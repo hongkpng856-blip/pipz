@@ -151,24 +151,29 @@ export default function HomePage() {
     </button>
   )
 
+  // ═══════ FIXED BOTTOM NAV LAYOUT ═══════
+
   return (
-    <div className="flex flex-col h-dvh max-w-sm mx-auto overflow-hidden select-none" style={{background:'#0b1120', color:'#f0f4f8'}}>
+    <div className="h-dvh max-w-sm mx-auto overflow-hidden select-none relative" style={{background:'#0b1120', color:'#f0f4f8'}}>
 
-      {/* ═══ TOP BAR ═══ */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
-        <h1 className="text-lg font-extrabold tracking-tight"
-          style={{background:'linear-gradient(135deg,#c084fc,#22d3ee)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent'}}>
-          Pipz
-        </h1>
-        <div className="flex items-center gap-2">
-          <span className="text-[#5a6d85] text-xs">👣</span>
-          <span className="text-sm font-bold">{ready ? formatSteps(totalSteps) : '0'}</span>
-          {walking && <span className="flex items-center gap-1 text-[10px] text-[#22c55e] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse"/>GPS</span>}
+      {/* Scrollable content area with padding for fixed nav */}
+      <div className="h-full overflow-y-auto pb-[62px]">
+
+        {/* ═══ TOP BAR ═══ */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-2 sticky top-0 z-10" style={{background:'#0b1120'}}>
+          <h1 className="text-lg font-extrabold tracking-tight"
+            style={{background:'linear-gradient(135deg,#c084fc,#22d3ee)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent'}}>
+            Pipz
+          </h1>
+          <div className="flex items-center gap-2">
+            <span className="text-[#5a6d85] text-xs">👣</span>
+            <span className="text-sm font-bold">{ready ? formatSteps(totalSteps) : '0'}</span>
+            {walking && <span className="flex items-center gap-1 text-[10px] text-[#22c55e] font-bold"><span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse"/>GPS</span>}
+          </div>
         </div>
-      </div>
 
-      {/* ═══ MAIN ═══ */}
-      <main className="flex-1 overflow-y-auto px-3 pb-1 space-y-2.5">
+        {/* ═══ MAIN ═══ */}
+        <div className="px-3 space-y-2.5">
 
         {/* ── MAP TAB ── */}
         {tab === 'map' && <div className="fade-up space-y-2.5">
@@ -430,10 +435,12 @@ export default function HomePage() {
           </div>
         </div>}
 
-      </main>
+        </div> {/* end main content */}
 
-      {/* ═══ BOTTOM NAV ═══ */}
-      <nav className="shrink-0 px-3 pb-2 pt-1">
+      </div> {/* end scrollable area */}
+
+      {/* ═══ BOTTOM NAV - FIXED ═══ */}
+      <nav className="absolute bottom-0 left-0 right-0 z-20 px-3 pb-2 pt-1" style={{background:'linear-gradient(transparent, #0b1120 30%)'}}>
         <div className="nav-bar">
           <div className="grid grid-cols-4 gap-1">
             <TabBtn t="map" icon="🗺️" label="地圖" />
