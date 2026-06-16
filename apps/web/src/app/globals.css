@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@source "../app/";
-@source "../components/";
 
 :root {
   --color-primary: #a855f7;
@@ -12,25 +10,116 @@
   --color-muted: #94a3b8;
 }
 
-/* ── Critical Inline Styles ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: #0f172a !important;
   color: #f1f5f9;
   font-family: ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
 }
 
-/* Layout helpers */
-.pipz-bg { background-color: #0f172a; }
-.pipz-surface { background-color: #1e293b; }
-.pipz-surface-2 { background-color: #334155; }
-.pipz-text { color: #f1f5f9; }
-.pipz-muted { color: #94a3b8; }
-.pipz-primary { color: #a855f7; }
-.pipz-border { border-color: rgba(51, 65, 85, 0.3); }
+/* ── Grass sway animation ── */
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+.grass-sway { animation: sway 3s ease-in-out infinite; transform-origin: bottom center; }
+.grass-sway-2 { animation: sway 3.5s ease-in-out infinite 0.5s; transform-origin: bottom center; }
+.grass-sway-3 { animation: sway 2.8s ease-in-out infinite 0.8s; transform-origin: bottom center; }
 
-* { -webkit-tap-highlight-color: transparent; }
+/* ── Twinkle stars ── */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.star { animation: twinkle 2s ease-in-out infinite; }
+.star:nth-child(2) { animation-delay: 0.5s; }
+.star:nth-child(3) { animation-delay: 1s; }
+.star:nth-child(4) { animation-delay: 1.5s; }
+.star:nth-child(5) { animation-delay: 0.3s; }
 
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+/* ── Walk button pulse ring ── */
+@keyframes ring-pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.15); opacity: 0.15; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+.walk-ring-pulse { animation: ring-pulse 2s ease-in-out infinite; }
+
+/* ── Egg shake ── */
+@keyframes egg-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+.egg-shake { animation: egg-shake 0.5s ease-in-out infinite; }
+
+/* ── Egg crack ── */
+@keyframes egg-crack {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.1); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.egg-crack { animation: egg-crack 0.8s ease-in-out; }
+
+/* ── Fade in ── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fade-in 0.5s ease-out; }
+
+/* ── Nearby slider ── */
+.nearby-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nearby-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Glass morphism ── */
+.glass {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+.glass-light {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(51, 65, 85, 0.2);
+}
+.glass-strong {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.4);
+}
+
+/* ── Bottom nav glass ── */
+.nav-glass {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(51, 65, 85, 0.3);
+}
+
+/* ── Walk button glow ── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.5), 0 0 60px rgba(168, 85, 247, 0.2); }
+}
+.btn-glow { animation: glow-pulse 3s ease-in-out infinite; }
+
+/* ── CP Glow ── */
+.cp-glow {
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
