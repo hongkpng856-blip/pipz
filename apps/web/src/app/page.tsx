@@ -190,7 +190,7 @@ export default function HomePage() {
                   ) : pet ? (
                     <>
                       <div className="pet-glow-wrap" style={{background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`}}>
-                        <div className={petAnim === 'walk' ? 'animate-bounce' : petAnim === 'happy' ? 'animate-pulse' : ''}>
+                        <div className={petAnim === 'walk' ? 'anim-bounce' : petAnim === 'happy' ? 'anim-pulse' : ''}>
                           <PixelPet color={PC[pet.rarity]} size={5} animation={petAnim} />
                         </div>
                       </div>
