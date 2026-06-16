@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "../app/";
+@source "../components/";
 
 :root {
   --color-primary: #a855f7;
@@ -9,6 +11,23 @@
   --color-text: #f1f5f9;
   --color-muted: #94a3b8;
 }
+
+/* ── Critical Inline Styles ── */
+body {
+  background-color: #0f172a !important;
+  color: #f1f5f9;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Layout helpers */
+.pipz-bg { background-color: #0f172a; }
+.pipz-surface { background-color: #1e293b; }
+.pipz-surface-2 { background-color: #334155; }
+.pipz-text { color: #f1f5f9; }
+.pipz-muted { color: #94a3b8; }
+.pipz-primary { color: #a855f7; }
+.pipz-border { border-color: rgba(51, 65, 85, 0.3); }
 
 * { -webkit-tap-highlight-color: transparent; }
 

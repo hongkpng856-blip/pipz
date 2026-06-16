@@ -152,7 +152,7 @@ export default function HomePage() {
   // Pet area conditionally shows static placeholder vs interactive
 
   return (
-    <div className="flex flex-col h-dvh max-w-md mx-auto bg-[#0f172a] text-[#f1f5f9] overflow-hidden select-none">
+    <div className="flex flex-col h-dvh max-w-md mx-auto overflow-hidden select-none pipz-bg pipz-text" style={{backgroundColor:'#0f172a',color:'#f1f5f9'}}>
       {/* ── Header ── */}
       <header className="flex items-center justify-between px-4 pt-3 pb-1 shrink-0">
         <div className="flex items-center gap-2">
