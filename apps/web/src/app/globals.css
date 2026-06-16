@@ -1,23 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #a855f7;
-  --color-secondary: #22d3ee;
-  --color-accent: #f59e0b;
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-text: #f1f5f9;
-  --color-muted: #94a3b8;
+  --c-bg: #0b1120;
+  --c-card: #141b2d;
+  --c-card-2: #1a2338;
+  --c-border: #1e2a45;
+  --c-border-light: #2a3a5a;
+  --c-text: #f0f4f8;
+  --c-text-2: #94a5b8;
+  --c-text-3: #5a6d85;
+  --c-purple: #8b5cf6;
+  --c-cyan: #22d3ee;
+  --c-amber: #f59e0b;
+  --c-green: #22c55e;
+  --c-red: #ef4444;
 }
 
-* {
-  -webkit-tap-highlight-color: transparent;
-}
+* { -webkit-tap-highlight-color: transparent; }
 
 body {
-  background-color: #0f172a !important;
-  color: #f1f5f9;
-  font-family: ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--c-bg) !important;
+  color: var(--c-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
   position: fixed;
@@ -25,101 +29,99 @@ body {
   height: 100%;
 }
 
-/* ── Grass sway animation ── */
-@keyframes sway {
-  0%, 100% { transform: rotate(-2deg); }
-  50% { transform: rotate(2deg); }
-}
-.grass-sway { animation: sway 3s ease-in-out infinite; transform-origin: bottom center; }
-.grass-sway-2 { animation: sway 3.5s ease-in-out infinite 0.5s; transform-origin: bottom center; }
-.grass-sway-3 { animation: sway 2.8s ease-in-out infinite 0.8s; transform-origin: bottom center; }
+/* ── Animations ── */
+@keyframes fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulse-ring { 0%, 100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.2); opacity: 0.05; } }
+@keyframes egg-wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes hatch-pop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes slide-up { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
-/* ── Twinkle stars ── */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
-}
-.star { animation: twinkle 2s ease-in-out infinite; }
-.star:nth-child(2) { animation-delay: 0.5s; }
-.star:nth-child(3) { animation-delay: 1s; }
-.star:nth-child(4) { animation-delay: 1.5s; }
-.star:nth-child(5) { animation-delay: 0.3s; }
+.fade-up { animation: fade-up 0.35s ease-out; }
+.fade-in { animation: fade-in 0.25s ease-out; }
+.egg-shake { animation: egg-wiggle 0.4s ease-in-out infinite; }
+.hatch-pop { animation: hatch-pop 0.6s ease-out; }
 
-/* ── Walk button pulse ring ── */
-@keyframes ring-pulse {
-  0% { transform: scale(1); opacity: 0.4; }
-  50% { transform: scale(1.15); opacity: 0.15; }
-  100% { transform: scale(1); opacity: 0.4; }
+/* ── Cards ── */
+.card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
 }
-.walk-ring-pulse { animation: ring-pulse 2s ease-in-out infinite; }
+.card-2 {
+  background: var(--c-card-2);
+  border: 1px solid var(--c-border-light);
+  border-radius: 12px;
+}
+.card-glow {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.08);
+}
 
-/* ── Egg shake ── */
-@keyframes egg-shake {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-5deg); }
-  75% { transform: rotate(5deg); }
+/* ── Walk Button ── */
+.walk-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  position: relative;
+  background: linear-gradient(145deg, #7c3aed, #6d28d9);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35), inset 0 -3px 6px rgba(0,0,0,0.3);
+  transition: all 0.15s;
 }
-.egg-shake { animation: egg-shake 0.5s ease-in-out infinite; }
+.walk-btn:active { transform: scale(0.92); }
+.walk-btn::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  animation: pulse-ring 2.5s ease-in-out infinite;
+}
+.walk-btn.active { background: linear-gradient(145deg, #dc2626, #b91c1c); box-shadow: 0 4px 20px rgba(220, 38, 38, 0.35), inset 0 -3px 6px rgba(0,0,0,0.3); }
 
-/* ── Egg crack ── */
-@keyframes egg-crack {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.1); }
-  60% { transform: scale(0.95); }
-  100% { transform: scale(1); }
+/* ── Progress Bar ── */
+.progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--c-card-2);
+  overflow: hidden;
 }
-.egg-crack { animation: egg-crack 0.8s ease-in-out; }
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+  transition: width 0.4s ease;
+}
 
-/* ── Fade in ── */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Nav ── */
+.nav-bar {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 18px;
+  padding: 4px;
 }
-.fade-in { animation: fade-in 0.5s ease-out; }
 
-/* ── Nearby slider ── */
-.nearby-scroll {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+/* ── Nearby scroll ── */
+.nearby-scroll { scrollbar-width: none; -ms-overflow-style: none; }
 .nearby-scroll::-webkit-scrollbar { display: none; }
 
-/* ── Glass morphism ── */
-.glass {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(51, 65, 85, 0.3);
+/* ── Button base ── */
+.btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
 }
-.glass-light {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(51, 65, 85, 0.2);
-}
-.glass-strong {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(51, 65, 85, 0.4);
-}
-
-/* ── Bottom nav glass ── */
-.nav-glass {
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(51, 65, 85, 0.3);
-}
-
-/* ── Walk button glow ── */
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1); }
-  50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.5), 0 0 60px rgba(168, 85, 247, 0.2); }
-}
-.btn-glow { animation: glow-pulse 3s ease-in-out infinite; }
-
-/* ── CP Glow ── */
-.cp-glow {
-  text-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
-}
+.btn:active { transform: scale(0.94); }
+.btn-primary { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+.btn-ghost { background: var(--c-card-2); color: var(--c-text-2); }
+.btn-green { background: #16a34a; color: white; }
+.btn-blue { background: #2563eb; color: white; }
+.btn-amber { background: #d97706; color: white; }
