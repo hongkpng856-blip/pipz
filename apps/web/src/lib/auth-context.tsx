@@ -101,10 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string): Promise<string | null> => {
     if (!supabase) return 'Supabase not initialized'
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { shouldCreateUser: true }
-    })
+    const { error } = await supabase.auth.signUp({ email, password })
     return error?.message ?? null
   }, [])
 
