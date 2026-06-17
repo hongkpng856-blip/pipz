@@ -32,18 +32,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Handle PKCE code exchange on the CLIENT side
+  // Magic Link redirects with #access_token=xxx in the URL hash
+  // After server-side callback, the URL has ?code=xxx
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(({ data: { session } }) => {
+
+    const initAuth = async () => {
+      // Check URL hash for access_token (PKCE direct flow)
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        // Supabase JS SDK handles hash automatically via onAuthStateChange
+        // Just need to setLoading(false) after it processes
+      }
+
+      // Check URL for ?code= parameter (after server callback redirect)
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
+      if (code) {
+        try {
+          await supabase.auth.exchangeCodeForSession(code)
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+        } catch (e) {
+          console.error('Code exchange failed:', e)
+        }
+      }
+
+      // Restore existing session
+      const { data: { session } } = await supabase.auth.getSession()
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
-    })
+    }
+
+    initAuth()
+
+    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
+
     return () => subscription.unsubscribe()
   }, [])
 
@@ -51,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return 'Supabase not initialized'
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true }
+      options: {
+        shouldCreateUser: true,
+        // Don't set redirectTo — let Supabase handle it (redirects back to site URL)
+      }
     })
     return error?.message ?? null
   }, [])
