@@ -513,17 +513,38 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="pet-grid">
-                  {pets.map((p,i) => (
-                    <div key={p.id} className="pet-card" onClick={() => setDetailPetId(p.id)}>
-                      <div className="pet-card-icon" style={{background:`radial-gradient(circle,${PC[p.rarity]}15,transparent)`}}>
-                        <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.2} animation="idle" />
+                  {pets.map((p,i) => {
+                    const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
+                    const starColor = RARITY_COLORS[p.rarity]
+                    const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
+                    return (
+                    <div key={p.id} className="pet-card" onClick={() => setDetailPetId(p.id)}
+                      style={{borderColor: `${starColor}33`}}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = `${starColor}66`)}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = `${starColor}33`)}>
+                      {/* Rarity top strip */}
+                      <div style={{position:'absolute', top:0, left:0, right:0, height:3, borderRadius:'14px 14px 0 0', background: starColor}} />
+                      {/* CP badge */}
+                      <div className="pet-card-cp">{cp(p)}</div>
+                      {/* Icon */}
+                      <div className="pet-card-icon">
+                        <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.5} animation="idle" />
                       </div>
-                      <div className="pet-card-rarity" style={{color:RARITY_COLORS[p.rarity]}}>{RARITY_LABELS[p.rarity]}</div>
-                      <div className="pet-card-cp">CP {cp(p)}</div>
+                      {/* Stars */}
+                      <div className="pet-card-stars" style={{color: starColor}}>
+                        {'★'.repeat(starCount)}
+                      </div>
+                      {/* Level */}
                       <div className="pet-card-lv">Lv.{p.level}</div>
-                      <span className="pet-card-mood">{ME[p.mood] || '😐'}</span>
+                      {/* Evolution indicator */}
+                      {p.evolutionStage < 5 && (
+                        <div className={`pet-card-evo ${canThisEvolve ? 'pet-card-evo-ready' : ''}`}
+                          style={{color: canThisEvolve ? '#f59e0b' : '#3a4d65'}}>
+                          {canThisEvolve ? '▶' : '►'}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>

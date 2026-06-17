@@ -228,20 +228,77 @@ body { position: fixed; }
 .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
 .section-count { font-size: 10px; color: var(--text-3); }
 
-/* ── Pets grid ── */
-.pet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pet-card {
-  cursor: pointer; padding: 12px; text-align: center;
-  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
-  transition: transform 0.15s, border-color 0.15s;
+/* ── Pets grid (P&D album style) ── */
+.pet-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
 }
-.pet-card:active { transform: scale(0.95); }
-.pet-card:hover { border-color: rgba(139, 92, 246, 0.3); }
-.pet-card-icon { width: 44px; height: 44px; margin: 0 auto 6px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-.pet-card-rarity { font-size: 10px; font-weight: 700; }
-.pet-card-cp { font-size: 9px; font-weight: 700; color: var(--amber); }
-.pet-card-lv { font-size: 9px; color: var(--text-3); }
-.pet-card-mood { font-size: 11px; }
+.pet-card {
+  cursor: pointer; position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 6px 6px;
+  text-align: center;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+.pet-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+}
+.pet-card:active { transform: scale(0.93); }
+.pet-card:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.1);
+}
+.pet-card-icon {
+  width: 48px; height: 48px;
+  margin: 0 auto 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.pet-card-stars {
+  font-size: 7px;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+.pet-card-lv {
+  font-size: 8px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.pet-card-cp {
+  position: absolute;
+  top: 6px; right: 6px;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--amber);
+  background: rgba(245,158,11,0.12);
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.pet-card-evo {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  font-size: 9px;
+  opacity: 0.5;
+}
+.pet-card-evo-ready {
+  opacity: 1;
+  animation: evoGlow 1.5s ease-in-out infinite;
+}
+@keyframes evoGlow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
 
 /* ── Empty state ── */
 .empty-state { text-align: center; padding: 64px 16px; }
