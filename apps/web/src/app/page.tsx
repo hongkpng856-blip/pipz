@@ -347,8 +347,11 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* Walking Canvas — full card */}
-              <div className="section card" style={{padding:0, overflow:'hidden', position:'relative'}}>
+              {/* Walking Canvas — full card (fills entire space) */}
+              <div className="section card" style={{
+                padding:0, overflow:'hidden', position:'relative',
+                aspectRatio:'4/3', width:'100%',
+              }}>
                 <WalkingCanvas
                   state={camState}
                   speed={walkSpeed}

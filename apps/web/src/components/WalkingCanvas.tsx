@@ -283,7 +283,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
       height={H}
       style={{
         width: '100%',
-        height: 'auto',
+        height: '100%',
         imageRendering: 'pixelated',
         display: 'block',
       }}

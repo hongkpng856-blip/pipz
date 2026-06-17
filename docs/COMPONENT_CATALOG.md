@@ -39,13 +39,15 @@ The entire app is a single page with 4 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Pet Display Card → **WalkingCanvas** (first-person pixel view)
-- Replaced with first-person 3D perspective pixel road animation
-- **Idle**: static road with grass + lane markings (retro RPG style)
-- **Walk**: road scrolls toward viewer, feet bob at bottom
-- **Run**: faster scrolling + speed lines (for future running mode)
-- **Encounter**: grass parts, ! mark, egg appears with sparkles
-- Pet info moved to a slim status bar BELOW the canvas
+### Pet Display Card → **WalkingCanvas** (top-down pixel view — Pixel Agents style)
+- Top-down 2D pixel art environment (grass, winding path, trees, bushes)
+- **Pet character** drawn with rarity colour + evolution stage size
+- **Idle**: pet stands with slight idle bob, ground slowly scrolls
+- **Walk**: pet legs alternate, ground scrolls at walking speed
+- **Run**: faster scrolling + leg movement
+- **Encounter**: grass shakes near pet, ❗ pops up, egg appears with sparkles
+- Canvas fills entire card with `aspectRatio: 4/3`
+- Pet status shown BELOW the canvas in a slim bar
 
 ### Steps Card
 - Three columns: 今日 steps | Walk button | 總計 steps
@@ -212,26 +214,33 @@ Full-screen overlay, max-width: 24rem centered.
 
 ## 11. WalkingCanvas (`WalkingCanvas.tsx`)
 
-Canvas-based first-person 3D perspective pixel road animation.
+Canvas-based top-down pixel art view (VS Code Pixel Agents style).
 
 ### States
-- **idle**: Static pixel road with grass, lane markings, horizon
-- **walk**: Road scrolls toward viewer, feet bob, speed lines
-- **run**: Faster scroll + more speed lines (reserved for future)
-- **encounter**: Grass parting → ! mark → egg with sparkles → fade back
+- **idle**: Pet stands with slight idle bob, ground slowly scrolls
+- **walk**: Pet legs alternate, ground scrolls at walking speed
+- **run**: Faster scrolling + leg movement speed
+- **encounter**: Grass shakes near pet → ❗ pop → egg + sparkles → callback
 
 ### Props
 - `state`: `'idle' | 'walk' | 'run' | 'encounter'`
 - `speed`: 0-100, affects scroll rate
 - `onEncounterEnd`: callback when encounter animation completes
-- `size`: pixel multiplier (default 3 = 320×180 → 960×540 rendered)
+- `size`: pixel multiplier (default 3 = 320×180 base resolution)
+- `pet`: `{ rarity, evolutionStage } | null` — the pet character to render
 
 ### Visual Design
-- Horizon at 55% height, dark sky
-- Road converging to vanishing point (perspective)
-- Alternating green grass, dashed center lane marking
-- Road edge lines
-- Random grass tufts on sides
-- Speed lines when running
-- Feet indicator at bottom center when walking/running
-- Encounter: vignette closes, grass parts, ! pop, egg appears, sparkles
+- Top-down 2D pixel art environment
+- Grass ground with checkerboard tiles and small flowers
+- Winding dirt path going upward with edge lines
+- Trees (trunk + leaves) on both sides, scrolling with parallax
+- Pet character drawn procedurally:
+  - Body colour = rarity colour (common→legendary)
+  - Size = 4-8px based on evolution stage
+  - White eyes, coloured limbs
+  - Walking animation: legs alternate + arms swing
+  - Idle: slight vertical bob
+- No pet → egg at centre with floating animation
+- Canvas CSS: `width: 100%; height: 100%` — fills parent card with `aspectRatio: 4/3`
+- Wraps Y for all elements (seamless scrolling)
+- Encounter: dark vignette, grass shake, ❗ mark, egg with sparkles, timed callback
