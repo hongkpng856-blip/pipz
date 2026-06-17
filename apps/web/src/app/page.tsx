@@ -185,6 +185,10 @@ export default function HomePage() {
   // ── Step manager ──
   const addSt = (n: number) => {
     setSteps(s => s + n)
+    // Also add steps to active pet
+    if (pet) {
+      setPets(v => v.map((p, i) => i === activeIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
+    }
     setTotalSteps(s => {
       const newTotal = s + n
       if (pets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
