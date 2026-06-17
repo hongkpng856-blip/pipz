@@ -286,7 +286,7 @@ export default function HomePage() {
         <div className="header">
           <span className="header-title">Pipz</span>
           <div className="header-right">
-            {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
+            {syncing && <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-3)'}}>⏳</span>}
             {walking && (
               <span className="header-gps">
                 <span className="gps-dot" />GPS
@@ -296,19 +296,19 @@ export default function HomePage() {
               <>
                 <button onClick={() => setShowLogin(true)}
                   style={{
-                    background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
+                    background:'rgba(139,92,246,0.15)', border:'2px solid rgba(139,92,246,0.3)',
                     cursor:'pointer', color:'#c084fc',
-                    fontSize: 11, padding: '3px 6px', borderRadius: 10,
-                    fontFamily:'inherit', whiteSpace:'nowrap',
+                    fontFamily:'var(--font-title)', fontSize:7, padding:'4px 6px',
+                    whiteSpace:'nowrap', letterSpacing:'0.3px',
                     maxWidth: 120, overflow:'hidden', textOverflow:'ellipsis',
                   }}>
                   {user.email}
                 </button>
                 <button onClick={() => signOut()}
                   style={{
-                    background:'none', border:'none', cursor:'pointer',
-                    color:'#ef4444', fontSize: 11, padding: '3px 4px',
-                    fontFamily:'inherit',
+                    background:'none', border:'2px solid rgba(255,51,85,0.3)', cursor:'pointer',
+                    color:'#ff3355', fontFamily:'var(--font-title)', fontSize:7, padding:'3px 6px',
+                    letterSpacing:'0.3px',
                   }}>
                   登出
                 </button>
@@ -316,10 +316,10 @@ export default function HomePage() {
             ) : (
               <button onClick={() => setShowLogin(true)}
                 style={{
-                  background:'none', border:'none',
-                  cursor:'pointer', color:'#5a6d85',
-                  fontSize: 14, padding: '2px 4px',
-                  fontFamily:'inherit',
+                  background:'none', border:'2px solid var(--border)',
+                  cursor:'pointer', color:'var(--text-3)',
+                  fontFamily:'var(--font-title)', fontSize:10, padding:'4px 8px',
+                  letterSpacing:'0.5px',
                 }}>
                 🔑
               </button>
@@ -334,7 +334,7 @@ export default function HomePage() {
 
           {/* ════ Loading ════ */}
           {loading ? (
-            <div style={{textAlign:'center', padding: '60px 0', color:'#5a6d85', fontSize:13}}>
+            <div style={{textAlign:'center', padding: '60px 0', color:'var(--text-3)', fontFamily:'var(--font-title)', fontSize:9}}>
               <div style={{fontSize:24, marginBottom:8}}>⏳</div>
               載入中...
             </div>
@@ -350,7 +350,7 @@ export default function HomePage() {
                 {encFlash && (
                   <div className="enc-flash">
                     <div><span style={{fontSize:36, display:'block', marginBottom:4}}>✨</span>
-                    <span style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>遇見新寵物！</span></div>
+                    <span style={{fontFamily:'var(--font-title)', fontSize:10, color:'var(--pink)'}}>遇見新寵物！</span></div>
                   </div>
                 )}
 
@@ -361,7 +361,7 @@ export default function HomePage() {
                     hatching ? (
                       <div style={{textAlign:'center', padding:'16px 0'}}>
                         <span className="pet-egg egg-crack">🥚</span>
-                        <p style={{fontSize:14, color:'#8b5cf6', fontWeight:700, marginTop:8, animation:'pulse 1s ease-in-out infinite'}}>孵化中...</p>
+                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--purple)', marginTop:8, animation:'pulse 1s step-end infinite', letterSpacing:'0.5px'}}>孵化中...</p>
                         <div className="hatch-sparkle">
                           {['✨','⭐','💫','🌟'].map((s,i) => (
                             <span key={i} style={{animationDelay:`${i*0.15}s`, fontSize:18}}>{s}</span>
@@ -371,8 +371,8 @@ export default function HomePage() {
                     ) : (
                       <>
                         <span className="pet-egg egg-shake">🥚</span>
-                        <p style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>就快孵化！</p>
-                        <p style={{fontSize:10, color:'#5a6d85'}}>❤️ 溫度剛剛好</p>
+                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'0.5px', marginTop:4}}>就快孵化！</p>
+                        <p style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-3)'}}>溫度剛剛好</p>
                         <button className="btn btn-primary" onClick={hatch} style={{marginTop:4}}>孵化 🐣</button>
                       </>
                     )
@@ -393,7 +393,7 @@ export default function HomePage() {
                         <span className="pet-cp">CP {cp(pet)}</span>
                         {canEvolve && (
                           <button className="btn" onClick={() => setShowEvolve(true)}
-                            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:9, padding:'2px 8px', borderRadius:8}}>
+                            style={{background:'#8a5a00', borderColor:'var(--pixel-gold)', color:'white', fontFamily:'var(--font-title)', fontSize:7, padding:'3px 8px', letterSpacing:'0.3px'}}>
                             🌟 進化
                           </button>
                         )}
@@ -427,7 +427,7 @@ export default function HomePage() {
                       <div className="progress-wrap" style={{marginTop:4}}>
                         <div className="progress-labels"><span>孵化進度</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
                         <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`}}/></div>
-                        <p style={{fontSize:10, color:'#5a6d85', textAlign:'center', marginTop:6}}>行 1,000 步孵化第一隻寵物</p>
+                        <p style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-3)', textAlign:'center', marginTop:6}}>行 1,000 步孵化第一隻寵物</p>
                       </div>
                     </>
                   )}
@@ -457,12 +457,12 @@ export default function HomePage() {
               {/* Nearby */}
               {nearby.length > 0 && (
                 <div className="section card card-pad-sm">
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
                     <div style={{display:'flex', alignItems:'center', gap:6}}>
                       <span style={{fontSize:10}}>📍</span>
-                      <span style={{fontSize:12, fontWeight:700, color:'#94a5b8'}}>附近</span>
+                      <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-2)', letterSpacing:'0.3px'}}>附近</span>
                     </div>
-                    <span style={{fontSize:9, color:'#5a6d85'}}>{nearby.length}隻</span>
+                    <span style={{fontFamily:'var(--font-title)', fontSize:7, color:'var(--text-3)'}}>{nearby.length}隻</span>
                   </div>
                   <div className="nearby-scroll">
                     {nearby.map(p => {
@@ -675,17 +675,18 @@ export default function HomePage() {
         <div style={{
           position:'fixed', inset:0, zIndex:100,
           display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+          background:'rgba(0,0,0,0.8)',
           padding:16
         }} onClick={() => !evolvingId && setShowEvolve(false)}>
           <div style={{
-            background:'#141b2d', border:'1px solid #f59e0b44', borderRadius:24,
-            padding:32, textAlign:'center', maxWidth:300, width:'100%',
+            background:'#12162b', border:'2px solid rgba(255,204,0,0.3)',
+            padding:28, textAlign:'center', maxWidth:300, width:'100%',
+            boxShadow:'6px 6px 0 rgba(0,0,0,0.5)',
           }} onClick={e => e.stopPropagation()}>
             {evolvingId === pet.id ? (
               <>
-                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
-                <div style={{fontSize:24, fontWeight:800, background:'linear-gradient(135deg,#f59e0b,#ffd700)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:8}}>
+                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s step-end infinite'}}>✨</div>
+                <div style={{fontFamily:'var(--font-title)', fontSize:12, color:'var(--pixel-gold)', letterSpacing:'1px', marginBottom:8}}>
                   進化中...
                 </div>
                 <div className="hatch-sparkle">
@@ -703,25 +704,25 @@ export default function HomePage() {
                   animation="happy"
                   size={6}
                 />
-                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
+                <div style={{fontFamily:'var(--font-title)', fontSize:10, color:'var(--pixel-gold)', margin:'12px 0 6px', letterSpacing:'0.5px'}}>
                   🌟 進化可能！
                 </div>
-                <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
+                <div style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-2)', marginBottom:14}}>
                   {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
                   {' → '}
                   {['幼年','成年','完全體','傳說','神話'][pet.evolutionStage-1] || '下一步'}
                 </div>
                 <div style={{display:'flex', gap:8, justifyContent:'center'}}>
                   <button className="btn btn-ghost" onClick={() => setShowEvolve(false)}
-                    style={{padding:'8px 20px', fontSize:12}}>
+                    style={{padding:'8px 16px', fontSize:7}}>
                     下次先
                   </button>
                   <button onClick={doEvolve}
                     style={{
-                      padding:'8px 24px', borderRadius:20, border:'none',
-                      background:'linear-gradient(135deg,#f59e0b,#d97706)',
-                      color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
-                      fontFamily:'inherit',
+                      padding:'8px 20px', border:'2px solid #ffcc00',
+                      background:'#8a5a00', color:'white',
+                      fontFamily:'var(--font-title)', fontSize:8, cursor:'pointer',
+                      letterSpacing:'0.5px', boxShadow:'2px 2px 0 rgba(0,0,0,0.4)',
                     }}>
                     🌟 進化！
                   </button>
