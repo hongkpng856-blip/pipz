@@ -112,12 +112,12 @@ Each skill: power = basePower + floor(level * 1.5)
 ### Evolution Formula
 
 ```typescript
-function calculateEvolution(totalSteps, currentStage, currentStats):
+function calculateEvolution(userTotalSteps, currentStage, currentStats):
     nextStage = currentStage + 1
     stepsRequired = EVOLUTION_STEPS[nextStage]
     
     if stepsRequired is undefined → return null (max stage)
-    if totalSteps < stepsRequired → return null (not enough steps)
+    if userTotalSteps < stepsRequired → return null (not enough steps)
     
     growthFactor = 1 + (nextStage - 1) * 0.3
     
@@ -128,6 +128,8 @@ function calculateEvolution(totalSteps, currentStage, currentStats):
         newStatus: EVOLUTION_STATUS[nextStage],
     }
 ```
+
+> **Note:** Evolution uses the USER's total steps (not the pet's individual steps). This means all pets share the same step progress toward evolution.
 
 ### Evolution Effect
 
