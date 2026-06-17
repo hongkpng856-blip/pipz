@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, Rarity, Mood, Pet, PetStatus, formatSteps } from '@pipz/core'
 import { RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPet from '../components/PixelPet'
+import LoginModal from './login-modal'
+import { useAuth } from '../lib/auth-context'
 
 function genId() { return Math.random().toString(36).substring(2, 10) }
 
@@ -30,6 +32,8 @@ export default function HomePage() {
   const [log, setLog] = useState<string[]>([])
   const [ready, setReady] = useState(false)
   const [encFlash, setEncFlash] = useState(false)
+  const [showLogin, setShowLogin] = useState(false)
+  const { user } = useAuth()
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
@@ -144,6 +148,10 @@ export default function HomePage() {
                 <span className="gps-dot" />GPS
               </span>
             )}
+            <button onClick={() => setShowLogin(true)}
+              style={{background:'none', border:'none', cursor:'pointer', color:'#5a6d85', fontSize:14, padding:'2px 4px', fontFamily:'inherit'}}>
+              {user ? '👤' : '🔑'}
+            </button>
             <span className="header-icon">👣</span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
           </div>
@@ -412,6 +420,8 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
 
     </div>
   )

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import AuthWrapper from './auth-wrapper'
 
 export const metadata: Metadata = {
   title: 'Pipz - 陪你每一步',
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
-        {children}
+        <AuthWrapper>{children}</AuthWrapper>
       </body>
     </html>
   )
