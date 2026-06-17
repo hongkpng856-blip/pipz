@@ -27,8 +27,8 @@ The entire app is a single page with 4 tabs and modals.
 ```
 
 ### Header
-- Left: "Pipz" title (gradient purple→cyan)
-- Right: Sync indicator, GPS badge, email button, logout, 👣 icon, step count
+- Left: "Pipz" title
+- Right: Sync indicator, **Walk button (🚶/⏹)**, GPS badge, email button, logout, 👣 icon, step count
 
 ### Bottom Navigation
 - 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community)
@@ -49,10 +49,15 @@ The entire app is a single page with 4 tabs and modals.
 - Canvas fills entire card with `aspectRatio: 4/3`
 - Pet status shown BELOW the canvas in a slim bar
 
-### Steps Card
-- Three columns: 今日 steps | Walk button | 總計 steps
-- Walk button (FAB): 🚶 (start) / ⏹ (stop)
-- Active state: red gradient, pulsing ring
+### Stats Card
+- Bigger card with **bar chart visualization**
+- Top row: today's steps | total steps (divided by vertical line)
+- Three bars:
+  - 📊 **今日進度**: today's steps / 5,000 goal
+  - 📈 **總步數進度**: total steps / 10,000 milestone
+  - 🥚 **孵化進度** / 🌟 **進化進度**: depending on pet state
+- Walk button moved to **header** (top-right area)
+- Green bg when idle, red bg when walking
 
 ### Nearby Pets
 - Horizontal scroll row of recent pets

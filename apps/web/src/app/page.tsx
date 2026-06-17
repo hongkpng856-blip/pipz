@@ -284,11 +284,22 @@ export default function HomePage() {
       {/* Scrollable content */}
       <div className="scroll-wrap">
 
-        {/* ── Header ── */}
+        {/* ── Header (with Walk button) ── */}
         <div className="header">
           <span className="header-title">Pipz</span>
           <div className="header-right">
             {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
+            <button
+              onClick={walking ? walkStop : walkStart}
+              style={{
+                background: walking ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.15)',
+                border: walking ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(34,197,94,0.3)',
+                cursor:'pointer', color: walking ? '#ef4444' : '#22c55e',
+                fontSize: 16, padding: '2px 6px', borderRadius: 10,
+                fontFamily:'inherit', lineHeight:1,
+              }}>
+              {walking ? '⏹' : '🚶'}
+            </button>
             {walking && (
               <span className="header-gps">
                 <span className="gps-dot" />GPS
@@ -443,35 +454,79 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Steps + Walk */}
-              <div className="section card">
-                <div className="steps-row">
-                  <div className="steps-stat">
-                    <div className="steps-num">{ready ? formatSteps(steps) : '0'}</div>
-                    <div className="steps-label">今日</div>
+              {/* 📊 Stats Card — bigger, with bar charts */}
+              <div className="section card" style={{padding:0}}>
+                <div style={{padding:'14px 16px'}}>
+                  {/* Numbers row */}
+                  <div style={{display:'flex', justifyContent:'space-around', marginBottom:14}}>
+                    <div style={{textAlign:'center'}}>
+                      <div className="steps-num">{ready ? formatSteps(steps) : '0'}</div>
+                      <div className="steps-label" style={{marginTop:2}}>今日步數</div>
+                    </div>
+                    <div style={{width:1, background:'#1e2a45'}} />
+                    <div style={{textAlign:'center'}}>
+                      <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
+                      <div className="steps-label" style={{marginTop:2}}>總步數</div>
+                    </div>
                   </div>
-                  <div className="steps-center">
-                    <button className={`walk-btn ${walking ? 'active' : ''}`}
-                      onClick={walking ? walkStop : walkStart}>
-                      {walking ? '⏹' : '🚶'}
-                    </button>
+
+                  {/* Bar: 今日進度 */}
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                      <span>📊 今日進度</span>
+                      <span>{formatSteps(steps)} / 5,000</span>
+                    </div>
+                    <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(steps/5000)*100)}%`}}/></div>
                   </div>
-                  <div className="steps-stat">
-                    <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
-                    <div className="steps-label">總計</div>
+
+                  {/* Bar: 總步數進度 */}
+                  <div style={{marginBottom:10}}>
+                    <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                      <span>📈 總步數進度</span>
+                      <span>{formatSteps(totalSteps)}步</span>
+                    </div>
+                    <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/10000)*100)}%`, background:'linear-gradient(90deg, #8b5cf6, #22d3ee)'}}/></div>
                   </div>
+
+                  {/* Bar: 孵化/進化進度 */}
+                  {!pet ? (
+                    <div>
+                      <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                        <span>🥚 孵化進度</span>
+                        <span>{formatSteps(totalSteps)} / {formatSteps(FIRST_PET_STEPS)}</span>
+                      </div>
+                      <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`, background:'#f59e0b'}}/></div>
+                    </div>
+                  ) : pet.evolutionStage < 5 && (() => {
+                    const nextStep = (() => {
+                      if (pet.evolutionStage === 1) return 10000
+                      if (pet.evolutionStage === 2) return 30000
+                      if (pet.evolutionStage === 3) return 60000
+                      if (pet.evolutionStage === 4) return 100000
+                      return 999999
+                    })()
+                    return (
+                      <div>
+                        <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                          <span>🌟 進化進度</span>
+                          <span>{formatSteps(totalSteps)} / {formatSteps(nextStep)}</span>
+                        </div>
+                        <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/nextStep)*100)}%`, background:'#f59e0b'}}/></div>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
 
-              {/* Nearby */}
+              {/* Nearby — compact */}
               {nearby.length > 0 && (
-                <div className="section card card-pad-sm">
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-                    <div style={{display:'flex', alignItems:'center', gap:6}}>
-                      <span style={{fontSize:10}}>📍</span>
-                      <span style={{fontSize:12, fontWeight:700, color:'#94a5b8'}}>附近</span>
+                <div style={{padding:'4px 0', marginBottom:8}}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, padding:'0 2px'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:4}}>
+                      <span style={{fontSize:8}}>📍</span>
+                      <span style={{fontSize:10, fontWeight:600, color:'#94a5b8'}}>附近</span>
                     </div>
-                    <span style={{fontSize:9, color:'#5a6d85'}}>{nearby.length}隻</span>
+                    <span style={{fontSize:8, color:'#5a6d85'}}>{nearby.length}隻</span>
                   </div>
                   <div className="nearby-scroll">
                     {nearby.map(p => {
@@ -479,7 +534,7 @@ export default function HomePage() {
                       return (
                         <div key={p.id} className="nearby-card" onClick={() => setDetailPetId(p.id)}>
                           <div className="nearby-pet" style={{background:`${PC[p.rarity]}12`}}>
-                            <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.8} animation="idle" />
+                            <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
                           </div>
                           <div className="nearby-rarity" style={{color:RARITY_COLORS[p.rarity]}}>{RARITY_LABELS[p.rarity]}</div>
                           <div className="nearby-cp">CP {cp(p)}</div>
