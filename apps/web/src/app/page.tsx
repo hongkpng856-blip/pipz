@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPet from '../components/PixelPet'
-import LoginModal from './login-modal' /* fresh */
+import LoginModal from './auth-modal' /* fresh */
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
 
