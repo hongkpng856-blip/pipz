@@ -337,3 +337,4 @@ body { position: fixed; }
   100% { transform: translateY(-40px) scale(0.5); opacity: 0; }
 }
 .particle { animation: float-up 1s ease-out forwards; }
+
