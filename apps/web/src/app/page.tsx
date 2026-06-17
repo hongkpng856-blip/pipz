@@ -286,7 +286,7 @@ export default function HomePage() {
         <div className="header">
           <span className="header-title">Pipz</span>
           <div className="header-right">
-            {syncing && <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-3)'}}>⏳</span>}
+            {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
             {walking && (
               <span className="header-gps">
                 <span className="gps-dot" />GPS
@@ -296,19 +296,19 @@ export default function HomePage() {
               <>
                 <button onClick={() => setShowLogin(true)}
                   style={{
-                    background:'rgba(139,92,246,0.15)', border:'2px solid rgba(139,92,246,0.3)',
+                    background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
                     cursor:'pointer', color:'#c084fc',
-                    fontFamily:'var(--font-title)', fontSize:7, padding:'4px 6px',
-                    whiteSpace:'nowrap', letterSpacing:'0.3px',
+                    fontSize: 11, padding: '3px 6px', borderRadius: 10,
+                    fontFamily:'inherit', whiteSpace:'nowrap',
                     maxWidth: 120, overflow:'hidden', textOverflow:'ellipsis',
                   }}>
                   {user.email}
                 </button>
                 <button onClick={() => signOut()}
                   style={{
-                    background:'none', border:'2px solid rgba(255,51,85,0.3)', cursor:'pointer',
-                    color:'#ff3355', fontFamily:'var(--font-title)', fontSize:7, padding:'3px 6px',
-                    letterSpacing:'0.3px',
+                    background:'none', border:'none', cursor:'pointer',
+                    color:'#ef4444', fontSize: 11, padding: '3px 4px',
+                    fontFamily:'inherit',
                   }}>
                   登出
                 </button>
@@ -316,14 +316,15 @@ export default function HomePage() {
             ) : (
               <button onClick={() => setShowLogin(true)}
                 style={{
-                  background:'none', border:'2px solid var(--border)',
-                  cursor:'pointer', color:'var(--text-3)',
-                  fontFamily:'var(--font-title)', fontSize:10, padding:'4px 8px',
-                  letterSpacing:'0.5px',
+                  background:'none', border:'none',
+                  cursor:'pointer', color:'#5a6d85',
+                  fontSize: 14, padding: '2px 4px',
+                  fontFamily:'inherit',
                 }}>
                 🔑
               </button>
             )}
+            <span className="header-icon">👣</span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
           </div>
         </div>
@@ -333,7 +334,7 @@ export default function HomePage() {
 
           {/* ════ Loading ════ */}
           {loading ? (
-            <div style={{textAlign:'center', padding: '60px 0', color:'var(--text-3)', fontFamily:'var(--font-title)', fontSize:9}}>
+            <div style={{textAlign:'center', padding: '60px 0', color:'#5a6d85', fontSize:13}}>
               <div style={{fontSize:24, marginBottom:8}}>⏳</div>
               載入中...
             </div>
@@ -348,8 +349,8 @@ export default function HomePage() {
               <div className="section card" style={{position:'relative', overflow:'hidden'}}>
                 {encFlash && (
                   <div className="enc-flash">
-                    <div><span style={{fontSize:32, display:'block', marginBottom:4}}>✦</span>
-                    <span style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'1px'}}>NEW PET!</span></div>
+                    <div><span style={{fontSize:36, display:'block', marginBottom:4}}>✨</span>
+                    <span style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>遇見新寵物！</span></div>
                   </div>
                 )}
 
@@ -360,7 +361,7 @@ export default function HomePage() {
                     hatching ? (
                       <div style={{textAlign:'center', padding:'16px 0'}}>
                         <span className="pet-egg egg-crack">🥚</span>
-                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--purple)', marginTop:6, letterSpacing:'1px'}}>HATCHING...</p>
+                        <p style={{fontSize:14, color:'#8b5cf6', fontWeight:700, marginTop:8, animation:'pulse 1s ease-in-out infinite'}}>孵化中...</p>
                         <div className="hatch-sparkle">
                           {['✨','⭐','💫','🌟'].map((s,i) => (
                             <span key={i} style={{animationDelay:`${i*0.15}s`, fontSize:18}}>{s}</span>
@@ -370,14 +371,14 @@ export default function HomePage() {
                     ) : (
                       <>
                         <span className="pet-egg egg-shake">🥚</span>
-                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'1px', marginTop:4}}>HATCH!</p>
-                        <p style={{fontFamily:'var(--font-body)', fontSize:16, color:'var(--text-3)'}}>Ready to hatch</p>
-                        <button className="btn btn-primary" onClick={hatch} style={{marginTop:2}}>HATCH</button>
+                        <p style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>就快孵化！</p>
+                        <p style={{fontSize:10, color:'#5a6d85'}}>❤️ 溫度剛剛好</p>
+                        <button className="btn btn-primary" onClick={hatch} style={{marginTop:4}}>孵化 🐣</button>
                       </>
                     )
                   ) : pet ? (
                     <>
-                      <div className="pet-glow-wrap" style={{borderColor: PC[pet.rarity] + '44'}}>
+                      <div className="pet-glow-wrap" style={{background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`}}>
                         <PixelPetCanvas
                           seed={parseInt(pet.speciesId) || 1}
                           rarity={pet.rarity}
@@ -386,22 +387,22 @@ export default function HomePage() {
                           size={5}
                         />
                       </div>
-                      <div className="pet-info-row">
+                      <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'center'}}>
                         <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18'}}>{RARITY_LABELS[pet.rarity]}</span>
                         <span className="pet-lv">Lv.{pet.level}</span>
                         <span className="pet-cp">CP {cp(pet)}</span>
                         {canEvolve && (
                           <button className="btn" onClick={() => setShowEvolve(true)}
-                            style={{background:'#8a5a00', borderColor:'var(--pixel-gold)', color:'white', padding:'2px 8px'}}>
-                            EVO
+                            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:9, padding:'2px 8px', borderRadius:8}}>
+                            🌟 進化
                           </button>
                         )}
                       </div>
                       <div className="pet-stats">
-                        <span>SPD {pet.stats.speed}</span>
-                        <span>LUK {pet.stats.luck}</span>
-                        <span>CHA {pet.stats.charm}</span>
-                        <span>ENR {pet.stats.energy}</span>
+                        <span>⚡{pet.stats.speed}</span>
+                        <span>🍀{pet.stats.luck}</span>
+                        <span>💜{pet.stats.charm}</span>
+                        <span>🔋{pet.stats.energy}</span>
                       </div>
                       {pet.xp > 0 && (
                         <div className="progress-wrap">
@@ -411,22 +412,22 @@ export default function HomePage() {
                       )}
                       <div className="pet-mood">
                         <span>{ME[pet.mood] || '😐'}</span>
-                        <span className="pet-mood-text">{pet.mood === 'happy' ? 'HAPPY' : pet.mood.toUpperCase()}</span>
+                        <span className="pet-mood-text">{pet.mood === 'happy' ? '開心' : pet.mood}</span>
                       </div>
                       <div className="pet-actions">
-                        <button className="btn btn-green" onClick={feed}>FEED</button>
-                        <button className="btn btn-blue" onClick={petAction}>PET</button>
-                        <button className="btn btn-amber" onClick={playAction}>PLAY</button>
+                        <button className="btn btn-green" onClick={feed}>🍖餵食</button>
+                        <button className="btn btn-blue" onClick={petAction}>✋摸頭</button>
+                        <button className="btn btn-amber" onClick={playAction}>🎾玩</button>
                       </div>
                     </>
                   ) : (
                     <>
                       <span className="pet-egg">🥚</span>
-                      <span className="pet-title">NO PET</span>
+                      <span className="pet-title">未有寵物</span>
                       <div className="progress-wrap" style={{marginTop:4}}>
-                        <div className="progress-labels"><span>INCUBATE</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
+                        <div className="progress-labels"><span>孵化進度</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
                         <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`}}/></div>
-                        <p style={{fontFamily:'var(--font-body)', fontSize:15, color:'var(--text-3)', textAlign:'center', marginTop:4}}>Walk 1,000 steps to hatch</p>
+                        <p style={{fontSize:10, color:'#5a6d85', textAlign:'center', marginTop:6}}>行 1,000 步孵化第一隻寵物</p>
                       </div>
                     </>
                   )}
@@ -456,11 +457,12 @@ export default function HomePage() {
               {/* Nearby */}
               {nearby.length > 0 && (
                 <div className="section card card-pad-sm">
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
                     <div style={{display:'flex', alignItems:'center', gap:6}}>
-                      <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-2)', letterSpacing:'0.3px'}}>NEARBY</span>
+                      <span style={{fontSize:10}}>📍</span>
+                      <span style={{fontSize:12, fontWeight:700, color:'#94a5b8'}}>附近</span>
                     </div>
-                    <span style={{fontFamily:'var(--font-title)', fontSize:7, color:'var(--text-3)'}}>{nearby.length}</span>
+                    <span style={{fontSize:9, color:'#5a6d85'}}>{nearby.length}隻</span>
                   </div>
                   <div className="nearby-scroll">
                     {nearby.map(p => {
@@ -501,13 +503,13 @@ export default function HomePage() {
           {tab === 'pets' && (
             <div className="fade-up">
               <div className="section-header">
-                <span className="section-title">PETS</span>
-                <span className="section-count">{pets.length}</span>
+                <span className="section-title">🐾 寵物</span>
+                <span className="section-count">{pets.length}隻</span>
               </div>
               {pets.length === 0 ? (
                 <div className="card empty-state">
                   <div className="empty-icon">🥚</div>
-                  <div className="empty-text">No pets yet — start walking!</div>
+                  <div className="empty-text">未有寵物，行路孵化啦！</div>
                 </div>
               ) : (
                 <div className="pet-grid">
@@ -552,8 +554,8 @@ export default function HomePage() {
           {tab === 'eggs' && (
             <div className="fade-up">
               <div className="section-header">
-                <span className="section-title">EGGS</span>
-                <span className="section-count">1/1</span>
+                <span className="section-title">🥚 蛋</span>
+                <span className="section-count">孵化器 1/1</span>
               </div>
 
               <div className="section card">
@@ -562,8 +564,8 @@ export default function HomePage() {
                     <span style={{fontSize:24}}>{pets.length === 0 ? '🥚' : '✅'}</span>
                   </div>
                   <div className="incubator-info">
-                    <div className="incubator-name">BASIC INCUBATOR</div>
-                    <div className="incubator-desc">{pets.length === 0 ? 'Walk 1,000 steps' : 'Complete!'}</div>
+                    <div className="incubator-name">{pets.length === 0 ? '基本孵化器' : '已孵化'}</div>
+                    <div className="incubator-desc">{pets.length === 0 ? '行 1,000 步孵化' : '完成！'}</div>
                     <div className="progress-bar">
                       <div className="progress-fill" style={{
                         width: pets.length === 0 ? `${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%` : '100%',
@@ -571,8 +573,8 @@ export default function HomePage() {
                       }}/>
                     </div>
                     <div className="incubator-labels">
-                      <span>PROGRESS</span>
-                      <span>{pets.length === 0 ? `${formatSteps(totalSteps)}/${formatSteps(FIRST_PET_STEPS)}` : 'DONE'}</span>
+                      <span>進度</span>
+                      <span>{pets.length === 0 ? `${formatSteps(totalSteps)}/${formatSteps(FIRST_PET_STEPS)}` : '✅ 完成'}</span>
                     </div>
                   </div>
                 </div>
@@ -582,8 +584,8 @@ export default function HomePage() {
                 {[1,2].map(i => (
                   <div key={i} className="card locked-slot">
                     <div className="locked-icon">🔒</div>
-                    <div className="locked-title">{i === 1 ? 'EXTRA INCUBATOR' : 'FRIEND INCUBATOR'}</div>
-                    <div className="locked-sub">Coming soon</div>
+                    <div className="locked-title">額外孵化器</div>
+                    <div className="locked-sub">即將開放</div>
                   </div>
                 ))}
               </div>
@@ -595,13 +597,13 @@ export default function HomePage() {
             <div className="fade-up community-wrap">
               <div className="card community-card">
                 <div className="community-icon">🏪</div>
-                <div className="community-title">COMMUNITY</div>
-                <div className="community-desc">Trade and battle with others</div>
+                <div className="community-title">社群 &amp; 交易</div>
+                <div className="community-desc">與其他玩家交換寵物</div>
                 <div className="community-list">
-                  {['RACE', 'TRADE', 'FRIENDS'].map(s => (
+                  {['行路競賽','交易市場','好友列表'].map(s => (
                     <div key={s} className="card-2 community-item">
                       <span>{s}</span>
-                      <span className="community-status">SOON</span>
+                      <span className="community-status">即將開放</span>
                     </div>
                   ))}
                 </div>
@@ -619,10 +621,10 @@ export default function HomePage() {
         <div className="nav-bar">
           <div className="nav-grid">
             {([
-              { k: 'map' as Tab, icon: '🗺️', label: 'MAP' },
-              { k: 'pets' as Tab, icon: '🐾', label: 'PETS' },
-              { k: 'eggs' as Tab, icon: '🥚', label: 'EGGS' },
-              { k: 'community' as Tab, icon: '🏪', label: 'SHOP' },
+              { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
+              { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
+              { k: 'eggs' as Tab, icon: '🥚', label: '蛋' },
+              { k: 'community' as Tab, icon: '🏪', label: '社群' },
             ]).map(t => (
               <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
@@ -673,18 +675,17 @@ export default function HomePage() {
         <div style={{
           position:'fixed', inset:0, zIndex:100,
           display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.8)',
+          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
           padding:16
         }} onClick={() => !evolvingId && setShowEvolve(false)}>
           <div style={{
-            background:'#12162b', border:'2px solid rgba(255,204,0,0.3)',
-            padding:28, textAlign:'center', maxWidth:300, width:'100%',
-            boxShadow:'6px 6px 0 rgba(0,0,0,0.5)',
+            background:'#141b2d', border:'1px solid #f59e0b44', borderRadius:24,
+            padding:32, textAlign:'center', maxWidth:300, width:'100%',
           }} onClick={e => e.stopPropagation()}>
             {evolvingId === pet.id ? (
               <>
-                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s step-end infinite'}}>✨</div>
-                <div style={{fontFamily:'var(--font-title)', fontSize:12, color:'var(--pixel-gold)', letterSpacing:'1px', marginBottom:8}}>
+                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                <div style={{fontSize:24, fontWeight:800, background:'linear-gradient(135deg,#f59e0b,#ffd700)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:8}}>
                   進化中...
                 </div>
                 <div className="hatch-sparkle">
@@ -702,27 +703,27 @@ export default function HomePage() {
                   animation="happy"
                   size={6}
                 />
-                <div style={{fontFamily:'var(--font-title)', fontSize:10, color:'var(--pixel-gold)', margin:'12px 0 6px', letterSpacing:'0.5px'}}>
-                  EVOLVE?
+                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
+                  🌟 進化可能！
                 </div>
-                <div style={{fontFamily:'var(--font-body)', fontSize:15, color:'var(--text-2)', marginBottom:14}}>
-                  {['BABY','JUVENILE','ADULT','EVOLVED','LEGENDARY'][pet.evolutionStage-1] || 'BASE'}
+                <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
+                  {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
                   {' → '}
-                  {['JUVENILE','ADULT','EVOLVED','LEGENDARY','MYTHIC'][pet.evolutionStage-1] || 'NEXT'}
+                  {['幼年','成年','完全體','傳說','神話'][pet.evolutionStage-1] || '下一步'}
                 </div>
                 <div style={{display:'flex', gap:8, justifyContent:'center'}}>
                   <button className="btn btn-ghost" onClick={() => setShowEvolve(false)}
-                    style={{padding:'8px 16px', fontSize:7}}>
-                    CANCEL
+                    style={{padding:'8px 20px', fontSize:12}}>
+                    下次先
                   </button>
                   <button onClick={doEvolve}
                     style={{
-                      padding:'8px 20px', border:'2px solid #ffcc00',
-                      background:'#8a5a00', color:'white',
-                      fontFamily:'var(--font-title)', fontSize:8, cursor:'pointer',
-                      letterSpacing:'0.5px', boxShadow:'2px 2px 0 rgba(0,0,0,0.4)',
+                      padding:'8px 24px', borderRadius:20, border:'none',
+                      background:'linear-gradient(135deg,#f59e0b,#d97706)',
+                      color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
+                      fontFamily:'inherit',
                     }}>
-                    EVOLVE
+                    🌟 進化！
                   </button>
                 </div>
               </>
