@@ -1,4 +1,4 @@
-import { PetStats, PetStatus, Rarity } from '../types'
+import { PetStats, PetStatus, Rarity, PetSkill } from '../types'
 
 // 孵化第一隻寵物需要嘅步數
 export const FIRST_PET_STEPS = 1000
@@ -127,6 +127,68 @@ export function rollEncounter(
   }
 
   return Rarity.Common
+}
+
+// ── Skills ──
+
+interface SkillDef {
+  id: string
+  name: string
+  description: string
+  icon: string
+  stat: keyof PetStats | 'all'
+  minRarity: Rarity
+  basePower: number
+}
+
+const SKILL_POOL: SkillDef[] = [
+  { id: 'quick_dash', name: '疾速衝刺', description: '速度提升，行得更快', icon: '⚡', stat: 'speed', minRarity: Rarity.Common, basePower: 10 },
+  { id: 'lucky_find', name: '幸運搜尋', description: '遇到稀有寵物機率提升', icon: '🍀', stat: 'luck', minRarity: Rarity.Common, basePower: 10 },
+  { id: 'charm_wave', name: '魅力波動', description: '寵物心情更容易變好', icon: '💜', stat: 'charm', minRarity: Rarity.Common, basePower: 10 },
+  { id: 'energy_shield', name: '能量護盾', description: '體力消耗減少', icon: '🔋', stat: 'energy', minRarity: Rarity.Common, basePower: 10 },
+  { id: 'star_power', name: '星光之力', description: '全部能力小幅提升', icon: '⭐', stat: 'all', minRarity: Rarity.Uncommon, basePower: 8 },
+  { id: 'fire_breath', name: '火焰吐息', description: '強大攻擊技能', icon: '🔥', stat: 'speed', minRarity: Rarity.Rare, basePower: 20 },
+  { id: 'ice_armor', name: '冰霜護甲', description: '防禦大幅提升', icon: '❄️', stat: 'energy', minRarity: Rarity.Rare, basePower: 20 },
+  { id: 'thunder_strike', name: '雷霆一擊', description: '傳說級終極技能', icon: '⚡', stat: 'all', minRarity: Rarity.Epic, basePower: 30 },
+  { id: 'divine_blessing', name: '神聖祝福', description: '所有能力大幅提升', icon: '🌟', stat: 'all', minRarity: Rarity.Legendary, basePower: 50 },
+  { id: 'shadow_step', name: '暗影步', description: '移動速度極大幅提升', icon: '🌙', stat: 'speed', minRarity: Rarity.Epic, basePower: 25 },
+  { id: 'nature_gift', name: '自然恩賜', description: '運氣大幅提升', icon: '🌿', stat: 'luck', minRarity: Rarity.Rare, basePower: 18 },
+  { id: 'moonlight_serenade', name: '月光小夜曲', description: '魅惑效果加倍', icon: '🌙', stat: 'charm', minRarity: Rarity.Uncommon, basePower: 12 },
+]
+
+const RARITY_ORDER: Record<Rarity, number> = {
+  [Rarity.Common]: 0,
+  [Rarity.Uncommon]: 1,
+  [Rarity.Rare]: 2,
+  [Rarity.Epic]: 3,
+  [Rarity.Legendary]: 4,
+}
+
+export function generateSkills(rarity: Rarity, level: number): PetSkill[] {
+  const available = SKILL_POOL.filter(s => RARITY_ORDER[s.minRarity] <= RARITY_ORDER[rarity])
+  const shuffled = [...available].sort(() => Math.random() - 0.5)
+
+  let count = 1
+  if (rarity === Rarity.Uncommon) count = Math.random() > 0.5 ? 2 : 1
+  else if (rarity === Rarity.Rare) count = 2
+  else if (rarity === Rarity.Epic) count = Math.random() > 0.5 ? 3 : 2
+  else if (rarity === Rarity.Legendary) count = 3
+
+  return shuffled.slice(0, count).map((s, i) => ({
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    icon: s.icon,
+    stat: s.stat,
+    power: s.basePower + Math.floor(level * 1.5),
+    unlockedAtLevel: Math.max(1, i * 3 + 1),
+  }))
+}
+
+export function getSkillBonus(skills: PetSkill[], stat: keyof PetStats): number {
+  return skills
+    .filter(s => s.stat === stat || s.stat === 'all')
+    .reduce((sum, s) => sum + s.power, 0)
 }
 
 // 計算 mood 衰減

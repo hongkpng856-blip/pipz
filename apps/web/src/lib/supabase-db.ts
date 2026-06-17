@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@supabase/supabase-js'
-import type { Pet } from '@pipz/core'
+import type { Pet, PetSkill } from '@pipz/core'
 
 // ── Client ──
 
@@ -184,6 +184,7 @@ function dbToPet(d: DbPet): Pet {
       charm: d.charm,
       energy: d.energy,
     },
+    skills: [],
     mood: d.mood as Pet['mood'],
     moodValue: d.mood_value,
     lastFedAt: new Date(d.last_fed_at).getTime(),

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, calculateEvolution, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
+import PetDetailModal from '../components/PetDetailModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
@@ -37,6 +38,7 @@ export default function HomePage() {
   const [syncing, setSyncing] = useState(false)
   const [showEvolve, setShowEvolve] = useState(false)
   const [evolvingId, setEvolvingId] = useState<string | null>(null)
+  const [detailPetId, setDetailPetId] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -162,7 +164,7 @@ export default function HomePage() {
       speciesId: seed.toString(), imageUrl: '',
       rarity: r, level: 1, xp: 0, totalSteps: 0, evolutionStage: 1,
       status: PetStatus.Baby,
-      stats: generateStats(r, 1), mood: Mood.Happy, moodValue: 100,
+      stats: generateStats(r, 1), skills: generateSkills(r, 1), mood: Mood.Happy, moodValue: 100,
       lastFedAt: Date.now(), lastInteractionAt: Date.now(), createdAt: Date.now(),
       isForSale: false, price: 0,
     }
@@ -459,7 +461,7 @@ export default function HomePage() {
                     {nearby.map(p => {
                       const idx = pets.indexOf(p)
                       return (
-                        <div key={p.id} className="nearby-card" onClick={() => { setActiveIdx(idx); setTab('map') }}>
+                        <div key={p.id} className="nearby-card" onClick={() => setDetailPetId(p.id)}>
                           <div className="nearby-pet" style={{background:`${PC[p.rarity]}12`}}>
                             <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.8} animation="idle" />
                           </div>
@@ -505,7 +507,7 @@ export default function HomePage() {
               ) : (
                 <div className="pet-grid">
                   {pets.map((p,i) => (
-                    <div key={p.id} className="pet-card" onClick={() => { setActiveIdx(i); setTab('map') }}>
+                    <div key={p.id} className="pet-card" onClick={() => setDetailPetId(p.id)}>
                       <div className="pet-card-icon" style={{background:`radial-gradient(circle,${PC[p.rarity]}15,transparent)`}}>
                         <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.2} animation="idle" />
                       </div>
@@ -607,7 +609,34 @@ export default function HomePage() {
 
       <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
 
-      {/* ════ Evolution Modal ════ */}
+      {/* ════ Pet Detail Modal ════ */}
+      {detailPetId && (() => {
+        const detailPet = pets.find(p => p.id === detailPetId)
+        if (!detailPet) return null
+        return (
+          <PetDetailModal
+            pet={detailPet}
+            totalSteps={totalSteps}
+            onClose={() => setDetailPetId(null)}
+            onEvolve={() => { setDetailPetId(null); setActiveIdx(pets.indexOf(detailPet)); setShowEvolve(true) }}
+            onFeed={() => {
+              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10 } : p))
+              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 })
+              logMsg('🍖 餵食咗！+10XP')
+            }}
+            onPet={() => {
+              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: Math.min(100, p.moodValue + 15) } : p))
+              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: Math.min(100, detailPet.moodValue + 15) })
+              logMsg('✋ 摸頭～')
+            }}
+            onPlay={() => {
+              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Excited, moodValue: Math.min(100, p.moodValue + 20), xp: p.xp + 5 } : p))
+              if (user) updatePet({ ...detailPet, mood: Mood.Excited, moodValue: Math.min(100, detailPet.moodValue + 20), xp: detailPet.xp + 5 })
+              logMsg('🎾 玩緊！+5XP')
+            }}
+          />
+        )
+      })()}
       {showEvolve && pet && canEvolve && (
         <div style={{
           position:'fixed', inset:0, zIndex:100,

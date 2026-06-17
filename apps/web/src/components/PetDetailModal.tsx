@@ -1,0 +1,287 @@
+'use client'
+
+import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateEvolution } from '@pipz/core'
+import PixelPetCanvas from './PixelPetCanvas'
+
+interface Props {
+  pet: Pet
+  totalSteps: number
+  onClose: () => void
+  onEvolve: () => void
+  onFeed: () => void
+  onPet: () => void
+  onPlay: () => void
+}
+
+const PC: Record<string, string> = {
+  common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
+  epic: '#8b5cf6', legendary: '#f59e0b',
+}
+const ME: Record<string, string> = {
+  happy: '😊', excited: '🤩', hungry: '🍽️', sleepy: '😴', sad: '😢',
+}
+
+const STAGE_NAMES = ['BB', 'I', 'II', 'III', 'IV']
+const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
+
+export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay }: Props) {
+  const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
+  const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
+
+  // Evolution progress
+  const nextStageSteps = 0
+  const currentStageMin = [0, 0, 10000, 30000, 60000][pet.evolutionStage - 1] || 0
+  const nextStageMin = [10000, 30000, 60000, 100000, 999999][pet.evolutionStage - 1] || 999999
+  const evoProgress = nextStageMin <= 999999
+    ? Math.min(100, ((pet.totalSteps - currentStageMin) / (nextStageMin - currentStageMin)) * 100)
+    : 100
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      display: 'flex', flexDirection: 'column',
+      background: '#0b1120',
+      overflow: 'hidden',
+    }}>
+      {/* ── Header ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid #1e2a45',
+      }}>
+        <button onClick={onClose} style={{
+          background: 'none', border: 'none', color: '#94a5b8',
+          fontSize: 16, cursor: 'pointer', padding: '4px 8px',
+          fontFamily: 'inherit',
+        }}>
+          ← 返回
+        </button>
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#f0f4f8' }}>
+          寵物詳情
+        </span>
+        <div style={{ width: 48 }} />
+      </div>
+
+      {/* ── Scrollable content ── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+
+        {/* ── Pet Display ── */}
+        <div style={{
+          textAlign: 'center',
+          background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 20,
+          padding: 24, marginBottom: 12,
+        }}>
+          <div style={{
+            background: `radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`,
+            width: 100, height: 100, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto',
+          }}>
+            <PixelPetCanvas
+              seed={parseInt(pet.speciesId) || 1}
+              rarity={pet.rarity}
+              evolutionStage={pet.evolutionStage}
+              animation="happy"
+              size={6}
+            />
+          </div>
+
+          <div style={{ marginTop: 8 }}>
+            <span className="pet-badge" style={{
+              color: RARITY_COLORS[pet.rarity], background: RARITY_COLORS[pet.rarity] + '18',
+              fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 700,
+            }}>
+              {RARITY_LABELS[pet.rarity]}
+            </span>
+          </div>
+
+          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 16 }}>
+            <span style={{ fontSize: 13, color: '#94a5b8' }}>Lv.{pet.level}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>CP {cp}</span>
+            <span style={{ fontSize: 13, color: '#94a5b8' }}>
+              {STAGE_CANTO[pet.evolutionStage - 1] || '初級'}
+            </span>
+          </div>
+
+          <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 4 }}>
+            <span>{ME[pet.mood] || '😐'}</span>
+            <span style={{ fontSize: 12, color: '#22c55e' }}>
+              {pet.mood === 'happy' ? '開心' : pet.mood}
+            </span>
+          </div>
+
+          {/* ── Actions ── */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+            <button onClick={onFeed}
+              style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
+                background: '#16a34a', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              🍖餵食
+            </button>
+            <button onClick={onPet}
+              style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
+                background: '#2563eb', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              ✋摸頭
+            </button>
+            <button onClick={onPlay}
+              style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
+                background: '#d97706', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              🎾玩
+            </button>
+          </div>
+        </div>
+
+        {/* ── Stats ── */}
+        <div style={{
+          background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+          padding: 16, marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
+            📊 能力值
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {[
+              { label: '⚡ 速度', value: pet.stats.speed, key: 'speed' },
+              { label: '🍀 運氣', value: pet.stats.luck, key: 'luck' },
+              { label: '💜 魅力', value: pet.stats.charm, key: 'charm' },
+              { label: '🔋 體力', value: pet.stats.energy, key: 'energy' },
+            ].map(s => (
+              <div key={s.key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
+                  <span style={{ color: '#94a5b8' }}>{s.label}</span>
+                  <span style={{ color: '#f0f4f8', fontWeight: 700 }}>{s.value}</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: '#1a2338', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 3,
+                    width: `${Math.min(100, (s.value / 200) * 100)}%`,
+                    background: 'linear-gradient(90deg, #8b5cf6, #22d3ee)',
+                    transition: 'width 0.3s',
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Skills ── */}
+        <div style={{
+          background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+          padding: 16, marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
+            🎯 技能
+          </div>
+          {pet.skills.length === 0 ? (
+            <div style={{ fontSize: 11, color: '#5a6d85', textAlign: 'center', padding: '8px 0' }}>
+              未有技能
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {pet.skills.map(skill => (
+                <div key={skill.id} style={{
+                  background: '#1a2338', border: '1px solid #2a3a5a', borderRadius: 12,
+                  padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{ fontSize: 20 }}>{skill.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8' }}>{skill.name}</div>
+                    <div style={{ fontSize: 10, color: '#5a6d85' }}>{skill.description}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#22d3ee' }}>+{skill.power}</div>
+                    <div style={{ fontSize: 9, color: '#5a6d85' }}>Lv.{skill.unlockedAtLevel}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Evolution Progress ── */}
+        <div style={{
+          background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+          padding: 16, marginBottom: 12,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
+            🌟 進化進度
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            {STAGE_CANTO.slice(0, 5).map((name, i) => (
+              <div key={i} style={{
+                textAlign: 'center',
+                opacity: i <= pet.evolutionStage - 1 ? 1 : 0.3,
+              }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: 14,
+                  background: i < pet.evolutionStage - 1 ? '#8b5cf6' : i === pet.evolutionStage - 1 ? '#f59e0b' : '#1a2338',
+                  border: `2px solid ${i <= pet.evolutionStage - 1 ? '#8b5cf6' : '#2a3a5a'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 4px',
+                  fontSize: 10, fontWeight: 700, color: 'white',
+                }}>
+                  {STAGE_NAMES[i]}
+                </div>
+                <div style={{ fontSize: 8, color: '#94a5b8' }}>{name}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Progress bar */}
+          {pet.evolutionStage < 5 && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#5a6d85', marginBottom: 4 }}>
+                <span>下一步：{STAGE_CANTO[pet.evolutionStage] || '進化'}</span>
+                <span>{formatSteps(pet.totalSteps)} / {formatSteps(nextStageMin)}步</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: '#1a2338', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 4,
+                  width: `${Math.min(100, evoProgress)}%`,
+                  background: 'linear-gradient(90deg, #f59e0b, #ffd700)',
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
+          )}
+
+          {canEvolve && (
+            <button onClick={onEvolve} style={{
+              width: '100%', marginTop: 12, padding: '10px 0', borderRadius: 16, border: 'none',
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}>
+              🌟 進化！
+            </button>
+          )}
+        </div>
+
+        {/* ── Total Stats ── */}
+        <div style={{
+          background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+          padding: 16,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
+            📈 總計
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            {[
+              { label: '總步數', value: formatSteps(pet.totalSteps) },
+              { label: '等級', value: `Lv.${pet.level}` },
+              { label: '階段', value: STAGE_CANTO[pet.evolutionStage - 1] || '初級' },
+              { label: 'CP', value: cp.toString() },
+              { label: '技能數量', value: `${pet.skills.length}個` },
+            ].map(s => (
+              <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                <span style={{ color: '#94a5b8' }}>{s.label}</span>
+                <span style={{ color: '#f0f4f8', fontWeight: 600 }}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}

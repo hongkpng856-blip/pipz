@@ -24,6 +24,16 @@ export enum PetStatus {
   Legendary = 'legendary',
 }
 
+export interface PetSkill {
+  id: string
+  name: string
+  description: string
+  icon: string
+  stat: keyof PetStats | 'all'
+  power: number
+  unlockedAtLevel: number
+}
+
 export interface PetStats {
   speed: number
   luck: number
@@ -44,6 +54,7 @@ export interface Pet {
   evolutionStage: number
   status: PetStatus
   stats: PetStats
+  skills: PetSkill[]
   mood: Mood
   moodValue: number
   lastFedAt: number
