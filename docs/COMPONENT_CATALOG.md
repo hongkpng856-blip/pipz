@@ -1,13 +1,6 @@
 # Component Catalog
 
-> Every screen and component in the Pipz web app (VS Code Pixel Agent theme). iOS/Android agents should replicate these exactly.
-
-## Visual Theme
-
-- **Colors:** `#1e1e2e` bg, `#252535` card, `#4a4a6a` border, `#6030ff` accent
-- **Style:** Sharp corners (no border-radius), 2px solid borders, `2px 2px 0px #0a0a14` shadow
-- **Font:** System UI stack (`-apple-system, 'Segoe UI', Roboto`)
-- **Layout:** Mobile-first, max-width 24rem, scrollable content
+> Every screen and component in the Pipz web app. iOS/Android agents should replicate these exactly.
 
 ## 1. Main Page (`page.tsx`)
 
