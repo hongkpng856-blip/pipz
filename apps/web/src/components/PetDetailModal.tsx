@@ -141,21 +141,21 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                   background: '#1a6b3a', color: 'white', fontFamily: 'var(--font-title)',
                   fontSize: 7, cursor: 'pointer', letterSpacing: '0.3px',
                   boxShadow: '2px 2px 0 rgba(0,0,0,0.4)' }}>
-                🍖餵食
+                🍖FEED
               </button>
               <button onClick={onPet}
                 style={{ padding: '5px 12px', border: '2px solid #4488ff',
                   background: '#1a4b8a', color: 'white', fontFamily: 'var(--font-title)',
                   fontSize: 7, cursor: 'pointer', letterSpacing: '0.3px',
                   boxShadow: '2px 2px 0 rgba(0,0,0,0.4)' }}>
-                ✋摸頭
+                ✋PET
               </button>
               <button onClick={onPlay}
                 style={{ padding: '5px 12px', border: '2px solid #ffcc00',
                   background: '#8a5a00', color: 'white', fontFamily: 'var(--font-title)',
                   fontSize: 7, cursor: 'pointer', letterSpacing: '0.3px',
                   boxShadow: '2px 2px 0 rgba(0,0,0,0.4)' }}>
-                🎾玩
+                🎾PLAY
               </button>
             </div>
           </div>
@@ -167,14 +167,14 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             boxShadow: '4px 4px 0 rgba(0,0,0,0.4)',
           }}>
             <div style={{ fontFamily: 'var(--font-title)', fontSize: 8, color: '#44ccff', marginBottom: 8, letterSpacing: '0.5px' }}>
-              📊 能力值
+              STATS
             </div>
             <div style={{ display: 'grid', gap: 6 }}>
               {[
-                { label: '⚡ 速度', value: pet.stats.speed, key: 'speed' },
-                { label: '🍀 運氣', value: pet.stats.luck, key: 'luck' },
-                { label: '💜 魅力', value: pet.stats.charm, key: 'charm' },
-                { label: '🔋 體力', value: pet.stats.energy, key: 'energy' },
+                { label: 'SPD', value: pet.stats.speed, key: 'speed' },
+                { label: 'LUK', value: pet.stats.luck, key: 'luck' },
+                { label: 'CHA', value: pet.stats.charm, key: 'charm' },
+                { label: 'ENR', value: pet.stats.energy, key: 'energy' },
               ].map(s => (
                 <div key={s.key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
@@ -200,11 +200,11 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             boxShadow: '4px 4px 0 rgba(0,0,0,0.4)',
           }}>
             <div style={{ fontFamily: 'var(--font-title)', fontSize: 8, color: '#44ccff', marginBottom: 8, letterSpacing: '0.5px' }}>
-              🎯 技能
+              SKILLS
             </div>
             {pet.skills.length === 0 ? (
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-3)', textAlign: 'center', padding: '6px 0' }}>
-                未有技能
+                No skills
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -235,7 +235,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             boxShadow: '4px 4px 0 rgba(0,0,0,0.4)',
           }}>
             <div style={{ fontFamily: 'var(--font-title)', fontSize: 8, color: '#44ccff', marginBottom: 8, letterSpacing: '0.5px' }}>
-              🌟 進化進度
+              EVOLUTION
             </div>
 
             {/* Stage dots */}
@@ -286,7 +286,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                 fontFamily: 'var(--font-title)', fontSize: 9, cursor: 'pointer',
                 letterSpacing: '0.5px', boxShadow: '2px 2px 0 rgba(0,0,0,0.4)',
               }}>
-                🌟 進化！
+                EVOLVE
               </button>
             ) : pet.evolutionStage < 5 && (
               <div style={{ marginTop: 10, textAlign: 'center' }}>
@@ -296,7 +296,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                   background: '#1a1f38', color: 'var(--text-3)',
                   fontFamily: 'var(--font-title)', fontSize: 7, letterSpacing: '0.3px',
                 }}>
-                  🔒 需要多 {formatSteps(stepsRemaining)} 步進化
+                  🔒 NEED {formatSteps(stepsRemaining)} STEPS
                 </div>
               </div>
             )}
@@ -309,15 +309,15 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             boxShadow: '4px 4px 0 rgba(0,0,0,0.4)',
           }}>
             <div style={{ fontFamily: 'var(--font-title)', fontSize: 8, color: '#44ccff', marginBottom: 8, letterSpacing: '0.5px' }}>
-              📈 總計
+              TOTAL
             </div>
             <div style={{ display: 'grid', gap: 4 }}>
               {[
-                { label: '總步數', value: formatSteps(pet.totalSteps) },
-                { label: '等級', value: `Lv.${pet.level}` },
-                { label: '階段', value: STAGE_CANTO[pet.evolutionStage - 1] || '初級' },
+                { label: 'Steps', value: formatSteps(pet.totalSteps) },
+                { label: 'Level', value: `Lv.${pet.level}` },
+                { label: 'Stage', value: STAGE_CANTO[pet.evolutionStage - 1] || '初級' },
                 { label: 'CP', value: cp.toString() },
-                { label: '技能數量', value: `${pet.skills.length}個` },
+                { label: 'Skills', value: `${pet.skills.length}` },
               ].map(s => (
                 <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-2)' }}>{s.label}</span>
@@ -333,7 +333,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
               style={{ background: 'none', border: '2px solid rgba(255,51,85,0.2)', cursor: 'pointer',
                 color: '#ff3355', fontFamily: 'var(--font-title)', fontSize: 7, padding: '4px 10px',
                 letterSpacing: '0.3px', opacity: 0.7 }}>
-              🗑️ 剷除
+                DELETE
             </button>
           </div>
 
@@ -355,10 +355,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
           }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: 36, marginBottom: 10 }}>🗑️</div>
             <div style={{ fontFamily: 'var(--font-title)', fontSize: 8, color: '#ff3355', letterSpacing: '0.5px', marginBottom: 4 }}>
-              確定要剷除？
+              DELETE THIS PET?
             </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-3)', marginBottom: 16 }}>
-              此操作無法還原
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--text-3)', marginBottom: 16 }}>
+              Cannot be undone
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button onClick={() => setShowDelete(false)}
@@ -368,7 +368,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                   fontFamily: 'var(--font-title)', fontSize: 7, cursor: 'pointer',
                   letterSpacing: '0.3px', flex: 1,
                 }}>
-                取消
+                CANCEL
               </button>
               <button onClick={() => onDelete(pet.id)}
                 style={{
@@ -377,7 +377,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                   fontFamily: 'var(--font-title)', fontSize: 7, cursor: 'pointer',
                   letterSpacing: '0.3px', flex: 1,
                 }}>
-                確認剷除
+                DELETE
               </button>
             </div>
           </div>

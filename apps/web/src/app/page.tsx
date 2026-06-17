@@ -324,7 +324,6 @@ export default function HomePage() {
                 🔑
               </button>
             )}
-            <span className="header-icon">👣</span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
           </div>
         </div>
@@ -349,8 +348,8 @@ export default function HomePage() {
               <div className="section card" style={{position:'relative', overflow:'hidden'}}>
                 {encFlash && (
                   <div className="enc-flash">
-                    <div><span style={{fontSize:36, display:'block', marginBottom:4}}>✨</span>
-                    <span style={{fontFamily:'var(--font-title)', fontSize:10, color:'var(--pink)'}}>遇見新寵物！</span></div>
+                    <div><span style={{fontSize:32, display:'block', marginBottom:4}}>✦</span>
+                    <span style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'1px'}}>NEW PET!</span></div>
                   </div>
                 )}
 
@@ -361,7 +360,7 @@ export default function HomePage() {
                     hatching ? (
                       <div style={{textAlign:'center', padding:'16px 0'}}>
                         <span className="pet-egg egg-crack">🥚</span>
-                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--purple)', marginTop:8, animation:'pulse 1s step-end infinite', letterSpacing:'0.5px'}}>孵化中...</p>
+                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--purple)', marginTop:6, letterSpacing:'1px'}}>HATCHING...</p>
                         <div className="hatch-sparkle">
                           {['✨','⭐','💫','🌟'].map((s,i) => (
                             <span key={i} style={{animationDelay:`${i*0.15}s`, fontSize:18}}>{s}</span>
@@ -371,14 +370,14 @@ export default function HomePage() {
                     ) : (
                       <>
                         <span className="pet-egg egg-shake">🥚</span>
-                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'0.5px', marginTop:4}}>就快孵化！</p>
-                        <p style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-3)'}}>溫度剛剛好</p>
-                        <button className="btn btn-primary" onClick={hatch} style={{marginTop:4}}>孵化 🐣</button>
+                        <p style={{fontFamily:'var(--font-title)', fontSize:9, color:'var(--pink)', letterSpacing:'1px', marginTop:4}}>HATCH!</p>
+                        <p style={{fontFamily:'var(--font-body)', fontSize:16, color:'var(--text-3)'}}>Ready to hatch</p>
+                        <button className="btn btn-primary" onClick={hatch} style={{marginTop:2}}>HATCH</button>
                       </>
                     )
                   ) : pet ? (
                     <>
-                      <div className="pet-glow-wrap" style={{background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`}}>
+                      <div className="pet-glow-wrap" style={{borderColor: PC[pet.rarity] + '44'}}>
                         <PixelPetCanvas
                           seed={parseInt(pet.speciesId) || 1}
                           rarity={pet.rarity}
@@ -387,22 +386,22 @@ export default function HomePage() {
                           size={5}
                         />
                       </div>
-                      <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'center'}}>
+                      <div className="pet-info-row">
                         <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18'}}>{RARITY_LABELS[pet.rarity]}</span>
                         <span className="pet-lv">Lv.{pet.level}</span>
                         <span className="pet-cp">CP {cp(pet)}</span>
                         {canEvolve && (
                           <button className="btn" onClick={() => setShowEvolve(true)}
-                            style={{background:'#8a5a00', borderColor:'var(--pixel-gold)', color:'white', fontFamily:'var(--font-title)', fontSize:7, padding:'3px 8px', letterSpacing:'0.3px'}}>
-                            🌟 進化
+                            style={{background:'#8a5a00', borderColor:'var(--pixel-gold)', color:'white', padding:'2px 8px'}}>
+                            EVO
                           </button>
                         )}
                       </div>
                       <div className="pet-stats">
-                        <span>⚡{pet.stats.speed}</span>
-                        <span>🍀{pet.stats.luck}</span>
-                        <span>💜{pet.stats.charm}</span>
-                        <span>🔋{pet.stats.energy}</span>
+                        <span>SPD {pet.stats.speed}</span>
+                        <span>LUK {pet.stats.luck}</span>
+                        <span>CHA {pet.stats.charm}</span>
+                        <span>ENR {pet.stats.energy}</span>
                       </div>
                       {pet.xp > 0 && (
                         <div className="progress-wrap">
@@ -415,19 +414,19 @@ export default function HomePage() {
                         <span className="pet-mood-text">{pet.mood === 'happy' ? '開心' : pet.mood}</span>
                       </div>
                       <div className="pet-actions">
-                        <button className="btn btn-green" onClick={feed}>🍖餵食</button>
-                        <button className="btn btn-blue" onClick={petAction}>✋摸頭</button>
-                        <button className="btn btn-amber" onClick={playAction}>🎾玩</button>
+                        <button className="btn btn-green" onClick={feed}>FEED</button>
+                        <button className="btn btn-blue" onClick={petAction}>PET</button>
+                        <button className="btn btn-amber" onClick={playAction}>PLAY</button>
                       </div>
                     </>
                   ) : (
                     <>
                       <span className="pet-egg">🥚</span>
-                      <span className="pet-title">未有寵物</span>
+                      <span className="pet-title">NO PET</span>
                       <div className="progress-wrap" style={{marginTop:4}}>
-                        <div className="progress-labels"><span>孵化進度</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
+                        <div className="progress-labels"><span>INCUBATE</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
                         <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`}}/></div>
-                        <p style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-3)', textAlign:'center', marginTop:6}}>行 1,000 步孵化第一隻寵物</p>
+                        <p style={{fontFamily:'var(--font-body)', fontSize:15, color:'var(--text-3)', textAlign:'center', marginTop:4}}>Walk 1,000 steps to hatch</p>
                       </div>
                     </>
                   )}
@@ -459,10 +458,9 @@ export default function HomePage() {
                 <div className="section card card-pad-sm">
                   <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
                     <div style={{display:'flex', alignItems:'center', gap:6}}>
-                      <span style={{fontSize:10}}>📍</span>
-                      <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-2)', letterSpacing:'0.3px'}}>附近</span>
+                      <span style={{fontFamily:'var(--font-title)', fontSize:8, color:'var(--text-2)', letterSpacing:'0.3px'}}>NEARBY</span>
                     </div>
-                    <span style={{fontFamily:'var(--font-title)', fontSize:7, color:'var(--text-3)'}}>{nearby.length}隻</span>
+                    <span style={{fontFamily:'var(--font-title)', fontSize:7, color:'var(--text-3)'}}>{nearby.length}</span>
                   </div>
                   <div className="nearby-scroll">
                     {nearby.map(p => {
@@ -503,13 +501,13 @@ export default function HomePage() {
           {tab === 'pets' && (
             <div className="fade-up">
               <div className="section-header">
-                <span className="section-title">🐾 寵物</span>
-                <span className="section-count">{pets.length}隻</span>
+                <span className="section-title">PETS</span>
+                <span className="section-count">{pets.length}</span>
               </div>
               {pets.length === 0 ? (
                 <div className="card empty-state">
                   <div className="empty-icon">🥚</div>
-                  <div className="empty-text">未有寵物，行路孵化啦！</div>
+                  <div className="empty-text">No pets yet — start walking!</div>
                 </div>
               ) : (
                 <div className="pet-grid">
@@ -554,8 +552,8 @@ export default function HomePage() {
           {tab === 'eggs' && (
             <div className="fade-up">
               <div className="section-header">
-                <span className="section-title">🥚 蛋</span>
-                <span className="section-count">孵化器 1/1</span>
+                <span className="section-title">EGGS</span>
+                <span className="section-count">1/1</span>
               </div>
 
               <div className="section card">
@@ -564,8 +562,8 @@ export default function HomePage() {
                     <span style={{fontSize:24}}>{pets.length === 0 ? '🥚' : '✅'}</span>
                   </div>
                   <div className="incubator-info">
-                    <div className="incubator-name">{pets.length === 0 ? '基本孵化器' : '已孵化'}</div>
-                    <div className="incubator-desc">{pets.length === 0 ? '行 1,000 步孵化' : '完成！'}</div>
+                    <div className="incubator-name">BASIC INCUBATOR</div>
+                    <div className="incubator-desc">{pets.length === 0 ? 'Walk 1,000 steps' : 'Complete!'}</div>
                     <div className="progress-bar">
                       <div className="progress-fill" style={{
                         width: pets.length === 0 ? `${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%` : '100%',
@@ -573,8 +571,8 @@ export default function HomePage() {
                       }}/>
                     </div>
                     <div className="incubator-labels">
-                      <span>進度</span>
-                      <span>{pets.length === 0 ? `${formatSteps(totalSteps)}/${formatSteps(FIRST_PET_STEPS)}` : '✅ 完成'}</span>
+                      <span>PROGRESS</span>
+                      <span>{pets.length === 0 ? `${formatSteps(totalSteps)}/${formatSteps(FIRST_PET_STEPS)}` : 'DONE'}</span>
                     </div>
                   </div>
                 </div>
@@ -584,8 +582,8 @@ export default function HomePage() {
                 {[1,2].map(i => (
                   <div key={i} className="card locked-slot">
                     <div className="locked-icon">🔒</div>
-                    <div className="locked-title">額外孵化器</div>
-                    <div className="locked-sub">即將開放</div>
+                    <div className="locked-title">{i === 1 ? 'EXTRA INCUBATOR' : 'FRIEND INCUBATOR'}</div>
+                    <div className="locked-sub">Coming soon</div>
                   </div>
                 ))}
               </div>
@@ -597,13 +595,13 @@ export default function HomePage() {
             <div className="fade-up community-wrap">
               <div className="card community-card">
                 <div className="community-icon">🏪</div>
-                <div className="community-title">社群 &amp; 交易</div>
-                <div className="community-desc">與其他玩家交換寵物</div>
+                <div className="community-title">COMMUNITY</div>
+                <div className="community-desc">Trade and battle with others</div>
                 <div className="community-list">
-                  {['行路競賽','交易市場','好友列表'].map(s => (
+                  {['RACE', 'TRADE', 'FRIENDS'].map(s => (
                     <div key={s} className="card-2 community-item">
                       <span>{s}</span>
-                      <span className="community-status">即將開放</span>
+                      <span className="community-status">SOON</span>
                     </div>
                   ))}
                 </div>
@@ -705,17 +703,17 @@ export default function HomePage() {
                   size={6}
                 />
                 <div style={{fontFamily:'var(--font-title)', fontSize:10, color:'var(--pixel-gold)', margin:'12px 0 6px', letterSpacing:'0.5px'}}>
-                  🌟 進化可能！
+                  EVOLVE?
                 </div>
-                <div style={{fontFamily:'var(--font-body)', fontSize:14, color:'var(--text-2)', marginBottom:14}}>
-                  {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
+                <div style={{fontFamily:'var(--font-body)', fontSize:15, color:'var(--text-2)', marginBottom:14}}>
+                  {['BABY','JUVENILE','ADULT','EVOLVED','LEGENDARY'][pet.evolutionStage-1] || 'BASE'}
                   {' → '}
-                  {['幼年','成年','完全體','傳說','神話'][pet.evolutionStage-1] || '下一步'}
+                  {['JUVENILE','ADULT','EVOLVED','LEGENDARY','MYTHIC'][pet.evolutionStage-1] || 'NEXT'}
                 </div>
                 <div style={{display:'flex', gap:8, justifyContent:'center'}}>
                   <button className="btn btn-ghost" onClick={() => setShowEvolve(false)}
                     style={{padding:'8px 16px', fontSize:7}}>
-                    下次先
+                    CANCEL
                   </button>
                   <button onClick={doEvolve}
                     style={{
@@ -724,7 +722,7 @@ export default function HomePage() {
                       fontFamily:'var(--font-title)', fontSize:8, cursor:'pointer',
                       letterSpacing:'0.5px', boxShadow:'2px 2px 0 rgba(0,0,0,0.4)',
                     }}>
-                    🌟 進化！
+                    EVOLVE
                   </button>
                 </div>
               </>
