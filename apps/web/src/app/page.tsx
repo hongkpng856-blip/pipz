@@ -54,7 +54,7 @@ export default function HomePage() {
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
-  const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
+  const canEvolve = pet ? calculateEvolution(totalSteps, pet.evolutionStage, pet.stats) : null
 
   useEffect(() => { setReady(true) }, [])
 

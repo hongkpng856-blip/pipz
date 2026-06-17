@@ -28,16 +28,16 @@ const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4: 100000, 5: 999999 }
 
 export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay }: Props) {
-  const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
+  const canEvolve = calculateEvolution(totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
 
   const nextReq = NEXT_STEP_REQ[pet.evolutionStage] ?? 999999
   const currentReq = EVOLUTION_STEPS[pet.evolutionStage] ?? 0
   const evoProgress = pet.evolutionStage >= 5
     ? 100
-    : Math.min(100, ((pet.totalSteps - currentReq) / (nextReq - currentReq)) * 100)
+    : Math.min(100, ((totalSteps - currentReq) / (nextReq - currentReq)) * 100)
 
-  const stepsRemaining = Math.max(0, nextReq - pet.totalSteps)
+  const stepsRemaining = Math.max(0, nextReq - totalSteps)
 
   return (
     <div style={{
