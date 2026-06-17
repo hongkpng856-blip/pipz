@@ -39,16 +39,13 @@ The entire app is a single page with 4 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Pet Display Card
-- Shows active pet (large Canvas animation)
-- Rarity badge, Level, CP value, Stage name
-- Mood emoji + text
-- Stats row: ⚡ 🍀 💜 🔋
-- XP progress bar (if XP > 0)
-- Action buttons: 🍖餵食 ✋摸頭 🎾玩
-- If no pet: shows egg emoji + "未有寵物" + progress to first pet
-- If egg ready: shows shaking egg + "孵化 🐣" button
-- Encounter flash overlay when new pet found
+### Pet Display Card → **WalkingCanvas** (first-person pixel view)
+- Replaced with first-person 3D perspective pixel road animation
+- **Idle**: static road with grass + lane markings (retro RPG style)
+- **Walk**: road scrolls toward viewer, feet bob at bottom
+- **Run**: faster scrolling + speed lines (for future running mode)
+- **Encounter**: grass parts, ! mark, egg appears with sparkles
+- Pet info moved to a slim status bar BELOW the canvas
 
 ### Steps Card
 - Three columns: 今日 steps | Walk button | 總計 steps
@@ -213,6 +210,28 @@ Full-screen overlay, max-width: 24rem centered.
 
 ---
 
-## 10. Not Found Page (`not-found.tsx`)
+## 11. WalkingCanvas (`WalkingCanvas.tsx`)
 
-- Simple 404 page with Pipz branding
+Canvas-based first-person 3D perspective pixel road animation.
+
+### States
+- **idle**: Static pixel road with grass, lane markings, horizon
+- **walk**: Road scrolls toward viewer, feet bob, speed lines
+- **run**: Faster scroll + more speed lines (reserved for future)
+- **encounter**: Grass parting → ! mark → egg with sparkles → fade back
+
+### Props
+- `state`: `'idle' | 'walk' | 'run' | 'encounter'`
+- `speed`: 0-100, affects scroll rate
+- `onEncounterEnd`: callback when encounter animation completes
+- `size`: pixel multiplier (default 3 = 320×180 → 960×540 rendered)
+
+### Visual Design
+- Horizon at 55% height, dark sky
+- Road converging to vanishing point (perspective)
+- Alternating green grass, dashed center lane marking
+- Road edge lines
+- Random grass tufts on sides
+- Speed lines when running
+- Feet indicator at bottom center when walking/running
+- Encounter: vignette closes, grass parts, ! pop, egg appears, sparkles
