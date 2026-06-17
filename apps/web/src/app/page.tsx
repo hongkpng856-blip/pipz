@@ -34,6 +34,7 @@ export default function HomePage() {
   const [log, setLog] = useState<string[]>([])
   const [ready, setReady] = useState(false)
   const [camState, setCamState] = useState<'idle'|'walk'|'encounter'>('idle')
+  const [walkSpeed, setWalkSpeed] = useState(0)
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -140,7 +141,7 @@ export default function HomePage() {
   // ── Walk ──
   const walkStart = () => {
     if (!navigator.geolocation) return logMsg('❌ 唔支援 GPS')
-    setWalking(true); setCamState('walk'); setPetAnim('walk'); logMsg('🚶 開始行路！')
+    setWalking(true); setCamState('walk'); setWalkSpeed(30); setPetAnim('walk'); logMsg('🚶 開始行路！')
     wid.current = navigator.geolocation.watchPosition(
       pos => {
         if (pos.coords.accuracy > 100) return
@@ -151,13 +152,13 @@ export default function HomePage() {
         }
         last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
       },
-      () => { setWalking(false); setCamState('idle'); setPetAnim('idle') },
+      () => { setWalking(false); setCamState('idle'); setWalkSpeed(0); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     )
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setCamState('idle'); setPetAnim('idle'); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setCamState('idle'); setWalkSpeed(0); setPetAnim('idle'); logMsg('⏹ 停低咗')
   }
 
   // ── Pet spawn ──
@@ -346,20 +347,41 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* Walking Canvas — first-person pixel view */}
-              <div className="section" style={{padding:0, margin:'0 -2px 8px'}}>
+              {/* Walking Canvas — full card */}
+              <div className="section card" style={{padding:0, overflow:'hidden', position:'relative'}}>
                 <WalkingCanvas
                   state={camState}
-                  speed={walking ? 60 : 0}
+                  speed={walkSpeed}
                   onEncounterEnd={() => {
-                    setCamState('idle')
+                    setCamState(walking ? 'walk' : 'idle')
                     logMsg(`🐾 遇到新寵物！`)
                   }}
                   size={3}
                 />
+                {/* Speed test buttons */}
+                <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:4}}>
+                  <button
+                    onClick={() => { setCamState('walk'); setWalkSpeed(25); logMsg('🚶 步行中') }}
+                    style={{
+                      padding:'3px 8px', border:'2px solid #22c55e', background:'rgba(0,0,0,0.6)',
+                      color:'#22c55e', fontFamily:'inherit', fontSize:9, cursor:'pointer',
+                    }}>🚶 WALK</button>
+                  <button
+                    onClick={() => { setCamState('walk'); setWalkSpeed(90); logMsg('🏃 跑步中') }}
+                    style={{
+                      padding:'3px 8px', border:'2px solid #f59e0b', background:'rgba(0,0,0,0.6)',
+                      color:'#f59e0b', fontFamily:'inherit', fontSize:9, cursor:'pointer',
+                    }}>🏃 RUN</button>
+                  <button
+                    onClick={() => { setCamState('idle'); setWalkSpeed(0); logMsg('⏹ 停低') }}
+                    style={{
+                      padding:'3px 8px', border:'2px solid #ef4444', background:'rgba(0,0,0,0.6)',
+                      color:'#ef4444', fontFamily:'inherit', fontSize:9, cursor:'pointer',
+                    }}>⏹ STOP</button>
+                </div>
               </div>
 
-              {/* Pet status bar (slim) */}
+              {/* Active Pet status bar */}
               {pet && camState !== 'encounter' && (
                 <div className="section card card-pad-sm">
                   <div style={{display:'flex', alignItems:'center', gap:8}}>
@@ -372,10 +394,14 @@ export default function HomePage() {
                         <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[pet.rarity]}</span>
                         <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{pet.level}</span>
                         <span style={{fontSize:11, fontWeight:700, color:'#f59e0b'}}>CP {cp(pet)}</span>
+                        <span style={{fontSize:10, color:'#94a5b8'}}>| ⚡{pet.stats.speed} 🍀{pet.stats.luck} 💜{pet.stats.charm} 🔋{pet.stats.energy}</span>
                       </div>
                       <div style={{display:'flex', alignItems:'center', gap:3, marginTop:2}}>
                         <span>{ME[pet.mood] || '😐'}</span>
                         <span style={{fontSize:9, color:'#22c55e'}}>{pet.mood === 'happy' ? '開心' : pet.mood}</span>
+                        <span style={{fontSize:9, color:'#5a6d85', marginLeft:6}}>
+                          步 {formatSteps(pet.totalSteps)} | {['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1] || '初級'}
+                        </span>
                       </div>
                     </div>
                     <div style={{display:'flex', gap:4}}>
