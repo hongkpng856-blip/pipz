@@ -1,0 +1,194 @@
+# Component Catalog
+
+> Every screen and component in the Pipz web app. iOS/Android agents should replicate these exactly.
+
+## 1. Main Page (`page.tsx`)
+
+The entire app is a single page with 4 tabs and modals.
+
+### Layout Structure
+
+```
+┌──────────────────────────────┐
+│         Header               │  ← Sticky, Pipz logo + steps + auth
+├──────────────────────────────┤
+│                              │
+│       Scrollable Content     │  ← padding-bottom: 62px
+│                              │
+│  ┌─── Tab Content ───────┐  │
+│  │                       │  │
+│  │  Varies by tab        │  │
+│  │                       │  │
+│  └───────────────────────┘  │
+│                              │
+├──────────────────────────────┤
+│   Bottom Navigation (fixed)  │  ← 4 tabs: 地圖 🐾 蛋 🥚 社群 🏪
+└──────────────────────────────┘
+```
+
+### Header
+- Left: "Pipz" title (gradient purple→cyan)
+- Right: Sync indicator, GPS badge, email button, logout, 👣 icon, step count
+
+### Bottom Navigation
+- 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community)
+- Active tab: purple highlight
+- Navigation is `position: absolute; bottom: 0`
+
+---
+
+## 2. Map Tab (`tab === 'map'`)
+
+### Pet Display Card
+- Shows active pet (large Canvas animation)
+- Rarity badge, Level, CP value, Stage name
+- Mood emoji + text
+- Stats row: ⚡ 🍀 💜 🔋
+- XP progress bar (if XP > 0)
+- Action buttons: 🍖餵食 ✋摸頭 🎾玩
+- If no pet: shows egg emoji + "未有寵物" + progress to first pet
+- If egg ready: shows shaking egg + "孵化 🐣" button
+- Encounter flash overlay when new pet found
+
+### Steps Card
+- Three columns: 今日 steps | Walk button | 總計 steps
+- Walk button (FAB): 🚶 (start) / ⏹ (stop)
+- Active state: red gradient, pulsing ring
+
+### Nearby Pets
+- Horizontal scroll row of recent pets
+- Each: thumbnail + rarity name + CP + level
+- Click → opens Pet Detail Modal
+
+### Debug Row
+- "+500 測試步數" button
+- "🛰️ GPS 記錄真實步數" label
+
+### Log
+- Shows last 3 log messages (encounters, actions, etc.)
+
+---
+
+## 3. Pets Tab (`tab === 'pets'`)
+
+### Header
+- "🐾 寵物" title + count (e.g., "3隻")
+
+### Pet Grid
+- 2-column grid of pet cards
+- Each card: Canvas thumbnail, rarity label, CP, level, mood emoji
+- Empty state: 🥚 "未有寵物，行路孵化啦！"
+- Click → opens Pet Detail Modal
+
+---
+
+## 4. Eggs Tab (`tab === 'eggs'`)
+
+### Incubator
+- Slot with egg/badge icon
+- Name: "基本孵化器" / "已孵化"
+- Progress bar to 1,000 steps
+- "進度: X/1.0K" labels
+
+### Locked Slots
+- 2 locked slots with 🔒 "額外孵化器" "即將開放"
+
+---
+
+## 5. Community Tab (`tab === 'community'`)
+
+- Centered card with 🏪 icon
+- Title: "社群 & 交易"
+- Description: "與其他玩家交換寵物"
+- 3 items (all "即將開放"):
+  - 行路競賽
+  - 交易市場
+  - 好友列表
+
+---
+
+## 6. Pet Detail Modal (`PetDetailModal.tsx`)
+
+Full-screen overlay, max-width: 24rem centered.
+
+### Header
+- "← 返回" button | "寵物詳情" title
+
+### Pet Display Section
+- Large Canvas pet animation (happy state)
+- Rarity badge, Level, CP, Stage name
+- Mood emoji + text
+- 3 action buttons: 🍖餵食 ✋摸頭 🎾玩
+
+### Stats Section
+- "📊 能力值" title
+- 4 stat bars with values (speed, luck, charm, energy)
+- Progress bar fill: purple→cyan gradient
+
+### Skills Section
+- "🎯 技能" title
+- List of skill cards (icon + name + description + power + level)
+- Empty state: "未有技能"
+
+### Evolution Section
+- "🌟 進化進度" title
+- 5-stage dot progression (BB → I → II → III → IV)
+- Stage names below dots (BB → 幼年 → 成年 → 完全體 → 傳說)
+- Progress bar showing steps toward next stage
+- **Evolve button** (ALWAYS visible):
+  - If evolvable: golden "🌟 進化！" with glow
+  - If not: dashed "🔒 需要多 X 步進化"
+
+### Total Stats Section
+- "📈 總計" title
+- List: 總步數, 等級, 階段, CP, 技能數量
+
+---
+
+## 7. Auth Modal (`auth-modal.tsx`)
+
+### States
+- Not logged in: Login form
+- Logged in: Account info + logout
+- Sent: Success message
+
+### Login Form
+- Two tabs: "密碼" / "Magic Link"
+- Email input (autoFocus)
+- Password input (password mode only)
+- Error message display
+- Submit: "登入" / "註冊" / "發送 Magic Link"
+- Toggle: "未有帳號？註冊" / "已有帳號？登入"
+
+### Account View
+- Avatar circle (first letter of email, purple→cyan gradient)
+- Email display
+- Green "● 已登入" status
+- Red "登出" button
+
+### Styling
+- Fixed overlay with backdrop blur
+- Dark card (#141b2d), max-width 320px
+- Tab toggle pill style
+
+---
+
+## 8. Auth Callback (`api/auth/callback/route.ts`)
+
+- Server route that redirects back to main page with `?code=` parameter
+- Client-side `AuthProvider` picks up the code via `exchangeCodeForSession`
+
+---
+
+## 9. Evolution Modal (inline in `page.tsx`)
+
+- Overlay with backdrop blur
+- Two states:
+  - **Confirm**: Pet Canvas + "🌟 進化可能！" + stage name → stage name + "下次先" / "🌟 進化！" buttons
+  - **Animating**: ✨ emoji + "進化中..." + sparkle particles
+
+---
+
+## 10. Not Found Page (`not-found.tsx`)
+
+- Simple 404 page with Pipz branding
