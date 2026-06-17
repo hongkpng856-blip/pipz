@@ -298,9 +298,10 @@ export default function HomePage() {
               <>
                 <button onClick={() => setShowLogin(true)}
                   style={{
-                    background:'var(--accent-active)', border:'2px solid var(--accent-bright)',
-                    cursor:'pointer', color:'var(--accent-bright)',
-                    fontSize: 11, padding: '3px 6px', fontFamily:'inherit', whiteSpace:'nowrap',
+                    background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
+                    cursor:'pointer', color:'#c084fc',
+                    fontSize: 11, padding: '3px 6px', borderRadius: 10,
+                    fontFamily:'inherit', whiteSpace:'nowrap',
                     maxWidth: 120, overflow:'hidden', textOverflow:'ellipsis',
                   }}>
                   {user.email}
@@ -346,8 +347,8 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* Walking Canvas — full card (VS Code panel style) */}
-              <div className="section canvas-card">
+              {/* Walking Canvas — full card */}
+              <div className="section card" style={{padding:0, overflow:'hidden', position:'relative'}}>
                 <WalkingCanvas
                   state={camState}
                   speed={walkSpeed}
@@ -357,28 +358,25 @@ export default function HomePage() {
                   }}
                   size={3}
                 />
-                {/* Speed test buttons — Pixel Agents style */}
-                <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:3}}>
+                {/* Speed test buttons */}
+                <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:4}}>
                   <button
                     onClick={() => { setCamState('walk'); setWalkSpeed(25); logMsg('🚶 步行中') }}
                     style={{
-                      padding:'3px 7px', border:'2px solid #22c55e', background:'#166534',
-                      color:'#fff', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                      boxShadow:'2px 2px 0px #0a0a14',
+                      padding:'3px 8px', border:'2px solid #22c55e', background:'rgba(0,0,0,0.6)',
+                      color:'#22c55e', fontFamily:'inherit', fontSize:9, cursor:'pointer',
                     }}>🚶 WALK</button>
                   <button
                     onClick={() => { setCamState('walk'); setWalkSpeed(90); logMsg('🏃 跑步中') }}
                     style={{
-                      padding:'3px 7px', border:'2px solid #f59e0b', background:'#5c3d0e',
-                      color:'#fff', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                      boxShadow:'2px 2px 0px #0a0a14',
+                      padding:'3px 8px', border:'2px solid #f59e0b', background:'rgba(0,0,0,0.6)',
+                      color:'#f59e0b', fontFamily:'inherit', fontSize:9, cursor:'pointer',
                     }}>🏃 RUN</button>
                   <button
                     onClick={() => { setCamState('idle'); setWalkSpeed(0); logMsg('⏹ 停低') }}
                     style={{
-                      padding:'3px 7px', border:'2px solid #ef4444', background:'#5c1a1a',
-                      color:'#fff', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                      boxShadow:'2px 2px 0px #0a0a14',
+                      padding:'3px 8px', border:'2px solid #ef4444', background:'rgba(0,0,0,0.6)',
+                      color:'#ef4444', fontFamily:'inherit', fontSize:9, cursor:'pointer',
                     }}>⏹ STOP</button>
                 </div>
               </div>
@@ -682,19 +680,20 @@ export default function HomePage() {
         <div style={{
           position:'fixed', inset:0, zIndex:100,
           display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.85)', padding:16
+          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+          padding:16
         }} onClick={() => !evolvingId && setShowEvolve(false)}>
           <div style={{
-            background:'#252535', border:'2px solid #f59e0b44', padding:24, textAlign:'center', maxWidth:300, width:'100%',
-            boxShadow:'2px 2px 0px #0a0a14',
+            background:'#141b2d', border:'1px solid #f59e0b44', borderRadius:24,
+            padding:32, textAlign:'center', maxWidth:300, width:'100%',
           }} onClick={e => e.stopPropagation()}>
             {evolvingId === pet.id ? (
               <>
-                <div style={{fontSize:40, marginBottom:10, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
-                <div style={{fontSize:20, fontWeight:800, color:'rgba(255,255,255,0.9)', marginBottom:6}}>
+                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                <div style={{fontSize:24, fontWeight:800, background:'linear-gradient(135deg,#f59e0b,#ffd700)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:8}}>
                   進化中...
                 </div>
-                <div style={{display:'flex', gap:8, justifyContent:'center', marginTop:8}}>
+                <div className="hatch-sparkle">
                   {['🌟','⭐','💫','✨'].map((s,i) => (
                     <span key={i} style={{animationDelay:`${i*0.2}s`, fontSize:24}}>{s}</span>
                   ))}
@@ -707,27 +706,27 @@ export default function HomePage() {
                   rarity={pet.rarity}
                   evolutionStage={pet.evolutionStage}
                   animation="happy"
-                  size={5}
+                  size={6}
                 />
-                <div style={{fontSize:17, fontWeight:800, color:'#f59e0b', margin:'10px 0 4px'}}>
+                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
                   🌟 進化可能！
                 </div>
-                <div style={{fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:14}}>
+                <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
                   {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
                   {' → '}
                   {['幼年','成年','完全體','傳說','神話'][pet.evolutionStage-1] || '下一步'}
                 </div>
-                <div style={{display:'flex', gap:6, justifyContent:'center'}}>
+                <div style={{display:'flex', gap:8, justifyContent:'center'}}>
                   <button className="btn btn-ghost" onClick={() => setShowEvolve(false)}
-                    style={{padding:'6px 18px', fontSize:11}}>
+                    style={{padding:'8px 20px', fontSize:12}}>
                     下次先
                   </button>
                   <button onClick={doEvolve}
                     style={{
-                      padding:'6px 20px', border:'2px solid #f59e0b',
-                      background:'#5c3d0e',
-                      color:'white', fontSize:11, fontWeight:700, cursor:'pointer',
-                      fontFamily:'inherit', boxShadow:'2px 2px 0px #0a0a14',
+                      padding:'8px 24px', borderRadius:20, border:'none',
+                      background:'linear-gradient(135deg,#f59e0b,#d97706)',
+                      color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
+                      fontFamily:'inherit',
                     }}>
                     🌟 進化！
                   </button>
