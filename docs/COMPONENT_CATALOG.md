@@ -45,8 +45,9 @@ The entire app is a single page with 4 tabs and modals.
 - **Idle**: pet stands with slight idle bob, ground slowly scrolls
 - **Walk**: pet legs alternate, ground scrolls at walking speed
 - **Run**: faster scrolling + leg movement
-- **Encounter**: grass shakes near pet, ❗ pops up, egg appears with sparkles
-- Canvas fills entire card with `aspectRatio: 4/3`
+- **Encounter**: grass shakes near pet, ❗ pops up, egg appears with sparkles (longer ~4s animation), then popup shows collected egg
+- After encounter: **egg popup** with rarity badge + "去蛋頁" button (not a pet yet)
+- Egg goes to inventory, hatched on Eggs tab by tapping
 - Pet status shown BELOW the canvas in a slim bar
 
 ### Stats Card

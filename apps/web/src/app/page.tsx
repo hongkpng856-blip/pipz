@@ -19,12 +19,19 @@ const ME: Record<string, string> = {
   happy: '😊', excited: '🤩', hungry: '🍽️', sleepy: '😴', sad: '😢',
 }
 
+interface EggItem {
+  id: string
+  rarity: Rarity
+  collectedAt: number
+}
+
 type Tab = 'map' | 'pets' | 'eggs' | 'community'
 
 export default function HomePage() {
   const [steps, setSteps] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
   const [pets, setPets] = useState<Pet[]>([])
+  const [eggs, setEggs] = useState<EggItem[]>([])
   const [activeIdx, setActiveIdx] = useState(0)
   const [walking, setWalking] = useState(false)
   const [showEgg, setShowEgg] = useState(false)
@@ -41,6 +48,9 @@ export default function HomePage() {
   const [showEvolve, setShowEvolve] = useState(false)
   const [evolvingId, setEvolvingId] = useState<string | null>(null)
   const [detailPetId, setDetailPetId] = useState<string | null>(null)
+  const [showEncounterEgg, setShowEncounterEgg] = useState(false)
+  const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
+  const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -207,14 +217,28 @@ export default function HomePage() {
         encCnt.current = 0
         if (r === Rarity.Legendary) pity.current.legendary = 0
         if (r === Rarity.Epic) pity.current.epic = 0
-        spawnPet(r)
+        // Store rarity for the encounter — don't spawn pet yet
+        setEncounterEggRarity(r)
         setCamState('encounter')
-        logMsg(`🐾 遇見 ${RARITY_LABELS[r]}！`)
+        logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
       }
     }
   }
 
   const addDebug = () => addSt(500)
+
+  // ── Hatch an egg from inventory ──
+  const hatchEgg = async (egg: EggItem) => {
+    setEggHatchingId(egg.id)
+    // Wait for hatching animation
+    setTimeout(async () => {
+      setEggs(v => v.filter(e => e.id !== egg.id))
+      await spawnPet(egg.rarity)
+      setEggHatchingId(null)
+      setTab('pets')
+      logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
+    }, 2000)
+  }
 
   // ── Pet actions ──
   const feed = () => {
@@ -368,7 +392,17 @@ export default function HomePage() {
                   speed={walkSpeed}
                   onEncounterEnd={() => {
                     setCamState(walking ? 'walk' : 'idle')
-                    logMsg(`🐾 遇到新寵物！`)
+                    // Collect the egg from encounter
+                    if (encounterEggRarity) {
+                      const newEgg: EggItem = {
+                        id: genSeed().toString(),
+                        rarity: encounterEggRarity,
+                        collectedAt: Date.now(),
+                      }
+                      setEggs(v => [...v, newEgg])
+                      setEncounterEggRarity(null)
+                      setShowEncounterEgg(true)
+                    }
                   }}
                   size={3}
                   pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
@@ -619,9 +653,50 @@ export default function HomePage() {
             <div className="fade-up">
               <div className="section-header">
                 <span className="section-title">🥚 蛋</span>
-                <span className="section-count">孵化器 1/1</span>
+                <span className="section-count">{eggs.length}粒</span>
               </div>
 
+              {/* Collected eggs grid */}
+              {eggs.length > 0 && (
+                <div className="pet-grid" style={{marginBottom:12}}>
+                  {eggs.map(egg => {
+                    const isHatching = eggHatchingId === egg.id
+                    return (
+                      <div key={egg.id}
+                        className="pet-card"
+                        onClick={() => !isHatching && hatchEgg(egg)}
+                        style={{
+                          borderColor: `${PC[egg.rarity]}44`,
+                          cursor: isHatching ? 'default' : 'pointer',
+                          padding: '12px 4px',
+                        }}>
+                        {isHatching ? (
+                          <>
+                            <div style={{fontSize:32, animation:'pulse 0.5s ease-in-out infinite', marginBottom:4}}>✨</div>
+                            <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{fontSize:32, marginBottom:4}}>🥚</div>
+                            <div style={{
+                              fontSize:7, fontWeight:700, color:PC[egg.rarity],
+                              background: `${PC[egg.rarity]}18`,
+                              display:'inline-block', padding:'1px 8px',
+                            }}>
+                              {RARITY_LABELS[egg.rarity]}
+                            </div>
+                            <div style={{fontSize:8, color:'#5a6d85', marginTop:2}}>
+                              點擊孵化
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* First pet incubator */}
               <div className="section card">
                 <div className="incubator">
                   <div className={`incubator-slot ${pets.length > 0 ? 'incubator-slot-done' : ''}`}>
@@ -643,6 +718,16 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Empty state */}
+              {eggs.length === 0 && (
+                <div className="card empty-state" style={{marginBottom:12}}>
+                  <div style={{fontSize:36, marginBottom:8}}>🥚</div>
+                  <div style={{fontSize:11, color:'#5a6d85'}}>
+                    行路遇到嘅蛋會係度顯示
+                  </div>
+                </div>
+              )}
 
               <div className="locked-grid">
                 {[1,2].map(i => (
@@ -792,6 +877,57 @@ export default function HomePage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ════ Encounter Egg Popup ════ */}
+      {showEncounterEgg && encounterEggRarity === null && eggs.length > 0 && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:100,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.75)',
+          padding:16,
+        }} onClick={() => setShowEncounterEgg(false)}>
+          <div style={{
+            background:'#141b2d', border:`2px solid ${PC[eggs[eggs.length-1].rarity]}44`,
+            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:48, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
+            <div style={{fontSize:13, fontWeight:700, marginBottom:4}}>
+              發現蛋！🥚
+            </div>
+            <div style={{
+              fontSize:11, fontWeight:700,
+              color: PC[eggs[eggs.length-1].rarity],
+              background: `${PC[eggs[eggs.length-1].rarity]}18`,
+              display:'inline-block', padding:'2px 12px', borderRadius:10,
+              marginBottom:8,
+            }}>
+              {RARITY_LABELS[eggs[eggs.length-1].rarity]}
+            </div>
+            <div style={{fontSize:11, color:'#94a5b8', marginBottom:16}}>
+              已收錄到蛋列表！去蛋頁面孵化啦
+            </div>
+            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+              <button onClick={() => setShowEncounterEgg(false)}
+                style={{
+                  padding:'8px 16px', border:'1px solid #2a3a5a',
+                  background:'#1a2338', color:'#94a5b8', fontSize:11, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit', borderRadius:12,
+                }}>
+                關閉
+              </button>
+              <button onClick={() => { setShowEncounterEgg(false); setTab('eggs') }}
+                style={{
+                  padding:'8px 16px', border:'none',
+                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
+                  fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  borderRadius:12,
+                }}>
+                去蛋頁 🥚
+              </button>
+            </div>
           </div>
         </div>
       )}

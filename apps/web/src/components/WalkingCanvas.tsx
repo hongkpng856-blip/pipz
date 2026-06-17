@@ -56,9 +56,16 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
 
     // Reset encounter state on state change
     if (state !== 'encounter') {
-      encPhase.current = 0
-      encDone.current = false
+    encPhase.current = 0
+    encDone.current = false
     }
+    // Start encounter timer for callback
+    const encTimer = setTimeout(() => {
+    if (state === 'encounter' && !encDone.current) {
+      encDone.current = true
+      if (onEncounterEnd) onEncounterEnd()
+    }
+    }, 4000)  // safety timeout after 4s
 
     const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
     const charSize = 3 + (pet?.evolutionStage ?? 1) * 1  // 4-8px character body
@@ -210,7 +217,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
 
       // ════ Encounter animation ──
       if (isEnc && !encDone.current) {
-        encPhase.current += 0.03
+        encPhase.current += 0.008
         if (encPhase.current > 1) {
           encPhase.current = 1
           encDone.current = true
@@ -273,7 +280,10 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
 
     draw()
 
-    return () => cancelAnimationFrame(rafRef.current)
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      clearTimeout(encTimer)
+    }
   }, [state, speed, size, pet, onEncounterEnd, CX, CY, W, H])
 
   return (
