@@ -249,25 +249,27 @@ export default function HomePage() {
   const doEvolve = () => {
     if (!pet || !canEvolve) return
     const e = canEvolve
-    // Update pet immediately
+    const reqForThisEvolution = EVOLUTION_STEPS[pet.evolutionStage + 1] || 10000
+    const remainingSteps = Math.max(0, pet.totalSteps - reqForThisEvolution)
     const evolved = {
       ...pet,
       evolutionStage: e.newStage,
       status: e.newStatus,
       stats: e.newStats,
       level: pet.level + 1,
-      totalSteps: pet.totalSteps + 1,
+      totalSteps: remainingSteps,
     }
-    setPets(v => v.map((p, i) => i === activeIdx ? {
-      ...evolved,
-      totalSteps: Math.max(0, evolved.totalSteps - EVOLUTION_STEPS[evolved.evolutionStage] || 10000),
-    } : p))
+    setPets(v => v.map((p, i) => i === activeIdx ? evolved : p))
     setEvolvingId(pet.id)
-    setShowEvolve(false)
     logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
     if (user) updatePet(evolved)
-    // Brief animation then reset
-    setTimeout(() => setEvolvingId(null), 1200)
+    // Animation → 帶回寵物頁
+    setTimeout(() => {
+      setEvolvingId(null)
+      setShowEvolve(false)
+      setTab('pets')
+      setDetailPetId(null)
+    }, 1200)
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])

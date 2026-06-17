@@ -72,7 +72,16 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
           <span style={{ fontSize: 14, fontWeight: 700, color: '#f0f4f8' }}>
             寵物詳情
           </span>
-          <div style={{ width: 48 }} />
+          <button onClick={() => setShowDelete(true)} style={{
+            background: 'none', border: 'none', color: '#ef4444',
+            fontSize: 18, cursor: 'pointer', padding: '4px 8px',
+            fontFamily: 'inherit', opacity: 0.7, transition: 'opacity 0.2s',
+          }}
+            onMouseOver={e => (e.currentTarget.style.opacity = '1')}
+            onMouseOut={e => (e.currentTarget.style.opacity = '0.7')}
+          >
+            ✕
+          </button>
         </div>
 
         {/* ── Scrollable content ── */}
@@ -308,40 +317,55 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
 
           {/* ── Delete / Sacrifice ── */}
           <div style={{ marginTop: 12, textAlign: 'center' }}>
-            {showDelete ? (
-              <div style={{
-                background: '#141b2d', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 16,
-                padding: 16,
-              }}>
-                <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 700, marginBottom: 8 }}>
-                  🗑️ 確定要剷除呢隻寵物？
-                </div>
-                <div style={{ fontSize: 11, color: '#5a6d85', marginBottom: 12 }}>
-                  此操作無法還原
-                </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                  <button onClick={() => setShowDelete(false)}
-                    style={{ padding: '8px 20px', borderRadius: 16, border: '1px solid #2a3a5a',
-                      background: '#1a2338', color: '#94a5b8', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    取消
-                  </button>
-                  <button onClick={() => onDelete(pet.id)}
-                    style={{ padding: '8px 20px', borderRadius: 16, border: 'none',
-                      background: '#dc2626', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    🗑️ 確認剷除
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => setShowDelete(true)}
-                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', opacity: 0.6 }}>
-                🗑️ 剷除此寵物
-              </button>
-            )}
+            <button onClick={() => setShowDelete(true)}
+              style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', opacity: 0.6 }}>
+              🗑️ 剷除此寵物
+            </button>
           </div>
 
           </div>
       </div>
+
+      {/* ════ Delete confirmation popup ════ */}
+      {showDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          padding: 16,
+        }} onClick={() => setShowDelete(false)}>
+          <div style={{
+            background: '#141b2d', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 20,
+            padding: 24, maxWidth: 280, width: '100%', textAlign: 'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
+            <div style={{ fontSize: 15, color: '#ef4444', fontWeight: 700, marginBottom: 6 }}>
+              確定要剷除呢隻寵物？
+            </div>
+            <div style={{ fontSize: 12, color: '#5a6d85', marginBottom: 20 }}>
+              此操作無法還原
+            </div>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button onClick={() => setShowDelete(false)}
+                style={{
+                  padding: '10px 24px', borderRadius: 16, border: '1px solid #2a3a5a',
+                  background: '#1a2338', color: '#94a5b8', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit', flex: 1,
+                }}>
+                取消
+              </button>
+              <button onClick={() => onDelete(pet.id)}
+                style={{
+                  padding: '10px 24px', borderRadius: 16, border: 'none',
+                  background: '#dc2626', color: 'white', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: 'inherit', flex: 1,
+                }}>
+                確認剷除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

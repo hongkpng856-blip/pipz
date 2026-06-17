@@ -129,7 +129,7 @@ function calculateEvolution(userTotalSteps, currentStage, currentStats):
     }
 ```
 
-> **Note:** Evolution uses the USER's total steps (not the pet's individual steps). This means all pets share the same step progress toward evolution.
+> **Note:** Evolution uses the PET's total steps (tracked per-pet as user walks with that pet active). On evolution, the required steps are deducted from the pet, so each pet must earn its own evolution. Old pets caught up to user's total steps on first load.
 
 ### Evolution Effect
 
