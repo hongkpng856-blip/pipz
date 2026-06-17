@@ -10,5 +10,9 @@
     "build": "npm run build --workspace=packages/core && npm run build --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
     "test": "npm run test --workspace=packages/core"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2"
   }
 }
