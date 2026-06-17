@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.0 (2026-06-18)
+
+### Added
+- Procedural pixel pet generator (Canvas-based, seed + rarity + stage)
+- Canvas pet animation (idle bob, walk bounce, happy jump, click reaction)
+- Evolution system with 5 stages: Baby → Juvenile → Adult → Evolved → Legendary
+- Evolution modal with animation
+- Pet skill system — 12 unique skills based on rarity
+- Pet detail modal with full stats, skills, evolution progress, interactions
+- Pet detail matches main layout width (max-width: 24rem)
+
+### Changed
+- Pet grid click → opens detail modal (not switches to map tab)
+- Nearby click → opens detail modal
+- Evolution button always visible (disabled when not enough steps)
+
 ## v0.1.0 (2026-06-18)
 
 ### Added
@@ -12,6 +28,12 @@
 - Brevo SMTP integration for Magic Link emails
 - Vercel deployment to pipz-ivory.vercel.app
 - Pure custom CSS design system (solid cards, dark theme)
+- GPS walking tracking + step counter
+- Pet encounter system with pity mechanics
+- Egg hatching animation
+- Pet interactions (feed, pet, play)
+- Pet collection grid view
+- Incubator UI
 
 ### Fixed
 - Auth callback user null → switched to client component
@@ -22,5 +44,4 @@
 
 ### Known Issues
 - Magic Link open accounts have no password (need "set password" feature)
-- Password tab confusing for existing Magic Link users
 - Vercel build cache may retain stale env vars
