@@ -357,6 +357,7 @@ export default function HomePage() {
                     logMsg(`🐾 遇到新寵物！`)
                   }}
                   size={3}
+                  pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
                 />
                 {/* Speed test buttons */}
                 <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:4}}>
