@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, Rarity, Mood, Pet, PetStatus, formatSteps } from '@pipz/core'
-import { RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPet from '../components/PixelPet'
 import LoginModal from './login-modal'
 import { useAuth } from '../lib/auth-context'
+import { ensureProfile, loadPets, savePet, updatePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
 
 function genId() { return Math.random().toString(36).substring(2, 10) }
 
@@ -33,12 +33,17 @@ export default function HomePage() {
   const [ready, setReady] = useState(false)
   const [encFlash, setEncFlash] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const { user } = useAuth()
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
   const encCnt = useRef(0)
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
+  const loadedUser = useRef<string|null>(null)
+  const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
+  const pendingSteps = useRef(0)
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -50,6 +55,80 @@ export default function HomePage() {
 
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
 
+  // ── Load data when user changes ──
+  useEffect(() => {
+    if (!user) {
+      // Not logged in — use local state
+      if (loadedUser.current !== null) {
+        setPets([])
+        setSteps(0)
+        setTotalSteps(0)
+        setShowEgg(false)
+        setActiveIdx(0)
+        loadedUser.current = null
+      }
+      setLoading(false)
+      return
+    }
+
+    // User logged in — load their data
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        await ensureProfile(user.id)
+        const [dbPets, todaySt] = await Promise.all([
+          loadPets(user.id),
+          getTodaySteps(user.id),
+        ])
+
+        setPets(dbPets)
+        setSteps(todaySt)
+        setActiveIdx(0)
+        loadedUser.current = user.id
+
+        // Calculate total steps from pet data + profile
+        if (dbPets.length > 0) {
+          const maxPetSteps = Math.max(...dbPets.map(p => p.totalSteps))
+          setTotalSteps(prev => Math.max(prev, maxPetSteps))
+        }
+      } catch (e) {
+        console.error('Failed to load data:', e)
+        logMsg('❌ 載入數據失敗')
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [user?.id])
+
+  // ── Debounced step sync to Supabase ──
+  const scheduleSync = useCallback((s: number, ts: number) => {
+    if (!user) return
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    pendingSteps.current = s
+    syncTimer.current = setTimeout(async () => {
+      setSyncing(true)
+      try {
+        await Promise.all([
+          updateTotalSteps(user.id, ts),
+          upsertDailySteps(user.id, pendingSteps.current),
+        ])
+      } catch (e) {
+        console.error('Sync failed:', e)
+      } finally {
+        setSyncing(false)
+      }
+    }, 2000)
+  }, [user])
+
+  // Cleanup sync timer
+  useEffect(() => {
+    return () => {
+      if (syncTimer.current) clearTimeout(syncTimer.current)
+    }
+  }, [])
+
+  // ── Walk ──
   const walkStart = () => {
     if (!navigator.geolocation) return logMsg('❌ 唔支援 GPS')
     setWalking(true); setPetAnim('walk'); logMsg('🚶 開始行路！')
@@ -72,9 +151,10 @@ export default function HomePage() {
     wid.current = null; setWalking(false); setPetAnim('idle'); logMsg('⏹ 停低咗')
   }
 
-  const spawnPet = (r: Rarity) => {
+  // ── Pet spawn ──
+  const spawnPet = async (r: Rarity) => {
     const np: Pet = {
-      id: genId(), userId: 'local', name: '',
+      id: genId(), userId: user?.id ?? 'local', name: '',
       speciesId: genId(), imageUrl: '',
       rarity: r, level: 1, xp: 0, totalSteps: 0, evolutionStage: 1,
       status: PetStatus.Baby,
@@ -82,13 +162,30 @@ export default function HomePage() {
       lastFedAt: Date.now(), lastInteractionAt: Date.now(), createdAt: Date.now(),
       isForSale: false, price: 0,
     }
-    setPets(v => [...v, np]); setActiveIdx(pets.length)
+
+    // Save to DB if logged in
+    if (user) {
+      const dbId = await savePet(user.id, np)
+      if (dbId) np.id = dbId
+    }
+
+    setPets(v => {
+      const updated = [...v, np]
+      setActiveIdx(updated.length - 1)
+      return updated
+    })
   }
 
+  // ── Step manager ──
   const addSt = (n: number) => {
-    setSteps(s => s + n); setTotalSteps(s => s + n)
+    setSteps(s => s + n)
+    setTotalSteps(s => {
+      const newTotal = s + n
+      if (pets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
+      scheduleSync(steps + n, newTotal)
+      return newTotal
+    })
     encCnt.current += n
-    if (pets.length === 0 && totalSteps + n >= FIRST_PET_STEPS) { setShowEgg(true); return }
     if (encCnt.current >= ENCOUNTER_INTERVAL) {
       const r = rollEncounter(encCnt.current, pity.current)
       if (r) {
@@ -104,20 +201,27 @@ export default function HomePage() {
 
   const addDebug = () => addSt(500)
 
+  // ── Pet actions ──
   const feed = () => {
     if (!pet) return
-    setPets(v => v.map((p,i) => i === activeIdx ? {...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10} : p))
+    const updated = { ...pet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: pet.xp + 10 }
+    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
+    if (user) updatePet(updated)
     setPetAnim('happy'); logMsg('🍖 餵食咗！+10XP'); setTimeout(() => setPetAnim('idle'), 1500)
   }
   const petAction = () => {
     if (!pet) return
-    setPetAnim('happy'); setPets(v => v.map((p,i) => i === activeIdx ? {...p, mood: Mood.Happy, moodValue: Math.min(100, p.moodValue + 15)} : p))
-    logMsg('✋ 摸頭～'); setTimeout(() => setPetAnim('idle'), 1500)
+    const updated = { ...pet, mood: Mood.Happy, moodValue: Math.min(100, pet.moodValue + 15) }
+    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
+    if (user) updatePet(updated)
+    setPetAnim('happy'); logMsg('✋ 摸頭～'); setTimeout(() => setPetAnim('idle'), 1500)
   }
   const playAction = () => {
     if (!pet) return
-    setPetAnim('happy'); setPets(v => v.map((p,i) => i === activeIdx ? {...p, mood: Mood.Excited, moodValue: Math.min(100, p.moodValue + 20), xp: p.xp + 5} : p))
-    logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 2000)
+    const updated = { ...pet, mood: Mood.Excited, moodValue: Math.min(100, pet.moodValue + 20), xp: pet.xp + 5 }
+    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
+    if (user) updatePet(updated)
+    setPetAnim('happy'); logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 2000)
   }
 
   const hatch = () => {
@@ -143,14 +247,24 @@ export default function HomePage() {
         <div className="header">
           <span className="header-title">Pipz</span>
           <div className="header-right">
+            {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
             {walking && (
               <span className="header-gps">
                 <span className="gps-dot" />GPS
               </span>
             )}
             <button onClick={() => setShowLogin(true)}
-              style={{background:'none', border:'none', cursor:'pointer', color:'#5a6d85', fontSize:14, padding:'2px 4px', fontFamily:'inherit'}}>
-              {user ? '👤' : '🔑'}
+              style={{
+                background: user ? 'rgba(139,92,246,0.15)' : 'none',
+                border: user ? '1px solid rgba(139,92,246,0.3)' : 'none',
+                cursor:'pointer', color: user ? '#c084fc' : '#5a6d85',
+                fontSize: 12, padding: '3px 8px', borderRadius: 12,
+                fontFamily:'inherit', whiteSpace:'nowrap',
+                display:'flex', alignItems:'center', gap: 4,
+              }}>
+              {user ? (
+                <>{user.email?.split('@')[0].slice(0, 8)} ▾</>
+              ) : '🔑'}
             </button>
             <span className="header-icon">👣</span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
@@ -160,6 +274,15 @@ export default function HomePage() {
         {/* ── Main ── */}
         <div className="main">
 
+          {/* ════ Loading ════ */}
+          {loading ? (
+            <div style={{textAlign:'center', padding: '60px 0', color:'#5a6d85', fontSize:13}}>
+              <div style={{fontSize:24, marginBottom:8}}>⏳</div>
+              載入中...
+            </div>
+          ) : (
+
+          <>
           {/* ════ MAP TAB ════ */}
           {tab === 'map' && (
             <div className="fade-up">
@@ -397,6 +520,8 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          )}
+          </>
           )}
 
         </div>
