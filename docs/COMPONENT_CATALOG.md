@@ -74,9 +74,19 @@ The entire app is a single page with 4 tabs and modals.
 ### Header
 - "🐾 寵物" title + count (e.g., "3隻")
 
-### Pet Grid
-- 2-column grid of pet cards
-- Each card: Canvas thumbnail, rarity label, CP, level, mood emoji
+### Pet Grid (P&D album style)
+- **3-column grid** of pet cards (gap 6px)
+- Each card:
+  - **Rarity-colored top strip** (3px)
+  - **CP badge** (amber, absolute top-right)
+  - **Pixel pet Canvas** (48×48)
+  - **Rarity stars** (★ × 1–5, coloured, e.g. ★★★ for Rare)
+  - **Level** "Lv.X"
+  - **Evolution indicator** (bottom-right):
+    - ▶ amber with glow animation if evolvable
+    - ► grey if locked
+- Hover: rarity-coloured border glow
+- Active: scale 0.93 press effect
 - Empty state: 🥚 "未有寵物，行路孵化啦！"
 - Click → opens Pet Detail Modal
 
