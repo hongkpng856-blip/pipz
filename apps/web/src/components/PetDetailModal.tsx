@@ -1,6 +1,7 @@
 'use client'
 
-import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, EVOLUTION_STATUS, calculateEvolution } from '@pipz/core'
+import { useState } from 'react'
+import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution } from '@pipz/core'
 import PixelPetCanvas from './PixelPetCanvas'
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   onFeed: () => void
   onPet: () => void
   onPlay: () => void
+  onDelete: (petId: string) => void
 }
 
 const PC: Record<string, string> = {
@@ -27,17 +29,18 @@ const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 // Evolution step requirements
 const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4: 100000, 5: 999999 }
 
-export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay }: Props) {
-  const canEvolve = calculateEvolution(totalSteps, pet.evolutionStage, pet.stats)
+export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay, onDelete }: Props) {
+  const [showDelete, setShowDelete] = useState(false)
+  const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
 
   const nextReq = NEXT_STEP_REQ[pet.evolutionStage] ?? 999999
   const currentReq = EVOLUTION_STEPS[pet.evolutionStage] ?? 0
   const evoProgress = pet.evolutionStage >= 5
     ? 100
-    : Math.min(100, ((totalSteps - currentReq) / (nextReq - currentReq)) * 100)
+    : Math.min(100, ((pet.totalSteps - currentReq) / (nextReq - currentReq)) * 100)
 
-  const stepsRemaining = Math.max(0, nextReq - totalSteps)
+  const stepsRemaining = Math.max(0, nextReq - pet.totalSteps)
 
   return (
     <div style={{
@@ -303,7 +306,41 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             </div>
           </div>
 
-        </div>
+          {/* ── Delete / Sacrifice ── */}
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            {showDelete ? (
+              <div style={{
+                background: '#141b2d', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 16,
+                padding: 16,
+              }}>
+                <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 700, marginBottom: 8 }}>
+                  🗑️ 確定要剷除呢隻寵物？
+                </div>
+                <div style={{ fontSize: 11, color: '#5a6d85', marginBottom: 12 }}>
+                  此操作無法還原
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                  <button onClick={() => setShowDelete(false)}
+                    style={{ padding: '8px 20px', borderRadius: 16, border: '1px solid #2a3a5a',
+                      background: '#1a2338', color: '#94a5b8', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    取消
+                  </button>
+                  <button onClick={() => onDelete(pet.id)}
+                    style={{ padding: '8px 20px', borderRadius: 16, border: 'none',
+                      background: '#dc2626', color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    🗑️ 確認剷除
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setShowDelete(true)}
+                style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', opacity: 0.6 }}>
+                🗑️ 剷除此寵物
+              </button>
+            )}
+          </div>
+
+          </div>
       </div>
     </div>
   )

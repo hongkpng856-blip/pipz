@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetDetailModal from '../components/PetDetailModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -54,7 +54,7 @@ export default function HomePage() {
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
-  const canEvolve = pet ? calculateEvolution(totalSteps, pet.evolutionStage, pet.stats) : null
+  const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
 
   useEffect(() => { setReady(true) }, [])
 
@@ -91,10 +91,13 @@ export default function HomePage() {
         setActiveIdx(0)
         loadedUser.current = user.id
 
-        // Calculate total steps from pet data + profile
+        // Catch up old pets — set pet totalSteps to user totalSteps if behind
         if (dbPets.length > 0) {
           const maxPetSteps = Math.max(...dbPets.map(p => p.totalSteps))
-          setTotalSteps(prev => Math.max(prev, maxPetSteps))
+          const userSteps = Math.max(maxPetSteps, todaySt)
+          if (todaySt > maxPetSteps) {
+            setPets(v => v.map(p => ({ ...p, totalSteps: Math.max(p.totalSteps, userSteps) })))
+          }
         }
       } catch (e) {
         console.error('Failed to load data:', e)
@@ -245,28 +248,26 @@ export default function HomePage() {
 
   const doEvolve = () => {
     if (!pet || !canEvolve) return
+    const e = canEvolve
+    // Update pet immediately
+    const evolved = {
+      ...pet,
+      evolutionStage: e.newStage,
+      status: e.newStatus,
+      stats: e.newStats,
+      level: pet.level + 1,
+      totalSteps: pet.totalSteps + 1,
+    }
+    setPets(v => v.map((p, i) => i === activeIdx ? {
+      ...evolved,
+      totalSteps: Math.max(0, evolved.totalSteps - EVOLUTION_STEPS[evolved.evolutionStage] || 10000),
+    } : p))
     setEvolvingId(pet.id)
-    setTimeout(() => {
-      const e = canEvolve
-      setPets(v => v.map(p => {
-        if (p.id !== pet.id) return p
-        return {
-          ...p,
-          evolutionStage: e.newStage,
-          status: e.newStatus,
-          stats: e.newStats,
-          level: p.level + 1,
-          totalSteps: p.totalSteps + 1,
-        }
-      }))
-      setEvolvingId(null)
-      setShowEvolve(false)
-      logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} Lv.${pet.level + 1}`)
-      if (user) {
-        const updated = { ...pet, evolutionStage: e.newStage, status: e.newStatus, stats: e.newStats, level: pet.level + 1, totalSteps: pet.totalSteps + 1 }
-        updatePet(updated)
-      }
-    }, 2500)
+    setShowEvolve(false)
+    logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
+    if (user) updatePet(evolved)
+    // Brief animation then reset
+    setTimeout(() => setEvolvingId(null), 1200)
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
@@ -637,6 +638,12 @@ export default function HomePage() {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Excited, moodValue: Math.min(100, p.moodValue + 20), xp: p.xp + 5 } : p))
               if (user) updatePet({ ...detailPet, mood: Mood.Excited, moodValue: Math.min(100, detailPet.moodValue + 20), xp: detailPet.xp + 5 })
               logMsg('🎾 玩緊！+5XP')
+            }}
+            onDelete={(id) => {
+              setPets(v => v.filter(p => p.id !== id))
+              setDetailPetId(null)
+              if (user) deletePet(id)
+              logMsg('🗑️ 寵物已剷除')
             }}
           />
         )
