@@ -112,7 +112,15 @@ The entire app is a single page with 4 tabs and modals.
 Full-screen overlay, max-width: 24rem centered.
 
 ### Header
-- "← 返回" button | "寵物詳情" title
+- "← 返回" button | "寵物詳情" title | **紅色 ✕ 刪除按鈕** (右上角)
+- ✕ 按鈕 hover 會變亮，click 開 delete confirmation popup
+
+### Delete Confirmation Popup (full-screen overlay)
+- Backdrop blur + dark overlay
+- 🗑️ 大 icon + "確定要剷除呢隻寵物？" 紅色警告
+- "此操作無法還原" 灰色提示
+- 兩個按鈕：**取消** (灰) / **確認剷除** (紅)
+- Click overlay 背景 = 關閉 popup
 
 ### Pet Display Section
 - Large Canvas pet animation (happy state)
@@ -185,7 +193,13 @@ Full-screen overlay, max-width: 24rem centered.
 - Overlay with backdrop blur
 - Two states:
   - **Confirm**: Pet Canvas + "🌟 進化可能！" + stage name → stage name + "下次先" / "🌟 進化！" buttons
-  - **Animating**: ✨ emoji + "進化中..." + sparkle particles
+  - **Animating**: ✨ emoji + "進化中..." + sparkle particles (1.2 seconds)
+- **After animation**: Auto-closes modal + redirects to **pets tab**
+- On evolution:
+  - Step deduction: pet.totalSteps - requirement of current stage (e.g. 10K/30K/60K/100K)
+  - Stats boosted by growthFactor (1 + (stage-1)*0.3)
+  - Level +1
+  - Saved to Supabase DB
 
 ---
 

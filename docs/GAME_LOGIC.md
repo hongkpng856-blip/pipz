@@ -129,7 +129,17 @@ function calculateEvolution(userTotalSteps, currentStage, currentStats):
     }
 ```
 
-> **Note:** Evolution uses the PET's total steps (tracked per-pet as user walks with that pet active). On evolution, the required steps are deducted from the pet, so each pet must earn its own evolution. Old pets caught up to user's total steps on first load.
+> **Note:** Evolution uses the PET's total steps (tracked per-pet). When a pet evolves, the required steps for that stage are **deducted** from the pet's total steps:
+> ```
+> remainingSteps = pet.totalSteps - EVOLUTION_STEPS[currentStage + 1]
+> ```
+> - Stage 1→2 deducts 10,000 steps
+> - Stage 2→3 deducts 30,000 steps
+> - Stage 3→4 deducts 60,000 steps
+> - Stage 4→5 deducts 100,000 steps
+> - Excess steps beyond the requirement are preserved on the pet
+> - This means each pet must independently earn its own evolution
+> - Updated in both local state AND Supabase DB immediately
 
 ### Evolution Effect
 
