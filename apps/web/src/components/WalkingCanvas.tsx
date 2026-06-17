@@ -16,7 +16,7 @@ const ROAD_COLOR = '#3a3a4a'
 const GRASS_COLOR_1 = '#1a5a2a'
 const GRASS_COLOR_2 = '#1a4a22'
 const LINE_COLOR = '#6a6a7a'
-const HORIZON_COLOR = '#0b1120'
+const HORIZON_COLOR = '#1e1e2e'
 
 export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size = 3 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
