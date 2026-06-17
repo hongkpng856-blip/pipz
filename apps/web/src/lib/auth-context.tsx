@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       options: {
         shouldCreateUser: true,
-        // Don't set redirectTo — let Supabase handle it (redirects back to site URL)
+        emailRedirectTo: 'https://pipz-ivory.vercel.app/',
       }
     })
     return error?.message ?? null
@@ -101,7 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(async (email: string, password: string): Promise<string | null> => {
     if (!supabase) return 'Supabase not initialized'
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: 'https://pipz-ivory.vercel.app/' }
+    })
     return error?.message ?? null
   }, [])
 

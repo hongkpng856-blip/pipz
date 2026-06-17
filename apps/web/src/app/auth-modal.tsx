@@ -34,8 +34,14 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
     if (isSignUp) {
       err = await signUp(email, password)
       if (!err) {
-        // Sign up successful — try signing in immediately
+        // Try signing in immediately (works if email confirmation is disabled)
         err = await signInWithPassword(email, password)
+        if (err && err.includes('Email not confirmed')) {
+          // Email confirmation required — show success message
+          setSending(false)
+          setSent(true)
+          return
+        }
       }
     } else {
       err = await signInWithPassword(email, password)
@@ -112,14 +118,18 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             </button>
           </div>
         ) : sent ? (
-          /* ── Magic Link sent ── */
+          /* ── Success sent ── */
           <div style={{textAlign:'center', padding: '20px 0'}}>
-            <div style={{fontSize:36, marginBottom:8}}>✉️</div>
-            <p style={{color:'#94a5b8', fontSize:13, marginBottom:4}}>確認電郵已發送</p>
-            <p style={{color:'#5a6d85', fontSize:11, marginBottom:16}}>請檢查 {email} 嘅收件箱</p>
-            <button onClick={() => { setSent(false); setMode('magic') }}
+            <div style={{fontSize:36, marginBottom:8}}>{isSignUp ? '✅' : '✉️'}</div>
+            <p style={{color:'#94a5b8', fontSize:13, marginBottom:4}}>{isSignUp ? '註冊成功！' : '確認電郵已發送'}</p>
+            <p style={{color:'#5a6d85', fontSize:11, marginBottom:16}}>
+              {isSignUp
+                ? '你可以直接用密碼登入'
+                : `請檢查 ${email} 嘅收件箱`}
+            </p>
+            <button onClick={() => { setSent(false); setMode(isSignUp ? 'password' : 'magic'); setIsSignUp(false) }}
               style={{background:'none', border:'none', color:'#8b5cf6', cursor:'pointer', fontSize:12, fontFamily:'inherit'}}>
-              再 Send 一次
+              {isSignUp ? '繼續登入' : '再 Send 一次'}
             </button>
           </div>
         ) : (
