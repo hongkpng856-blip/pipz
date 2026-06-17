@@ -1,25 +1,27 @@
 # Design System
 
-> Platform-agnostic UI specification — **Pixel Theme (Retro Game)**. iOS (SwiftUI) and Android (Jetpack Compose) agents must follow these exact values.
+> Platform-agnostic UI specification — **VS Code Pixel Agent Theme**. iOS (SwiftUI) and Android (Jetpack Compose) agents must follow these exact values.
 
 ## Colour Palette
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `bg` | `#0b0b1a` | Page background (dark retro blue-black) |
-| `card` | `#12162b` | Card background |
-| `card-2` | `#1a1f38` | Secondary card / input bg |
-| `border` | `#2a2f4a` | Card border (2px solid everywhere) |
-| `border-2` | `#363b58` | Secondary border (inputs, inner cards) |
-| `text` | `#e0e8f0` | Primary text |
-| `text-2` | `#8899aa` | Secondary text |
-| `text-3` | `#556677` | Muted text / labels |
-| `pink` | `#ff6b9d` | Encounter flash, accent |
-| `pixel-cyan` | `#44ccff` | Section titles, headers |
-| `pixel-gold` | `#ffcc00` | CP value, evolution, rarity stars |
-| `pixel-green` | `#33dd77` | GPS active, mood happy |
-| `pixel-red` | `#ff3355` | Delete, danger, error |
-| `purple` | `#8b5cf6` | Primary accent (buttons, active tab) |
+| `bg` | `#1e1e2e` | Page background (VS Code dark) |
+| `bg-dark` | `#181828` | Header, footer, canvas bg |
+| `card` | `#252535` | Card/panel background |
+| `card-2` | `#2a2a3a` | Secondary card, inputs, inner panels |
+| `border` | `#4a4a6a` | Card border (2px solid everywhere) |
+| `border-light` | `#5a5a7a` | Hover/active border |
+| `accent` | `#6030ff` | Primary accent |
+| `accent-bright` | `#746fff` | Bright accent (hover, active) |
+| `accent-active` | `rgb(44, 43, 109)` | Active tab / button bg |
+| `text-pri` | `rgba(255,255,255,0.9)` | Primary text |
+| `text-sec` | `rgba(255,255,255,0.5)` | Secondary text |
+| `text-muted` | `#7a7a9a` | Muted text / labels |
+| `green` | `#22c55e` | GPS active, success |
+| `red` | `#ef4444` | Delete, danger |
+| `amber` | `#f59e0b` | CP, evolution, rarity stars |
+| `purple` | `#8b5cf6` | Legacy accent (kept for rarity) |
 
 ## Rarity Colours
 
@@ -35,38 +37,36 @@
 
 | Style | Font | Size | Weight | Usage |
 |-------|------|------|--------|-------|
-| Title | `Press Start 2P` | 14px | 400 | Header "Pipz" logo |
-| Section | `Press Start 2P` | 10px | 400 | Section titles (e.g. "🐾 寵物") |
-| Key number | `Press Start 2P` | 16px | 400 | Step counter, CP, Level |
-| Badge | `Press Start 2P` | 8px | 400 | Rarity badges, stat values |
-| Button | `Press Start 2P` | 7-8px | 400 | All buttons |
-| Nav label | `Press Start 2P` | 6px | 400 | Bottom navigation labels |
-| Body | `VT323` | 15-16px | 400 | General text, descriptions |
-| Body small | `VT323` | 13-14px | 400 | Labels, hints, secondary text |
+| Title | System UI (`-apple-system, 'Segoe UI', Roboto`) | 13px | 700 | Header "Pipz" logo |
+| Section | System UI | 12px | 700 | Section titles |
+| Key number | System UI | 18px | 700 | Step counter, CP, Level |
+| Badge | System UI | 10px | 700 | Rarity badges |
+| Button | System UI | 10px | 700 | All buttons |
+| Nav label | System UI | 8px | 700 | Bottom navigation labels |
+| Body | System UI | 11px | 400 | General text |
+| Body small | System UI | 9px | 400 | Labels, hints, secondary text |
 
 ## Spacing
 
 | Token | Value |
 |-------|-------|
-| Page padding | 0 10px |
-| Card padding | 14px |
-| Card padding (sm) | 10px |
-| Section margin-bottom | 10px |
-| Header padding | 10px 14px 6px |
-| Grid gap | 4-6px |
+| Page padding | 0 8px |
+| Card padding | 12px |
+| Card padding (sm) | 8px |
+| Section margin-bottom | 8px |
+| Header padding | 8px 12px |
+| Grid gap | 6px |
 | Action button gap | 6px |
 
 ## Borders
 
-All elements use **sharp corners** (no border-radius). Pixel aesthetic requires 90° angles.
+All elements use **sharp corners** (no border-radius). VS Code Pixel Agent aesthetic requires 2px solid borders.
 
 | Element | Border |
 |---------|--------|
-| Cards | 2px solid |
-| Buttons | 2px solid |
-| Progress bars | 2px solid inner |
-| Bottom nav | 2px solid |
-| Input fields | 2px solid |
+| Cards | 2px solid `#4a4a6a` |
+| Buttons | 2px solid (per variant) |
+| Header | 2px solid bottom |
 | Modals | 2px solid |
 
 ## Shadow System
@@ -74,120 +74,66 @@ All elements use **sharp corners** (no border-radius). Pixel aesthetic requires 
 Pixel drop shadows (no blur):
 
 ```
-box-shadow: 4px 4px 0 rgba(0,0,0,0.4)    /* cards */
-box-shadow: 2px 2px 0 rgba(0,0,0,0.4)    /* buttons */
-box-shadow: 6px 6px 0 rgba(0,0,0,0.5)    /* modals */
+box-shadow: 2px 2px 0px #0a0a14    /* cards, panels, buttons */
 ```
 
 ## Components
 
-### Card
+### Card (.card / .pixel-panel)
 ```
-background: #12162b
-border: 2px solid #2a2f4a
-box-shadow: 4px 4px 0 rgba(0,0,0,0.4)
+background: #252535
+border: 2px solid #4a4a6a
+box-shadow: 2px 2px 0px #0a0a14
 ```
 
-### Buttons (Pixel)
+### Canvas Card (.canvas-card)
+```
+background: #181828
+border: 2px solid #4a4a6a
+box-shadow: 2px 2px 0px #0a0a14
+padding: 0, overflow: hidden
+```
+
+### Buttons
 
 | Type | Background | Border | Text |
 |------|-----------|--------|------|
-| Primary | `#5b2fbe` | `#8b5cf6` | white |
-| Green | `#1a6b3a` | `#33dd77` | white |
-| Blue | `#1a4b8a` | `#4488ff` | white |
-| Amber | `#8a5a00` | `#ffcc00` | white |
-| Ghost | `#1a1f38` | `#363b58` | `#8899aa` |
-| Walk (idle) | `#3b1f6e` | `#7c3aed` | white |
-| Walk (active) | `#5c1010` | `#ff3355` | white |
+| Primary | `#6030ff` | `#746fff` | white |
+| Default | `#2a2a3a` | `#4a4a6a` | `rgba(255,255,255,0.9)` |
+| Green | `#166534` | `#22c55e` | white |
+| Blue | `#1e3a5f` | `#3b82f6` | white |
+| Amber | `#5c3d0e` | `#f59e0b` | white |
+| Ghost | transparent | transparent | `rgba(255,255,255,0.5)` |
 
-All buttons: `font-family: Press Start 2P, font-size: 7-8px, letter-spacing: 0.3px, box-shadow: 2px 2px 0 rgba(0,0,0,0.4)`
-Button press: `transform: translate(1px, 1px) + reduced box-shadow`
+All buttons: `box-shadow: 2px 2px 0px #0a0a14`, no border-radius.
 
-### Bottom Navigation
-```
-background: #12162b
-border: 2px solid #2a2f4a
-box-shadow: 0 -2px 0 rgba(0,0,0,0.3)
-padding: 3px
-Grid: 4 columns, equal width, gap: 1px
-Active tab: background rgba(139,92,246,0.2), color #8b5cf6
-Inactive: color #556677
-Nav label font: Press Start 2P, 6px
-```
-
-### Progress Bar (Pixel)
-```
-height: 8px
-border: 2px solid #363b58
-background: #1a1f38
-fill: linear-gradient(90deg, #8b5cf6, #22d3ee) [stats]
-      linear-gradient(90deg, #f59e0b, #ffd700) [evolution]
-transition: width 0.3s steps(8)  (stepped, not smooth)
-```
-
-### Walk Button (Pixel FAB)
-```
-width: 60px, height: 60px
-border: 3px solid
-font-size: 24px
-box-shadow: 3px 3px 0 rgba(0,0,0,0.5), inset -2px -2px 0 rgba(0,0,0,0.3), inset 2px 2px 0 rgba(255,255,255,0.1)
-On press: translate(2px, 2px), reduce outer shadow
-```
-
-### Scanline Overlay
-```
-html::after {
-  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
-  );
-}
-```
-
-### Background Grid
-```
-.layout {
-  background:
-    linear-gradient(rgba(68,204,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(68,204,255,0.03) 1px, transparent 1px);
-  background-size: 16px 16px;
-}
-```
-
-## Pet Card (Album / P&D-style)
+### Bottom Navigation (VS Code Activity Bar style)
 
 ```
-3-column grid, gap: 4px
-Card: background #12162b, border 2px solid (rarity-coloured 33% alpha)
-Top strip: 3px solid rarity colour
-Icon: 48x48 PixelPetCanvas
-Stars: Press Start 2P, 6px, rarity-coloured (★ × 1-5)
-Level: Press Start 2P, 7px, #8899aa
-CP badge: absolute top-right, Press Start 2P 6px, #ffcc00, dark bg
-Evolution indicator: bottom-right, ▶ amber when ready, ► grey when locked
-Press: translate(1px,1px)
+.nav-bar:
+  background: #181828
+  border: 2px solid #4a4a6a
+  box-shadow: 2px 2px 0px #0a0a14
+
+.nav-btn.active:
+  background: rgb(44, 43, 109)   /* accent-active */
+  color: #746fff                  /* accent-bright */
+  box-shadow: inset 0 2px 0 #746fff
 ```
 
-## Layout
+### Walk Button
 
-- Mobile-first, max-width: **24rem (384px)**, centered
-- Height: `100dvh`
-- Fixed bottom nav (with padding, ~72px total)
-- Content scrolls with `padding-bottom: 72px`
-- Pixel grid background (16px grid pattern)
-- Scanline overlay across entire viewport
+```
+background: #2a2a3a
+border: 2px solid #4a4a6a
+box-shadow: 2px 2px 0px #0a0a14
+active: transform translate(1px, 1px), shadow 1px 1px
+```
 
 ## Animations
 
-All animations use `step-end` / `steps(N)` timing for pixel feel (no smooth easing).
-
-| Name | Type | Duration | Timing | Usage |
-|------|------|----------|--------|-------|
-| slide-up | translateY(16px) → 0 | 0.3s | steps(8) | Tab content entrance |
-| pulse | opacity 1 ↔ 0.2 | 1s | step-end | GPS dot, evolving |
-| wiggle | rotate(-4deg) ↔ 4deg | 0.4s | step-end | Egg shaking |
-| pop-in | scale(0.5)→1.15→1 | 0.6s | steps(4) | Egg cracking |
-| bounce | translateY(0) ↔ -6px | 0.5s | step-end | Sparkle particles |
-| pixel-ring | scale(1)→1.1, opacity 0.3→0.05 | 2s | step-end | Walk button ring |
-| fade-in | opacity 0 → 1 | 0.2s | steps(4) | Encounter flash |
-| evo-glow | scale(1) ↔ 1.2 | 1s | step-end | Evolution ready arrow |
+- **Pulse**: `.gps-dot` — 1s ease-in-out infinite
+- **Slide-up**: `.fade-up` — 0.3s ease-out (page transitions)
+- **Pixel pulse**: `.anim-pulse` — 2s ease-in-out infinite
+- **Walk**: Canvas road scroll at speed-based rate
+- **Encounter**: Canvas vignette + grass part + egg appear + sparkles
