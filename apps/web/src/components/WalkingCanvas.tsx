@@ -45,7 +45,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
   const W = Math.floor(320 / size)  // base pixel width
   const H = Math.floor(180 / size)  // base pixel height
   const CX = W / 2
-  const CY = H * 0.4                // character Y position (upper centre)
+  const CY = H * 0.4                // character Y position
   const TILE = 8                    // tile size in base pixels
 
   useEffect(() => {
@@ -276,17 +276,14 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
     return () => cancelAnimationFrame(rafRef.current)
   }, [state, speed, size, pet, onEncounterEnd, CX, CY, W, H])
 
-  const scaledW = W * size
-  const scaledH = H * size
-
   return (
     <canvas
       ref={canvasRef}
       width={W}
       height={H}
       style={{
-        width: scaledW,
-        height: scaledH,
+        width: '100%',
+        height: 'auto',
         imageRendering: 'pixelated',
         display: 'block',
       }}
