@@ -31,7 +31,7 @@ CREATE TABLE public.pets (
   xp INT DEFAULT 0,
   total_steps INT DEFAULT 0,
   evolution_stage INT DEFAULT 1,
-  status TEXT DEFAULT 'baby' CHECK (status IN ('baby','young','adult','elite')),
+  status TEXT DEFAULT 'baby' CHECK (status IN ('baby','juvenile','adult','evolved','legendary')),
   speed INT DEFAULT 5,
   luck INT DEFAULT 5,
   charm INT DEFAULT 5,

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
-import PixelPet from '../components/PixelPet'
-import LoginModal from './auth-modal' /* fresh */
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, calculateEvolution, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import PixelPetCanvas from '../components/PixelPetCanvas'
+import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
 
-function genId() { return Math.random().toString(36).substring(2, 10) }
+function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
 const PC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
@@ -35,6 +35,8 @@ export default function HomePage() {
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [showEvolve, setShowEvolve] = useState(false)
+  const [evolvingId, setEvolvingId] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -50,6 +52,7 @@ export default function HomePage() {
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
+  const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
 
   useEffect(() => { setReady(true) }, [])
 
@@ -153,9 +156,10 @@ export default function HomePage() {
 
   // ── Pet spawn ──
   const spawnPet = async (r: Rarity) => {
+    const seed = genSeed()
     const np: Pet = {
-      id: genId(), userId: user?.id ?? 'local', name: '',
-      speciesId: genId(), imageUrl: '',
+      id: seed.toString(), userId: user?.id ?? 'local', name: '',
+      speciesId: seed.toString(), imageUrl: '',
       rarity: r, level: 1, xp: 0, totalSteps: 0, evolutionStage: 1,
       status: PetStatus.Baby,
       stats: generateStats(r, 1), mood: Mood.Happy, moodValue: 100,
@@ -231,6 +235,32 @@ export default function HomePage() {
       spawnPet(Rarity.Common)
       logMsg('🎉 孵化成功！')
     }, 2000)
+  }
+
+  const doEvolve = () => {
+    if (!pet || !canEvolve) return
+    setEvolvingId(pet.id)
+    setTimeout(() => {
+      const e = canEvolve
+      setPets(v => v.map(p => {
+        if (p.id !== pet.id) return p
+        return {
+          ...p,
+          evolutionStage: e.newStage,
+          status: e.newStatus,
+          stats: e.newStats,
+          level: p.level + 1,
+          totalSteps: p.totalSteps + 1,
+        }
+      }))
+      setEvolvingId(null)
+      setShowEvolve(false)
+      logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} Lv.${pet.level + 1}`)
+      if (user) {
+        const updated = { ...pet, evolutionStage: e.newStage, status: e.newStatus, stats: e.newStats, level: pet.level + 1, totalSteps: pet.totalSteps + 1 }
+        updatePet(updated)
+      }
+    }, 2500)
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
@@ -340,14 +370,24 @@ export default function HomePage() {
                   ) : pet ? (
                     <>
                       <div className="pet-glow-wrap" style={{background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`}}>
-                        <div className={petAnim === 'walk' ? 'anim-bounce' : petAnim === 'happy' ? 'anim-pulse' : ''}>
-                          <PixelPet color={PC[pet.rarity]} size={5} animation={petAnim} />
-                        </div>
+                        <PixelPetCanvas
+                          seed={parseInt(pet.speciesId) || 1}
+                          rarity={pet.rarity}
+                          evolutionStage={pet.evolutionStage}
+                          animation={petAnim}
+                          size={5}
+                        />
                       </div>
-                      <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'center'}}>
                         <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18'}}>{RARITY_LABELS[pet.rarity]}</span>
                         <span className="pet-lv">Lv.{pet.level}</span>
                         <span className="pet-cp">CP {cp(pet)}</span>
+                        {canEvolve && (
+                          <button className="btn" onClick={() => setShowEvolve(true)}
+                            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:9, padding:'2px 8px', borderRadius:8}}>
+                            🌟 進化
+                          </button>
+                        )}
                       </div>
                       <div className="pet-stats">
                         <span>⚡{pet.stats.speed}</span>
@@ -421,7 +461,7 @@ export default function HomePage() {
                       return (
                         <div key={p.id} className="nearby-card" onClick={() => { setActiveIdx(idx); setTab('map') }}>
                           <div className="nearby-pet" style={{background:`${PC[p.rarity]}12`}}>
-                            <PixelPet color={PC[p.rarity]} size={2.8} animation="idle" />
+                            <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.8} animation="idle" />
                           </div>
                           <div className="nearby-rarity" style={{color:RARITY_COLORS[p.rarity]}}>{RARITY_LABELS[p.rarity]}</div>
                           <div className="nearby-cp">CP {cp(p)}</div>
@@ -467,7 +507,7 @@ export default function HomePage() {
                   {pets.map((p,i) => (
                     <div key={p.id} className="pet-card" onClick={() => { setActiveIdx(i); setTab('map') }}>
                       <div className="pet-card-icon" style={{background:`radial-gradient(circle,${PC[p.rarity]}15,transparent)`}}>
-                        <PixelPet color={PC[p.rarity]} size={3.2} animation="idle" />
+                        <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.2} animation="idle" />
                       </div>
                       <div className="pet-card-rarity" style={{color:RARITY_COLORS[p.rarity]}}>{RARITY_LABELS[p.rarity]}</div>
                       <div className="pet-card-cp">CP {cp(p)}</div>
@@ -566,6 +606,68 @@ export default function HomePage() {
       </div>
 
       <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+
+      {/* ════ Evolution Modal ════ */}
+      {showEvolve && pet && canEvolve && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:100,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+          padding:16
+        }} onClick={() => !evolvingId && setShowEvolve(false)}>
+          <div style={{
+            background:'#141b2d', border:'1px solid #f59e0b44', borderRadius:24,
+            padding:32, textAlign:'center', maxWidth:300, width:'100%',
+          }} onClick={e => e.stopPropagation()}>
+            {evolvingId === pet.id ? (
+              <>
+                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                <div style={{fontSize:24, fontWeight:800, background:'linear-gradient(135deg,#f59e0b,#ffd700)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:8}}>
+                  進化中...
+                </div>
+                <div className="hatch-sparkle">
+                  {['🌟','⭐','💫','✨'].map((s,i) => (
+                    <span key={i} style={{animationDelay:`${i*0.2}s`, fontSize:24}}>{s}</span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <PixelPetCanvas
+                  seed={parseInt(pet.speciesId) || 1}
+                  rarity={pet.rarity}
+                  evolutionStage={pet.evolutionStage}
+                  animation="happy"
+                  size={6}
+                />
+                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
+                  🌟 進化可能！
+                </div>
+                <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
+                  {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
+                  {' → '}
+                  {['幼年','成年','完全體','傳說','神話'][pet.evolutionStage-1] || '下一步'}
+                </div>
+                <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+                  <button className="btn btn-ghost" onClick={() => setShowEvolve(false)}
+                    style={{padding:'8px 20px', fontSize:12}}>
+                    下次先
+                  </button>
+                  <button onClick={doEvolve}
+                    style={{
+                      padding:'8px 24px', borderRadius:20, border:'none',
+                      background:'linear-gradient(135deg,#f59e0b,#d97706)',
+                      color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
+                      fontFamily:'inherit',
+                    }}>
+                    🌟 進化！
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   )
