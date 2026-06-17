@@ -35,7 +35,7 @@ export default function HomePage() {
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
@@ -253,19 +253,38 @@ export default function HomePage() {
                 <span className="gps-dot" />GPS
               </span>
             )}
-            <button onClick={() => setShowLogin(true)}
-              style={{
-                background: user ? 'rgba(139,92,246,0.15)' : 'none',
-                border: user ? '1px solid rgba(139,92,246,0.3)' : 'none',
-                cursor:'pointer', color: user ? '#c084fc' : '#5a6d85',
-                fontSize: 12, padding: '3px 8px', borderRadius: 12,
-                fontFamily:'inherit', whiteSpace:'nowrap',
-                display:'flex', alignItems:'center', gap: 4,
-              }}>
-              {user ? (
-                <>{user.email?.split('@')[0].slice(0, 8)} ▾</>
-              ) : '🔑'}
-            </button>
+            {user ? (
+              <>
+                <button onClick={() => setShowLogin(true)}
+                  style={{
+                    background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
+                    cursor:'pointer', color:'#c084fc',
+                    fontSize: 11, padding: '3px 6px', borderRadius: 10,
+                    fontFamily:'inherit', whiteSpace:'nowrap',
+                    maxWidth: 120, overflow:'hidden', textOverflow:'ellipsis',
+                  }}>
+                  {user.email}
+                </button>
+                <button onClick={() => signOut()}
+                  style={{
+                    background:'none', border:'none', cursor:'pointer',
+                    color:'#ef4444', fontSize: 11, padding: '3px 4px',
+                    fontFamily:'inherit',
+                  }}>
+                  登出
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setShowLogin(true)}
+                style={{
+                  background:'none', border:'none',
+                  cursor:'pointer', color:'#5a6d85',
+                  fontSize: 14, padding: '2px 4px',
+                  fontFamily:'inherit',
+                }}>
+                🔑
+              </button>
+            )}
             <span className="header-icon">👣</span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
           </div>
