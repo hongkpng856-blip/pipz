@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
+import WalkingCanvas from '../components/WalkingCanvas'
 import PetDetailModal from '../components/PetDetailModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
@@ -32,7 +33,7 @@ export default function HomePage() {
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
   const [ready, setReady] = useState(false)
-  const [encFlash, setEncFlash] = useState(false)
+  const [camState, setCamState] = useState<'idle'|'walk'|'encounter'>('idle')
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
@@ -139,7 +140,7 @@ export default function HomePage() {
   // ── Walk ──
   const walkStart = () => {
     if (!navigator.geolocation) return logMsg('❌ 唔支援 GPS')
-    setWalking(true); setPetAnim('walk'); logMsg('🚶 開始行路！')
+    setWalking(true); setCamState('walk'); setPetAnim('walk'); logMsg('🚶 開始行路！')
     wid.current = navigator.geolocation.watchPosition(
       pos => {
         if (pos.coords.accuracy > 100) return
@@ -150,13 +151,13 @@ export default function HomePage() {
         }
         last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
       },
-      () => { setWalking(false); setPetAnim('idle') },
+      () => { setWalking(false); setCamState('idle'); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     )
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setCamState('idle'); setPetAnim('idle'); logMsg('⏹ 停低咗')
   }
 
   // ── Pet spawn ──
@@ -206,7 +207,7 @@ export default function HomePage() {
         if (r === Rarity.Legendary) pity.current.legendary = 0
         if (r === Rarity.Epic) pity.current.epic = 0
         spawnPet(r)
-        setEncFlash(true); setTimeout(() => setEncFlash(false), 1800)
+        setCamState('encounter')
         logMsg(`🐾 遇見 ${RARITY_LABELS[r]}！`)
       }
     }
@@ -345,94 +346,72 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* Pet Display */}
-              <div className="section card" style={{position:'relative', overflow:'hidden'}}>
-                {encFlash && (
-                  <div className="enc-flash">
-                    <div><span style={{fontSize:36, display:'block', marginBottom:4}}>✨</span>
-                    <span style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>遇見新寵物！</span></div>
-                  </div>
-                )}
+              {/* Walking Canvas — first-person pixel view */}
+              <div className="section" style={{padding:0, margin:'0 -2px 8px'}}>
+                <WalkingCanvas
+                  state={camState}
+                  speed={walking ? 60 : 0}
+                  onEncounterEnd={() => {
+                    setCamState('idle')
+                    logMsg(`🐾 遇到新寵物！`)
+                  }}
+                  size={3}
+                />
+              </div>
 
-                <div className="card-pad pet-area">
-                  {!ready ? (
-                    <><span className="pet-egg">🥚</span><span className="pet-title">載入中...</span></>
-                  ) : showEgg ? (
-                    hatching ? (
-                      <div style={{textAlign:'center', padding:'16px 0'}}>
-                        <span className="pet-egg egg-crack">🥚</span>
-                        <p style={{fontSize:14, color:'#8b5cf6', fontWeight:700, marginTop:8, animation:'pulse 1s ease-in-out infinite'}}>孵化中...</p>
-                        <div className="hatch-sparkle">
-                          {['✨','⭐','💫','🌟'].map((s,i) => (
-                            <span key={i} style={{animationDelay:`${i*0.15}s`, fontSize:18}}>{s}</span>
-                          ))}
-                        </div>
+              {/* Pet status bar (slim) */}
+              {pet && camState !== 'encounter' && (
+                <div className="section card card-pad-sm">
+                  <div style={{display:'flex', alignItems:'center', gap:8}}>
+                    <div style={{width:36, height:36, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
+                      background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`, borderRadius:8}}>
+                      <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={2.5} animation={petAnim} />
+                    </div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{display:'flex', alignItems:'center', gap:6}}>
+                        <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[pet.rarity]}</span>
+                        <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{pet.level}</span>
+                        <span style={{fontSize:11, fontWeight:700, color:'#f59e0b'}}>CP {cp(pet)}</span>
                       </div>
-                    ) : (
-                      <>
-                        <span className="pet-egg egg-shake">🥚</span>
-                        <p style={{fontSize:14, fontWeight:700, color:'#c084fc'}}>就快孵化！</p>
-                        <p style={{fontSize:10, color:'#5a6d85'}}>❤️ 溫度剛剛好</p>
-                        <button className="btn btn-primary" onClick={hatch} style={{marginTop:4}}>孵化 🐣</button>
-                      </>
-                    )
-                  ) : pet ? (
-                    <>
-                      <div className="pet-glow-wrap" style={{background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`}}>
-                        <PixelPetCanvas
-                          seed={parseInt(pet.speciesId) || 1}
-                          rarity={pet.rarity}
-                          evolutionStage={pet.evolutionStage}
-                          animation={petAnim}
-                          size={5}
-                        />
-                      </div>
-                      <div style={{display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'center'}}>
-                        <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18'}}>{RARITY_LABELS[pet.rarity]}</span>
-                        <span className="pet-lv">Lv.{pet.level}</span>
-                        <span className="pet-cp">CP {cp(pet)}</span>
-                        {canEvolve && (
-                          <button className="btn" onClick={() => setShowEvolve(true)}
-                            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:9, padding:'2px 8px', borderRadius:8}}>
-                            🌟 進化
-                          </button>
-                        )}
-                      </div>
-                      <div className="pet-stats">
-                        <span>⚡{pet.stats.speed}</span>
-                        <span>🍀{pet.stats.luck}</span>
-                        <span>💜{pet.stats.charm}</span>
-                        <span>🔋{pet.stats.energy}</span>
-                      </div>
-                      {pet.xp > 0 && (
-                        <div className="progress-wrap">
-                          <div className="progress-labels"><span>EXP</span><span>{pet.xp}/{xpMax(pet)}</span></div>
-                          <div className="progress-bar"><div className="progress-fill" style={{width:`${xpPct(pet)}%`}}/></div>
-                        </div>
-                      )}
-                      <div className="pet-mood">
+                      <div style={{display:'flex', alignItems:'center', gap:3, marginTop:2}}>
                         <span>{ME[pet.mood] || '😐'}</span>
-                        <span className="pet-mood-text">{pet.mood === 'happy' ? '開心' : pet.mood}</span>
+                        <span style={{fontSize:9, color:'#22c55e'}}>{pet.mood === 'happy' ? '開心' : pet.mood}</span>
                       </div>
-                      <div className="pet-actions">
-                        <button className="btn btn-green" onClick={feed}>🍖餵食</button>
-                        <button className="btn btn-blue" onClick={petAction}>✋摸頭</button>
-                        <button className="btn btn-amber" onClick={playAction}>🎾玩</button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="pet-egg">🥚</span>
-                      <span className="pet-title">未有寵物</span>
-                      <div className="progress-wrap" style={{marginTop:4}}>
-                        <div className="progress-labels"><span>孵化進度</span><span>{formatSteps(totalSteps)}/{formatSteps(FIRST_PET_STEPS)}</span></div>
+                    </div>
+                    <div style={{display:'flex', gap:4}}>
+                      <button className="btn btn-green" onClick={feed} style={{fontSize:8, padding:'3px 8px'}}>🍖</button>
+                      <button className="btn btn-blue" onClick={petAction} style={{fontSize:8, padding:'3px 8px'}}>✋</button>
+                      <button className="btn btn-amber" onClick={playAction} style={{fontSize:8, padding:'3px 8px'}}>🎾</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Egg ready / no pet */}
+              {!pet && camState !== 'encounter' && (
+                <div className="section card card-pad-sm">
+                  {!showEgg ? (
+                    <div style={{textAlign:'center', padding:'8px 0'}}>
+                      <span style={{fontSize:24}}>🥚</span>
+                      <div style={{fontSize:11, color:'#94a5b8', marginTop:4}}>行 {formatSteps(FIRST_PET_STEPS)} 步孵化第一隻寵物</div>
+                      <div className="progress-wrap" style={{width:'100%', marginTop:6}}>
                         <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`}}/></div>
-                        <p style={{fontSize:10, color:'#5a6d85', textAlign:'center', marginTop:6}}>行 1,000 步孵化第一隻寵物</p>
                       </div>
-                    </>
+                    </div>
+                  ) : hatching ? (
+                    <div style={{textAlign:'center', padding:'8px 0'}}>
+                      <span className="pet-egg egg-crack">🥚</span>
+                      <p style={{fontSize:14, color:'#8b5cf6', fontWeight:700, marginTop:6, animation:'pulse 1s ease-in-out infinite'}}>孵化中...</p>
+                    </div>
+                  ) : (
+                    <div style={{textAlign:'center', padding:'8px 0'}}>
+                      <span className="pet-egg egg-shake">🥚</span>
+                      <p style={{fontSize:13, fontWeight:700, color:'#c084fc', marginTop:4}}>就快孵化！</p>
+                      <button className="btn btn-primary" onClick={hatch} style={{marginTop:6}}>孵化 🐣</button>
+                    </div>
                   )}
                 </div>
-              </div>
+              )}
 
               {/* Steps + Walk */}
               <div className="section card">
