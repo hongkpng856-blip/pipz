@@ -411,7 +411,7 @@ export default function HomePage() {
                       )}
                       <div className="pet-mood">
                         <span>{ME[pet.mood] || '😐'}</span>
-                        <span className="pet-mood-text">{pet.mood === 'happy' ? '開心' : pet.mood}</span>
+                        <span className="pet-mood-text">{pet.mood === 'happy' ? 'HAPPY' : pet.mood.toUpperCase()}</span>
                       </div>
                       <div className="pet-actions">
                         <button className="btn btn-green" onClick={feed}>FEED</button>
@@ -619,10 +619,10 @@ export default function HomePage() {
         <div className="nav-bar">
           <div className="nav-grid">
             {([
-              { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
-              { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
-              { k: 'eggs' as Tab, icon: '🥚', label: '蛋' },
-              { k: 'community' as Tab, icon: '🏪', label: '社群' },
+              { k: 'map' as Tab, icon: '🗺️', label: 'MAP' },
+              { k: 'pets' as Tab, icon: '🐾', label: 'PETS' },
+              { k: 'eggs' as Tab, icon: '🥚', label: 'EGGS' },
+              { k: 'community' as Tab, icon: '🏪', label: 'SHOP' },
             ]).map(t => (
               <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
