@@ -51,6 +51,7 @@ export default function HomePage() {
   const [showEncounterEgg, setShowEncounterEgg] = useState(false)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
+  const [favorites, setFavorites] = useState<string[]>([])
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -60,6 +61,7 @@ export default function HomePage() {
   const loadedUser = useRef<string|null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
   const pendingSteps = useRef(0)
+  const loadedStorage = useRef(false)
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -67,6 +69,22 @@ export default function HomePage() {
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
   const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
+
+  // ── Load persisted eggs + favorites from localStorage ──
+  useEffect(() => {
+    if (loadedStorage.current) return
+    try {
+      const savedEggs = localStorage.getItem('pipz_eggs')
+      if (savedEggs) setEggs(JSON.parse(savedEggs))
+      const savedFavs = localStorage.getItem('pipz_favs')
+      if (savedFavs) setFavorites(JSON.parse(savedFavs))
+    } catch {}
+    loadedStorage.current = true
+  }, [])
+
+  // ── Persist eggs + favorites to localStorage ──
+  useEffect(() => { try { localStorage.setItem('pipz_eggs', JSON.stringify(eggs)) } catch {} }, [eggs])
+  useEffect(() => { try { localStorage.setItem('pipz_favs', JSON.stringify(favorites)) } catch {} }, [favorites])
 
   useEffect(() => { setReady(true) }, [])
 
@@ -238,6 +256,15 @@ export default function HomePage() {
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
     }, 2000)
+  }
+
+  // ── Toggle favorite (max 5) ──
+  const toggleFavorite = (petId: string) => {
+    setFavorites(prev => {
+      if (prev.includes(petId)) return prev.filter(id => id !== petId)
+      if (prev.length >= 5) return prev
+      return [...prev, petId]
+    })
   }
 
   // ── Pet actions ──
@@ -580,40 +607,57 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="pet-grid">
-                  {pets.map((p,i) => {
+                  {[...pets].sort((a, b) => {
+                    const af = favorites.includes(a.id) ? 0 : 1
+                    const bf = favorites.includes(b.id) ? 0 : 1
+                    return af - bf
+                  }).map((p,i) => {
+                    const origIdx = pets.indexOf(p)
                     const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
                     const starColor = RARITY_COLORS[p.rarity]
                     const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
-                    const isActive = i === activeIdx
+                    const isActive = origIdx === activeIdx
+                    const isFav = favorites.includes(p.id)
                     return (
                     <div key={p.id} className="pet-card"
-                      onClick={() => { setActiveIdx(i); logMsg(`⭐ ${RARITY_LABELS[p.rarity]} 設為主力`) }}
+                      onClick={() => { setActiveIdx(origIdx); logMsg(`⭐ ${RARITY_LABELS[p.rarity]} 設為主力`) }}
                       style={{
                         borderColor: isActive ? `${starColor}88` : `${starColor}33`,
                         boxShadow: isActive ? `0 0 10px ${starColor}44` : undefined,
+                        padding: '6px 3px 3px',
                       }}>
                       {/* Rarity top strip */}
                       <div style={{position:'absolute', top:0, left:0, right:0, height:3, background: starColor}} />
-                      {/* Active badge */}
-                      {isActive && (
-                        <div style={{
-                          position:'absolute', top:5, left:4, fontSize:7, fontWeight:700,
-                          color: starColor, background: `${starColor}18`,
-                          padding:'1px 4px', borderRadius:4, lineHeight:1,
-                        }}>⭐主力</div>
-                      )}
-                      {/* Detail button */}
+                      {/* Favorite star (top-left) */}
+                      <div
+                        onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
+                        style={{
+                          position:'absolute', top:4, left:3, fontSize:9, cursor:'pointer',
+                          color: isFav ? '#f59e0b' : '#3a4d65', lineHeight:1, zIndex:2,
+                          textShadow: isFav ? '0 0 4px rgba(245,158,11,0.5)' : undefined,
+                        }}>
+                        {isFav ? '★' : '☆'}
+                      </div>
+                      {/* Detail button (top-right) */}
                       <div
                         onClick={e => { e.stopPropagation(); setDetailPetId(p.id) }}
                         style={{
-                          position:'absolute', top:4, right:4, fontSize:8, cursor:'pointer',
+                          position:'absolute', top:4, right:3, fontSize:8, cursor:'pointer',
                           color:'#5a6d85', lineHeight:1, zIndex:2,
                         }}>ℹ️</div>
-                      {/* CP badge (moved left side since detail btn is on right) */}
-                      <div className="pet-card-cp" style={{right:'auto', left:4, top:18}}>{cp(p)}</div>
-                      {/* Icon */}
-                      <div className="pet-card-icon">
-                        <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.5} animation="idle" />
+                      {/* Active badge */}
+                      {isActive && (
+                        <div style={{
+                          position:'absolute', top:4, left:14, fontSize:6, fontWeight:700,
+                          color: starColor, background: `${starColor}18`,
+                          padding:'1px 4px', lineHeight:1,
+                        }}>主力</div>
+                      )}
+                      {/* CP badge (top-center) */}
+                      <div className="pet-card-cp" style={{top:4, right:20}}>{cp(p)}</div>
+                      {/* Icon — smaller */}
+                      <div className="pet-card-icon" style={{width:36, height:36}}>
+                        <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.8} animation="idle" />
                       </div>
                       {/* Stars */}
                       <div className="pet-card-stars" style={{color: starColor}}>
