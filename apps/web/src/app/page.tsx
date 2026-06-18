@@ -668,44 +668,37 @@ export default function HomePage() {
                   return af - bf
                 })
                 const mainPet = sorted.find((_, i) => pets.indexOf(sorted[i]) === activeIdx) || sorted[0]
-                const teamPets = sorted.filter(p => p.id !== mainPet.id && favorites.includes(p.id)).slice(0, 5)
+                const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).filter(p => p.id !== mainPet.id).slice(0, 5)
                 const otherPets = sorted.filter(p => p.id !== mainPet.id && !favorites.includes(p.id))
                 return (
                   <>
-                    {/* 📋 寵物詳細 — energy display */}
-                    {mainPet && (
-                      <div className="section" style={{marginBottom:12}}>
-                        <div className="section-header">
-                          <span className="section-title">📋 寵物詳細</span>
-                        </div>
-                        <div className="pet-card-main"
-                          onClick={() => setDetailPetId(mainPet.id)}
-                          style={{
-                            borderColor: `${RARITY_COLORS[mainPet.rarity]}44`,
-                            boxShadow: `0 0 8px ${RARITY_COLORS[mainPet.rarity]}22`,
+                    {/* ⚡ 你擁有的能量 */}
+                    <div className="section" style={{marginBottom:12}}>
+                      <div className="section-header">
+                        <span className="section-title">⚡ 你擁有的能量</span>
+                      </div>
+                      <div className="card" style={{padding:'14px 20px'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:16}}>
+                          {/* Pixel-style lightning bolt */}
+                          <div style={{
+                            width:48, height:48, flexShrink:0, borderRadius:14,
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                            background:'rgba(245,158,11,0.12)',
                           }}>
-                          <div style={{position:'absolute', top:0, left:0, right:0, height:3, background: RARITY_COLORS[mainPet.rarity], borderRadius:'16px 16px 0 0'}} />
-                          <div style={{display:'flex', alignItems:'center', gap:16, padding:'14px 16px'}}>
-                            <div style={{width:44, height:44, flexShrink:0, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                              <PixelPetCanvas seed={parseInt(mainPet.speciesId)||1} rarity={mainPet.rarity} evolutionStage={mainPet.evolutionStage} size={3.2} animation="idle" />
+                            <svg width="26" height="38" viewBox="0 0 26 38" fill="none">
+                              <path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{fontSize:10, color:'#5a6d85', marginBottom:2}}>🔋 累積能量</div>
+                            <div style={{fontSize:28, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
+                              {ready ? formatSteps(totalSteps) : '0'}
                             </div>
-                            <div style={{flex:1, minWidth:0}}>
-                              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:6}}>
-                                <span className="pet-badge" style={{color:RARITY_COLORS[mainPet.rarity], background:RARITY_COLORS[mainPet.rarity]+'18', fontSize:8}}>{RARITY_LABELS[mainPet.rarity]}</span>
-                                <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{mainPet.level}</span>
-                                <span style={{flex:1}} />
-                              </div>
-                              {/* Energy = step count */}
-                              <div style={{display:'flex', alignItems:'center', gap:6}}>
-                                <span style={{fontSize:9, color:'#5a6d85'}}>🔋 能量</span>
-                                <span style={{fontSize:20, fontWeight:800, color:'#22d3ee'}}>{formatSteps(mainPet.totalSteps)}</span>
-                                <span style={{fontSize:9, color:'#5a6d85'}}>步</span>
-                              </div>
-                            </div>
+                            <div style={{fontSize:9, color:'#5a6d85', marginTop:2}}>步數 = 能量</div>
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
 
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
                     <div className="section" style={{marginBottom:12}}>
@@ -740,8 +733,14 @@ export default function HomePage() {
                                 e.preventDefault()
                                 const pid = e.dataTransfer.getData('text/plain')
                                 if (pid && !favorites.includes(pid) && favorites.length < 5) {
-                                  toggleFavorite(pid)
-                                  logMsg('🐉 加入主力隊伍！')
+                                  setFavorites(prev => {
+                                    const newFavs = [...prev]
+                                    const insertAt = Math.min(slotIdx, newFavs.length)
+                                    newFavs.splice(insertAt, 0, pid)
+                                    return newFavs
+                                  })
+                                  if (user) setFavoriteOrder(pid, slotIdx + 1)
+                                  logMsg(`🐉 加入 slot ${slotIdx + 1}！`)
                                 }
                               }}>
                               <span style={{fontSize:18, opacity:0.3}}>+</span>
