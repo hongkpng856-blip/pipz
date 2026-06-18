@@ -15,6 +15,7 @@ interface Props {
   onEncounterEnd?: () => void
   size?: number        // pixel size multiplier
   pet?: PetInfo | null // pet to render as character
+  nearby?: PetInfo[]   // nearby pets to show in environment
 }
 
 /* ── Top-down pixel palette ── */
@@ -34,7 +35,7 @@ const RC: Record<string, string> = {
   epic: '#8b5cf6', legendary: '#f59e0b',
 }
 
-export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size = 3, pet }: Props) {
+export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size = 3, pet, nearby = [] }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const scrollRef = useRef(0)
   const rafRef = useRef(0)
@@ -157,6 +158,36 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         ctx.fillStyle = '#1a5a1a'
         ctx.fillRect(bx, by, 3, 2)
         ctx.fillRect(bx - 1, by + 1, 5, 1)
+      }
+
+      // ── Nearby pets in environment ──
+      for (let ni = 0; ni < nearby.length; ni++) {
+        const np = nearby[ni]
+        const npColor = RC[np.rarity] || '#9ca3af'
+        const npSize = 2 + (np.evolutionStage || 1) * 0.5
+        // Spread pets across left/right sides, scroll with ground
+        const side = ni % 2 === 0 ? -1 : 1
+        const nx = CX + side * (12 + Math.sin(ni * 2.3) * 6)
+        const nyBase = CY + 10 + ni * 12 + (scrollRef.current * 0.4) % 40 - 20
+        const ny = ((nyBase % H) + H) % H
+        if (ny < 4 || ny > H - 4) continue
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.15)'
+        ctx.fillRect(nx - npSize / 2, ny + 1, npSize, 1)
+
+        // Body
+        ctx.fillStyle = npColor
+        ctx.fillRect(nx - npSize / 2, ny - npSize, npSize, npSize - 1)
+
+        // Head
+        ctx.fillStyle = npColor
+        ctx.fillRect(nx - npSize / 3, ny - npSize - npSize / 2 + 1, npSize * 2 / 3, npSize / 2)
+
+        // Eyes (tiny)
+        ctx.fillStyle = 'white'
+        ctx.fillRect(nx - npSize / 4, ny - npSize - npSize / 2 + 1, 1, 1)
+        ctx.fillRect(nx + npSize / 4 - 1, ny - npSize - npSize / 2 + 1, 1, 1)
       }
 
       // ════ Character ════
@@ -284,7 +315,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
       cancelAnimationFrame(rafRef.current)
       clearTimeout(encTimer)
     }
-  }, [state, speed, size, pet, onEncounterEnd, CX, CY, W, H])
+  }, [state, speed, size, pet, nearby, onEncounterEnd, CX, CY, W, H])
 
   return (
     <canvas

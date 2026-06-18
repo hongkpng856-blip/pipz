@@ -406,6 +406,7 @@ export default function HomePage() {
                   }}
                   size={3}
                   pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
+                  nearby={nearby.slice(0, 3).map(p => ({ rarity: p.rarity, evolutionStage: p.evolutionStage }))}
                 />
                 {/* Speed test buttons */}
                 <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:4}}>
@@ -547,34 +548,6 @@ export default function HomePage() {
                   })()}
                 </div>
               </div>
-
-              {/* Nearby — compact */}
-              {nearby.length > 0 && (
-                <div style={{padding:'4px 0', marginBottom:8}}>
-                  <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, padding:'0 2px'}}>
-                    <div style={{display:'flex', alignItems:'center', gap:4}}>
-                      <span style={{fontSize:8}}>📍</span>
-                      <span style={{fontSize:10, fontWeight:600, color:'#94a5b8'}}>附近</span>
-                    </div>
-                    <span style={{fontSize:8, color:'#5a6d85'}}>{nearby.length}隻</span>
-                  </div>
-                  <div className="nearby-scroll">
-                    {nearby.map(p => {
-                      const idx = pets.indexOf(p)
-                      return (
-                        <div key={p.id} className="nearby-card" onClick={() => setDetailPetId(p.id)}>
-                          <div className="nearby-pet" style={{background:`${PC[p.rarity]}12`}}>
-                            <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
-                          </div>
-                          <div className="nearby-rarity" style={{color:RARITY_COLORS[p.rarity]}}>{RARITY_LABELS[p.rarity]}</div>
-                          <div className="nearby-cp">CP {cp(p)}</div>
-                          <div className="nearby-lv">Lv.{p.level}</div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Debug + Log */}
               <div className="section debug-row">
