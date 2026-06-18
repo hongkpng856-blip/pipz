@@ -388,6 +388,70 @@ body { position: fixed; }
 .anim-pulse { animation: pulse-tw 2s ease-in-out infinite; }
 @keyframes pulse-tw { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
+/* ── Weekly bar chart (Apple Health style) ── */
+.weekly-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 4px 0;
+}
+.weekly-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.weekly-bar-wrap {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 64px;
+}
+.weekly-bar {
+  width: 100%;
+  max-width: 28px;
+  border-radius: 4px 4px 2px 2px;
+  transition: height 0.4s ease;
+  min-height: 4px;
+}
+.weekly-bar-today {
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+}
+.weekly-bar-steps {
+  font-size: 7px;
+  color: #94a5b8;
+  font-weight: 600;
+  line-height: 1;
+}
+.weekly-bar-label {
+  font-size: 8px;
+  color: #5a6d85;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.weekly-bar-label-today {
+  color: #c084fc;
+  font-weight: 700;
+}
+
+/* ── Main Pet Card ── */
+.pet-card-main {
+  cursor: pointer;
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+.pet-card-main:active { transform: scale(0.98); }
+.pet-card-main:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.1);
+}
+
 /* ── Egg hatching particles ── */
 @keyframes float-up {
   0% { transform: translateY(0) scale(1); opacity: 1; }

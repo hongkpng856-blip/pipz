@@ -126,6 +126,35 @@ export async function upsertDailySteps(
   return error
 }
 
+export async function getWeeklySteps(userId: string): Promise<{date: string; dayLabel: string; steps: number; isToday: boolean}[]> {
+  const supabase = db()
+  const days: {date: string; dayLabel: string; steps: number; isToday: boolean}[] = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().split('T')[0]
+    const dayLabel = i === 0 ? '今日' : ['日','一','二','三','四','五','六'][d.getDay()]
+    days.push({ date: dateStr, dayLabel, steps: 0, isToday: i === 0 })
+  }
+
+  const { data } = await supabase
+    .from('daily_activity')
+    .select('date, steps')
+    .eq('user_id', userId)
+    .gte('date', days[0].date)
+    .lte('date', days[6].date)
+    .order('date', { ascending: true })
+
+  const rows = (data as unknown as {date: string; steps: number}[]) ?? []
+  for (const row of rows) {
+    const match = days.find(d => d.date === row.date)
+    if (match) match.steps = row.steps
+  }
+
+  return days
+}
+
 export async function getTodaySteps(userId: string): Promise<number> {
   const supabase = db()
   const today = new Date().toISOString().split('T')[0]
