@@ -78,22 +78,68 @@ The entire app is a single page with 4 tabs and modals.
 
 ### Header
 - "🐾 寵物" title + count (e.g., "3隻")
-
-### Pet Grid (P&D album style)
-- **3-column grid** of pet cards (gap 6px)
-- Each card:
-  - **Rarity-colored top strip** (3px)
-  - **CP badge** (amber, absolute top-right)
-  - **Pixel pet Canvas** (48×48)
-  - **Rarity stars** (★ × 1–5, coloured, e.g. ★★★ for Rare)
-  - **Level** "Lv.X"
-  - **Evolution indicator** (bottom-right):
-    - ▶ amber with glow animation if evolvable
-    - ► grey if locked
-- Hover: rarity-coloured border glow
-- Active: scale 0.93 press effect
 - Empty state: 🥚 "未有寵物，行路孵化啦！"
-- Click → opens Pet Detail Modal
+
+### Three Sections Layout
+
+#### ⚡ 你擁有的能量 (top card)
+- Section title: "⚡ 你擁有的能量"
+- Card display:
+  - **Amber (#f59e0b) lightning SVG** in a circular amber-tinted background (48×48)
+  - "🔋 累積能量" label
+  - **User's total steps** in large bold amber text (28px, 800 weight)
+  - "步數 = 能量" subtitle
+- No pet icon — this is a global energy counter using `totalSteps`
+- Not clickable (no modal)
+
+#### ⭐ 主力隊伍 (team slots, max 5)
+- Section title: "⭐ 主力隊伍" with count (e.g., "3/5")
+- **5-column grid** of equal-width square slots (gap 6px)
+- **Filled slot** (team member):
+  - Rarity-colored top strip (2px)
+  - Pixel pet canvas (size 1.8)
+  - Level label bottom-center
+  - **Red minus button** ("−") top-right corner (18px circle, #ef4444 bg, white text, z-index 3)
+  - Click pet area → opens **PetDetailModal** for that pet
+  - Click minus button → removes pet from team (`toggleFavorite`)
+  - Drag-over prevented (already in team)
+- **Empty slot** (placeholder):
+  - Dashed border, dimmed "+" icon
+  - **Drag target** — accept drop from other pets
+  - Click does nothing
+- **First slot pet = active map pet** — `useEffect` syncs `activeIdx` to `favorites[0]`
+- Team order **matches `favorites` array order** (not pets array order):
+  ```javascript
+  teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter(Boolean).slice(0, 5)
+  ```
+
+#### 🐾 其他寵物 (unselected pets)
+- Section title: "🐾 其他寵物" with count
+- **4-column grid** of tiny square cards (gap 8px)
+- Each card:
+  - Rarity-colored top strip (2px)
+  - Pixel pet canvas (size 1.6) centered
+  - Small "▶" arrow (amber) bottom-right if evolvable
+  - **`draggable`** — drag to empty team slot to add to team
+  - **Click** → opens **PetDetailModal** for that pet
+  - On drag start: sets `dataTransfer` with pet ID
+  - Active pet highlighted with brighter border
+- All pets not in `favorites` array
+
+### Interaction Rules (critical)
+| Zone | Click | Drag | Minus button |
+|------|-------|------|--------------|
+| ⚡ Energy card | Nothing | N/A | N/A |
+| ⭐ Team slot (filled) | Open detail modal | N/A (prevented) | **Remove from team** |
+| ⭐ Team slot (empty) | Nothing | **Drop target** → insert at this slot position | N/A |
+| 🐾 Other pet | Open detail modal | **Drag source** → move to team | N/A |
+
+### Drag & Drop Implementation
+- **Source**: `onDragStart` on other pets — `e.dataTransfer.setData('text/plain', pet.id)`
+- **Target**: `onDragOver` (preventDefault) + `onDrop` on empty team slots
+- **Positional insert**: dropped pet is inserted at the specific slot index via `splice(slotIdx, 0, pid)`
+- **Guard**: no duplicates (`!favorites.includes(pid)`), max 5 (`favorites.length < 5`)
+- **DB sync**: `setFavoriteOrder(pid, slotIdx + 1)` on drop
 
 ---
 
