@@ -138,6 +138,71 @@ export async function getTodaySteps(userId: string): Promise<number> {
   return (data as unknown as { steps: number } | null)?.steps ?? 0
 }
 
+// ── Eggs ──
+
+interface DbEgg {
+  id: string
+  user_id: string
+  rarity: string
+  collected_at: string
+}
+
+export async function loadEggs(userId: string): Promise<{id:string; rarity:string; collectedAt:number}[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('eggs')
+    .select('*')
+    .eq('user_id', userId)
+    .order('collected_at', { ascending: false })
+  return ((data as unknown as DbEgg[]) ?? []).map(e => ({
+    id: e.id,
+    rarity: e.rarity,
+    collectedAt: new Date(e.collected_at).getTime(),
+  }))
+}
+
+export async function saveEgg(userId: string, rarity: string): Promise<string | null> {
+  const supabase = db()
+  const { data, error } = await supabase
+    .from('eggs')
+    .insert({ user_id: userId, rarity } as never)
+    .select('id')
+    .single()
+  if (error) return error.message
+  return (data as unknown as { id: string } | null)?.id ?? null
+}
+
+export async function deleteEgg(eggId: string): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('eggs')
+    .delete()
+    .eq('id', eggId)
+  return error?.message ?? null
+}
+
+// ── Favorites ──
+
+export async function loadFavorites(userId: string): Promise<string[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('pets')
+    .select('id')
+    .eq('user_id', userId)
+    .not('favorite_order', 'is', null)
+    .order('favorite_order', { ascending: true })
+  return ((data as unknown as { id: string }[]) ?? []).map(p => p.id)
+}
+
+export async function setFavoriteOrder(petId: string, order: number | null): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('pets')
+    .update({ favorite_order: order } as never)
+    .eq('id', petId)
+  return error?.message ?? null
+}
+
 // ── Pets ──
 
 function petToDb(userId: string, p: Pet): Record<string, unknown> {

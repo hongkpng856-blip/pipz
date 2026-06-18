@@ -7,7 +7,7 @@ import WalkingCanvas from '../components/WalkingCanvas'
 import PetDetailModal from '../components/PetDetailModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -70,21 +70,27 @@ export default function HomePage() {
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
   const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
 
-  // ── Load persisted eggs + favorites from localStorage ──
+  // ── Load persisted eggs + favorites from localStorage (guest) or Supabase ──
   useEffect(() => {
     if (loadedStorage.current) return
-    try {
-      const savedEggs = localStorage.getItem('pipz_eggs')
-      if (savedEggs) setEggs(JSON.parse(savedEggs))
-      const savedFavs = localStorage.getItem('pipz_favs')
-      if (savedFavs) setFavorites(JSON.parse(savedFavs))
-    } catch {}
+    if (!user) {
+      try {
+        const savedEggs = localStorage.getItem('pipz_eggs')
+        if (savedEggs) setEggs(JSON.parse(savedEggs))
+        const savedFavs = localStorage.getItem('pipz_favs')
+        if (savedFavs) setFavorites(JSON.parse(savedFavs))
+      } catch {}
+    }
     loadedStorage.current = true
-  }, [])
+  }, [user])
 
-  // ── Persist eggs + favorites to localStorage ──
-  useEffect(() => { try { localStorage.setItem('pipz_eggs', JSON.stringify(eggs)) } catch {} }, [eggs])
-  useEffect(() => { try { localStorage.setItem('pipz_favs', JSON.stringify(favorites)) } catch {} }, [favorites])
+  // ── Persist eggs + favorites to localStorage (guest) or Supabase (logged in) ──
+  useEffect(() => {
+    if (!user) { try { localStorage.setItem('pipz_eggs', JSON.stringify(eggs)) } catch {} }
+  }, [eggs, user])
+  useEffect(() => {
+    if (!user) { try { localStorage.setItem('pipz_favs', JSON.stringify(favorites)) } catch {} }
+  }, [favorites, user])
 
   useEffect(() => { setReady(true) }, [])
 
@@ -111,12 +117,16 @@ export default function HomePage() {
       setLoading(true)
       try {
         await ensureProfile(user.id)
-        const [dbPets, todaySt] = await Promise.all([
+        const [dbPets, todaySt, dbEggs, dbFavs] = await Promise.all([
           loadPets(user.id),
           getTodaySteps(user.id),
+          loadEggs(user.id),
+          loadFavorites(user.id),
         ])
 
         setPets(dbPets)
+        setEggs(dbEggs as EggItem[])
+        setFavorites(dbFavs)
         setSteps(todaySt)
         setActiveIdx(0)
         loadedUser.current = user.id
@@ -248,6 +258,8 @@ export default function HomePage() {
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
     setEggHatchingId(egg.id)
+    // Delete from Supabase if logged in
+    if (user) await deleteEgg(egg.id)
     // Wait for hatching animation
     setTimeout(async () => {
       setEggs(v => v.filter(e => e.id !== egg.id))
@@ -261,8 +273,13 @@ export default function HomePage() {
   // ── Toggle favorite (max 5) ──
   const toggleFavorite = (petId: string) => {
     setFavorites(prev => {
-      if (prev.includes(petId)) return prev.filter(id => id !== petId)
+      const isFav = prev.includes(petId)
+      if (isFav) {
+        if (user) setFavoriteOrder(petId, null)
+        return prev.filter(id => id !== petId)
+      }
       if (prev.length >= 5) return prev
+      if (user) setFavoriteOrder(petId, prev.length + 1)
       return [...prev, petId]
     })
   }
@@ -425,6 +442,12 @@ export default function HomePage() {
                         id: genSeed().toString(),
                         rarity: encounterEggRarity,
                         collectedAt: Date.now(),
+                      }
+                      // Save to Supabase if logged in
+                      if (user) {
+                        saveEgg(user.id, encounterEggRarity).then(dbId => {
+                          if (dbId) setEggs(v => v.map(e => e.id === newEgg.id ? { ...e, id: dbId } : e))
+                        })
                       }
                       setEggs(v => [...v, newEgg])
                       setEncounterEggRarity(null)

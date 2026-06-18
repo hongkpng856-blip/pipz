@@ -88,7 +88,32 @@ CREATE POLICY "Users can update own activity"
   ON public.daily_activity FOR UPDATE
   USING (auth.uid() = user_id);
 
--- 4. Transactions
+-- 4. Eggs
+CREATE TABLE public.eggs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  rarity TEXT NOT NULL CHECK (rarity IN ('common','uncommon','rare','epic','legendary')),
+  collected_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.eggs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own eggs"
+  ON public.eggs FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own eggs"
+  ON public.eggs FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own eggs"
+  ON public.eggs FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- 5. Add favorite_order to pets
+ALTER TABLE public.pets ADD COLUMN IF NOT EXISTS favorite_order INT;
+
+-- 6. Transactions
 CREATE TABLE public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   seller_id UUID REFERENCES public.profiles(id) NOT NULL,
