@@ -677,8 +677,8 @@ export default function HomePage() {
                   return af - bf
                 })
                 const mainPet = sorted.find((_, i) => pets.indexOf(sorted[i]) === activeIdx) || sorted[0]
-                const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).filter(p => p.id !== mainPet.id).slice(0, 5)
-                const otherPets = sorted.filter(p => p.id !== mainPet.id && !favorites.includes(p.id))
+                const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).slice(0, 5)
+                const otherPets = sorted.filter(p => !favorites.includes(p.id))
                 return (
                   <>
                     {/* ⚡ 你擁有的能量 */}
