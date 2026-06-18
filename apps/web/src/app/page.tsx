@@ -430,34 +430,30 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Active Pet status bar */}
+              {/* Active Pet status bar — cleaner layout */}
               {pet && camState !== 'encounter' && (
                 <div className="section card card-pad-sm">
-                  <div style={{display:'flex', alignItems:'center', gap:8}}>
-                    <div style={{width:36, height:36, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
-                      background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`, borderRadius:8}}>
-                      <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={2.5} animation={petAnim} />
+                  <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4}}>
+                    <div style={{width:28, height:28, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
+                      background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`, borderRadius:6}}>
+                      <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={2} animation={petAnim} />
                     </div>
-                    <div style={{flex:1, minWidth:0}}>
-                      <div style={{display:'flex', alignItems:'center', gap:6}}>
-                        <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[pet.rarity]}</span>
-                        <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{pet.level}</span>
-                        <span style={{fontSize:11, fontWeight:700, color:'#f59e0b'}}>CP {cp(pet)}</span>
-                        <span style={{fontSize:10, color:'#94a5b8'}}>| ⚡{pet.stats.speed} 🍀{pet.stats.luck} 💜{pet.stats.charm} 🔋{pet.stats.energy}</span>
-                      </div>
-                      <div style={{display:'flex', alignItems:'center', gap:3, marginTop:2}}>
-                        <span>{ME[pet.mood] || '😐'}</span>
-                        <span style={{fontSize:9, color:'#22c55e'}}>{pet.mood === 'happy' ? '開心' : pet.mood}</span>
-                        <span style={{fontSize:9, color:'#5a6d85', marginLeft:6}}>
-                          步 {formatSteps(pet.totalSteps)} | {['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1] || '初級'}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{display:'flex', gap:4}}>
-                      <button className="btn btn-green" onClick={feed} style={{fontSize:8, padding:'3px 8px'}}>🍖</button>
-                      <button className="btn btn-blue" onClick={petAction} style={{fontSize:8, padding:'3px 8px'}}>✋</button>
-                      <button className="btn btn-amber" onClick={playAction} style={{fontSize:8, padding:'3px 8px'}}>🎾</button>
-                    </div>
+                    <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[pet.rarity]}</span>
+                    <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{pet.level}</span>
+                    <span style={{fontSize:11, fontWeight:700, color:'#f59e0b'}}>CP {cp(pet)}</span>
+                    <span style={{flex:1}} />
+                    <span>{ME[pet.mood] || '😐'}</span>
+                    <span style={{fontSize:9, color:'#22c55e'}}>{pet.mood === 'happy' ? '開心' : pet.mood}</span>
+                  </div>
+                  <div style={{display:'flex', alignItems:'center', gap:6, fontSize:9, color:'#5a6d85', marginBottom:4}}>
+                    <span>👣 {formatSteps(pet.totalSteps)}步</span>
+                    <span>|</span>
+                    <span>{['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1] || '初級'}</span>
+                  </div>
+                  <div style={{display:'flex', gap:4}}>
+                    <button className="btn btn-green" onClick={feed} style={{fontSize:8, padding:'2px 8px'}}>🍖 餵食</button>
+                    <button className="btn btn-blue" onClick={petAction} style={{fontSize:8, padding:'2px 8px'}}>✋ 摸頭</button>
+                    <button className="btn btn-amber" onClick={playAction} style={{fontSize:8, padding:'2px 8px'}}>🎾 玩</button>
                   </div>
                 </div>
               )}
