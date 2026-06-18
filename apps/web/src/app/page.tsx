@@ -152,6 +152,15 @@ export default function HomePage() {
     loadData()
   }, [user?.id])
 
+  // ── First team slot = active map pet ──
+  useEffect(() => {
+    if (favorites.length > 0) {
+      const firstId = favorites[0]
+      const idx = pets.findIndex(p => p.id === firstId)
+      if (idx >= 0 && idx !== activeIdx) setActiveIdx(idx)
+    }
+  }, [favorites, pets])
+
   // ── Debounced step sync to Supabase ──
   const scheduleSync = useCallback((s: number, ts: number) => {
     if (!user) return
