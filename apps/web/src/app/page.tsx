@@ -670,51 +670,67 @@ export default function HomePage() {
                 const mainPet = sorted.find((_, i) => pets.indexOf(sorted[i]) === activeIdx) || sorted[0]
                 const teamPets = sorted.filter(p => p.id !== mainPet.id && favorites.includes(p.id)).slice(0, 5)
                 const otherPets = sorted.filter(p => p.id !== mainPet.id && !favorites.includes(p.id))
-                const starColor = (p: {id:string; rarity:Rarity}) => RARITY_COLORS[p.rarity]
                 return (
                   <>
-                    {/* ⭐ 主力 — simple card, same size */}
+                    {/* 📋 寵物詳細 — big card */}
                     {mainPet && (
                       <div className="section" style={{marginBottom:12}}>
                         <div className="section-header">
-                          <span className="section-title">⭐ 主力</span>
+                          <span className="section-title">📋 寵物詳細</span>
                         </div>
-                        <div className="pet-card pet-card-main-simple" onClick={() => setDetailPetId(mainPet.id)}>
-                          <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[mainPet.rarity], borderRadius:'14px 14px 0 0'}} />
-                          <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 12px'}}>
-                            <div style={{width:36, height:36, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
-                              <PixelPetCanvas seed={parseInt(mainPet.speciesId)||1} rarity={mainPet.rarity} evolutionStage={mainPet.evolutionStage} size={2.8} animation="idle" />
+                        <div className="pet-card-main"
+                          onClick={() => setDetailPetId(mainPet.id)}
+                          style={{
+                            borderColor: `${RARITY_COLORS[mainPet.rarity]}66`,
+                            boxShadow: `0 0 16px ${RARITY_COLORS[mainPet.rarity]}33`,
+                          }}>
+                          <div style={{position:'absolute', top:0, left:0, right:0, height:4, background: RARITY_COLORS[mainPet.rarity], borderRadius:'16px 16px 0 0'}} />
+                          <div style={{display:'flex', alignItems:'center', gap:14, padding:'16px 16px 12px'}}>
+                            <div style={{
+                              width:56, height:56, flexShrink:0, borderRadius:14,
+                              display:'flex', alignItems:'center', justifyContent:'center',
+                              background: `${RARITY_COLORS[mainPet.rarity]}15`,
+                            }}>
+                              <PixelPetCanvas seed={parseInt(mainPet.speciesId)||1} rarity={mainPet.rarity} evolutionStage={mainPet.evolutionStage} size={4} animation="idle" />
                             </div>
                             <div style={{flex:1, minWidth:0}}>
-                              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:2}}>
+                              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4}}>
                                 <span className="pet-badge" style={{color:RARITY_COLORS[mainPet.rarity], background:RARITY_COLORS[mainPet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[mainPet.rarity]}</span>
-                                <span style={{fontSize:12, fontWeight:700, color:'#f0f4f8'}}>Lv.{mainPet.level}</span>
-                                <span style={{fontSize:10, fontWeight:700, color:'#f59e0b'}}>CP {cp(mainPet)}</span>
+                                <span style={{fontSize:13, fontWeight:700, color:'#f0f4f8'}}>Lv.{mainPet.level}</span>
+                                <span style={{fontSize:12, fontWeight:700, color:'#f59e0b'}}>CP {cp(mainPet)}</span>
                                 <span style={{flex:1}} />
-                                <div
-                                  onClick={e => { e.stopPropagation(); toggleFavorite(mainPet.id) }}
-                                  style={{
-                                    fontSize:14, cursor:'pointer', lineHeight:1,
-                                    color: favorites.includes(mainPet.id) ? '#f59e0b' : '#3a4d65',
-                                  }}>
-                                  {favorites.includes(mainPet.id) ? '★' : '☆'}
-                                </div>
                               </div>
-                              <div style={{display:'flex', alignItems:'center', gap:8, fontSize:9, color:'#5a6d85'}}>
+                              <div style={{display:'flex', alignItems:'center', gap:10, fontSize:10, color:'#5a6d85'}}>
                                 <span>👣 {formatSteps(mainPet.totalSteps)}</span>
                                 <span>|</span>
                                 <span>{['BB','幼年','成年','完全體','傳說'][mainPet.evolutionStage-1] || '初級'}</span>
                                 {mainPet.evolutionStage < 5 && calculateEvolution(mainPet.totalSteps, mainPet.evolutionStage, mainPet.stats) && (
-                                  <span style={{color:'#f59e0b', fontWeight:700, fontSize:9}}>🌟 進化可能</span>
+                                  <span style={{color:'#f59e0b', fontWeight:700}}>🌟 可進化</span>
                                 )}
                               </div>
+                            </div>
+                          </div>
+                          {/* Actions + star row */}
+                          <div style={{display:'flex', gap:4, padding:'0 16px 14px', alignItems:'center'}}>
+                            <button className="btn btn-green" onClick={e => { e.stopPropagation(); feed() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>🍖 餵</button>
+                            <button className="btn btn-blue" onClick={e => { e.stopPropagation(); petAction() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>✋ 摸</button>
+                            <button className="btn btn-amber" onClick={e => { e.stopPropagation(); playAction() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>🎾 玩</button>
+                            <span style={{flex:1}} />
+                            <div
+                              onClick={e => { e.stopPropagation(); toggleFavorite(mainPet.id) }}
+                              style={{
+                                fontSize:16, cursor:'pointer', lineHeight:1,
+                                color: favorites.includes(mainPet.id) ? '#f59e0b' : '#3a4d65',
+                                textShadow: favorites.includes(mainPet.id) ? '0 0 6px rgba(245,158,11,0.5)' : undefined,
+                              }}>
+                              {favorites.includes(mainPet.id) ? '★' : '☆'}
                             </div>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* ⭐ 主力隊伍 (max 5 favorites) — styled as slots */}
+                    {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
                     <div className="section" style={{marginBottom:12}}>
                       <div className="section-header">
                         <span className="section-title">⭐ 主力隊伍</span>
@@ -727,15 +743,30 @@ export default function HomePage() {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
                                 onClick={() => { setActiveIdx(pets.indexOf(pet)); logMsg(`⭐ ${RARITY_LABELS[pet.rarity]} 設為主力`) }}
+                                onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+                                onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
                                 <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
+                                {/* Minus button — remove from team */}
+                                <div
+                                  onClick={e => { e.stopPropagation(); toggleFavorite(pet.id) }}
+                                  className="team-slot-minus">−</div>
                               </div>
                             )
                           }
                           return (
-                            <div key={`empty-${slotIdx}`} className="team-slot team-slot-empty">
+                            <div key={`empty-${slotIdx}`} className="team-slot team-slot-empty"
+                              onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+                              onDrop={e => {
+                                e.preventDefault()
+                                const pid = e.dataTransfer.getData('text/plain')
+                                if (pid && !favorites.includes(pid) && favorites.length < 5) {
+                                  toggleFavorite(pid)
+                                  logMsg('🐉 加入主力隊伍！')
+                                }
+                              }}>
                               <span style={{fontSize:18, opacity:0.3}}>+</span>
                             </div>
                           )
@@ -743,46 +774,37 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* 🐾 其他寵物 — square, spacious */}
+                    {/* 🐾 其他寵物 — tiny draggable squares */}
                     {otherPets.length > 0 && (
                       <div className="section" style={{marginBottom:10}}>
                         <div className="section-header">
                           <span className="section-title">🐾 其他寵物</span>
                           <span className="section-count">{otherPets.length}隻</span>
                         </div>
-                        <div className="pet-grid pet-grid-square">
+                        <div className="pet-grid pet-grid-other">
                           {otherPets.map(p => {
-                            const origIdx = pets.indexOf(p)
-                            const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
                             const sc = RARITY_COLORS[p.rarity]
+                            const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
                             const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
-                            const isFav = favorites.includes(p.id)
                             return (
-                            <div key={p.id} className="pet-card pet-card-sq"
-                              onClick={() => { setActiveIdx(origIdx); logMsg(`⭐ ${RARITY_LABELS[p.rarity]} 設為主力`) }}
+                            <div key={p.id} className="pet-card-other"
+                              draggable
+                              onDragStart={e => {
+                                e.dataTransfer.setData('text/plain', p.id)
+                                e.dataTransfer.effectAllowed = 'move'
+                              }}
+                              onClick={() => {
+                                // Mobile: tap to add to team (alternative to drag)
+                                if (!favorites.includes(p.id) && favorites.length < 5) {
+                                  toggleFavorite(p.id)
+                                  logMsg(`🐉 ${RARITY_LABELS[p.rarity]} 加入隊伍`)
+                                }
+                              }}
                               style={{borderColor: `${sc}33`}}>
-                              <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'12px 12px 0 0'}} />
-                              <div
-                                onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
-                                style={{
-                                  position:'absolute', top:3, left:3, fontSize:9, cursor:'pointer', lineHeight:1, zIndex:2,
-                                  color: isFav ? '#f59e0b' : '#3a4d65',
-                                }}>
-                                {isFav ? '★' : '☆'}
-                              </div>
-                              <div className="pet-card-sq-icon">
-                                <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.4} animation="idle" />
-                              </div>
-                              <div className="pet-card-stars" style={{color: sc, fontSize:6}}>
-                                {'★'.repeat(starCount)}
-                              </div>
-                              <div className="pet-card-lv" style={{fontSize:8}}>Lv.{p.level}</div>
-                              <div className="pet-card-cp" style={{top:2, right:2, fontSize:6, padding:'0 4px'}}>{cp(p)}</div>
-                              {p.evolutionStage < 5 && (
-                                <div className={`pet-card-evo ${canThisEvolve ? 'pet-card-evo-ready' : ''}`}
-                                  style={{bottom:2, right:2, fontSize:8, color: canThisEvolve ? '#f59e0b' : '#3a4d65'}}>
-                                  {canThisEvolve ? '▶' : '►'}
-                                </div>
+                              <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
+                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
+                              {canThisEvolve && (
+                                <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
                               )}
                             </div>
                           )})}
