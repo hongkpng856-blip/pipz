@@ -668,120 +668,119 @@ export default function HomePage() {
                   return af - bf
                 })
                 const mainPet = sorted.find((_, i) => pets.indexOf(sorted[i]) === activeIdx) || sorted[0]
-                const otherPets = sorted.filter(p => p.id !== mainPet?.id)
+                const teamPets = sorted.filter(p => p.id !== mainPet.id && favorites.includes(p.id)).slice(0, 5)
+                const otherPets = sorted.filter(p => p.id !== mainPet.id && !favorites.includes(p.id))
+                const starColor = (p: {id:string; rarity:Rarity}) => RARITY_COLORS[p.rarity]
                 return (
                   <>
-                    {/* ⭐ Main Pet Section — large card */}
+                    {/* ⭐ 主力 — simple card, same size */}
                     {mainPet && (
-                      <div className="section" style={{marginBottom:14}}>
+                      <div className="section" style={{marginBottom:12}}>
                         <div className="section-header">
                           <span className="section-title">⭐ 主力</span>
                         </div>
-                        <div
-                          className="pet-card-main"
-                          onClick={() => setDetailPetId(mainPet.id)}
-                          style={{
-                            borderColor: `${RARITY_COLORS[mainPet.rarity]}66`,
-                            boxShadow: `0 0 16px ${RARITY_COLORS[mainPet.rarity]}33`,
-                          }}>
-                          {/* Rarity top strip */}
-                          <div style={{position:'absolute', top:0, left:0, right:0, height:4, background: RARITY_COLORS[mainPet.rarity], borderRadius:'16px 16px 0 0'}} />
-                          <div style={{display:'flex', alignItems:'center', gap:14, padding:'16px 16px 12px'}}>
-                            {/* Big icon */}
-                            <div style={{
-                              width:56, height:56, flexShrink:0, borderRadius:14,
-                              display:'flex', alignItems:'center', justifyContent:'center',
-                              background: `${RARITY_COLORS[mainPet.rarity]}15`,
-                            }}>
-                              <PixelPetCanvas seed={parseInt(mainPet.speciesId)||1} rarity={mainPet.rarity} evolutionStage={mainPet.evolutionStage} size={4} animation="idle" />
+                        <div className="pet-card pet-card-main-simple" onClick={() => setDetailPetId(mainPet.id)}>
+                          <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[mainPet.rarity], borderRadius:'14px 14px 0 0'}} />
+                          <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 12px'}}>
+                            <div style={{width:36, height:36, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center'}}>
+                              <PixelPetCanvas seed={parseInt(mainPet.speciesId)||1} rarity={mainPet.rarity} evolutionStage={mainPet.evolutionStage} size={2.8} animation="idle" />
                             </div>
-                            {/* Info */}
                             <div style={{flex:1, minWidth:0}}>
-                              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4}}>
+                              <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:2}}>
                                 <span className="pet-badge" style={{color:RARITY_COLORS[mainPet.rarity], background:RARITY_COLORS[mainPet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[mainPet.rarity]}</span>
-                                <span style={{fontSize:13, fontWeight:700, color:'#f0f4f8'}}>Lv.{mainPet.level}</span>
-                                <span style={{fontSize:12, fontWeight:700, color:'#f59e0b'}}>CP {cp(mainPet)}</span>
+                                <span style={{fontSize:12, fontWeight:700, color:'#f0f4f8'}}>Lv.{mainPet.level}</span>
+                                <span style={{fontSize:10, fontWeight:700, color:'#f59e0b'}}>CP {cp(mainPet)}</span>
                                 <span style={{flex:1}} />
+                                <div
+                                  onClick={e => { e.stopPropagation(); toggleFavorite(mainPet.id) }}
+                                  style={{
+                                    fontSize:14, cursor:'pointer', lineHeight:1,
+                                    color: favorites.includes(mainPet.id) ? '#f59e0b' : '#3a4d65',
+                                  }}>
+                                  {favorites.includes(mainPet.id) ? '★' : '☆'}
+                                </div>
                               </div>
-                              <div style={{display:'flex', alignItems:'center', gap:10, fontSize:10, color:'#5a6d85'}}>
+                              <div style={{display:'flex', alignItems:'center', gap:8, fontSize:9, color:'#5a6d85'}}>
                                 <span>👣 {formatSteps(mainPet.totalSteps)}</span>
                                 <span>|</span>
                                 <span>{['BB','幼年','成年','完全體','傳說'][mainPet.evolutionStage-1] || '初級'}</span>
                                 {mainPet.evolutionStage < 5 && calculateEvolution(mainPet.totalSteps, mainPet.evolutionStage, mainPet.stats) && (
-                                  <span style={{color:'#f59e0b', fontWeight:700}}>🌟 可進化</span>
+                                  <span style={{color:'#f59e0b', fontWeight:700, fontSize:9}}>🌟 進化可能</span>
                                 )}
                               </div>
-                            </div>
-                          </div>
-                          {/* Actions + star row */}
-                          <div style={{display:'flex', gap:4, padding:'0 16px 14px', alignItems:'center'}}>
-                            <button className="btn btn-green" onClick={e => { e.stopPropagation(); feed() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>🍖 餵</button>
-                            <button className="btn btn-blue" onClick={e => { e.stopPropagation(); petAction() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>✋ 摸</button>
-                            <button className="btn btn-amber" onClick={e => { e.stopPropagation(); playAction() }} style={{fontSize:8, padding:'2px 10px', borderRadius:10}}>🎾 玩</button>
-                            <span style={{flex:1}} />
-                            <div
-                              onClick={e => { e.stopPropagation(); toggleFavorite(mainPet.id) }}
-                              style={{
-                                fontSize:16, cursor:'pointer', lineHeight:1,
-                                color: favorites.includes(mainPet.id) ? '#f59e0b' : '#3a4d65',
-                                textShadow: favorites.includes(mainPet.id) ? '0 0 6px rgba(245,158,11,0.5)' : undefined,
-                              }}>
-                              {favorites.includes(mainPet.id) ? '★' : '☆'}
                             </div>
                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* 🐾 Other Pets Section — compact grid */}
+                    {/* ⭐ 主力隊伍 (max 5 favorites) — styled as slots */}
+                    <div className="section" style={{marginBottom:12}}>
+                      <div className="section-header">
+                        <span className="section-title">⭐ 主力隊伍</span>
+                        <span className="section-count">{favorites.length}/5</span>
+                      </div>
+                      <div className="team-grid">
+                        {Array.from({length:5}).map((_, slotIdx) => {
+                          const pet = teamPets[slotIdx]
+                          if (pet) {
+                            return (
+                              <div key={pet.id} className="team-slot team-slot-filled"
+                                onClick={() => { setActiveIdx(pets.indexOf(pet)); logMsg(`⭐ ${RARITY_LABELS[pet.rarity]} 設為主力`) }}
+                                style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
+                                <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
+                                <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
+                                <div className="team-slot-lv">Lv.{pet.level}</div>
+                              </div>
+                            )
+                          }
+                          return (
+                            <div key={`empty-${slotIdx}`} className="team-slot team-slot-empty">
+                              <span style={{fontSize:18, opacity:0.3}}>+</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 🐾 其他寵物 — square, spacious */}
                     {otherPets.length > 0 && (
-                      <div style={{marginBottom:10}}>
+                      <div className="section" style={{marginBottom:10}}>
                         <div className="section-header">
                           <span className="section-title">🐾 其他寵物</span>
                           <span className="section-count">{otherPets.length}隻</span>
                         </div>
-                        <div className="pet-grid" style={{gap:5}}>
+                        <div className="pet-grid pet-grid-square">
                           {otherPets.map(p => {
                             const origIdx = pets.indexOf(p)
                             const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
-                            const starColor = RARITY_COLORS[p.rarity]
+                            const sc = RARITY_COLORS[p.rarity]
                             const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
-                            const isActive = origIdx === activeIdx
                             const isFav = favorites.includes(p.id)
                             return (
-                            <div key={p.id} className="pet-card"
+                            <div key={p.id} className="pet-card pet-card-sq"
                               onClick={() => { setActiveIdx(origIdx); logMsg(`⭐ ${RARITY_LABELS[p.rarity]} 設為主力`) }}
-                              style={{
-                                borderColor: isFav ? `${starColor}55` : `${starColor}22`,
-                                padding: '4px 3px 2px',
-                              }}>
-                              {/* Rarity top strip */}
-                              <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: starColor, borderRadius:'14px 14px 0 0'}} />
-                              {/* Favorite star */}
+                              style={{borderColor: `${sc}33`}}>
+                              <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'12px 12px 0 0'}} />
                               <div
                                 onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
                                 style={{
-                                  position:'absolute', top:3, left:3, fontSize:8, cursor:'pointer', lineHeight:1, zIndex:2,
+                                  position:'absolute', top:3, left:3, fontSize:9, cursor:'pointer', lineHeight:1, zIndex:2,
                                   color: isFav ? '#f59e0b' : '#3a4d65',
                                 }}>
                                 {isFav ? '★' : '☆'}
                               </div>
-                              {/* Icon — smaller */}
-                              <div className="pet-card-icon" style={{width:30, height:30, marginBottom:1}}>
-                                <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2} animation="idle" />
+                              <div className="pet-card-sq-icon">
+                                <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.4} animation="idle" />
                               </div>
-                              {/* Stars */}
-                              <div className="pet-card-stars" style={{color: starColor, fontSize:6}}>
+                              <div className="pet-card-stars" style={{color: sc, fontSize:6}}>
                                 {'★'.repeat(starCount)}
                               </div>
-                              {/* Level */}
-                              <div className="pet-card-lv" style={{fontSize:7}}>Lv.{p.level}</div>
-                              {/* CP badge */}
-                              <div className="pet-card-cp" style={{top:3, fontSize:6, padding:'0 4px'}}>{cp(p)}</div>
-                              {/* Evo indicator */}
+                              <div className="pet-card-lv" style={{fontSize:8}}>Lv.{p.level}</div>
+                              <div className="pet-card-cp" style={{top:2, right:2, fontSize:6, padding:'0 4px'}}>{cp(p)}</div>
                               {p.evolutionStage < 5 && (
                                 <div className={`pet-card-evo ${canThisEvolve ? 'pet-card-evo-ready' : ''}`}
-                                  style={{bottom:2, fontSize:8, color: canThisEvolve ? '#f59e0b' : '#3a4d65'}}>
+                                  style={{bottom:2, right:2, fontSize:8, color: canThisEvolve ? '#f59e0b' : '#3a4d65'}}>
                                   {canThisEvolve ? '▶' : '►'}
                                 </div>
                               )}

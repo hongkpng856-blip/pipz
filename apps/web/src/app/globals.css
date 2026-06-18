@@ -451,6 +451,83 @@ body { position: fixed; }
   border-color: rgba(139, 92, 246, 0.35);
   box-shadow: 0 0 12px rgba(139, 92, 246, 0.1);
 }
+.pet-card-main-simple {
+  cursor: pointer;
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  transition: transform 0.15s, border-color 0.15s;
+  overflow: hidden;
+}
+.pet-card-main-simple:active { transform: scale(0.97); }
+
+/* ── Team slots (5 favorites row) ── */
+.team-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  gap: 6px;
+}
+.team-slot {
+  position: relative;
+  border-radius: 12px;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s;
+  overflow: hidden;
+}
+.team-slot:active { transform: scale(0.93); }
+.team-slot-filled {
+  background: var(--card);
+  border: 1px solid var(--border);
+  gap: 2px;
+}
+.team-slot-empty {
+  background: rgba(26, 35, 56, 0.5);
+  border: 1px dashed var(--border-2);
+}
+.team-slot-lv {
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--text-3);
+  line-height: 1;
+}
+
+/* ── Square other pets ── */
+.pet-grid-square {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.pet-card-sq {
+  cursor: pointer;
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  padding: 4px;
+  text-align: center;
+  transition: transform 0.15s, border-color 0.15s;
+  overflow: hidden;
+}
+.pet-card-sq:active { transform: scale(0.93); }
+.pet-card-sq-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ── Egg hatching particles ── */
 @keyframes float-up {
