@@ -584,15 +584,33 @@ export default function HomePage() {
                     const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
                     const starColor = RARITY_COLORS[p.rarity]
                     const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
+                    const isActive = i === activeIdx
                     return (
-                    <div key={p.id} className="pet-card" onClick={() => setDetailPetId(p.id)}
-                      style={{borderColor: `${starColor}33`}}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = `${starColor}66`)}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = `${starColor}33`)}>
+                    <div key={p.id} className="pet-card"
+                      onClick={() => { setActiveIdx(i); logMsg(`⭐ ${RARITY_LABELS[p.rarity]} 設為主力`) }}
+                      style={{
+                        borderColor: isActive ? `${starColor}88` : `${starColor}33`,
+                        boxShadow: isActive ? `0 0 10px ${starColor}44` : undefined,
+                      }}>
                       {/* Rarity top strip */}
-                      <div style={{position:'absolute', top:0, left:0, right:0, height:3, borderRadius:'14px 14px 0 0', background: starColor}} />
-                      {/* CP badge */}
-                      <div className="pet-card-cp">{cp(p)}</div>
+                      <div style={{position:'absolute', top:0, left:0, right:0, height:3, background: starColor}} />
+                      {/* Active badge */}
+                      {isActive && (
+                        <div style={{
+                          position:'absolute', top:5, left:4, fontSize:7, fontWeight:700,
+                          color: starColor, background: `${starColor}18`,
+                          padding:'1px 4px', borderRadius:4, lineHeight:1,
+                        }}>⭐主力</div>
+                      )}
+                      {/* Detail button */}
+                      <div
+                        onClick={e => { e.stopPropagation(); setDetailPetId(p.id) }}
+                        style={{
+                          position:'absolute', top:4, right:4, fontSize:8, cursor:'pointer',
+                          color:'#5a6d85', lineHeight:1, zIndex:2,
+                        }}>ℹ️</div>
+                      {/* CP badge (moved left side since detail btn is on right) */}
+                      <div className="pet-card-cp" style={{right:'auto', left:4, top:18}}>{cp(p)}</div>
                       {/* Icon */}
                       <div className="pet-card-icon">
                         <PixelPetCanvas seed={parseInt(p.speciesId) || 1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={3.5} animation="idle" />

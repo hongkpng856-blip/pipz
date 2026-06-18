@@ -160,34 +160,39 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         ctx.fillRect(bx - 1, by + 1, 5, 1)
       }
 
-      // ── Nearby pets in environment ──
+      // ── Nearby pets in environment (more visible) ──
       for (let ni = 0; ni < nearby.length; ni++) {
         const np = nearby[ni]
         const npColor = RC[np.rarity] || '#9ca3af'
-        const npSize = 2 + (np.evolutionStage || 1) * 0.5
+        const npSize = 3 + (np.evolutionStage || 1) * 0.8
         // Spread pets across left/right sides, scroll with ground
         const side = ni % 2 === 0 ? -1 : 1
-        const nx = CX + side * (12 + Math.sin(ni * 2.3) * 6)
-        const nyBase = CY + 10 + ni * 12 + (scrollRef.current * 0.4) % 40 - 20
+        const nx = CX + side * (14 + Math.sin(ni * 2.3) * 6)
+        const nyBase = CY + 8 + ni * 14 + (scrollRef.current * 0.4) % 40 - 20
         const ny = ((nyBase % H) + H) % H
-        if (ny < 4 || ny > H - 4) continue
+        if (ny < 5 || ny > H - 5) continue
+
+        // Rarity glow halo
+        ctx.fillStyle = `${npColor}33`
+        ctx.fillRect(nx - npSize, ny - npSize - 2, npSize * 2, npSize * 2)
 
         // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.15)'
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'
         ctx.fillRect(nx - npSize / 2, ny + 1, npSize, 1)
 
-        // Body
+        // Body with small bob
+        const bobY = Math.sin(Date.now() * 0.003 + ni * 2) * 1
         ctx.fillStyle = npColor
-        ctx.fillRect(nx - npSize / 2, ny - npSize, npSize, npSize - 1)
+        ctx.fillRect(nx - npSize / 2, ny - npSize + bobY, npSize, npSize - 1)
 
         // Head
         ctx.fillStyle = npColor
-        ctx.fillRect(nx - npSize / 3, ny - npSize - npSize / 2 + 1, npSize * 2 / 3, npSize / 2)
+        ctx.fillRect(nx - npSize / 3, ny - npSize - npSize / 2 + 1 + bobY, npSize * 2 / 3, npSize / 2)
 
-        // Eyes (tiny)
+        // Eyes
         ctx.fillStyle = 'white'
-        ctx.fillRect(nx - npSize / 4, ny - npSize - npSize / 2 + 1, 1, 1)
-        ctx.fillRect(nx + npSize / 4 - 1, ny - npSize - npSize / 2 + 1, 1, 1)
+        ctx.fillRect(nx - npSize / 4, ny - npSize - npSize / 2 + 2 + bobY, 1, 1)
+        ctx.fillRect(nx + npSize / 4 - 1, ny - npSize - npSize / 2 + 2 + bobY, 1, 1)
       }
 
       // ════ Character ════
