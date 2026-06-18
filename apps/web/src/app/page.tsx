@@ -742,7 +742,7 @@ export default function HomePage() {
                           if (pet) {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
-                                onClick={() => { setActiveIdx(pets.indexOf(pet)); logMsg(`⭐ ${RARITY_LABELS[pet.rarity]} 設為主力`) }}
+                                onClick={() => { toggleFavorite(pet.id); logMsg(`❌ ${RARITY_LABELS[pet.rarity]} 離開隊伍`) }}
                                 onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
@@ -783,8 +783,8 @@ export default function HomePage() {
                         </div>
                         <div className="pet-grid pet-grid-other">
                           {otherPets.map(p => {
+                            const origIdx = pets.indexOf(p)
                             const sc = RARITY_COLORS[p.rarity]
-                            const starCount = {common:1, uncommon:2, rare:3, epic:4, legendary:5}[p.rarity] || 1
                             const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
                             return (
                             <div key={p.id} className="pet-card-other"
@@ -794,13 +794,10 @@ export default function HomePage() {
                                 e.dataTransfer.effectAllowed = 'move'
                               }}
                               onClick={() => {
-                                // Mobile: tap to add to team (alternative to drag)
-                                if (!favorites.includes(p.id) && favorites.length < 5) {
-                                  toggleFavorite(p.id)
-                                  logMsg(`🐉 ${RARITY_LABELS[p.rarity]} 加入隊伍`)
-                                }
+                                setActiveIdx(origIdx)
+                                logMsg(`👀 ${RARITY_LABELS[p.rarity]} 詳細`)
                               }}
-                              style={{borderColor: `${sc}33`}}>
+                              style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
                               {canThisEvolve && (
