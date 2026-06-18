@@ -742,7 +742,8 @@ export default function HomePage() {
                           if (pet) {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
-                                onClick={() => { toggleFavorite(pet.id); logMsg(`❌ ${RARITY_LABELS[pet.rarity]} 離開隊伍`) }}
+                                onClick={() => { setActiveIdx(pets.indexOf(pet)); logMsg(`⭐ ${RARITY_LABELS[pet.rarity]} 設為主力`) }}
+                                onDoubleClick={() => { setDetailPetId(pet.id) }}
                                 onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
@@ -797,6 +798,7 @@ export default function HomePage() {
                                 setActiveIdx(origIdx)
                                 logMsg(`👀 ${RARITY_LABELS[p.rarity]} 詳細`)
                               }}
+                              onDoubleClick={() => { setDetailPetId(p.id) }}
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
