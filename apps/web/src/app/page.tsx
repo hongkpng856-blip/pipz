@@ -5,6 +5,7 @@ import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, gene
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import WalkingCanvas from '../components/WalkingCanvas'
 import PetDetailModal from '../components/PetDetailModal'
+import ProfileModal from '../components/ProfileModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet } from '../lib/supabase-db'
@@ -49,6 +50,7 @@ export default function HomePage() {
   const [evolvingId, setEvolvingId] = useState<string | null>(null)
   const [detailPetId, setDetailPetId] = useState<string | null>(null)
   const [showEncounterEgg, setShowEncounterEgg] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
@@ -458,23 +460,15 @@ export default function HomePage() {
             )}
             {user ? (
               <>
-                <button onClick={() => setShowLogin(true)}
+                <button onClick={() => setShowProfile(true)}
                   style={{
                     background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
                     cursor:'pointer', color:'#c084fc',
-                    fontSize: 11, padding: '3px 6px', borderRadius: 10,
+                    fontSize: 11, padding: '3px 8px', borderRadius: 10,
                     fontFamily:'inherit', whiteSpace:'nowrap',
-                    maxWidth: 120, overflow:'hidden', textOverflow:'ellipsis',
+                    maxWidth: 100, overflow:'hidden', textOverflow:'ellipsis',
                   }}>
-                  {user.email}
-                </button>
-                <button onClick={() => signOut()}
-                  style={{
-                    background:'none', border:'none', cursor:'pointer',
-                    color:'#ef4444', fontSize: 11, padding: '3px 4px',
-                    fontFamily:'inherit',
-                  }}>
-                  登出
+                  👤 {user.email}
                 </button>
               </>
             ) : (
@@ -1057,6 +1051,17 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <ProfileModal
+        open={showProfile}
+        onClose={() => setShowProfile(false)}
+        user={user}
+        totalSteps={totalSteps}
+        todaySteps={steps}
+        pets={pets}
+        eggCount={eggs.length}
+        onSignOut={() => signOut()}
+      />
 
       <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
 
