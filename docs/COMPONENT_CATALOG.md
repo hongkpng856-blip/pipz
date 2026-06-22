@@ -392,3 +392,31 @@ Full-screen overlay showing user profile and stats.
 ### Sign Out Button
 - Red button at bottom: "🔴 登出"
 - Access via header user email button (replaces the old inline logout)
+
+---
+
+## 13. Notification Modal (`NotificationModal.tsx`)
+
+Full-screen overlay showing trade notifications.
+
+### Header
+- "← 返回" button | "🔔 通知" title with unread count badge
+- "全部已讀" button (only visible when unread > 0)
+
+### Notification List
+- Unread items: darker background (#1a2540) + purple border + purple dot indicator
+- Read items: normal card bg (#141b2d), reduced opacity (0.7)
+- Each item: type icon (💰 sold / 🎉 bought / ℹ️ info), title, message, timestamp (zh-HK locale)
+- Empty state: 🔔 "未有通知"
+- Loading state: ⏳ "載入中..."
+
+### Notification Generation
+- Created server-side in `/api/market` POST buy handler
+- **pet_sold**: seller receives "你嘅寵物以 ⚡X 能量賣出！"
+- **pet_bought**: buyer receives "你以 ⚡X 能量買入咗新寵物！"
+- Unread count fetched when community tab mounts via `useEffect`
+
+### Access
+- 🔔 bell icon in community tab header (with red unread badge)
+- Badge shows count (capped at 99+)
+- On close: badge remains until user returns to community tab
