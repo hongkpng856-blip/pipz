@@ -1,5 +1,5 @@
 import { PixelPetConfig, PixelGrid, PixelPetData, PixelPalette } from './types'
-import { seededRandom, RARITY_PALETTES, BODY_TEMPLATES, EYE_TEMPLATES, ACCESSORY_TEMPLATES, STAGE_EMBELLISHMENTS } from './palette'
+import { seededRandom, RARITY_PALETTES, BODY_TEMPLATES, EYE_TEMPLATES, ACCESSORY_TEMPLATES, STAGE_EMBELLISHMENTS, SPECIES_NAMES } from './palette'
 
 const GRID_SIZE = 16
 
@@ -13,6 +13,9 @@ export function generatePixelPet(config: PixelPetConfig): PixelPetData {
   // Select body template
   const bodyIdx = Math.floor(rand() * BODY_TEMPLATES.length)
   const body = BODY_TEMPLATES[bodyIdx]
+  
+  // Species info
+  const speciesName = SPECIES_NAMES[bodyIdx] || '未知'
   
   // Select eye style
   const eyeIdx = Math.floor(rand() * EYE_TEMPLATES.length)
@@ -83,6 +86,8 @@ export function generatePixelPet(config: PixelPetConfig): PixelPetData {
     width: GRID_SIZE,
     height: GRID_SIZE,
     palette,
+    speciesId: bodyIdx,
+    speciesName,
   }
 }
 

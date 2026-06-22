@@ -23,4 +23,6 @@ export interface PixelPetData {
   width: number
   height: number
   palette: PixelPalette
+  speciesId: number
+  speciesName: string
 }

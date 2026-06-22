@@ -46,17 +46,21 @@ export default function PetCompanion({
   const [renaming, setRenaming] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [shake, setShake] = useState(false)
+  const [speciesName, setSpeciesName] = useState('')
 
   // Generate pet pixel data
   useEffect(() => {
     if (pet) {
-      petDataRef.current = generatePixelPet({
+      const data = generatePixelPet({
         seed: parseInt(pet.speciesId) || 1,
         rarity: pet.rarity,
         evolutionStage: pet.evolutionStage,
       })
+      petDataRef.current = data
+      setSpeciesName(data.speciesName)
     } else {
       petDataRef.current = null
+      setSpeciesName('')
     }
   }, [pet])
 
@@ -324,6 +328,7 @@ export default function PetCompanion({
                 color:'#f0f4f8', fontSize:14, fontWeight:700, padding:'4px 12px', cursor:'pointer',
                 fontFamily:'inherit', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', gap:6 }}>
               {pet.name || '未命名'} ✏️
+              <span style={{ fontSize:8, fontWeight:400, color:'#5a6d85', marginLeft:4 }}>#{speciesName}</span>
             </button>
           )}
 
@@ -358,6 +363,12 @@ export default function PetCompanion({
                            'linear-gradient(90deg,#ef4444,#f87171)',
               }}/></div>
             </div>
+          </div>
+
+          {/* Species + Rarity row */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <span style={{ fontSize:10, fontWeight:600, color:'#f0f4f8' }}>#{speciesName}</span>
+            <span className="pet-badge" style={{ color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9 }}>{RARITY_LABELS[pet.rarity]}</span>
           </div>
 
           {/* Row 2: Stats */}
