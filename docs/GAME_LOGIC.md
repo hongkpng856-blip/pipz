@@ -200,14 +200,19 @@ Pets are procedurally generated based on 3 inputs:
 - **rarity** — determines colour palette
 - **evolutionStage** — determines size/complexity
 
-### Body Templates (5)
-- Round/chubby, Tall/slender, Wide/flat, Star-shaped, Heart-shaped
+### Body Templates (50 species)
+50 unique species generated via procedural seed + species lookup. Each species has:
+- **speciesId**: deterministic seed
+- **speciesName**: e.g., `#圓貓`, `#小狗`, `#小龍`, `#機械人`, `#史萊姆`, `#鳳凰`, `#獨角獸`, `#水母`
+- **gridTemplate**: 16×16 pixel grid
+- **palette**: rarity-coloured variant
+- **accessorySet**: which accessories this species can wear
 
-### Eye Styles (5)
-- Big round, Small dot, Happy closed, Sparkle, Side eyes
+### Eye Styles (15)
+Big round, Small dot, Happy closed, Sparkle, Side eyes, Sleepy (━━), Angry (> <), Heart (♥), Tear (; ;), Star (☆), Glowing, Cross (X X), Dizzy (@ @), Winking (◕‿◕), Closed happy (∪ ∪)
 
-### Accessories (5)
-- None, Small ears, Cat ears, Horns, Wings
+### Accessories (19)
+None, Small ears, Cat ears, Horns, Wings, Crown, Bow, Top hat, Flower, Scarf, Glasses, Eyepatch, Halo, Antenna, Tail, Cape, Collar, Earring, Mask
 
 ### Stage Embellishments
 - Stage 1 (Baby): no extras

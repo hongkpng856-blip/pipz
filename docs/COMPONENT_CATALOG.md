@@ -40,7 +40,50 @@ The entire app is a single page with 4 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Pet Display Card → **WalkingCanvas** (top-down pixel view — Pixel Agents style)
+### Main View: Two States
+
+#### State A — PetCompanion (idle, not walking → full-screen interactive pet)
+Replaces WalkingCanvas when user is **not actively walking** (GPS off). Rendered by `PetCompanion.tsx`.
+
+**Layout:**
+- Full-width canvas with **indoor room scene** (dark purple walls, tiled floor)
+- **Pet character** (drawn via pixel-gen) walks randomly within the room
+- Pet can do **mischief jumps** — random bounce animation
+- **Tap anywhere** on pet → ❤️ heart particles + sparkle effect
+- **No pet state**: egg at center + "未有寵物" text + progress bar toward first hatch
+
+**Info Panel (浮動 overlay, top-left):**
+- **Name + rename**: shows pet name (or "未命名"), ✏️ click → inline input with ✓/✕ buttons
+- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. — rendered immediately after name
+- **Toggle button**: 📊 詳情 / 隱藏 (top-right corner)
+
+**Info Panel Detail (when expanded):**
+```
+┌─────────────────────────────────┐
+│ 😊 開心                 92%    │
+│ ██████████░░░░░  (mood bar)     │
+│                                 │
+│ #圓貓                [普通]     │
+│                                 │
+│ ⚡ 20  🍀 15  💜 25  🔋 18    │  ← 4 stats
+│                                 │
+│ 🌟 BB              Lv.3        │
+│ ██████░░░░░░░  (evolution bar)  │
+└─────────────────────────────────┘
+```
+- **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
+- **Species name**: `#` + `speciesName` from pixel-gen engine
+- **Rarity badge**: colour-coded pill
+- **4 Stats**: ⚡ Speed / 🍀 Luck / 💜 Charm / 🔋 Energy, each in mini cards
+- **Evolution stage**: label + progress bar toward next stage (amber `#f59e0b`)
+
+**Action Buttons (bottom):**
+- 🍖 餵食 / ✋ 摸頭 / 🎾 玩
+- Footer: 👣 steps · ❤️ mood% · rarity badge
+
+#### State B — WalkingCanvas (walking/encounter → top-down pixel view)
+Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animation**.
+
 - Top-down 2D pixel art environment (grass, winding path, trees, bushes)
 - **Pet character** drawn with rarity colour + evolution stage size
 - **Idle**: pet stands with slight idle bob, ground slowly scrolls
@@ -49,7 +92,7 @@ The entire app is a single page with 4 tabs and modals.
 - **Encounter**: grass shakes near pet, ❗ pops up, egg appears with sparkles (longer ~4s animation), then popup shows collected egg
 - After encounter: **egg popup** with rarity badge + "去蛋頁" button (not a pet yet)
 - Egg goes to inventory, hatched on Eggs tab by tapping
-- Pet status shown BELOW the canvas in a slim bar
+- Pet status shown BELOW the canvas in a slim bar (3 action buttons: feed/pet/play)
 
 ### Stats Card
 - Bigger card with **bar chart visualization**
@@ -206,8 +249,13 @@ Full-screen overlay, max-width: 24rem centered.
 
 ### Pet Display Section
 - Large Canvas pet animation (happy state)
-- Rarity badge, Level, CP, Stage name
-- Mood emoji + text
+- Rarity badge
+- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (rendered via `D({seed, rarity, stage}).speciesName`)
+- Level, CP, Stage name
+- **Mood emoji + text + mood bar**:
+  - Mood emoji (😊/🤩/😋/😴/😢) + mood label (開心/興奮/肚餓/眼瞓/傷心)
+  - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
+  - Percentage shown (e.g., 92%)
 - 3 action buttons: 🍖餵食 ✋摸頭 🎾玩
 
 ### Stats Section
@@ -346,6 +394,15 @@ Canvas-based top-down pixel art view (VS Code Pixel Agents style).
 - **Navigation + API**: **Network-first** — fetch from network, fall back to cache when offline
 - **Register**: `src/components/SwRegister.tsx` client component, mounted in `layout.tsx`
 - SW skips waiting and claims clients immediately on activate
+- **Cache versioning**: SW version (`pipz-v1`, `pipz-v2`, etc.) must be bumped in `public/sw.js` every deploy to force PWA update:
+  ```js
+  const CACHE = 'pipz-v2'  // bump on every significant update
+  ```
+- **iPhone PWA cache fix**: When user reports "冇睇到更新":
+  1. Settings → Safari → Advanced → Website Data → Delete `pipz-ivory.vercel.app`
+  2. Kill PWA app
+  3. Open Safari to URL (loads new SW)
+  4. Re-open PWA app
 
 ### Installation
 - **Desktop Chrome**: Address bar install prompt or ⋮ → Install Pipz

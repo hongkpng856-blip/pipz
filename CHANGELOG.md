@@ -1,6 +1,25 @@
 # Changelog
 
-## v0.2.0 (2026-06-18)
+## v0.3.0 (2026-06-23)
+
+### Added
+- **PetCompanion** — full-screen interactive pet room (indoor scene, auto-walk, mischief, tap ❤️)
+- **Pet info panel** — mood bar (green/amber/red gradient), species name `#圓貓`, 4 stats (⚡🍀💜🔋), evolution progress
+- **50 pixel pet species** — expanded from 5 to 50 (cat, dog, bunny, dragon, alien, robot, phoenix, unicorn, slime, jellyfish, etc.)
+- **15 eye templates** — expanded from 5 to 15 (sleepy, angry, heart, sparkle, tear, star, etc.)
+- **19 colour variants per rarity** — expanded from 3 to 5 per rarity × 5 rarities
+- **Species name display** — `#物種名` shown in both PetCompanion and PetDetailModal
+- **Mood bar in PetDetailModal** — feature parity with PetCompanion
+- **Service Worker v2** — cache-busting via version bump (`pipz-v1` → `pipz-v2`) to force PWA update
+
+### Changed
+- PetDetailModal now shows species name (`#物種名`) and mood bar (emoji + gradient bar + %)
+- Map tab: idle (no GPS) → PetCompanion room view; walking → WalkingCanvas
+- PetCompanion replaces WalkingCanvas when GPS is off
+
+### Fixed
+- Vercel deploy failure — removed `vercel.json` (config conflicted with dashboard settings)
+- iPhone PWA cache — SW v2 forces re-fetch of all static assets on next page load
 
 ### Added
 - Procedural pixel pet generator (Canvas-based, seed + rarity + stage)
