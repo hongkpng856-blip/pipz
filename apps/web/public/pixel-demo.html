@@ -3,610 +3,768 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Pipz Pixel Art Demo</title>
+<title>Pipz Pixel Art Redesign Demo</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #0b1120; color: #e2e8f0; font-family: system-ui, sans-serif;
-  padding: 20px; min-height: 100vh;
+  background: #0b1120; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif;
+  padding: 16px; min-height: 100vh;
 }
-h1 { font-size: 18px; margin-bottom: 4px; }
-h2 { font-size: 14px; color: #94a5b8; margin: 24px 0 12px; border-bottom: 1px solid #1e2a45; padding-bottom: 6px; }
-.sub { font-size: 11px; color: #5a6d85; margin-bottom: 16px; }
-.design-row {
-  display: flex; gap: 24px; align-items: flex-start;
-  margin-bottom: 20px; flex-wrap: wrap;
+h1 { font-size: 20px; margin-bottom: 2px; }
+.sub { font-size: 11px; color: #5a6d85; margin-bottom: 20px; }
+.species-section { margin-bottom: 32px; }
+.species-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #1e2a45;
 }
-.design-card {
-  background: #141b2d; border: 1px solid #1e2a45; border-radius: 12px;
-  padding: 16px; text-align: center; width: 140px;
+.species-header h2 { font-size: 16px; font-weight: 700; }
+.species-header .emoji { font-size: 20px; }
+.style-grid {
+  display: flex; gap: 16px; flex-wrap: wrap;
 }
-.design-card canvas {
-  display: block; margin: 0 auto 8px;
-  image-rendering: pixelated;
+.style-card {
+  background: #141b2d; border: 1px solid #1e2a45; border-radius: 14px;
+  padding: 14px; text-align: center; width: 158px; cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.design-card .label {
-  font-size: 10px; color: #5a6d85; margin-bottom: 2px;
+.style-card:hover { border-color: #8b5cf6; }
+.style-card.selected { border-color: #8b5cf6; box-shadow: 0 0 12px rgba(139,92,246,0.3); }
+.style-card canvas {
+  display: block; margin: 0 auto 6px; border-radius: 4px;
+  image-rendering: pixelated; width: 120px; height: 120px;
 }
-.design-card .name {
-  font-size: 13px; font-weight: 700; color: #f0f4f8;
+.style-card .sname { font-size: 12px; font-weight: 700; color: #f0f4f8; }
+.style-card .sdesc { font-size: 9px; color: #5a6d85; margin-top: 2px; }
+.style-card .sbadge {
+  display: inline-block; font-size: 8px; padding: 2px 10px;
+  border-radius: 8px; margin-top: 4px; font-weight: 700;
 }
-.design-card .badge {
-  display: inline-block; font-size: 8px; padding: 1px 8px;
-  border-radius: 8px; margin-top: 4px; font-weight: 600;
-}
-.badge-current { background: #1e2a45; color: #5a6d85; }
-.badge-redesign { background: rgba(34,197,94,0.15); color: #22c55e; }
-.badge-v2 { background: rgba(139,92,246,0.15); color: #a855f7; }
-.badge-v3 { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.badge-curr { background: #1e2a45; color: #5a6d85; }
+.badge-new { background: rgba(34,197,94,0.15); color: #22c55e; }
+.badge-det { background: rgba(139,92,246,0.15); color: #a855f7; }
+.badge-chibi { background: rgba(245,158,11,0.15); color: #f59e0b; }
 
-.legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 16px; font-size: 10px; color: #5a6d85; }
-.legend span { display: flex; align-items: center; gap: 4px; }
-.legend .swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; border: 1px solid rgba(255,255,255,0.1); }
-
-.pick-btn {
-  display: inline-block; margin-top: 6px;
-  padding: 4px 14px; border-radius: 10px; border: 1px solid #8b5cf6;
-  background: rgba(139,92,246,0.12); color: #c084fc;
-  font-size: 10px; cursor: pointer; font-family: inherit; font-weight: 600;
-  transition: all 0.15s;
+#result-box {
+  margin-top: 20px; padding: 16px; border-radius: 14px;
+  border: 1px solid #8b5cf6; background: rgba(139,92,246,0.08);
+  display: none;
 }
-.pick-btn:hover { background: #8b5cf6; color: white; }
-.pick-btn.selected { background: #8b5cf6; color: white; }
+#result-box.show { display: block; }
+#result-box .rtitle { font-size: 13px; font-weight: 700; color: #c084fc; margin-bottom: 4px; }
+#result-box .rdesc { font-size: 11px; color: #94a5b8; }
+
+.btn-generate {
+  display: inline-block; margin-top: 16px;
+  padding: 10px 32px; background: #8b5cf6; color: white;
+  border: none; border-radius: 12px; font-size: 14px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.btn-generate:disabled { opacity: 0.3; cursor: not-allowed; }
 </style>
 </head>
 <body>
 
-<h1>🎨 Pipz Pixel Art Redesign</h1>
-<div class="sub">揀你鍾意嘅風格，我再根據嗰個方向重新設計全部 50 種動物</div>
-
-<div class="legend">
-  <span><span class="swatch" style="background:#555"></span> 而家 (16×16 + outline)</span>
-  <span><span class="swatch" style="background:#22c55e"></span> Style A — 更似動物 (特徵強化)</span>
-  <span><span class="swatch" style="background:#a855f7"></span> Style B — 更細緻 (24×24 高解析)</span>
-  <span><span class="swatch" style="background:#f59e0b"></span> Style C — Q版大眼 (可愛風)</span>
-</div>
+<h1>🎨 Pipz Pixel Art 重新設計</h1>
+<div class="sub">撳每個風格嘅 card 揀你鍾意嘅方向，我根據你揀嘅風格 redesign 晒全部 50 種動物</div>
 
 <div id="app"></div>
 
+<div id="result-box">
+  <div class="rtitle">✨ 已揀選風格</div>
+  <div class="rdesc" id="result-text">請撳每個動物下面嘅風格 card</div>
+</div>
+
+<button class="btn-generate" id="genBtn" disabled onclick="confirmChoice()">
+  根據呢個風格生成全部 50 種動物 →
+</button>
+
 <script>
-// ─── Palette Colors ───
-const COLORS = {
-  cat:    { p:'#a8a8a8', s:'#d4d4d4', a:'#808080', o:'#555555' },
-  dog:    { p:'#c4a882', s:'#e8d5b7', a:'#a08060', o:'#6b5a40' },
-  dragon: { p:'#4a90d9', s:'#80c0f0', a:'#2068b0', o:'#1a4a7a' },
-  bunny:  { p:'#e0c8a0', s:'#f0dcc0', a:'#c0a070', o:'#705038' },
-  slime:  { p:'#6bc46b', s:'#a0e0a0', a:'#40a040', o:'#2d7a2d' },
-  robot:  { p:'#b0b8c8', s:'#d0d8e0', a:'#8890a0', o:'#586070' },
-  phoenix:{ p:'#d02060', s:'#ff4080', a:'#ff80a0', o:'#a01040' },
-  jelly:  { p:'#4fc4b0', s:'#80e0d0', a:'#20a090', o:'#1a7060' },
+// ─── Color palettes ───
+const PAL = {
+  cat:    { p:'#a8a8a8', s:'#d4d4d4', a:'#808080', o:'#555555', e:'#fff', n:'#333' },
+  dog:    { p:'#c4a882', s:'#e8d5b7', a:'#a08060', o:'#6b5a40', e:'#fff', n:'#4a3520' },
+  dragon: { p:'#4a90d9', s:'#80c0f0', a:'#2068b0', o:'#1a4a7a', e:'#fff', n:'#0a2040' },
+  slime:  { p:'#6bc46b', s:'#a0e0a0', a:'#40a040', o:'#2d7a2d', e:'#fff', n:'#1a5c1a' },
+  robot:  { p:'#b0b8c8', s:'#d0d8e0', a:'#8890a0', o:'#586070', e:'#fff', n:'#303848' },
 };
 
-function drawPixel(ctx, grid, pal, px=3, outline=true) {
+// ─── Pixel art grids (24×24) ───
+// Colors: p=primary s=secondary a=accent o=outline e=eye-white n=eye/nose
+// _=transparent
+
+const G = {};
+
+// ════════════════ #圓貓 CAT ════════════════
+
+G.cat_curr = [
+  '________________________',
+  '________________________',
+  '_________pppp_________',
+  '________pppppp________',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______pppssppp_______',
+  '_______pppssppp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______appppppa_______',
+  '______aa_app_aa_______',
+  '______ppp___ppp_______',
+  '______ppppppppp_______',
+  '_______ppppppp________',
+  '_______ppppppp________',
+  '______ppppppppp_______',
+  '_____ppppppppppp______',
+  '____ppppppppppppp_____',
+  '____ppppppppppppp_____',
+  '_____ppppppppppp______',
+  '______spppppps________',
+  '_________aa___________',
+].map(r => r.replace(/ /g,''));
+
+G.cat_A = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '_________pppp_________',
+  '________pppppp________',
+  '_______pppppppp_______',
+  '_______ppe__epp_______',
+  '_______pp____pp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______appppppa_______',
+  '______pa__pp__ap______',
+  '______ppp____ppp______',
+  '______pppppppppp______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '______pppppppppp______',
+  '_____pppppppppppp_____',
+  '____pppppppppppppp____',
+  '____spppppppppppps____',
+  '_____spppppppppps_____',
+  '______a_______a______',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.cat_B = [
+  '__ppp_______________',
+  '_pppp_______________',
+  '__ppppp___ppppp_____',
+  '___pppppppppppp______',
+  '____ppppppppppp______',
+  '____ppppppppppp______',
+  '____ppppppppppp______',
+  '____ppp__e_e__ppp____',
+  '____ppp_e___e_ppp____',
+  '____ppp_______ppp____',
+  '____pppppppppppp_____',
+  '____pppppppppppp_____',
+  '____appppppppppa_____',
+  '____pa_apppp_ap______',
+  '____ppp____ppp_______',
+  '____pppppppppp_______',
+  '____pppppppppp_______',
+  '___pppppppppppp______',
+  '__pppppppppppppp_____',
+  '__pppppppppppppp_____',
+  '__pppppppppppppp_____',
+  '___pppppppppppp______',
+  '____spppppppps_______',
+  '_______aa___________',
+].map(r => r.replace(/ /g,''));
+
+G.cat_C = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '_________pppp_________',
+  '________pppppp________',
+  '_______pppppppp_______',
+  '_______ppe__epp_______',
+  '_______pp____pp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '_______appppppa_______',
+  '______pa__pp__ap______',
+  '______ppp____ppp______',
+  '______pppppppppp______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '______spppppppps______',
+  '_____spppppppppps_____',
+  '___spppppppppppppps___',
+  '__spppppppppppppppps__',
+  '__spppppppppppppppps__',
+  '__apppppppppppppppa__',
+  '____a___________a____',
+].map(r => r.replace(/ /g,''));
+
+// ════════════════ #小狗 DOG ════════════════
+
+G.dog_curr = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '________ppppp________',
+  '_______ppppppp_______',
+  '______ppppppppp______',
+  '______ppppppppp______',
+  '______ppppppppp______',
+  '______ppppppppp______',
+  '______ppppppppp______',
+  '______ppppppppp______',
+  '______apppppppa______',
+  '_____aa__ppp__aa_____',
+  '_____ppp___p__pp_____',
+  '_____pppppppppp______',
+  '______pppppppp_______',
+  '______pppppppp_______',
+  '_____pppppppppp______',
+  '____pppppppppppp_____',
+  '___pppppppppppppp____',
+  '___spppppppppppps____',
+  '____spppppppppps_____',
+  '______a_____a_______',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.dog_A = [
+  '________________________',
+  '________________________',
+  '________ss___ss_______',
+  '_______spps_spps______',
+  '_______ppppppppp______',
+  '______ppppppppppp_____',
+  '______ppppppppppp_____',
+  '______ppppppppppp_____',
+  '______pppppppppp______',
+  '______appppppppa______',
+  '______p_apppp_p_______',
+  '______pp_____pp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '_______pppppppp_______',
+  '_______pppppppp_______',
+  '______pppppppppp______',
+  '_____pppppppppppp_____',
+  '____pppppppppppppp____',
+  '____spppppppppppps____',
+  '_____spppppppppps_____',
+  '_______a_____a_______',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.dog_B = [
+  '________________________',
+  '___ss____________ss____',
+  '__sppp__________sppp___',
+  '__ppppp________ppppp___',
+  '__ppppppppppppppppp____',
+  '__ppppppppppppppppp____',
+  '__ppppppppppppppppp____',
+  '__ppppppppppppppppp____',
+  '__apppppppppppppppa____',
+  '__p_appppppppppp_p_____',
+  '__pp____________pp_____',
+  '__ppppppppppppppp______',
+  '__ppppppppppppppp______',
+  '__ppppppppppppppp______',
+  '___pppppppppppppp______',
+  '___pppppppppppppp______',
+  '___pppppppppppppp______',
+  '__pppppppppppppppp_____',
+  '__spppppppppppppps_____',
+  '__spppppppppppppps_____',
+  '__apppppppppppppppa____',
+  '____a___________a______',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.dog_C = [
+  '________________________',
+  '________________________',
+  '________ss___ss_______',
+  '_______sppp_sppp______',
+  '_______ppppppppp______',
+  '______ppppppppppp_____',
+  '______ppp_____ppp_____',
+  '______pe_______ep_____',
+  '______pe_______ep_____',
+  '______ppp_____ppp_____',
+  '______ppppppppppp_____',
+  '______appppppppa______',
+  '_____pa__ppp__ap______',
+  '_____ppp_____ppp______',
+  '_____ppppppppppp______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '_____ppppppppppp______',
+  '____ppppppppppppp_____',
+  '___sppppppppppppps____',
+  '__sppppppppppppppps___',
+  '__apppppppppppppppa___',
+  '____a___________a_____',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+// ════════════════ #小龍 DRAGON ════════════════
+
+G.dragon_curr = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '________a____a________',
+  '_______spppps_______',
+  '______pppppppp______',
+  '______pppppppp______',
+  '______pppppppp______',
+  '______pppppppp______',
+  '______pppppppp______',
+  '______pppppppp______',
+  '______appppppa______',
+  '______a_appp_a______',
+  '_____pp_____pp______',
+  '_____ppppppppp______',
+  '______pppppppp_______',
+  '_____pppppppppp______',
+  '____pppppppppppp_____',
+  '___pppppppppppppp____',
+  '___spppppppppppps____',
+  '____sppppspppps_____',
+  '_____a___p___a______',
+  '________p___________',
+  '_______a_a__________',
+].map(r => r.replace(/ /g,''));
+
+G.dragon_A = [
+  '________________________',
+  '________a____a__________',
+  '_______spppps__________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______ppe__epp_________',
+  '______pp____pp_________',
+  '______appppppa_________',
+  '_____pa__pp__ap________',
+  '_____ppp____ppp________',
+  '_____ppppppppp_________',
+  '______pppppppp_________',
+  '_____ppppppppp_________',
+  '____ppppppppppp________',
+  '___ppppppppppppp_______',
+  '__ppppppppppppppp______',
+  '__sppppppppppppps______',
+  '__sppp____pppps________',
+  '__a__p____p__a_________',
+  '_____a____a____________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.dragon_B = [
+  '________________________',
+  '________________________',
+  '________a____a__________',
+  '_______spppps__________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______pppppppp_________',
+  '______ppe__epp_________',
+  '______pp____pp_________',
+  '______appppppa_________',
+  '_____pppppppppp________',
+  '____pppppppppppp_______',
+  '___pppppppppppppp______',
+  '__pppppppppppppppp_____',
+  '__pppppppppppppppp_____',
+  '__pppppppppppppppp_____',
+  '__sppppppppppppps______',
+  '__sppp____pppps________',
+  '__app_____p___pa_______',
+  '___a___________a________',
+  '____a_________a_________',
+  '_____a_______a__________',
+  '______a_____a___________',
+].map(r => r.replace(/ /g,''));
+
+G.dragon_C = [
+  '________________________',
+  '_______aa____aa_________',
+  '______sppp__spps________',
+  '_____pppppppppp_________',
+  '_____pppppppppp_________',
+  '_____pe______ep_________',
+  '_____pe______ep_________',
+  '_____pppppppppp_________',
+  '_____pppppppppp_________',
+  '_____appppppppa_________',
+  '____pa__ppp__ap_________',
+  '____ppp_____ppp_________',
+  '____ppppppppppp_________',
+  '_____ppppppppp__________',
+  '____ppppppppppp_________',
+  '___ppppppppppppp________',
+  '__sspppppppppppss_______',
+  '__sppppppppppppps_______',
+  '__sppp____pppps_________',
+  '__a_p______p_a__________',
+  '___a________a___________',
+  '____a______a____________',
+  '_____a____a_____________',
+  '______a__a______________',
+].map(r => r.replace(/ /g,''));
+
+// ════════════════ #史萊姆 SLIME ════════════════
+
+G.slime_curr = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '________ppppp_________',
+  '_______ppppppp________',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______apppppppa_______',
+  '______apppppppa_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '______ppppppppp_______',
+  '_______pppppppp________',
+  '________pppppp_________',
+  '_________pppp__________',
+  '__________aa___________',
+  '________________________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.slime_A = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '_________pppp__________',
+  '________pppppp_________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______ppe__epp________',
+  '_______pp____pp________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______appppppa________',
+  '______pa__pp__ap_______',
+  '______ppp____ppp_______',
+  '______pppppppppp_______',
+  '_______pppppppp________',
+  '________pppppp_________',
+  '________pppppp_________',
+  '________pppppp_________',
+  '_________pppp__________',
+  '__________aa___________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.slime_B = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '_______ppppppppp________',
+  '______ppppppppppp_______',
+  '_____ppppppppppppp______',
+  '_____ppppppppppppp______',
+  '_____pppe_____eppp______',
+  '_____pppe_____eppp______',
+  '_____ppppppppppppp______',
+  '_____ppppppppppppp______',
+  '_____ppppppppppppp______',
+  '_____appppppppppa______',
+  '____pa__ppppp__ap_______',
+  '____ppp_______ppp_______',
+  '____ppppppppppppp_______',
+  '_____ppppppppppp________',
+  '______ppppppppp_________',
+  '______ppppppppp_________',
+  '_______ppppppp__________',
+  '________ppppp___________',
+  '_________ppp____________',
+  '__________a_____________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.slime_C = [
+  '________________________',
+  '________________________',
+  '________________________',
+  '_________pppp__________',
+  '________pppppp_________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '______apppppppa_______',
+  '______appe__epa_______',
+  '______app____pa_______',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______pppppppp________',
+  '_______appppppa________',
+  '______pa__pp__ap_______',
+  '______ppp____ppp_______',
+  '______pppppppppp_______',
+  '_______pppppppp________',
+  '________pppppp_________',
+  '_________pppp__________',
+  '__________aa___________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+// ════════════════ #機械人 ROBOT ════════════════
+
+G.robot_curr = [
+  '________________________',
+  '_________aaaa__________',
+  '________spppps_________',
+  '_______spppppps________',
+  '_______pp_aa_pp________',
+  '_______ppppppp_________',
+  '_______sppppps_________',
+  '_______sppppps_________',
+  '_______apppppa_________',
+  '________aaaaa__________',
+  '_______a_____a_________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.robot_A = [
+  '________________________',
+  '_________aaaa__________',
+  '________aappaa_________',
+  '_______spppppps________',
+  '_______pppppppp________',
+  '_______pp_aa_pp________',
+  '_______pppppppp________',
+  '_______spppppps________',
+  '_______spppppps________',
+  '_______appppppa________',
+  '________aaaaa__________',
+  '_______a_____a_________',
+  '______a_______a________',
+  '______a_______a________',
+  '______ppppppppp________',
+  '______p_______p________',
+  '______p_______p________',
+  '______ppppppppp________',
+  '______sppppppps________',
+  '______a_______a________',
+  '_____pa_______ap_______',
+  '________________________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.robot_B = [
+  '________________________',
+  '________________________',
+  '_________aaaa__________',
+  '________spppps_________',
+  '_______spppppps________',
+  '_______pp_aa_pp________',
+  '_______pppppppp________',
+  '_______spppppps________',
+  '_______spppppps________',
+  '_______appppppa________',
+  '________aaaaa__________',
+  '_______a_____a_________',
+  '______a_______a________',
+  '______ppppppppp________',
+  '______p_______p________',
+  '______p_______p________',
+  '______p_______p________',
+  '______ppppppppp________',
+  '______sppppppps________',
+  '______a_______a________',
+  '_____aa_______aa_______',
+  '____a___________a______',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+G.robot_C = [
+  '________________________',
+  '_________aaaa__________',
+  '________aappaa_________',
+  '_______spppppps________',
+  '_______pppppppp________',
+  '_______ppp__ppp________',
+  '_______pe____ep________',
+  '_______pe____ep________',
+  '_______ppp__ppp________',
+  '_______spppppps________',
+  '_______appppppa________',
+  '________aaaaa__________',
+  '_______a_____a_________',
+  '______a_______a________',
+  '______ppppppppp________',
+  '______p_______p________',
+  '______p_______p________',
+  '______ppppppppp________',
+  '______sppppppps________',
+  '______a_______a________',
+  '_____pa_______ap_______',
+  '________________________',
+  '________________________',
+  '________________________',
+].map(r => r.replace(/ /g,''));
+
+// ─── Drawing engine ───
+function drawAnimal(canvas, grid, pal, px) {
+  const ctx = canvas.getContext('2d');
   const h = grid.length, w = grid[0].length;
-  const cvs = ctx.canvas;
-  cvs.width = (w+2)*px; cvs.height = (h+2)*px;
-  ctx.clearRect(0,0,cvs.width,cvs.height);
+  const sz = px || 4;
+  canvas.width = w * sz + 2 * sz;
+  canvas.height = h * sz + 2 * sz;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.imageSmoothingEnabled = false;
 
-  // Build outlined grid
+  // Build with outline
   const g = grid.map(r => [...r]);
-  if (outline) {
-    for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
-      if (g[y][x]==='') continue;
-      for (const [ny,nx] of [[y-1,x],[y+1,x],[y,x-1],[y,x+1]]) {
-        if (ny<0||ny>=h||nx<0||nx>=w) continue;
-        if (g[ny][nx]==='') g[ny][nx]=pal.o;
-      }
+  for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
+    if (g[y][x]==='_'||g[y][x]==='') continue;
+    for (const [ny,nx] of [[y-1,x],[y+1,x],[y,x-1],[y,x+1]]) {
+      if (ny<0||ny>=h||nx<0||nx>=w) continue;
+      if (g[ny][nx]==='_'||g[ny][nx]==='') g[ny][nx]=pal.o;
     }
   }
 
-  const ox = px, oy = px; // offset for outline
+  const ox = sz, oy = sz;
   for (let y=0; y<h; y++) for (let x=0; x<w; x++) {
     const c = g[y][x];
-    if (c && c!=='') {
-      ctx.fillStyle = c;
-      ctx.fillRect(ox + x*px, oy + y*px, px, px);
+    if (!c || c==='_') continue;
+    switch(c) {
+      case 'p': ctx.fillStyle = pal.p; break;
+      case 's': ctx.fillStyle = pal.s; break;
+      case 'a': ctx.fillStyle = pal.a; break;
+      case 'o': ctx.fillStyle = pal.o; break;
+      case 'e': ctx.fillStyle = pal.e; break;
+      case 'n': ctx.fillStyle = pal.n; break;
+      default: ctx.fillStyle = pal.p;
     }
+    ctx.fillRect(ox + x*sz, oy + y*sz, sz, sz);
   }
 }
 
-// ─── Template Grids ───
-// Each grid: 16x16 array, '' = transparent, 'p'/'s'/'a'/'e' = palette color
-
-const T = {
-  // ─── #圓貓 (Cat) ───
-  cat_current: [
-    '________________',
-    '________________',
-    '__ssppppss______',
-    '__sppppppps_____',
-    '_pppppppppp_____',
-    '_pppppppppp_____',
-    '_pppppppppp_____',
-    '__spppppps______',
-    '__ssppppss______',
-    '_____aa_________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  cat_A: [
-    '________ss______',
-    '_______spps_____',
-    '__ss___pppps____',
-    '_spps_ppppps____',
-    '__pppppppppp____',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__pppppppppp____',
-    '__pppppppps_____',
-    '__spppppps______',
-    '___spppps_______',
-    '____spps________',
-    '_____aa_________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  cat_B: [
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '______ss________',
-    '_____spps_______',
-    '__ss_pppps___ss_',
-    '_spppppppppppps_',
-    '__pppppppppppp__',
-    '__ppppp__ppppp__',
-    '__pppppppppppp__',
-    '__pppppppppppp__',
-    '__spppppppppps__',
-    '___spppppppps___',
-    '____aa___aa_____',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  cat_C: [
-    '_______ss_______',
-    '______spps______',
-    '__ss__pppps__ss_',
-    '_spppppppppps__',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__pppppppppps___',
-    '__pppppppps_____',
-    '__spppppps______',
-    '___spppps_______',
-    '____spps________',
-    '_____aa_________',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-
-  // ─── #小狗 (Dog) ───
-  dog_current: [
-    '________________',
-    '________________',
-    '_____pppss______',
-    '____pppppps_____',
-    '___pppppppps____',
-    '__spppppppp_____',
-    '__sppppppp______',
-    '__spppppp_______',
-    '__sppppp________',
-    '___aa___________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  dog_A: [
-    '________________',
-    '____ss____ss____',
-    '___sppp__spps___',
-    '____pppppppps___',
-    '___pppppppppp___',
-    '__ppppppppppp___',
-    '__pppppppppp____',
-    '__ppppppppp_____',
-    '__pppppppp______',
-    '__spppppp_______',
-    '___spppps_______',
-    '____spps________',
-    '_____aa_________',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  dog_B: [
-    '________________',
-    '________________',
-    '________________',
-    '_____ss__ss_____',
-    '____spppspps____',
-    '____pppppppps___',
-    '___pppppppppp___',
-    '___ppppppppp____',
-    '___pppppppp_____',
-    '___ppppppp______',
-    '___pppppp_______',
-    '___ppppp________',
-    '___spppps_______',
-    '____aa__aa______',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  dog_C: [
-    '_______ss_______',
-    '______ssss______',
-    '__ss_sppps_ss___',
-    '_spppppppps_____',
-    '__ppppppppp_____',
-    '__ppppppppp_____',
-    '__pppppppps_____',
-    '__ppppppp_______',
-    '__pppppps_______',
-    '__spppps________',
-    '___spps_________',
-    '____aa__________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-
-  // ─── #小龍 (Dragon) ───
-  dragon_current: [
-    '________________',
-    '___aa____aa_____',
-    '__spppppppps____',
-    '_spppppppppps___',
-    '_spppppppppps___',
-    '__spppppppps____',
-    '___spppppps_____',
-    '____spppps______',
-    '____a___a_______',
-    '___a_____a______',
-    '__a_______a_____',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  dragon_A: [
-    '______aa________',
-    '_____aapp_______',
-    '___ssppppp______',
-    '__sppppppp______',
-    '__pppppppp______',
-    '__pppppppp______',
-    '__pppppppp______',
-    '__pppppppp______',
-    '__ppppppps______',
-    '___pppppps______',
-    '___spppps_______',
-    '____pppps_______',
-    '___a__pp__a_____',
-    '__aa_____aa_____',
-    '_a_________a____',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  dragon_B: [
-    '________________',
-    '________________',
-    '____aa__aa______',
-    '___sssssss_______',
-    '__ppppppppp______',
-    '__ppppppppp______',
-    '__ppppppppp______',
-    '__ppppppppp______',
-    '__pppppppps______',
-    '___ppppppps______',
-    '___pppppps_______',
-    '____ppppps_______',
-    '____pp_pp________',
-    '___a_____a_______',
-    '__a_______a______',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  dragon_C: [
-    '______aa____aa__',
-    '_____aapp__aapp_',
-    '____ssppppss____',
-    '___spppppppps___',
-    '__spppppppppps__',
-    '__ppppppppppp___',
-    '__pppppppppp____',
-    '__pppppppps_____',
-    '__ppppppps______',
-    '__spppppps______',
-    '___spppps_______',
-    '____spps________',
-    '____a___a_______',
-    '___a_____a______',
-    '__a_______a_____',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-
-  // ─── #史萊姆 (Slime) ───
-  slime_current: [
-    '________________',
-    '________________',
-    '____spppps______',
-    '___ppppppp______',
-    '__spppppppps____',
-    '__spppppppps____',
-    '___ppppppp______',
-    '____spppps______',
-    '____spppps______',
-    '____spppps______',
-    '____spppps______',
-    '_____ppp________',
-    '______a_________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  slime_A: [
-    '________________',
-    '________________',
-    '_____sppps______',
-    '____ppppppp_____',
-    '___ppppppppp____',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__pppppppppp____',
-    '__pppppppppps___',
-    '___spppppppps___',
-    '____ssppppss____',
-    '______aa________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  slime_B: [
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '_____ppppp______',
-    '____ppppppp_____',
-    '___ppppppppp____',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '__ppppppppppp___',
-    '___ppppppppp____',
-    '____ppppppp_____',
-    '____ppp_pp______',
-    '_____aa_________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  slime_C: [
-    '________________',
-    '________________',
-    '______pp________',
-    '_____pppp_______',
-    '____pppppp______',
-    '__ppppppppp_____',
-    '__pppppppppp____',
-    '__pppppppppp____',
-    '__pppppppppp____',
-    '__pppppppppp____',
-    '__pppppppppp____',
-    '___pppppppp_____',
-    '____pppppp______',
-    '_____pppp_______',
-    '______aa________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-
-  // ─── #機械人 (Robot) ───
-  robot_current: [
-    '________________',
-    '________________',
-    '____spppps______',
-    '___spppppps_____',
-    '___pp_aa_pp_____',
-    '___ppppppp______',
-    '___s_a__as______',
-    '___sppppps______',
-    '___apppppa______',
-    '__a__pp__a______',
-    '__a_______a_____',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ],
-  robot_A: [
-    '________________',
-    '_____aaaa_______',
-    '____spppps______',
-    '___spppppps_____',
-    '___pp_aa_pp_____',
-    '___ppppppp______',
-    '___sppppps______',
-    '___sppppps______',
-    '___apppppa______',
-    '____aaaaa_______',
-    '___a_____a______',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  robot_B: [
-    '________________',
-    '________________',
-    '________________',
-    '_____aaaa_______',
-    '____spppps______',
-    '___spppppps_____',
-    '___pp_aa_pp_____',
-    '___ppppppp______',
-    '___sppppps______',
-    '___sppppps______',
-    '___apppppa______',
-    '____a___a_______',
-    '___a_____a______',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-  robot_C: [
-    '________________',
-    '_____aaaa_______',
-    '____aappaa______',
-    '___ppppppp______',
-    '___p_a__ap______',
-    '___ppppppp______',
-    '___sppppps______',
-    '___sppppps______',
-    '___apppppa______',
-    '____aaaaa_______',
-    '___a_____a______',
-    '__a_______a_____',
-    '________________',
-    '________________',
-    '________________',
-    '________________',
-  ].map(r => r.replace(/ /g,'')),
-};
-
-// ─── Render Helper ───
-function renderGrid(id, grid, pal, label, badge, badgeClass, px=3) {
-  const div = document.createElement('div');
-  div.className = 'design-card';
-  div.innerHTML = `<canvas id="${id}"></canvas>
-    <div class="label">${label}</div>
-    <div class="name">${grid === T.cat_current ? '' : '#'}</div>
-    <span class="badge ${badgeClass}">${badge}</span>
-    <button class="pick-btn" data-style="${badge.toLowerCase().replace(/\s/g,'')}" data-species="${label}">揀呢個</button>`;
-  document.getElementById('app').appendChild(div);
-  const canvas = div.querySelector('canvas');
-  const ctx = canvas.getContext('2d');
-  const pxSize = px;
-  const gridArr = grid.map(r => [...r].map(c => c==='_'?'':c));
-  drawPixel(ctx, gridArr, pal, pxSize, true);
-}
-
-// ─── Build Demo Page ───
-const species = [
-  { id:'cat', name:'圓貓', pal: COLORS.cat, grids: { current: T.cat_current, A: T.cat_A, B: T.cat_B, C: T.cat_C }},
-  { id:'dog', name:'小狗', pal: COLORS.dog, grids: { current: T.dog_current, A: T.dog_A, B: T.dog_B, C: T.dog_C }},
-  { id:'dragon', name:'小龍', pal: COLORS.dragon, grids: { current: T.dragon_current, A: T.dragon_A, B: T.dragon_B, C: T.dragon_C }},
-  { id:'slime', name:'史萊姆', pal: COLORS.slime, grids: { current: T.slime_current, A: T.slime_A, B: T.slime_B, C: T.slime_C }},
-  { id:'robot', name:'機械人', pal: COLORS.robot, grids: { current: T.robot_current, A: T.robot_A, B: T.robot_B, C: T.robot_C }},
+// ─── Build UI ───
+const styles = [
+  { key:'curr', label:'目前版本', badge:'現有', cls:'badge-curr' },
+  { key:'A', label:'Style A',  badge:'特徵強化', cls:'badge-new', desc:'更明顯動物特徵' },
+  { key:'B', label:'Style B',  badge:'更細緻',   cls:'badge-det', desc:'24×24 高解析度' },
+  { key:'C', label:'Style C',  badge:'Q版大眼', cls:'badge-chibi', desc:'可愛大眼風格' },
 ];
 
-species.forEach(s => {
-  // Section header
-  const h2 = document.createElement('h2');
-  h2.textContent = `#${s.name}`;
-  document.getElementById('app').appendChild(h2);
+const species = [
+  { id:'cat',    name:'圓貓',   emoji:'🐱', pal: PAL.cat },
+  { id:'dog',    name:'小狗',   emoji:'🐶', pal: PAL.dog },
+  { id:'dragon', name:'小龍',   emoji:'🐉', pal: PAL.dragon },
+  { id:'slime',  name:'史萊姆', emoji:'🟢', pal: PAL.slime },
+  { id:'robot',  name:'機械人', emoji:'🤖', pal: PAL.robot },
+];
 
-  const row = document.createElement('div');
-  row.className = 'design-row';
-  row.id = `row-${s.id}`;
-  document.getElementById('app').appendChild(row);
+let choices = {};
 
-  // Current
-  const curDiv = document.createElement('div');
-  curDiv.className = 'design-card';
-  curDiv.innerHTML = `<canvas id="${s.id}-current"></canvas>
-    <div class="label">目前版本</div>
-    <div class="name">#${s.name}</div>
-    <span class="badge badge-current">Current</span>`;
-  row.appendChild(curDiv);
-  const curCanvas = curDiv.querySelector('canvas');
-  const curCtx = curCanvas.getContext('2d');
-  const curGrid = s.grids.current.map(r => [...r].map(c => c==='_'?'':c));
-  drawPixel(curCtx, curGrid, s.pal, 4, true);
+const app = document.getElementById('app');
 
-  // Style A
-  const aDiv = document.createElement('div');
-  aDiv.className = 'design-card';
-  aDiv.innerHTML = `<canvas id="${s.id}-A"></canvas>
-    <div class="label">Style A — 特徵強化</div>
-    <div class="name">#${s.name}</div>
-    <span class="badge badge-redesign">A</span>
-    <button class="pick-btn" data-species="${s.id}" data-style="A">揀呢個</button>`;
-  row.appendChild(aDiv);
-  const aCanvas = aDiv.querySelector('canvas');
-  const aCtx = aCanvas.getContext('2d');
-  const aGrid = s.grids.A.map(r => [...r].map(c => c==='_'?'':c));
-  drawPixel(aCtx, aGrid, s.pal, 4, true);
+species.forEach(sp => {
+  const sec = document.createElement('div');
+  sec.className = 'species-section';
+  sec.innerHTML = `<div class="species-header">
+    <span class="emoji">${sp.emoji}</span>
+    <h2>#${sp.name}</h2>
+  </div><div class="style-grid" id="grid-${sp.id}"></div>`;
+  app.appendChild(sec);
 
-  // Style B
-  const bDiv = document.createElement('div');
-  bDiv.className = 'design-card';
-  bDiv.innerHTML = `<canvas id="${s.id}-B"></canvas>
-    <div class="label">Style B — 更細緻</div>
-    <div class="name">#${s.name}</div>
-    <span class="badge badge-v2">B</span>
-    <button class="pick-btn" data-species="${s.id}" data-style="B">揀呢個</button>`;
-  row.appendChild(bDiv);
-  const bCanvas = bDiv.querySelector('canvas');
-  const bCtx = bCanvas.getContext('2d');
-  const bGrid = s.grids.B.map(r => [...r].map(c => c==='_'?'':c));
-  drawPixel(bCtx, bGrid, s.pal, 3, true);
+  const grid = sec.querySelector('.style-grid');
 
-  // Style C
-  const cDiv = document.createElement('div');
-  cDiv.className = 'design-card';
-  cDiv.innerHTML = `<canvas id="${s.id}-C"></canvas>
-    <div class="label">Style C — Q版大眼</div>
-    <div class="name">#${s.name}</div>
-    <span class="badge badge-v3">C</span>
-    <button class="pick-btn" data-species="${s.id}" data-style="C">揀呢個</button>`;
-  row.appendChild(cDiv);
-  const cCanvas = cDiv.querySelector('canvas');
-  const cCtx = cCanvas.getContext('2d');
-  const cGrid = s.grids.C.map(r => [...r].map(c => c==='_'?'':c));
-  drawPixel(cCtx, cGrid, s.pal, 4, true);
+  styles.forEach((st, si) => {
+    const key = `${sp.id}_${st.key}`;
+    const gridData = G[key];
+    if (!gridData) return;
+
+    const card = document.createElement('div');
+    card.className = 'style-card';
+    card.dataset.species = sp.id;
+    card.dataset.style = st.key;
+    card.innerHTML = `<canvas id="cvs-${key}"></canvas>
+      <div class="sname">${st.label}</div>
+      <div class="sdesc">${st.desc||''}</div>
+      <span class="sbadge ${st.cls}">${st.badge}</span>`;
+    grid.appendChild(card);
+
+    const cvs = card.querySelector('canvas');
+    drawAnimal(cvs, gridData, sp.pal, st.key==='B'?3:4);
+
+    card.addEventListener('click', () => {
+      document.querySelectorAll(`#grid-${sp.id} .style-card`).forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      choices[sp.id] = st.key;
+      updateResult();
+    });
+  });
 });
 
-// Selection handler
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.pick-btn');
-  if (!btn) return;
-  document.querySelectorAll('.pick-btn.selected').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  const style = btn.dataset.style;
-  const species = btn.dataset.species;
-  document.querySelector('#result').innerHTML = `
-    <div style="background:#141b2d;border:1px solid #1e2a45;border-radius:12px;padding:16px;margin-top:16px">
-      <div style="font-size:12px;color:#94a5b8;margin-bottom:4px">你揀咗：</div>
-      <div style="font-size:16px;font-weight:700;color:#c084fc">
-        Style ${style.toUpperCase()}「${style === 'A' ? '特徵強化' : style === 'B' ? '更細緻' : 'Q版大眼'}」
-      </div>
-      <div style="font-size:11px;color:#5a6d85;margin-top:4px">根據呢個方向設計晒全部 50 種動物</div>
-    </div>`;
-});
+function updateResult() {
+  const all = ['cat','dog','dragon','slime','robot'];
+  const allChosen = all.every(s => choices[s]);
+  document.getElementById('genBtn').disabled = !allChosen;
+  if (allChosen) {
+    const counts = {};
+    all.forEach(s => { const k = choices[s]; counts[k] = (counts[k]||0)+1; });
+    const mainStyle = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+    const styleNames = { curr:'目前版本', A:'特徵強化 (Style A)', B:'更細緻 (Style B)', C:'Q版大眼 (Style C)' };
+    document.getElementById('result-box').classList.add('show');
+    document.getElementById('result-text').innerHTML =
+      `多數選擇：<strong>${styleNames[mainStyle]}</strong><br>全部已揀，可以生成！`;
+  }
+}
 
+function confirmChoice() {
+  const styleNames = { A:'特徵強化 (Style A)', B:'更細緻 (Style B)', C:'Q版大眼 (Style C)', curr:'目前版本' };
+  let msg = '你揀咗：\n';
+  for (const [sp, st] of Object.entries(choices)) {
+    const name = species.find(s=>s.id===sp)?.name||sp;
+    msg += `  #${name} → ${styleNames[st]||st}\n`;
+  }
+  document.getElementById('result-text').innerHTML = msg.replace(/\n/g,'<br>') +
+    '<br><span style="color:#22c55e;font-weight:700">✅ 收到！我會根據呢啲風格重新設計全部 50 種動物</span>';
+}
 </script>
-
-<div id="result"></div>
-
-<div style="margin-top:24px;padding:16px;background:#141b2d;border:1px solid #1e2a45;border-radius:12px;font-size:10px;color:#5a6d85;line-height:1.6">
-  <strong style="color:#94a5b8">三個設計方向解說：</strong><br>
-  <span style="color:#22c55e">■ Style A — 特徵強化</span>：保留 16×16 grid，但每個動物加入更明顯物種特徵（耳朵形狀、尾巴、嘴型），令圓貓真係似貓、小龍真係似龍<br>
-  <span style="color:#a855f7">■ Style B — 更細緻</span>：擴大到 24×24 grid，更多像素細節，可以畫到更精細嘅外形，但顯示時要縮細返<br>
-  <span style="color:#f59e0b">■ Style C — Q版大眼</span>：保留 16×16 grid，但用大眼 + 圓身設計，可愛風格，每種動物靠耳朵/顏色/配件區分<br>
-</div>
 
 </body>
 </html>
