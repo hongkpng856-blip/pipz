@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution } from '@pipz/core'
+import { useState, useMemo } from 'react'
+import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution, generatePixelPet } from '@pipz/core'
 import PixelPetCanvas from './PixelPetCanvas'
 
 interface Props {
@@ -40,6 +40,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
   const [listPrice, setListPrice] = useState('500')
   const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
+  const speciesName = useMemo(() => {
+    const data = generatePixelPet({ seed: parseInt(pet.speciesId) || 1, rarity: pet.rarity, evolutionStage: pet.evolutionStage })
+    return data.speciesName
+  }, [pet.speciesId, pet.rarity, pet.evolutionStage])
 
   const nextReq = NEXT_STEP_REQ[pet.evolutionStage] ?? 999999
   const currentReq = EVOLUTION_STEPS[pet.evolutionStage] ?? 0
@@ -124,6 +128,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
               </span>
             </div>
 
+            <div style={{ marginTop: 6, fontSize: 11, color: '#5a6d85' }}>
+              #{speciesName}
+            </div>
+
             <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 16 }}>
               <span style={{ fontSize: 13, color: '#94a5b8' }}>Lv.{pet.level}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>CP {cp}</span>
@@ -137,6 +145,21 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
               <span style={{ fontSize: 12, color: '#22c55e' }}>
                 {pet.mood === 'happy' ? '開心' : pet.mood}
               </span>
+            </div>
+
+            {/* Mood bar */}
+            <div style={{ marginTop: 6, padding: '0 20px' }}>
+              <div className="progress-wrap" style={{ height: 4 }}>
+                <div className="progress-bar"><div className="progress-fill" style={{
+                  width: `${Math.max(5, pet.moodValue)}%`,
+                  background: pet.moodValue > 60 ? 'linear-gradient(90deg,#22c55e,#4ade80)' :
+                             pet.moodValue > 30 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
+                             'linear-gradient(90deg,#ef4444,#f87171)',
+                }}/></div>
+              </div>
+              <div style={{ fontSize: 9, color: '#5a6d85', textAlign: 'right', marginTop: 2 }}>
+                ❤️ {pet.moodValue}%
+              </div>
             </div>
 
             {/* ── Actions ── */}
