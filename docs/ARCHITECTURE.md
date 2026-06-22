@@ -98,6 +98,8 @@ Feed / Pet / Play → Mood + XP updates → Evolution check
 | Canvas pixel art | Free, no AI API key needed, deterministic |
 | Monorepo | Core logic reusable across platforms |
 | client-side auth callback | Server-side always returned null user |
+| Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |
+| Env vars via vercel.json | `SUPABASE_SERVICE_ROLE_KEY` set in `vercel.json` at project root + `apps/web/.env.production` for Next.js |
 
 ## Deployment
 

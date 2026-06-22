@@ -176,12 +176,15 @@ The entire app is a single page with 4 tabs and modals.
 - Empty state: "市集暫時未有寵物出售"
 
 ### PetDetailModal Market Mode
-- **isMarket=true**: Shows seller asking price + ⚡ **購買** button
-- **Own pet (onList provided)**: Shows:
+- **isMarket={isMarketView && !isOwnPet}**: Shows seller asking price + ⚡ **購買** button
+- **Own pet (onList={user && isOwnPet})**: Shows:
   - If listed: ✅ 已上架 + price + **取消上架** button
   - If not listed: **🏪 上架交易市場** section with price input + **📤 上架** button
-- Purchase deducts `price` from buyer's `total_steps` and adds to seller's
+- **onBuy={user && isMarketView && !isOwnPet}**: Only other users' market pets show the buy button
+- Purchase deducts `price` from buyer's `total_steps` (local state via `setTotalSteps(s => Math.max(0, s - price))` immediately, synced to Supabase via debounce) and adds to seller's
 - Pet ownership transferred to buyer after purchase
+- **Market data load**: `loadMarketListings()` and `loadMyListings()` both fetch from `/api/market`, filter client-side by `user_id`
+- **detailPet lookup**: `pets.find(p => p.id === detailPetId) ?? marketListings.find(p => p.id === detailPetId)` — searches own pets first, falls back to market listings
 
 ---
 

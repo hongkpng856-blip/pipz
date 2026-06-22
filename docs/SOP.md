@@ -75,7 +75,9 @@ npx vercel deploy --prod --yes
 
 ### Vercel Gotchas
 - `vercel link --yes --project <name>` wipes existing env vars
-- To set env vars: `vercel env add NEXT_PUBLIC_XXX` (interactive) or use Dashboard
+- To set env vars: add to `vercel.json` (project root) under `"env": {}` OR use Dashboard
+- `.env.production` must be in `apps/web/` for Next.js to read it (monorepo root won't work)
+- `SUPABASE_SERVICE_ROLE_KEY` is required for the `/api/market` route to bypass RLS
 - To force fresh build: rename files (e.g., login-modal.tsx → auth-modal.tsx)
 - Verify deployment by curling JS chunks
 - New deployment aliases may differ from old `project.vercel.app` URL
