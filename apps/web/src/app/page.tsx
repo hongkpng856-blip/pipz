@@ -371,7 +371,15 @@ export default function HomePage() {
     const updated = { ...pet, mood: Mood.Excited, moodValue: Math.min(100, pet.moodValue + 20), xp: pet.xp + 5 }
     setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
     if (user) updatePet(updated)
-    setPetAnim('happy'); logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 2000)
+    setPetAnim('happy'); logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 1500)
+  }
+  // ── Rename pet ──
+  const renamePet = (name: string) => {
+    if (!pet) return
+    const updated = { ...pet, name }
+    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
+    if (user) updatePet(updated)
+    logMsg(`✏️ 改名做「${name}」`)
   }
 
   const hatch = () => {
@@ -629,6 +637,7 @@ export default function HomePage() {
                     onFeed={feed}
                     onPet={petAction}
                     onPlay={playAction}
+                    onRename={renamePet}
                     anim={petAnim}
                     steps={steps}
                     totalSteps={totalSteps}
