@@ -353,7 +353,7 @@ export default function HomePage() {
     const updated = { ...pet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: pet.xp + 10 }
     setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
     if (user) updatePet(updated)
-    if (user && wasHungry) createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, petId)
+    if (user && wasHungry) createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, pet.id)
     setPetAnim('happy'); logMsg('🍖 餵食咗！+10XP'); setTimeout(() => setPetAnim('idle'), 1500)
   }
   const petAction = () => {
@@ -396,7 +396,7 @@ export default function HomePage() {
     setPets(v => v.map((p, i) => i === activeIdx ? evolved : p))
     setEvolvingId(pet.id)
     logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
-    if (user) createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, petId)
+    if (user) createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, pet.id)
     if (user) updatePet(evolved)
     // Animation → 帶回寵物頁
     setTimeout(() => {
