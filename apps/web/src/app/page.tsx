@@ -410,6 +410,8 @@ export default function HomePage() {
     if (err) return logMsg(`❌ ${err}`)
     logMsg(`🎉 購買成功！花費 ⚡${formatSteps(price)}`)
     setDetailPetId(null)
+    // Update local energy
+    setTotalSteps(s => Math.max(0, s - price))
     loadMarketData()
     // Reload user's pets to include the new one
     if (user) {
@@ -1060,8 +1062,10 @@ export default function HomePage() {
 
       {/* ════ Pet Detail Modal ════ */}
       {detailPetId && (() => {
-        const detailPet = pets.find(p => p.id === detailPetId)
+        const detailPet = pets.find(p => p.id === detailPetId) ?? marketListings.find(p => p.id === detailPetId)
         if (!detailPet) return null
+        const isMarketView = isMarketPet(detailPet.id)
+        const isOwnPet = user ? detailPet.userId === user.id : false
         return (
           <PetDetailModal
             pet={detailPet}
@@ -1070,17 +1074,17 @@ export default function HomePage() {
             onEvolve={() => { setDetailPetId(null); setActiveIdx(pets.indexOf(detailPet)); setShowEvolve(true) }}
             onFeed={() => {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10 } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 })
+              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 } as Pet)
               logMsg('🍖 餵食咗！+10XP')
             }}
             onPet={() => {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: Math.min(100, p.moodValue + 15) } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: Math.min(100, detailPet.moodValue + 15) })
+              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: Math.min(100, detailPet.moodValue + 15) } as Pet)
               logMsg('✋ 摸頭～')
             }}
             onPlay={() => {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Excited, moodValue: Math.min(100, p.moodValue + 20), xp: p.xp + 5 } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Excited, moodValue: Math.min(100, detailPet.moodValue + 20), xp: detailPet.xp + 5 })
+              if (user) updatePet({ ...detailPet, mood: Mood.Excited, moodValue: Math.min(100, detailPet.moodValue + 20), xp: detailPet.xp + 5 } as Pet)
               logMsg('🎾 玩緊！+5XP')
             }}
             onDelete={(id) => {
@@ -1089,10 +1093,10 @@ export default function HomePage() {
               if (user) deletePet(id)
               logMsg('🗑️ 寵物已剷除')
             }}
-            onList={user && !isMarketPet(detailPet.id) ? handleList : undefined}
-            onUnlist={user ? handleUnlist : undefined}
-            onBuy={user && detailPet.userId !== user.id ? handleBuy : undefined}
-            isMarket={isMarketPet(detailPet.id)}
+            onList={user && !isOwnPet ? handleList : undefined}
+            onUnlist={user && isOwnPet ? handleUnlist : undefined}
+            onBuy={user && isMarketView && !isOwnPet ? handleBuy : undefined}
+            isMarket={isMarketView && !isOwnPet}
             sellerId={marketSellerId ?? undefined}
             currentUserId={user?.id}
           />
