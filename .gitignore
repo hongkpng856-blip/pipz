@@ -7,3 +7,4 @@ apps/web/out/
 *.local
 .github_token
 .vercel
+.sbp_token.sh

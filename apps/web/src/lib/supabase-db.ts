@@ -403,3 +403,34 @@ export async function buyPet(
     return '網絡錯誤'
   }
 }
+
+// ── Create notification (client-side via API) ──
+
+export async function createNotification(
+  userId: string,
+  type: string,
+  title: string,
+  message: string,
+  relatedPetId?: string,
+) {
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        userId,
+        type,
+        title,
+        message,
+        relatedPetId: relatedPetId ?? null,
+      }),
+    })
+  } catch { /* silent */ }
+}
+
+// ── Milestone thresholds ──
+
+export const MILESTONES = [
+  1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000,
+]

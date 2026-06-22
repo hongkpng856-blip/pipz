@@ -9,7 +9,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -286,6 +286,15 @@ export default function HomePage() {
     setTotalSteps(s => {
       const newTotal = s + n
       if (pets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
+
+      // ── Milestone check ──
+      const oldM = MILESTONES.filter(m => s >= m).length
+      const newM = MILESTONES.filter(m => newTotal >= m).length
+      if (newM > oldM && user) {
+        const ms = MILESTONES[oldM]
+        createNotification(user.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
+      }
+
       scheduleSync(steps + n, newTotal)
       return newTotal
     })
@@ -300,6 +309,7 @@ export default function HomePage() {
         setEncounterEggRarity(r)
         setCamState('encounter')
         logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
+        if (user) createNotification(user.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
       }
     }
   }
@@ -318,6 +328,7 @@ export default function HomePage() {
       setEggHatchingId(null)
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
+      if (user) createNotification(user.id, 'egg_hatched', '🥚 蛋孵化咗！', `${RARITY_LABELS[egg.rarity]}新寵物出世啦！快啲去寵物欄睇下`)
     }, 2000)
   }
 
@@ -338,9 +349,11 @@ export default function HomePage() {
   // ── Pet actions ──
   const feed = () => {
     if (!pet) return
+    const wasHungry = pet.moodValue < 40 || pet.mood !== Mood.Happy
     const updated = { ...pet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: pet.xp + 10 }
     setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
     if (user) updatePet(updated)
+    if (user && wasHungry) createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, petId)
     setPetAnim('happy'); logMsg('🍖 餵食咗！+10XP'); setTimeout(() => setPetAnim('idle'), 1500)
   }
   const petAction = () => {
@@ -383,6 +396,7 @@ export default function HomePage() {
     setPets(v => v.map((p, i) => i === activeIdx ? evolved : p))
     setEvolvingId(pet.id)
     logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
+    if (user) createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, petId)
     if (user) updatePet(evolved)
     // Animation → 帶回寵物頁
     setTimeout(() => {

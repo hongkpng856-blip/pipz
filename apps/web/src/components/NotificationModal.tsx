@@ -54,8 +54,18 @@ export default function NotificationModal({ open, onClose, userId }: Props) {
   if (!open) return null
 
   const unreadCount = notifications.filter(n => !n.read).length
-  const ICONS: Record<string, string> = {
-    pet_sold: '💰', pet_bought: '🎉', info: 'ℹ️',
+  const ICONS: Record<string, { icon: string; color: string }> = {
+    pet_sold:       { icon: '💰', color: '#f59e0b' },
+    pet_bought:     { icon: '🎉', color: '#22c55e' },
+    egg_hatched:    { icon: '🐣', color: '#a855f7' },
+    pet_evolved:    { icon: '🌟', color: '#f59e0b' },
+    milestone:      { icon: '🏆', color: '#3b82f6' },
+    achievement:    { icon: '⭐', color: '#eab308' },
+    egg_encounter:  { icon: '🥚', color: '#ec4899' },
+    pet_care:       { icon: '🍖', color: '#ef4444' },
+    reward:         { icon: '🎁', color: '#8b5cf6' },
+    system:         { icon: '📢', color: '#64748b' },
+    info:           { icon: 'ℹ️', color: '#5a6d85' },
   }
 
   return (
@@ -125,11 +135,12 @@ export default function NotificationModal({ open, onClose, userId }: Props) {
                   display: 'flex', gap: 10,
                   padding: '12px 14px', borderRadius: 14,
                   background: n.read ? '#141b2d' : '#1a2540',
-                  border: `1px solid ${n.read ? '#1e2a45' : '#8b5cf644'}`,
+                  border: `1px solid ${n.read ? '#1e2a45' : (ICONS[n.type]?.color || '#8b5cf6') + '44'}`,
+                  borderLeft: `3px solid ${ICONS[n.type]?.color || '#5a6d85'}`,
                   opacity: n.read ? 0.7 : 1,
                 }}>
                   <span style={{ fontSize: 20, flexShrink: 0 }}>
-                    {ICONS[n.type] || 'ℹ️'}
+                    {ICONS[n.type]?.icon || 'ℹ️'}
                   </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
