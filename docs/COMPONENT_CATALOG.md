@@ -156,15 +156,32 @@ The entire app is a single page with 4 tabs and modals.
 
 ---
 
-## 5. Community Tab (`tab === 'community'`)
+## 5. Community / Market Tab (`tab === 'community'`)
 
-- Centered card with 🏪 icon
-- Title: "社群 & 交易"
-- Description: "與其他玩家交換寵物"
-- 3 items (all "即將開放"):
-  - 行路競賽
-  - 交易市場
-  - 好友列表
+### Auth Gate
+- Not logged in: 🔑 "需要登入先可以使用交易市場"
+
+### My Listings Section
+- Section title: "📋 我的上架" + count
+- 3-column grid of listed pets (same style as pet-grid)
+- Each card: PixelPetCanvas (size 2.2), Lv, ⚡price
+- Click → opens PetDetailModal with **Unlist** option
+- Empty state: "未有上架 — 喺寵物詳細頁可以上架"
+
+### Marketplace Section
+- Section title: "🛒 市集" + count
+- 3-column grid of all pets listed by other players
+- Each card: PixelPetCanvas (size 2.2), Lv, ⚡price
+- Click → opens PetDetailModal in **market mode** with Buy option
+- Empty state: "市集暫時未有寵物出售"
+
+### PetDetailModal Market Mode
+- **isMarket=true**: Shows seller asking price + ⚡ **購買** button
+- **Own pet (onList provided)**: Shows:
+  - If listed: ✅ 已上架 + price + **取消上架** button
+  - If not listed: **🏪 上架交易市場** section with price input + **📤 上架** button
+- Purchase deducts `price` from buyer's `total_steps` and adds to seller's
+- Pet ownership transferred to buyer after purchase
 
 ---
 
