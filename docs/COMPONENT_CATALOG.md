@@ -351,3 +351,44 @@ Canvas-based top-down pixel art view (VS Code Pixel Agents style).
 - **Android Chrome**: ⋮ → Install app
 - **iOS Safari**: Share → Add to Home Screen (manual, Safari only)
 - **iOS limitation**: Background GPS does not work when app is minimized (Safari restriction)
+
+---
+
+## 12. Profile Modal (`ProfileModal.tsx`)
+
+Full-screen overlay showing user profile and stats.
+
+### Header
+- "← 返回" button | "👤 個人檔案" title
+
+### Avatar Card
+- 56px gradient circle (purple→cyan) with first letter of email
+- Email address (full, word-break)
+- "● 已登入" green status
+
+### Stats Section
+- "📊 統計" title
+- 4 stat rows with colored values:
+  - 👣 總步數 (amber `#f59e0b`)
+  - ⚡ 今日步數 (cyan `#22d3ee`)
+  - 🐾 寵物 (purple `#8b5cf6`)
+  - 🥚 蛋 (green `#22c55e`)
+
+### Achievements Section
+- "🏆 成就" title
+- 7 achievement badges with unlock state:
+  | Achievement | Unlock condition |
+  |-------------|------------------|
+  | 👣 第一步 | totalSteps >= 1,000 |
+  | 🥚 孵化者 | pets.length >= 1 |
+  | 🌟 進化大師 | any pet evolutionStage > 1 |
+  | 🚶 行路人 | totalSteps >= 10,000 |
+  | 🐾 收藏家 | pets.length >= 3 |
+  | 💜 繁殖者 | pets.length >= 5 |
+  | 🏃 馬拉松 | totalSteps >= 50,000 |
+- Unlocked: purple-tinted bg + colored border
+- Locked: dimmed dark bg + 🔒 icon
+
+### Sign Out Button
+- Red button at bottom: "🔴 登出"
+- Access via header user email button (replaces the old inline logout)
