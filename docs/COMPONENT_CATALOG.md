@@ -28,7 +28,8 @@ The entire app is a single page with 4 tabs and modals.
 
 ### Header
 - Left: "Pipz" title
-- Right: Sync indicator, **Walk button (🚶/⏹)**, GPS badge, email button, logout, 👣 icon, step count
+- **Golden bell 🔔** (after title): opens notification modal; color `#fbbf24` (gold) when unread > 0, `#9ca3af` (grey) when none; red badge on top-right corner (capped 99+)
+- Right: sync indicator, Walk button (🚶/⏹), GPS indicator, profile button 👤, steps counter 👣
 
 ### Bottom Navigation
 - 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community)
@@ -435,7 +436,8 @@ Each notification card shows:
   - **pet_evolved**: after `evolve()` calculation
   - **milestone**: in `addSt()` step counter, checks `MILESTONES[]` crossing
   - **egg_encounter**: on random encounter roll in `addSt()`
-  - **pet_care**: in `feed()` when pet mood < 40 or not happy
+  - **pet_care (main)**: in `feed()` when pet mood < 40 or not happy
+  - **pet_care (detail modal)**: in `onFeed` callback of PetDetailModal, creates notification + increments unread
 
 ### Notification Generation (Server-side)
 - `POST /api/market` buy handler creates 2 notifications atomically:
@@ -443,9 +445,11 @@ Each notification card shows:
   - **pet_bought**: buyer receives "你以 ⚡X 能量買入咗新寵物！"
 
 ### Unread Count
-- Fetched when community tab mounts via `useEffect`
-- 🔔 bell icon in community tab header with red badge (capped at 99+)
-- On close: badge remains until user returns to community tab
+- 🔔 **Golden bell** in header (between title and right controls): colour = `#fbbf24` (unread > 0) or `#9ca3af` (none)
+- Red badge on bell's top-right corner, capped at 99+
+- **Incremented locally** (`setNotifUnread(n => n + 1)`) after every `createNotification()` call for instant feedback
+- **Refreshed from server** on bell click (open modal) and modal close
+- Community tab `useEffect` also refreshes on tab switch (backup)
 
 ### Milestone Thresholds
 ```ts
