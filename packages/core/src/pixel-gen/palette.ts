@@ -598,28 +598,38 @@ export const BODY_TEMPLATES: BodyTemplate[] = [
   ],
 ]
 
-// Enhanced eye templates
+// Enhanced eye templates — each has unique pixel arrangement
 export const EYE_TEMPLATES: [number, number][][] = [
-  // Big round eyes
+  // 0: Big round eyes (● ●)
   [[3,5],[3,6],[3,8],[3,9]],
-  // Small dot eyes
+  // 1: Small dot eyes (· ·)
   [[3,6],[3,8]],
-  // Happy closed eyes (^_^)
-  [[3,5],[3,6],[3,8],[3,9]],
-  // Sparkle eyes (star-shaped)
-  [[3,5],[3,6],[3,8],[3,9]],
-  // Side-looking eyes
+  // 2: Happy ^_^ (^ ^)
+  [[2,6],[2,8]],
+  // 3: Sparkle eyes (* *)
+  [[2,5],[2,6],[2,8],[2,9]],
+  // 4: Side-looking eyes (> <)
   [[3,5],[3,9]],
-  // Sleepy eyes (--)
-  [[3,5],[3,6],[3,8],[3,9]],
-  // Round surprised eyes
-  [[3,5],[3,6],[3,8],[3,9]],
-  // Angry eyes (\ /)
-  [[3,5],[3,6],[3,8],[3,9]],
-  // Winking eye (left)
+  // 5: Sleepy -- (一 一) — wider horizontal
+  [[3,4],[3,5],[3,6],[3,8],[3,9],[3,10]],
+  // 6: Surprised O_O (O O) — bigger, row 2-3
+  [[2,5],[2,6],[3,5],[3,6],[2,8],[2,9],[3,8],[3,9]],
+  // 7: Angry >_< (\ /)
+  [[2,5],[3,6],[2,9],[3,8]],
+  // 8: Winking ;) (; ·)
+  [[2,6],[3,8]],
+  // 9: Heart eyes (♥ ♥) — higher + wider
+  [[2,5],[2,6],[3,5],[2,8],[2,9],[3,8]],
+  // 10: Tiny dots (｀｀)
   [[3,5],[3,9]],
-  // Heart eyes
-  [[3,5],[3,6],[3,8],[3,9]],
+  // 11: Blank / no eyes (__)
+  [],
+  // 12: Cat slit eyes (| |)
+  [[2,6],[2,8]],
+  // 13: Glowing (@ @) — extra sparkle pixels
+  [[2,5],[2,6],[3,5],[3,6],[2,8],[2,9],[3,8],[3,9]],
+  // 14: Tear eyes (;_;) — eyes with tear drops
+  [[3,5],[3,6],[3,8],[3,9],[4,6],[4,8]],
 ]
 
 // Enhanced accessory templates
