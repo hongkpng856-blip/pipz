@@ -6,6 +6,7 @@ import PixelPetCanvas from '../components/PixelPetCanvas'
 import WalkingCanvas from '../components/WalkingCanvas'
 import PetDetailModal from '../components/PetDetailModal'
 import ProfileModal from '../components/ProfileModal'
+import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet } from '../lib/supabase-db'
@@ -51,6 +52,8 @@ export default function HomePage() {
   const [detailPetId, setDetailPetId] = useState<string | null>(null)
   const [showEncounterEgg, setShowEncounterEgg] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifUnread, setNotifUnread] = useState(0)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
@@ -185,9 +188,16 @@ export default function HomePage() {
     if (user) loadMarketData()
   }, [user?.id])
 
-  // ── Reload market when switching to community tab ──
+  // ── Reload market + notifs when switching to community tab ──
   useEffect(() => {
-    if (tab === 'community' && user) loadMarketData()
+    if (tab === 'community' && user) {
+      loadMarketData()
+      // Fetch unread notifications count
+      fetch(`/api/notifications?userId=${user.id}`)
+        .then(r => r.json())
+        .then(d => setNotifUnread((d.notifications ?? []).filter((n: any) => !n.read).length))
+        .catch(() => {})
+    }
   }, [tab])
 
   // ── Debounced step sync to Supabase ──
@@ -968,7 +978,27 @@ export default function HomePage() {
                   <div className="section" style={{marginBottom:12}}>
                     <div className="section-header">
                       <span className="section-title">📋 我的上架</span>
-                      <span className="section-count">{myListings.length}隻</span>
+                            <span className="section-count">{myListings.length}隻</span>
+                            <div style={{ flex: 1 }} />
+                            <button onClick={() => setShowNotifications(true)}
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                fontSize: 16, fontFamily: 'inherit', position: 'relative',
+                                padding: '2px 4px',
+                              }}>
+                              🔔
+                              {notifUnread > 0 && (
+                                <span style={{
+                                  position: 'absolute', top: -2, right: -4,
+                                  background: '#ef4444', color: 'white',
+                                  fontSize: 8, fontWeight: 700,
+                                  padding: '1px 5px', borderRadius: 8,
+                                  lineHeight: '12px', minWidth: 16, textAlign: 'center',
+                                }}>
+                                  {notifUnread > 99 ? '99+' : notifUnread}
+                                </span>
+                              )}
+                            </button>
                     </div>
                     {myListings.length === 0 ? (
                       <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
@@ -1051,6 +1081,12 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      <NotificationModal
+        open={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        userId={user?.id ?? null}
+      />
 
       <ProfileModal
         open={showProfile}

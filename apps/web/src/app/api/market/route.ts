@@ -90,6 +90,25 @@ export async function POST(req: NextRequest) {
         .eq('id', petId)
 
       if (transferErr) return NextResponse.json({ error: transferErr.message }, { status: 500 })
+
+      // Create notifications
+      // Notify seller
+      await supabase.from('notifications').insert({
+        user_id: sellerId,
+        type: 'pet_sold',
+        title: '🐾 寵物已售出',
+        message: `你嘅寵物以 ⚡${price} 能量賣出！`,
+        related_pet_id: petId,
+      })
+      // Notify buyer
+      await supabase.from('notifications').insert({
+        user_id: buyerId,
+        type: 'pet_bought',
+        title: '🎉 成功購買寵物',
+        message: `你以 ⚡${price} 能量買入咗新寵物！`,
+        related_pet_id: petId,
+      })
+
       return NextResponse.json({ success: true })
     }
 
