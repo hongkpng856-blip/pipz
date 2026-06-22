@@ -132,6 +132,7 @@ CREATE POLICY "Users can read transactions"
   USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
 
 -- 7. Notifications
+-- type values: pet_sold | pet_bought | egg_hatched | pet_evolved | milestone | achievement | egg_encounter | pet_care | reward | system | info
 CREATE TABLE public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,

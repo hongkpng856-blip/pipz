@@ -397,26 +397,60 @@ Full-screen overlay showing user profile and stats.
 
 ## 13. Notification Modal (`NotificationModal.tsx`)
 
-Full-screen overlay showing trade notifications.
+Full-screen overlay showing all system notifications.
 
 ### Header
 - "← 返回" button | "🔔 通知" title with unread count badge
 - "全部已讀" button (only visible when unread > 0)
 
-### Notification List
-- Unread items: darker background (#1a2540) + purple border + purple dot indicator
-- Read items: normal card bg (#141b2d), reduced opacity (0.7)
-- Each item: type icon (💰 sold / 🎉 bought / ℹ️ info), title, message, timestamp (zh-HK locale)
-- Empty state: 🔔 "未有通知"
-- Loading state: ⏳ "載入中..."
+### Notification Types & Icons
 
-### Notification Generation
-- Created server-side in `/api/market` POST buy handler
-- **pet_sold**: seller receives "你嘅寵物以 ⚡X 能量賣出！"
-- **pet_bought**: buyer receives "你以 ⚡X 能量買入咗新寵物！"
-- Unread count fetched when community tab mounts via `useEffect`
+| Type | Icon | Color | Trigger Event |
+|------|------|-------|--------------|
+| `pet_sold` | 💰 | `#f59e0b` | 你上架嘅寵物俾人買走 |
+| `pet_bought` | 🎉 | `#22c55e` | 喺市集成功買入寵物 |
+| `egg_hatched` | 🐣 | `#a855f7` | 蛋孵化出新寵物 |
+| `pet_evolved` | 🌟 | `#f59e0b` | 寵物進化到下一形態 |
+| `milestone` | 🏆 | `#3b82f6` | 步數達里程碑 (1k/5k/10k/25k/50k/100k/250k/500k/1M) |
+| `achievement` | ⭐ | `#eab308` | 成就解鎖 |
+| `egg_encounter` | 🥚 | `#ec4899` | 行路途中發現新蛋 |
+| `pet_care` | 🍖 | `#ef4444` | 肚餓/唔開心時餵食 |
+| `reward` | 🎁 | `#8b5cf6` | 每日獎勵 / Egg grant |
+| `system` | 📢 | `#64748b` | 系統公告 |
+| `info` | ℹ️ | `#5a6d85` | 其他資訊 (fallback) |
 
-### Access
-- 🔔 bell icon in community tab header (with red unread badge)
-- Badge shows count (capped at 99+)
+Each notification card shows:
+- **Left border**: 3px colour bar matching notification type
+- **Icon**: 20px emoji
+- **Title**: bold 12px (white if unread, grey if read)
+- **Message**: 11px secondary text
+- **Timestamp**: 9px in zh-HK locale
+- **Unread dot**: 8px purple circle (right side)
+
+### Notification Generation (Client-side)
+- `createNotification(userId, type, title, message, relatedPetId?)` helper in `supabase-db.ts`
+- Calls `POST /api/notifications` with service-role key via API route
+- Triggers in `page.tsx`:
+  - **egg_hatched**: after `hatchEgg()` completes (2s animation)
+  - **pet_evolved**: after `evolve()` calculation
+  - **milestone**: in `addSt()` step counter, checks `MILESTONES[]` crossing
+  - **egg_encounter**: on random encounter roll in `addSt()`
+  - **pet_care**: in `feed()` when pet mood < 40 or not happy
+
+### Notification Generation (Server-side)
+- `POST /api/market` buy handler creates 2 notifications atomically:
+  - **pet_sold**: seller receives "你嘅寵物以 ⚡X 能量賣出！"
+  - **pet_bought**: buyer receives "你以 ⚡X 能量買入咗新寵物！"
+
+### Unread Count
+- Fetched when community tab mounts via `useEffect`
+- 🔔 bell icon in community tab header with red badge (capped at 99+)
 - On close: badge remains until user returns to community tab
+
+### Milestone Thresholds
+```ts
+export const MILESTONES = [
+  1000, 5000, 10000, 25000, 50000,
+  100000, 250000, 500000, 1000000
+]
+```
