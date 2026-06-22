@@ -334,3 +334,93 @@ export async function deletePet(petId: string): Promise<string | null> {
     .eq('id', petId)
   return error?.message ?? null
 }
+
+// ── Market / Trading ──
+
+export async function loadMarketListings(userId: string): Promise<Pet[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('pets')
+    .select('*')
+    .eq('is_for_sale', true)
+    .neq('user_id', userId)
+    .order('created_at', { ascending: false })
+  return ((data as unknown as DbPet[]) ?? []).map(dbToPet)
+}
+
+export async function loadMyListings(userId: string): Promise<Pet[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('pets')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_for_sale', true)
+    .order('created_at', { ascending: false })
+  return ((data as unknown as DbPet[]) ?? []).map(dbToPet)
+}
+
+export async function listPet(
+  petId: string,
+  price: number
+): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('pets')
+    .update({ is_for_sale: true, price } as never)
+    .eq('id', petId)
+  return error?.message ?? null
+}
+
+export async function unlistPet(petId: string): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('pets')
+    .update({ is_for_sale: false, price: 0 } as never)
+    .eq('id', petId)
+  return error?.message ?? null
+}
+
+export async function buyPet(
+  petId: string,
+  buyerId: string,
+  sellerId: string,
+  price: number
+): Promise<string | null> {
+  const supabase = db()
+
+  // Deduct from buyer
+  const { data: buyerProfile } = await supabase
+    .from('profiles')
+    .select('total_steps')
+    .eq('id', buyerId)
+    .single()
+  const buyerSteps = (buyerProfile as unknown as { total_steps: number } | null)?.total_steps ?? 0
+  if (buyerSteps < price) return '能量不足'
+
+  const { error: deductErr } = await supabase
+    .from('profiles')
+    .update({ total_steps: buyerSteps - price } as never)
+    .eq('id', buyerId)
+  if (deductErr) return deductErr.message
+
+  // Add to seller
+  const { data: sellerProfile } = await supabase
+    .from('profiles')
+    .select('total_steps')
+    .eq('id', sellerId)
+    .single()
+  const sellerSteps = (sellerProfile as unknown as { total_steps: number } | null)?.total_steps ?? 0
+
+  const { error: addErr } = await supabase
+    .from('profiles')
+    .update({ total_steps: sellerSteps + price } as never)
+    .eq('id', sellerId)
+  if (addErr) return addErr.message
+
+  // Transfer pet ownership
+  const { error: transferErr } = await supabase
+    .from('pets')
+    .update({ user_id: buyerId, is_for_sale: false, price: 0 } as never)
+    .eq('id', petId)
+  return transferErr?.message ?? null
+}

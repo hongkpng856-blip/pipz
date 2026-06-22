@@ -14,7 +14,9 @@ Pipz is a mobile-first web app where users walk in real life to hatch and evolve
 | Database | Supabase (PostgreSQL) |
 | Auth | Supabase Auth (Password + Magic Link) |
 | Email | Brevo SMTP |
-| Hosting | Vercel |
+| Hosting | Vercel (auto-deploy from GitHub main) |
+| PWA | Service worker + Manifest (standalone, iOS home screen) |
+| Icon generation | Sharp (lightning SVG → 192/512 PNG) |
 | Animation | HTML Canvas (no external lib) |
 | Monorepo | npm workspaces |
 
@@ -41,8 +43,15 @@ Pipz/
 │       │       ├── auth-context.tsx     # Auth provider + hooks
 │       │       ├── supabase-client.ts   # Supabase client factory
 │       │       └── supabase-db.ts       # DB CRUD operations
-│       ├── public/manifest.json        # PWA manifest
-│       └── next.config.ts              # Next.js config
+│       ├── public/
+│       │   ├── manifest.json        # PWA manifest
+│       │   ├── sw.js                # Service worker (cache-first static)
+│       │   ├── icon-192.png         # PWA app icon
+│       │   ├── icon-512.png         # PWA app icon (high-res)
+│       │   ├── favicon.svg          # Browser tab icon
+│       ├── scripts/
+│       │   └── gen-icons.mjs        # Generate PNG icons via Sharp
+│       └── next.config.ts           # Next.js config
 │
 ├── packages/
 │   └── core/                    # Cross-platform game logic

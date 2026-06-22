@@ -296,3 +296,38 @@ Canvas-based top-down pixel art view (VS Code Pixel Agents style).
 - Canvas CSS: `width: 100%; height: 100%` — fills parent card with `aspectRatio: 4/3`
 - Wraps Y for all elements (seamless scrolling)
 - Encounter: dark vignette, grass shake, ❗ mark, egg with sparkles, timed callback
+
+---
+
+## 10. PWA Support
+
+### Files
+| File | Purpose |
+|------|---------|
+| `public/manifest.json` | PWA manifest — name, icons, display standalone, theme color `#0b1120` |
+| `public/sw.js` | Service worker — cache-first for static assets, network-first for navigation |
+| `public/icon-192.png` | App icon 192×192 (lightning bolt on dark bg, generated via Sharp) |
+| `public/icon-512.png` | App icon 512×512 (same design) |
+| `public/favicon.svg` | Browser tab SVG favicon (lightning bolt) |
+| `scripts/gen-icons.mjs` | Node.js script to regenerate PNG icons from SVG template |
+
+### Layout Metadata (`layout.tsx`)
+- `manifest: '/manifest.json'` — links PWA manifest
+- `icons.icon: '/favicon.svg'` — favicon
+- `icons.apple: '/icon-192.png'` — apple-touch-icon
+- `appleWebApp.capable: true` — iOS standalone mode
+- `appleWebApp.statusBarStyle: 'black-translucent'` — iOS status bar
+- `viewport.themeColor: '#0b1120'` — browser chrome colour
+
+### Service Worker Strategy
+- **Install**: Cache `/`, `/manifest.json`, icons, favicon
+- **Static assets** (scripts, styles, images, fonts, `/_next/static/`): **Cache-first** — serve from cache, update on fetch
+- **Navigation + API**: **Network-first** — fetch from network, fall back to cache when offline
+- **Register**: `src/components/SwRegister.tsx` client component, mounted in `layout.tsx`
+- SW skips waiting and claims clients immediately on activate
+
+### Installation
+- **Desktop Chrome**: Address bar install prompt or ⋮ → Install Pipz
+- **Android Chrome**: ⋮ → Install app
+- **iOS Safari**: Share → Add to Home Screen (manual, Safari only)
+- **iOS limitation**: Background GPS does not work when app is minimized (Safari restriction)

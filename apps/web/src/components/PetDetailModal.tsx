@@ -13,6 +13,12 @@ interface Props {
   onPet: () => void
   onPlay: () => void
   onDelete: (petId: string) => void
+  onList?: (petId: string, price: number) => void
+  onUnlist?: (petId: string) => void
+  onBuy?: (petId: string, sellerId: string, price: number) => void
+  isMarket?: boolean
+  sellerId?: string
+  currentUserId?: string
 }
 
 const PC: Record<string, string> = {
@@ -29,8 +35,9 @@ const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 // Evolution step requirements
 const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4: 100000, 5: 999999 }
 
-export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay, onDelete }: Props) {
+export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId }: Props) {
   const [showDelete, setShowDelete] = useState(false)
+  const [listPrice, setListPrice] = useState('500')
   const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
 
@@ -314,6 +321,86 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
               ))}
             </div>
           </div>
+
+          {/* ── Market / Trading ── */}
+          {isMarket ? (
+            /* Viewing from market — Buy button */
+            sellerId && sellerId !== currentUserId && onBuy && (
+              <div style={{
+                marginTop: 12,
+                background: '#141b2d', border: '1px solid #f59e0b44', borderRadius: 16,
+                padding: 16, textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 12, color: '#94a5b8', marginBottom: 8 }}>
+                  賣家開價
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b', marginBottom: 12 }}>
+                  ⚡ {formatSteps(pet.price)}
+                </div>
+                <button onClick={() => onBuy(pet.id, sellerId, pet.price)}
+                  style={{
+                    width: '100%', padding: '12px 0', borderRadius: 16, border: 'none',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}>
+                  ⚡ 購買
+                </button>
+              </div>
+            )
+          ) : onList ? (
+            /* Own pet — List / Unlist */
+            pet.isForSale ? (
+              <div style={{
+                marginTop: 12,
+                background: '#141b2d', border: '1px solid #22c55e44', borderRadius: 16,
+                padding: 16, textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#22c55e', marginBottom: 4 }}>
+                  ✅ 已上架
+                </div>
+                <div style={{ fontSize: 11, color: '#94a5b8', marginBottom: 8 }}>
+                  價格：⚡ {formatSteps(pet.price)} 能量
+                </div>
+                <button onClick={() => onUnlist?.(pet.id)}
+                  style={{
+                    padding: '8px 24px', borderRadius: 14, border: '1px solid #ef4444',
+                    background: 'transparent', color: '#ef4444', fontSize: 12, fontWeight: 700,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}>
+                  取消上架
+                </button>
+              </div>
+            ) : (
+              <div style={{
+                marginTop: 12,
+                background: '#141b2d', border: '1px solid #f59e0b33', borderRadius: 16,
+                padding: 16,
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 8 }}>
+                  🏪 上架交易市場
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, color: '#94a5b8' }}>價格（能量）</span>
+                  <input type="number" value={listPrice} onChange={e => setListPrice(e.target.value)}
+                    style={{
+                      flex: 1, padding: '6px 10px', borderRadius: 10, border: '1px solid #2a3a5a',
+                      background: '#1a2338', color: 'white', fontSize: 13, fontWeight: 700,
+                      fontFamily: 'inherit', outline: 'none',
+                    }} />
+                </div>
+                <button onClick={() => onList!(pet.id, parseInt(listPrice) || 500)}
+                  style={{
+                    width: '100%', padding: '10px 0', borderRadius: 14, border: 'none',
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}>
+                  📤 上架
+                </button>
+              </div>
+            )
+          ) : null}
 
           {/* ── Delete / Sacrifice ── */}
           <div style={{ marginTop: 12, textAlign: 'center' }}>

@@ -7,7 +7,7 @@ import WalkingCanvas from '../components/WalkingCanvas'
 import PetDetailModal from '../components/PetDetailModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -53,6 +53,9 @@ export default function HomePage() {
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
+  const [marketListings, setMarketListings] = useState<Pet[]>([])
+  const [myListings, setMyListings] = useState<Pet[]>([])
+  const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -160,6 +163,30 @@ export default function HomePage() {
       if (idx >= 0 && idx !== activeIdx) setActiveIdx(idx)
     }
   }, [favorites, pets])
+
+  // ── Load market listings when user changes or tab switches ──
+  const loadMarketData = useCallback(async () => {
+    if (!user) return
+    try {
+      const [ml, own] = await Promise.all([
+        loadMarketListings(user.id),
+        loadMyListings(user.id),
+      ])
+      setMarketListings(ml)
+      setMyListings(own)
+    } catch (e) {
+      console.error('Market load failed:', e)
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (user) loadMarketData()
+  }, [user?.id])
+
+  // ── Reload market when switching to community tab ──
+  useEffect(() => {
+    if (tab === 'community' && user) loadMarketData()
+  }, [tab])
 
   // ── Debounced step sync to Supabase ──
   const scheduleSync = useCallback((s: number, ts: number) => {
@@ -355,6 +382,48 @@ export default function HomePage() {
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
+
+  // ── Market actions ──
+  const handleList = async (petId: string, price: number) => {
+    if (!user) return logMsg('❌ 需要登入')
+    const err = await listPet(petId, price)
+    if (err) return logMsg(`❌ ${err}`)
+    logMsg(`📤 已上架，價格 ⚡${formatSteps(price)}`)
+    setPets(v => v.map(p => p.id === petId ? { ...p, isForSale: true, price } : p))
+    setDetailPetId(null)
+    loadMarketData()
+  }
+
+  const handleUnlist = async (petId: string) => {
+    if (!user) return logMsg('❌ 需要登入')
+    const err = await unlistPet(petId)
+    if (err) return logMsg(`❌ ${err}`)
+    logMsg('📥 已取消上架')
+    setPets(v => v.map(p => p.id === petId ? { ...p, isForSale: false, price: 0 } : p))
+    setDetailPetId(null)
+    loadMarketData()
+  }
+
+  const handleBuy = async (petId: string, sellerId: string, price: number) => {
+    if (!user) return logMsg('❌ 需要登入')
+    const err = await buyPet(petId, user.id, sellerId, price)
+    if (err) return logMsg(`❌ ${err}`)
+    logMsg(`🎉 購買成功！花費 ⚡${formatSteps(price)}`)
+    setDetailPetId(null)
+    loadMarketData()
+    // Reload user's pets to include the new one
+    if (user) {
+      const dbPets = await loadPets(user.id)
+      setPets(dbPets)
+    }
+  }
+
+  const viewMarketPet = (p: Pet) => {
+    setMarketSellerId(p.userId)
+    setDetailPetId(p.id)
+  }
+
+  const isMarketPet = (petId: string) => marketListings.some(p => p.id === petId)
 
   // ═══════ RENDER ═══════
 
@@ -889,22 +958,77 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* ════ COMMUNITY TAB ════ */}
+          {/* ════ COMMUNITY / MARKET TAB ════ */}
           {tab === 'community' && (
-            <div className="fade-up community-wrap">
-              <div className="card community-card">
-                <div className="community-icon">🏪</div>
-                <div className="community-title">社群 &amp; 交易</div>
-                <div className="community-desc">與其他玩家交換寵物</div>
-                <div className="community-list">
-                  {['行路競賽','交易市場','好友列表'].map(s => (
-                    <div key={s} className="card-2 community-item">
-                      <span>{s}</span>
-                      <span className="community-status">即將開放</span>
-                    </div>
-                  ))}
+            <div className="fade-up">
+              {!user ? (
+                <div className="card empty-state" style={{marginTop:32}}>
+                  <div className="empty-icon">🔑</div>
+                  <div className="empty-text">需要登入先可以使用交易市場</div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Section: My Listings */}
+                  <div className="section" style={{marginBottom:12}}>
+                    <div className="section-header">
+                      <span className="section-title">📋 我的上架</span>
+                      <span className="section-count">{myListings.length}隻</span>
+                    </div>
+                    {myListings.length === 0 ? (
+                      <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
+                        <div style={{fontSize:11, color:'#5a6d85'}}>
+                          未有上架 — 喺寵物詳細頁可以上架
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pet-grid" style={{gap:6}}>
+                        {myListings.map(p => (
+                          <div key={p.id} className="pet-card"
+                            onClick={() => setDetailPetId(p.id)}
+                            style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
+                            <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
+                            <div className="pet-card-icon" style={{width:32, height:32}}>
+                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                            </div>
+                            <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
+                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Section: Marketplace */}
+                  <div className="section" style={{marginBottom:10}}>
+                    <div className="section-header">
+                      <span className="section-title">🛒 市集</span>
+                      <span className="section-count">{marketListings.length}隻</span>
+                    </div>
+                    {marketListings.length === 0 ? (
+                      <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
+                        <div style={{fontSize:11, color:'#5a6d85'}}>
+                          市集暫時未有寵物出售
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pet-grid" style={{gap:6}}>
+                        {marketListings.map(p => (
+                          <div key={p.id} className="pet-card"
+                            onClick={() => viewMarketPet(p)}
+                            style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
+                            <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
+                            <div className="pet-card-icon" style={{width:32, height:32}}>
+                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                            </div>
+                            <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
+                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
           </>
@@ -942,7 +1066,7 @@ export default function HomePage() {
           <PetDetailModal
             pet={detailPet}
             totalSteps={totalSteps}
-            onClose={() => setDetailPetId(null)}
+            onClose={() => { setDetailPetId(null); setMarketSellerId(null) }}
             onEvolve={() => { setDetailPetId(null); setActiveIdx(pets.indexOf(detailPet)); setShowEvolve(true) }}
             onFeed={() => {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10 } : p))
@@ -965,6 +1089,12 @@ export default function HomePage() {
               if (user) deletePet(id)
               logMsg('🗑️ 寵物已剷除')
             }}
+            onList={user && !isMarketPet(detailPet.id) ? handleList : undefined}
+            onUnlist={user ? handleUnlist : undefined}
+            onBuy={user && detailPet.userId !== user.id ? handleBuy : undefined}
+            isMarket={isMarketPet(detailPet.id)}
+            sellerId={marketSellerId ?? undefined}
+            currentUserId={user?.id}
           />
         )
       })()}
