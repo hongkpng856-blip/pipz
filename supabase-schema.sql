@@ -155,6 +155,43 @@ CREATE POLICY "Users can update own notifications"
 
 CREATE INDEX idx_notifications_user_read ON public.notifications(user_id, read);
 
+-- 8. Atomic buy_pet function (prevents duplicate purchases)
+CREATE OR REPLACE FUNCTION public.buy_pet(
+  p_pet_id UUID,
+  p_buyer_id UUID,
+  p_seller_id UUID,
+  p_price BIGINT
+) RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_is_for_sale BOOLEAN;
+  v_owner UUID;
+  v_buyer_steps BIGINT;
+BEGIN
+  SELECT is_for_sale, user_id INTO v_is_for_sale, v_owner
+  FROM public.pets WHERE id = p_pet_id;
+  IF NOT v_is_for_sale OR v_owner != p_seller_id THEN
+    RETURN FALSE;
+  END IF;
+  SELECT total_steps INTO v_buyer_steps
+  FROM public.profiles WHERE id = p_buyer_id;
+  IF v_buyer_steps < p_price THEN
+    RAISE EXCEPTION '能量不足';
+  END IF;
+  UPDATE public.profiles SET total_steps = total_steps - p_price WHERE id = p_buyer_id;
+  UPDATE public.profiles SET total_steps = total_steps + p_price WHERE id = p_seller_id;
+  UPDATE public.pets SET user_id = p_buyer_id, is_for_sale = FALSE, price = 0 WHERE id = p_pet_id;
+  RETURN TRUE;
+END;
+$$;
+
+CREATE POLICY "Seller can unlist own pets"
+  ON public.pets FOR UPDATE
+  USING (auth.uid() = user_id AND is_for_sale = true)
+  WITH CHECK (auth.uid() = user_id AND is_for_sale = false);
+
 -- 5. Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

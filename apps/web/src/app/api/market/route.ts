@@ -55,40 +55,21 @@ export async function POST(req: NextRequest) {
 
     if (action === 'buy') {
       const { petId, buyerId, sellerId, price } = body
+      if (buyerId === sellerId) {
+        return NextResponse.json({ error: '唔可以買自己嘅寵物' }, { status: 400 })
+      }
 
-      // Check buyer balance
-      const { data: buyer } = await supabase
-        .from('profiles')
-        .select('total_steps')
-        .eq('id', buyerId)
-        .single()
-      const buyerSteps = (buyer as any)?.total_steps ?? 0
-      if (buyerSteps < price) return NextResponse.json({ error: '能量不足' }, { status: 400 })
+      // ── 原子化交易：用 RPC 確保唔會重複購買 ──
+      const { data: transferResult, error: transferErr } = await supabase.rpc('buy_pet', {
+        p_pet_id: petId,
+        p_buyer_id: buyerId,
+        p_seller_id: sellerId,
+        p_price: price,
+      })
 
-      // Deduct from buyer
-      await supabase
-        .from('profiles')
-        .update({ total_steps: buyerSteps - price })
-        .eq('id', buyerId)
-
-      // Add to seller
-      const { data: seller } = await supabase
-        .from('profiles')
-        .select('total_steps')
-        .eq('id', sellerId)
-        .single()
-      const sellerSteps = (seller as any)?.total_steps ?? 0
-      await supabase
-        .from('profiles')
-        .update({ total_steps: sellerSteps + price })
-        .eq('id', sellerId)
-
-      // Transfer pet
-      const { error: transferErr } = await supabase
-        .from('pets')
-        .update({ user_id: buyerId, is_for_sale: false, price: 0 })
-        .eq('id', petId)
-
+      if (transferErr?.message?.includes('already sold') || transferResult === false) {
+        return NextResponse.json({ error: '呢隻寵物已經賣咗' }, { status: 409 })
+      }
       if (transferErr) return NextResponse.json({ error: transferErr.message }, { status: 500 })
 
       // Create notifications
