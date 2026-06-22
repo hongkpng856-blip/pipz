@@ -469,20 +469,22 @@ export default function HomePage() {
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 18, fontFamily: 'inherit', position: 'relative',
-                padding: '0 4px', lineHeight: 1, marginLeft: 4,
+                padding: 0, lineHeight: 1, marginLeft: 4,
               }}>
-              <span style={{ color: notifUnread > 0 ? '#fbbf24' : '#9ca3af' }}>🔔</span>
-              {notifUnread > 0 && (
-                <span style={{
-                  position: 'absolute', top: -4, right: 0,
-                  background: '#ef4444', color: 'white',
-                  fontSize: 8, fontWeight: 700,
-                  padding: '1px 5px', borderRadius: 8,
-                  lineHeight: '12px', minWidth: 16, textAlign: 'center',
-                }}>
-                  {notifUnread > 99 ? '99+' : notifUnread}
-                </span>
-              )}
+              <span style={{ color: notifUnread > 0 ? '#fbbf24' : '#9ca3af', position: 'relative' }}>
+                🔔
+                {notifUnread > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -6, right: -8,
+                    background: '#ef4444', color: 'white',
+                    fontSize: 8, fontWeight: 700,
+                    padding: '1px 5px', borderRadius: 8,
+                    lineHeight: '12px', minWidth: 16, textAlign: 'center',
+                  }}>
+                    {notifUnread > 99 ? '99+' : notifUnread}
+                  </span>
+                )}
+              </span>
             </button>
           ) : null}
           <div className="header-right">
