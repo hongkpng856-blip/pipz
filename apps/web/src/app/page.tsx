@@ -1093,7 +1093,7 @@ export default function HomePage() {
               if (user) deletePet(id)
               logMsg('🗑️ 寵物已剷除')
             }}
-            onList={user && !isOwnPet ? handleList : undefined}
+            onList={user && isOwnPet ? handleList : undefined}
             onUnlist={user && isOwnPet ? handleUnlist : undefined}
             onBuy={user && isMarketView && !isOwnPet ? handleBuy : undefined}
             isMarket={isMarketView && !isOwnPet}
