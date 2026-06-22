@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import WalkingCanvas from '../components/WalkingCanvas'
+import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
 import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
@@ -552,63 +553,45 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* Walking Canvas — full card (fills entire space) */}
-              <div className="section card" style={{
-                padding:0, overflow:'hidden', position:'relative',
-                aspectRatio:'4/3', width:'100%',
-              }}>
-                <WalkingCanvas
-                  state={camState}
-                  speed={walkSpeed}
-                  onEncounterEnd={() => {
-                    setCamState(walking ? 'walk' : 'idle')
-                    // Collect the egg from encounter
-                    if (encounterEggRarity) {
-                      const newEgg: EggItem = {
-                        id: genSeed().toString(),
-                        rarity: encounterEggRarity,
-                        collectedAt: Date.now(),
+              {/* ── When walking: show WalkingCanvas ── */}
+              {(walking || camState === 'encounter') ? (
+                <>
+                {/* Walking Canvas */}
+                <div className="section card" style={{
+                  padding:0, overflow:'hidden', position:'relative',
+                  aspectRatio:'4/3', width:'100%',
+                }}>
+                  <WalkingCanvas
+                    state={camState}
+                    speed={walkSpeed}
+                    onEncounterEnd={() => {
+                      setCamState(walking ? 'walk' : 'idle')
+                      // Collect the egg from encounter
+                      if (encounterEggRarity) {
+                        const newEgg: EggItem = {
+                          id: genSeed().toString(),
+                          rarity: encounterEggRarity,
+                          collectedAt: Date.now(),
+                        }
+                        // Save to Supabase if logged in
+                        if (user) {
+                          saveEgg(user.id, encounterEggRarity).then(dbId => {
+                            if (dbId) setEggs(v => v.map(e => e.id === newEgg.id ? { ...e, id: dbId } : e))
+                          })
+                        }
+                        setEggs(v => [...v, newEgg])
+                        setEncounterEggRarity(null)
+                        setShowEncounterEgg(true)
                       }
-                      // Save to Supabase if logged in
-                      if (user) {
-                        saveEgg(user.id, encounterEggRarity).then(dbId => {
-                          if (dbId) setEggs(v => v.map(e => e.id === newEgg.id ? { ...e, id: dbId } : e))
-                        })
-                      }
-                      setEggs(v => [...v, newEgg])
-                      setEncounterEggRarity(null)
-                      setShowEncounterEgg(true)
-                    }
-                  }}
-                  size={3}
-                  pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
-                  nearby={nearby.slice(0, 3).map(p => ({ rarity: p.rarity, evolutionStage: p.evolutionStage }))}
-                />
-                {/* Speed test buttons */}
-                <div style={{position:'absolute', bottom:6, left:6, display:'flex', gap:4}}>
-                  <button
-                    onClick={() => { setCamState('walk'); setWalkSpeed(25); logMsg('🚶 步行中') }}
-                    style={{
-                      padding:'3px 8px', border:'2px solid #22c55e', background:'rgba(0,0,0,0.6)',
-                      color:'#22c55e', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                    }}>🚶 WALK</button>
-                  <button
-                    onClick={() => { setCamState('walk'); setWalkSpeed(90); logMsg('🏃 跑步中') }}
-                    style={{
-                      padding:'3px 8px', border:'2px solid #f59e0b', background:'rgba(0,0,0,0.6)',
-                      color:'#f59e0b', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                    }}>🏃 RUN</button>
-                  <button
-                    onClick={() => { setCamState('idle'); setWalkSpeed(0); logMsg('⏹ 停低') }}
-                    style={{
-                      padding:'3px 8px', border:'2px solid #ef4444', background:'rgba(0,0,0,0.6)',
-                      color:'#ef4444', fontFamily:'inherit', fontSize:9, cursor:'pointer',
-                    }}>⏹ STOP</button>
+                    }}
+                    size={3}
+                    pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
+                    nearby={nearby.slice(0, 3).map(p => ({ rarity: p.rarity, evolutionStage: p.evolutionStage }))}
+                  />
                 </div>
-              </div>
 
-              {/* Active Pet status bar — cleaner layout */}
-              {pet && camState !== 'encounter' && (
+                {/* Pet status bar (walking mode) */}
+                {pet && camState !== 'encounter' && (
                 <div className="section card card-pad-sm">
                   <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4}}>
                     <div style={{width:28, height:28, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
@@ -633,32 +616,26 @@ export default function HomePage() {
                     <button className="btn btn-amber" onClick={playAction} style={{fontSize:8, padding:'2px 8px'}}>🎾 玩</button>
                   </div>
                 </div>
-              )}
-
-              {/* Egg ready / no pet */}
-              {!pet && camState !== 'encounter' && (
-                <div className="section card card-pad-sm">
-                  {!showEgg ? (
-                    <div style={{textAlign:'center', padding:'8px 0'}}>
-                      <span style={{fontSize:24}}>🥚</span>
-                      <div style={{fontSize:11, color:'#94a5b8', marginTop:4}}>行 {formatSteps(FIRST_PET_STEPS)} 步孵化第一隻寵物</div>
-                      <div className="progress-wrap" style={{width:'100%', marginTop:6}}>
-                        <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`}}/></div>
-                      </div>
-                    </div>
-                  ) : hatching ? (
-                    <div style={{textAlign:'center', padding:'8px 0'}}>
-                      <span className="pet-egg egg-crack">🥚</span>
-                      <p style={{fontSize:14, color:'#8b5cf6', fontWeight:700, marginTop:6, animation:'pulse 1s ease-in-out infinite'}}>孵化中...</p>
-                    </div>
-                  ) : (
-                    <div style={{textAlign:'center', padding:'8px 0'}}>
-                      <span className="pet-egg egg-shake">🥚</span>
-                      <p style={{fontSize:13, fontWeight:700, color:'#c084fc', marginTop:4}}>就快孵化！</p>
-                      <button className="btn btn-primary" onClick={hatch} style={{marginTop:6}}>孵化 🐣</button>
-                    </div>
-                  )}
+                )}
+                </>
+              ) : (
+                <>
+                {/* ── When NOT walking: show PetCompanion ── */}
+                <div className="section card" style={{
+                  padding:0, overflow:'hidden', position:'relative', width:'100%',
+                }}>
+                  <PetCompanion
+                    pet={pet}
+                    onFeed={feed}
+                    onPet={petAction}
+                    onPlay={playAction}
+                    anim={petAnim}
+                    steps={steps}
+                    totalSteps={totalSteps}
+                    evolutionStage={pet?.evolutionStage ?? 1}
+                  />
                 </div>
+                </>
               )}
 
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
