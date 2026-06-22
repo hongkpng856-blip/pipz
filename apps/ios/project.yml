@@ -1,0 +1,45 @@
+name: Pipz
+options:
+  bundleIdPrefix: com.pipz
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1"  # iPhone only
+    INFOPLIST_FILE: Pipz/Info.plist
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  Pipz:
+    type: application
+    platform: iOS
+    sources:
+      - path: Pipz
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pipz.ios
+        INFOPLIST_FILE: Pipz/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_EMIT_LOC_STRINGS: YES
+    dependencies:
+      - framework: Supabase
+      - framework: GoTrue
+      - framework: Realtime
+    preBuildScripts:
+      - name: "Copy Supabase Dependencies"
+        script: |
+          if [ -d "$SRCROOT/Supabase" ]; then
+            cp -Rf "$SRCROOT"/Supabase/Sources/Supabase/Supabase.swift "$SRCROOT/Pipz/Services/"
+          fi
+
+  # Tests (optional)
+  PipzTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: PipzTests
+    dependencies:
+      - target: Pipz
