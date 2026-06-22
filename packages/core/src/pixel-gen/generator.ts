@@ -81,8 +81,26 @@ export function generatePixelPet(config: PixelPetConfig): PixelPetData {
     grid[0][8] = palette.accent
   }
   
+  // ── Outline pass: add 1px outline around entire sprite ──
+  // For each non-transparent pixel, fill its transparent neighbors with outline color
+  const outlineColor = palette.outline
+  const outlineGrid: PixelGrid = grid.map(row => [...row]) // copy
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      if (grid[y][x] === 'transparent') continue
+      // Check 4 neighbors (up, down, left, right)
+      const neighbors: [number, number][] = [[y-1,x],[y+1,x],[y,x-1],[y,x+1]]
+      for (const [ny, nx] of neighbors) {
+        if (ny < 0 || ny >= GRID_SIZE || nx < 0 || nx >= GRID_SIZE) continue
+        if (grid[ny][nx] === 'transparent' && outlineGrid[ny][nx] === 'transparent') {
+          outlineGrid[ny][nx] = outlineColor
+        }
+      }
+    }
+  }
+  
   return {
-    grid,
+    grid: outlineGrid,
     width: GRID_SIZE,
     height: GRID_SIZE,
     palette,
