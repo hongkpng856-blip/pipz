@@ -1,9 +1,0 @@
-{
-  "rootDirectory": "apps/web",
-  "buildCommand": "cd ../.. && npm run build",
-  "installCommand": "cd ../.. && npm install",
-  "outputDirectory": ".next",
-  "env": {
-    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbG...9cTA"
-  }
-}
