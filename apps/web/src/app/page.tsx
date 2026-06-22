@@ -464,6 +464,27 @@ export default function HomePage() {
         {/* ── Header (with Walk button) ── */}
         <div className="header">
           <span className="header-title">Pipz</span>
+          {user ? (
+            <button onClick={() => setShowNotifications(true)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 18, fontFamily: 'inherit', position: 'relative',
+                padding: '0 4px', lineHeight: 1, marginLeft: 4,
+              }}>
+              <span style={{ color: notifUnread > 0 ? '#fbbf24' : '#9ca3af' }}>🔔</span>
+              {notifUnread > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: 0,
+                  background: '#ef4444', color: 'white',
+                  fontSize: 8, fontWeight: 700,
+                  padding: '1px 5px', borderRadius: 8,
+                  lineHeight: '12px', minWidth: 16, textAlign: 'center',
+                }}>
+                  {notifUnread > 99 ? '99+' : notifUnread}
+                </span>
+              )}
+            </button>
+          ) : null}
           <div className="header-right">
             {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
             <button
@@ -994,25 +1015,6 @@ export default function HomePage() {
                       <span className="section-title">📋 我的上架</span>
                             <span className="section-count">{myListings.length}隻</span>
                             <div style={{ flex: 1 }} />
-                            <button onClick={() => setShowNotifications(true)}
-                              style={{
-                                background: 'none', border: 'none', cursor: 'pointer',
-                                fontSize: 16, fontFamily: 'inherit', position: 'relative',
-                                padding: '2px 4px',
-                              }}>
-                              🔔
-                              {notifUnread > 0 && (
-                                <span style={{
-                                  position: 'absolute', top: -2, right: -4,
-                                  background: '#ef4444', color: 'white',
-                                  fontSize: 8, fontWeight: 700,
-                                  padding: '1px 5px', borderRadius: 8,
-                                  lineHeight: '12px', minWidth: 16, textAlign: 'center',
-                                }}>
-                                  {notifUnread > 99 ? '99+' : notifUnread}
-                                </span>
-                              )}
-                            </button>
                     </div>
                     {myListings.length === 0 ? (
                       <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
