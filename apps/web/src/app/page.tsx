@@ -293,6 +293,7 @@ export default function HomePage() {
       if (newM > oldM && user) {
         const ms = MILESTONES[oldM]
         createNotification(user.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
+        setNotifUnread(n => n + 1)
       }
 
       scheduleSync(steps + n, newTotal)
@@ -310,6 +311,7 @@ export default function HomePage() {
         setCamState('encounter')
         logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
         if (user) createNotification(user.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
+        if (user) setNotifUnread(n => n + 1)
       }
     }
   }
@@ -328,7 +330,7 @@ export default function HomePage() {
       setEggHatchingId(null)
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
-      if (user) createNotification(user.id, 'egg_hatched', '🥚 蛋孵化咗！', `${RARITY_LABELS[egg.rarity]}新寵物出世啦！快啲去寵物欄睇下`)
+      if (user) { createNotification(user.id, 'egg_hatched', '🥚 蛋孵化咗！', `${RARITY_LABELS[egg.rarity]}新寵物出世啦！快啲去寵物欄睇下`); setNotifUnread(n => n + 1) }
     }, 2000)
   }
 
@@ -353,7 +355,7 @@ export default function HomePage() {
     const updated = { ...pet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: pet.xp + 10 }
     setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
     if (user) updatePet(updated)
-    if (user && wasHungry) createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, pet.id)
+    if (user && wasHungry) { createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, pet.id); setNotifUnread(n => n + 1) }
     setPetAnim('happy'); logMsg('🍖 餵食咗！+10XP'); setTimeout(() => setPetAnim('idle'), 1500)
   }
   const petAction = () => {
@@ -396,7 +398,7 @@ export default function HomePage() {
     setPets(v => v.map((p, i) => i === activeIdx ? evolved : p))
     setEvolvingId(pet.id)
     logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
-    if (user) createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, pet.id)
+    if (user) { createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, pet.id); setNotifUnread(n => n + 1) }
     if (user) updatePet(evolved)
     // Animation → 帶回寵物頁
     setTimeout(() => {
@@ -465,7 +467,7 @@ export default function HomePage() {
         <div className="header">
           <span className="header-title">Pipz</span>
           {user ? (
-            <button onClick={() => setShowNotifications(true)}
+            <button onClick={() => { setShowNotifications(true); if (user) fetch(`/api/notifications?userId=${user.id}`).then(r => r.json()).then(d => setNotifUnread((d.notifications ?? []).filter((n: any) => !n.read).length)).catch(() => {}) }}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 18, fontFamily: 'inherit', position: 'relative',
@@ -1102,7 +1104,7 @@ export default function HomePage() {
 
       <NotificationModal
         open={showNotifications}
-        onClose={() => setShowNotifications(false)}
+        onClose={() => { setShowNotifications(false); if (user) fetch(`/api/notifications?userId=${user.id}`).then(r => r.json()).then(d => setNotifUnread((d.notifications ?? []).filter((n: any) => !n.read).length)).catch(() => {}) }}
         userId={user?.id ?? null}
       />
 
@@ -1133,7 +1135,7 @@ export default function HomePage() {
             onEvolve={() => { setDetailPetId(null); setActiveIdx(pets.indexOf(detailPet)); setShowEvolve(true) }}
             onFeed={() => {
               setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10 } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 } as Pet)
+              if (user) { updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 } as Pet); createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${detailPet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, detailPet.id); setNotifUnread(n => n + 1) }
               logMsg('🍖 餵食咗！+10XP')
             }}
             onPet={() => {
