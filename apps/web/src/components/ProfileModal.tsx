@@ -1,7 +1,6 @@
 'use client'
 
 import { formatSteps } from '@pipz/core'
-import PixelPetCanvas from './PixelPetCanvas'
 import type { Pet } from '@pipz/core'
 
 interface Props {
@@ -27,7 +26,6 @@ export default function ProfileModal({ open, onClose, user, totalSteps, todaySte
   if (!open || !user) return null
 
   const firstLetter = user.email?.[0]?.toUpperCase() ?? '?'
-  const joinDate = '2026' // simplified — could fetch from profile
 
   // Compute achievements
   const achievements: Achievement[] = [
