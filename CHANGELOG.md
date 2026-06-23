@@ -17,6 +17,7 @@
 
 ### Fixed
 - **WalkingCanvas import** — added `useCallback` import for skipEncounter handler
+- **NEW badge detection** — replaced `isNewPet` with `isNewBadge` that also computes `newestPet` directly from array as final fallback; ensures the badge always shows for the most recently created pet regardless of state matching
 
 ## v0.3.2 (2026-06-24)
 
