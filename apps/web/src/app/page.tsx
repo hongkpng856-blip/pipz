@@ -77,6 +77,7 @@ export default function HomePage() {
   const pendingSteps = useRef(0)
   const pendingBuffer = useRef(0) // steps queued during encounter
   const loadedStorage = useRef(false)
+  const dismissedNewPets = useRef<Set<string>>(new Set())
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -135,7 +136,16 @@ export default function HomePage() {
 
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
 
+  const isNewPet = (petId: string, createdAt: number) => {
+    if (dismissedNewPets.current.has(petId)) return false
+    if (newPetId === petId) return true
+    // Fallback: pet created within last 5 minutes
+    if (createdAt > 0 && Date.now() - createdAt < 5 * 60 * 1000) return true
+    return false
+  }
+
   const dismissNewPet = () => {
+    if (newPetId) dismissedNewPets.current.add(newPetId)
     setNewPetId(null)
     try { localStorage.removeItem('pipz_new_pet') } catch(_){}
   }
@@ -908,7 +918,7 @@ export default function HomePage() {
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
                                 <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
-                                {newPetId === pet.id && <div className="new-badge">NEW</div>}
+                                {isNewPet(pet.id, pet.createdAt) && <div className="new-badge">NEW</div>}
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
                                 {/* Minus button — remove from team */}
                                 <div
@@ -964,7 +974,7 @@ export default function HomePage() {
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
-                              {newPetId === p.id && <div className="new-badge">NEW</div>}
+                              {isNewPet(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
                               {canThisEvolve && (
                                 <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
                               )}

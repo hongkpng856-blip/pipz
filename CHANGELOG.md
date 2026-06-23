@@ -10,6 +10,7 @@
 
 ### Added
 - **NEW badge persistence** — `newPetId` now saved to `localStorage`, so the NEW badge survives page reload until the user clicks/taps the pet card
+- **NEW badge recency fallback** — pets created within the last 5 minutes also show NEW badge (even without `newPetId` match), ensuring it always appears after hatching
 
 ### Fixed
 - **WalkingCanvas import** — added `useCallback` import for skipEncounter handler
