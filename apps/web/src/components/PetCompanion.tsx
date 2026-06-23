@@ -66,7 +66,7 @@ export default function PetCompanion({
     }
   }, [pet])
 
-  // Load PNG sprite
+  // Load PNG sprite and pre-process to remove white background
   useEffect(() => {
     let cancelled = false
     if (!pet) { setSpriteLoaded(false); return }
@@ -75,8 +75,28 @@ export default function PetCompanion({
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       if (cancelled) return
-      spriteImageRef.current = img
-      setSpriteLoaded(true)
+      // Pre-process: remove white background pixels onto an offscreen canvas
+      const oc = document.createElement('canvas')
+      oc.width = img.width
+      oc.height = img.height
+      const ox = oc.getContext('2d')!
+      ox.drawImage(img, 0, 0)
+      const od = ox.getImageData(0, 0, img.width, img.height)
+      for (let i = 0; i < od.data.length; i += 4) {
+        if (od.data[i] > 245 && od.data[i + 1] > 245 && od.data[i + 2] > 245 && od.data[i + 3] > 0) {
+          od.data[i + 3] = 0
+        }
+      }
+      ox.putImageData(od, 0, 0)
+      // Convert processed canvas to image
+      const processed = new Image()
+      processed.onload = () => {
+        if (!cancelled) {
+          spriteImageRef.current = processed
+          setSpriteLoaded(true)
+        }
+      }
+      processed.src = oc.toDataURL()
     }
     img.onerror = () => {
       if (!cancelled) setSpriteLoaded(false)
@@ -252,16 +272,6 @@ export default function PetCompanion({
 
         ctx.drawImage(spriteImg, -sw / 2, -sh / 2, sw, sh)
 
-        // Remove white/near-white background from the drawn sprite
-        const sd = ctx.getImageData(-sw / 2 + W / 2 + xRef.current + shakeX, -sh / 2 + cy + mRot * 10, sw, sh)
-        const sp = sd.data
-        for (let i = 0; i < sp.length; i += 4) {
-          if (sp[i] > 230 && sp[i + 1] > 230 && sp[i + 2] > 230 && sp[i + 3] > 0) {
-            sp[i + 3] = 0
-          }
-        }
-        ctx.putImageData(sd, -sw / 2 + W / 2 + xRef.current + shakeX, -sh / 2 + cy + mRot * 10)
-
         ctx.restore()
         ctx.shadowBlur = 0
       } else if (pd) {
@@ -330,7 +340,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, steps, totalSteps, showTapHint, shake])
+  }, [pet, anim, showTapHint, shake])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)

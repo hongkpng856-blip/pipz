@@ -149,7 +149,7 @@ export async function getTodaySteps(userId: string): Promise<number> {
     .select('steps')
     .eq('user_id', userId)
     .eq('date', today)
-    .single()
+    .maybeSingle()
   return (data as unknown as { steps: number } | null)?.steps ?? 0
 }
 
@@ -183,7 +183,10 @@ export async function saveEgg(userId: string, rarity: string): Promise<string | 
     .insert({ user_id: userId, rarity } as never)
     .select('id')
     .single()
-  if (error) return error.message
+  if (error) {
+    console.error('saveEgg error:', error.message)
+    return null
+  }
   return (data as unknown as { id: string } | null)?.id ?? null
 }
 
@@ -326,16 +329,24 @@ export async function deletePet(petId: string): Promise<string | null> {
 
 // ── Market / Trading ──
 
-export async function loadMarketListings(userId: string): Promise<Pet[]> {
+export async function loadAllMarketData(userId: string): Promise<{ listings: Pet[]; myListings: Pet[] }> {
   try {
     const res = await fetch('/api/market')
-    if (!res.ok) return []
+    if (!res.ok) return { listings: [], myListings: [] }
     const json = await res.json()
-    // Filter out own pets client-side
-    return (json.listings ?? []).filter((p: any) => p.user_id !== userId).map(dbToPet)
+    const all = (json.listings ?? []).map(dbToPet)
+    return {
+      listings: all.filter((p: Pet) => p.userId !== userId),
+      myListings: all.filter((p: Pet) => p.userId === userId),
+    }
   } catch {
-    return []
+    return { listings: [], myListings: [] }
   }
+}
+
+export async function loadMarketListings(userId: string): Promise<Pet[]> {
+  const { listings } = await loadAllMarketData(userId)
+  return listings
 }
 
 export async function loadMyListings(userId: string): Promise<Pet[]> {

@@ -43,15 +43,34 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   const speciesIdx = getSpeciesIndex(seed)
 
-  // Load PNG sprite
+  // Load PNG sprite and pre-process to remove white background
   useEffect(() => {
     let cancelled = false
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       if (cancelled) return
-      imageRef.current = img
-      setSpriteLoaded(true)
+      // Pre-process: remove white background pixels
+      const oc = document.createElement('canvas')
+      oc.width = img.width
+      oc.height = img.height
+      const ox = oc.getContext('2d')!
+      ox.drawImage(img, 0, 0)
+      const od = ox.getImageData(0, 0, img.width, img.height)
+      for (let i = 0; i < od.data.length; i += 4) {
+        if (od.data[i] > 245 && od.data[i + 1] > 245 && od.data[i + 2] > 245 && od.data[i + 3] > 0) {
+          od.data[i + 3] = 0
+        }
+      }
+      ox.putImageData(od, 0, 0)
+      const processed = new Image()
+      processed.onload = () => {
+        if (!cancelled) {
+          imageRef.current = processed
+          setSpriteLoaded(true)
+        }
+      }
+      processed.src = oc.toDataURL()
     }
     img.onerror = () => {
       if (!cancelled) setSpriteLoaded(false)
@@ -123,18 +142,6 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       // Draw sprite onto canvas
       ctx.drawImage(img, dx, dy, dw, dh)
 
-      // Remove white/off-white background pixels from the drawn sprite area
-      const imageData = ctx.getImageData(dx, dy, dw, dh)
-      const pixels = imageData.data
-      for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]
-        // If pixel is white or near-white (>230 each channel) and fully opaque, make transparent
-        if (a > 0 && r > 230 && g > 230 && b > 230) {
-          pixels[i + 3] = 0
-        }
-      }
-      ctx.putImageData(imageData, dx, dy)
-
       // Glow for high rarity
       if (RARITY_GLOWS[rarity]) {
         ctx.shadowColor = RARITY_GLOWS[rarity]
@@ -143,15 +150,6 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         ctx.drawImage(img, dx, dy, dw, dh)
         ctx.shadowColor = 'transparent'
         ctx.shadowBlur = 0
-        // Re-apply transparency
-        const glowData = ctx.getImageData(dx, dy, dw, dh)
-        const gp = glowData.data
-        for (let i = 0; i < gp.length; i += 4) {
-          if (gp[i] > 230 && gp[i + 1] > 230 && gp[i + 2] > 230 && gp[i + 3] > 0) {
-            gp[i + 3] = 0
-          }
-        }
-        ctx.putImageData(glowData, dx, dy)
       }
 
       // Rarity tint overlay

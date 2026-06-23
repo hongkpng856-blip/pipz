@@ -10,7 +10,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadMarketListings, loadMyListings, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -88,6 +88,7 @@ export default function HomePage() {
   const petRef = useRef(pet)
   const camStateRef = useRef(camState)
   const activeIdxRef = useRef(activeIdx)
+  const lastEggRarityRef = useRef<Rarity | null>(null)
   // Update refs every render
   stepsRef.current = steps
   totalStepsRef.current = totalSteps
@@ -144,6 +145,15 @@ export default function HomePage() {
       setLoading(true)
       try {
         await ensureProfile(user.id)
+
+        // Merge any guest data into DB before overwriting with DB state
+        if (pets.length > 0 || eggs.length > 0) {
+          await Promise.all([
+            ...pets.map(p => savePet(user.id, p).catch(() => {})),
+            ...eggs.map(e => saveEgg(user.id, e.rarity).catch(() => {})),
+          ])
+        }
+
         const [dbPets, todaySt, dbEggs, dbFavs, dbWeekly] = await Promise.all([
           loadPets(user.id),
           getTodaySteps(user.id),
@@ -182,10 +192,7 @@ export default function HomePage() {
   const loadMarketData = useCallback(async () => {
     if (!user) return
     try {
-      const [ml, own] = await Promise.all([
-        loadMarketListings(user.id),
-        loadMyListings(user.id),
-      ])
+      const { listings: ml, myListings: own } = await loadAllMarketData(user.id)
       setMarketListings(ml)
       setMyListings(own)
     } catch (e) {
@@ -462,6 +469,7 @@ export default function HomePage() {
 
   const handleBuy = async (petId: string, sellerId: string, price: number) => {
     if (!user) return logMsg('❌ 需要登入')
+    if (totalSteps < price) return logMsg('❌ 能量不足')
     const err = await buyPet(petId, user.id, sellerId, price)
     if (err) return logMsg(`❌ ${err}`)
     logMsg(`🎉 購買成功！花費 ⚡${formatSteps(price)}`)
@@ -596,6 +604,7 @@ export default function HomePage() {
                       // Collect the egg from encounter
                       if (encounterEggRarity) {
                         const rarity = encounterEggRarity
+                        lastEggRarityRef.current = rarity
                         setEncounterEggRarity(null)
                         // Save to Supabase first, then add to local state
                         if (user) {
@@ -803,7 +812,6 @@ export default function HomePage() {
                   const bf = favorites.includes(b.id) ? 0 : 1
                   return af - bf
                 })
-                const mainPet = sorted.find((_, i) => pets.indexOf(sorted[i]) === activeIdx) || sorted[0]
                 const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).slice(0, 5)
                 const otherPets = sorted.filter(p => !favorites.includes(p.id))
                 return (
@@ -1246,7 +1254,7 @@ export default function HomePage() {
           padding:16,
         }} onClick={() => setShowEncounterEgg(false)}>
           <div style={{
-            background:'#141b2d', border:`2px solid ${PC[eggs[eggs.length-1].rarity]}44`,
+            background:'#141b2d', border:`2px solid ${PC[lastEggRarityRef.current || 'common']}44`,
             borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
           }} onClick={e => e.stopPropagation()}>
             <div style={{fontSize:48, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
@@ -1255,12 +1263,12 @@ export default function HomePage() {
             </div>
             <div style={{
               fontSize:11, fontWeight:700,
-              color: PC[eggs[eggs.length-1].rarity],
-              background: `${PC[eggs[eggs.length-1].rarity]}18`,
+              color: PC[lastEggRarityRef.current || 'common'],
+              background: `${PC[lastEggRarityRef.current || 'common']}18`,
               display:'inline-block', padding:'2px 12px', borderRadius:10,
               marginBottom:8,
             }}>
-              {RARITY_LABELS[eggs[eggs.length-1].rarity]}
+              {RARITY_LABELS[lastEggRarityRef.current || 'common']}
             </div>
             <div style={{fontSize:11, color:'#94a5b8', marginBottom:16}}>
               已收錄到蛋列表！去蛋頁面孵化啦
