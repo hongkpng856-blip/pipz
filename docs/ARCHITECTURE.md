@@ -49,6 +49,8 @@ Pipz/
 │       │   ├── icon-192.png         # PWA app icon
 │       │   ├── icon-512.png         # PWA app icon (high-res)
 │       │   ├── favicon.svg          # Browser tab icon
+│       │   └── pixel-gen/
+│       │       └── sprites/         # 50 PICO-8 dithered PNG sprites (0-49.png)
 │       ├── scripts/
 │       │   └── gen-icons.mjs        # Generate PNG icons via Sharp
 │       └── next.config.ts           # Next.js config
@@ -95,7 +97,7 @@ Feed / Pet / Play → Mood + XP updates → Evolution check
 | Pure CSS | Tailwind v4 broke mid-project |
 | Brevo SMTP | Free tier, no domain required |
 | Vercel | Free hosting, auto-deploy from GitHub |
-| Canvas pixel art | Free, no AI API key needed, deterministic |
+| Canvas pixel art | Free, no API key needed for procedural fallback; PICO-8 PNG sprites via Pollinations.ai for primary display |
 | Monorepo | Core logic reusable across platforms |
 | client-side auth callback | Server-side always returned null user |
 | Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |

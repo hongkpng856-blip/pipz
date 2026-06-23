@@ -170,6 +170,36 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
   - Active pet highlighted with brighter border
 - All pets not in `favorites` array
 
+### PixelPetCanvas (`PixelPetCanvas.tsx`)
+
+Canvas-based pet renderer with hybrid PNG sprite + procedural fallback.
+
+**Sprite loading:**
+- Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
+- `onload` → draws PNG with canvas scaling, enables larger canvas (`64 * size + 60`)
+- `onerror` → falls back to procedural `generatePixelPet()` with smaller canvas (`16 * size + 60`)
+
+**Rarity effects:**
+- Tint overlay: `fillRect` with rgba (common=`transparent`, uncommon=`#22c55e14`, rare=`#3b82f61a`, epic=`#8b5cf61f`, legendary=`#f59e0b26`)
+- Glow shadow: `ctx.shadowBlur = size * 3` with rarity glow colour
+- Legendary border: gold corner highlights (`#ffd70060`)
+
+**Animation states:**
+| State | Behaviour |
+|-------|-----------|
+| `idle` | Sinusoidal Y bob (±1.5px) |
+| `walk` | X translation (±20px) + Y step bounce |
+| `happy` | Y bounce (±6px) |
+| `jump` | Y arc (15px, decay 0.08/frame) |
+
+**Canvas props:**
+- `seed`: species + visual determinism
+- `rarity`: tint/glow colours
+- `evolutionStage`: not used for PNG (procedural fallback only)
+- `animation`: idle/walk/happy/jump
+- `size`: pixel multiplier (default 5)
+- `onClick`: sets bounceRef + callback
+
 ### Interaction Rules (critical)
 | Zone | Click | Drag | Minus button |
 |------|-------|------|--------------|

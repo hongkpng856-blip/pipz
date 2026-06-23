@@ -193,14 +193,55 @@ return min(decay, 100)
 - Play: +5 XP
 - XP bar shows as progress bar in pet display
 
-## Pixel Pet Generation
+## Pixel Pet Generation (Hybrid System)
 
-Pets are procedurally generated based on 3 inputs:
+Pets use a **hybrid rendering system**: PNG sprites (PICO-8 style) as primary, procedural fallback when sprite fails to load.
+
+### Render Priority
+```
+1. PNG sprite → /pixel-gen/sprites/{speciesIdx}.png  (loaded into canvas)
+2. Fallback → procedural generatePixelPet() (16×16 grid)
+```
+
+### PNG Sprite System (Primary)
+
+50 unique PICO-8 style sprites generated via Pollinations.ai API + pico8 dither pipeline:
+
+| Asset | Location | Format |
+|-------|----------|--------|
+| Sprites | `apps/web/public/pixel-gen/sprites/{0-49}.png` | PICO-8 dithered PNG |
+| Total size | ~469KB (avg ~9KB/sprite) | 32×32 → dithered |
+| Generation | Pollinations.ai free API + `pixel_art(preset='pico8')` | |
+
+**Sprite generation pipeline:**
+```
+Pollinations.ai API → raw PNG (~30-50KB) → pico8 dither → output PNG (~8-11KB)
+```
+
+**Species list (0-49):**
+`橙色貓 · 小狗 · 白兔 · 熊仔 · 紅狐 · 藍鳥 · 企鵝 · 小龍 · 外星人 · 機械人 · 鬼魂 · 史萊姆 · 恐龍 · 貓頭鷹 · 海龜 · 鯨魚 · 蝙蝠 · 蛇 · 猴子 · 鹿 · 熊貓 · 樹懶 · 獅子 · 老虎 · 獨角獸 · 八爪魚 · 水母 · 蝴蝶 · 蜜蜂 · 青蛙 · 鳳凰 · 精靈 · 仙人掌 · 花 · 樹人 · 水晶 · 雲 · 螃蟹 · 海星 · 瓢蟲 · 雪怪 · 哥布林 · 南瓜 · 魔鬼 · 天使 · 刺蝟 · 鯊魚 · 老鼠 · 蛋 · 金貓`
+
+**Species index lookup:** `getSpeciesIndex(seed) % 50` determines which sprite file to load.
+
+### Canvas Rendering (`PixelPetCanvas.tsx`)
+- Loads PNG via `new Image()` from `/pixel-gen/sprites/${speciesIdx}.png`
+- On `onload`: draws PNG with canvas scaling (fits to `maxDim = min(cw, ch) - 10`)
+- On `onerror`: falls back to procedural `generatePixelPet()`
+- **Rarity tint overlay**: `fillRect` with rgba colour per rarity
+- **Rarity glow**: `ctx.shadowBlur` with rarity glow colour
+- **Legendary**: gold border + sparkle effect (corner highlights)
+- Canvas size: `(64 * pixelSize) + 60` when sprite loaded, `(16 * pixelSize) + 60` when fallback
+- Animation loop: idle bob, walk offset, happy bounce, jump arc
+- `imageRendering: 'pixelated'` CSS for sharp pixel scaling
+
+### Procedural Fallback System
+
+When PNG fails to load, falls back to procedural generation based on 3 inputs:
 - **seed** (deterministic random) — same seed = same pet
 - **rarity** — determines colour palette
 - **evolutionStage** — determines size/complexity
 
-### Body Templates (50 species)
+#### Body Templates (50 species)
 50 unique species generated via procedural seed + species lookup. Each species has:
 - **speciesId**: deterministic seed
 - **speciesName**: e.g., `#圓貓`, `#小狗`, `#小龍`, `#機械人`, `#史萊姆`, `#鳳凰`, `#獨角獸`, `#水母`
@@ -208,23 +249,23 @@ Pets are procedurally generated based on 3 inputs:
 - **palette**: rarity-coloured variant
 - **accessorySet**: which accessories this species can wear
 
-### Eye Styles (15)
+#### Eye Styles (15)
 Big round, Small dot, Happy closed, Sparkle, Side eyes, Sleepy (━━), Angry (> <), Heart (♥), Tear (; ;), Star (☆), Glowing, Cross (X X), Dizzy (@ @), Winking (◕‿◕), Closed happy (∪ ∪)
 
-### Accessories (19)
+#### Accessories (19)
 None, Small ears, Cat ears, Horns, Wings, Crown, Bow, Top hat, Flower, Scarf, Glasses, Eyepatch, Halo, Antenna, Tail, Cape, Collar, Earring, Mask
 
-### Stage Embellishments
+#### Stage Embellishments
 - Stage 1 (Baby): no extras
 - Stage 2: tiny feet
 - Stage 3: full feet
 - Stage 4: bigger + ornate
 - Stage 5 (Legendary): wings + glow
 
-### Legendary Crown
+#### Legendary Crown
 All legendary pets automatically get a crown on their head.
 
-### Colour Palettes
+#### Colour Palettes
 Each rarity has 3 colour variants (randomly chosen):
 - Common: greys, tans, muted greens
 - Uncommon: vibrant greens, teals, ambers
@@ -232,7 +273,7 @@ Each rarity has 3 colour variants (randomly chosen):
 - Epic: deep purples, royal blues, ruby reds (with glow)
 - Legendary: golds, red-golds, cyan-golds (with glow)
 
-### Grid
+#### Grid
 - 16x16 pixel grid
 - Rendered on HTML Canvas with `image-rendering: pixelated`
 - Pixel size determines display scale
