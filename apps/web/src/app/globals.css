@@ -574,6 +574,28 @@ body { position: fixed; }
 }
 .team-slot-minus:active { transform: scale(0.85); }
 
+/* ── NEW badge for freshly hatched pets ── */
+.new-badge {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background: #f59e0b;
+  color: #0b1120;
+  font-size: 6px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  z-index: 5;
+  line-height: 1.2;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  animation: new-pulse 1.2s ease-in-out infinite;
+}
+@keyframes new-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
 /* ── Egg hatching particles ── */
 @keyframes float-up {
   0% { transform: translateY(0) scale(1); opacity: 1; }

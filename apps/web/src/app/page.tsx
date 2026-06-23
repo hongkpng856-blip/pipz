@@ -57,6 +57,7 @@ export default function HomePage() {
   const [notifUnread, setNotifUnread] = useState(0)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
+  const [newPetId, setNewPetId] = useState<string | null>(null) // most recently hatched pet
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
   const [marketListings, setMarketListings] = useState<Pet[]>([])
@@ -227,6 +228,15 @@ export default function HomePage() {
     }
   }, [tab])
 
+  // ── Load unread notification count on user login ──
+  useEffect(() => {
+    if (!user) { setNotifUnread(0); return }
+    fetch(`/api/notifications?userId=${user.id}`)
+      .then(r => r.json())
+      .then(d => setNotifUnread((d.notifications ?? []).filter((n: any) => !n.read).length))
+      .catch(() => {})
+  }, [user?.id])
+
   // ── Debounced step sync to Supabase ──
   const scheduleSync = useCallback((s: number, ts: number) => {
     if (!user) return
@@ -301,6 +311,8 @@ export default function HomePage() {
 
     setPets(v => [...v, np])
     setActiveIdx(pets.length) // point to the new pet (last index)
+    setNewPetId(np.id)
+    return np.id
   }
 
   // ── Step manager ──
@@ -358,7 +370,7 @@ export default function HomePage() {
     }
   }
 
-  const addDebug = () => addSt(500, true) // skip encounters for debug
+  const addDebug = () => addSt(500)
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
@@ -876,12 +888,13 @@ export default function HomePage() {
                           if (pet) {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
-                                onClick={() => { setDetailPetId(pet.id) }}
+                                onClick={() => { if (newPetId === pet.id) setNewPetId(null); setDetailPetId(pet.id) }}
                                 onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
                                 <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
+                                {newPetId === pet.id && <div className="new-badge">NEW</div>}
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
                                 {/* Minus button — remove from team */}
                                 <div
@@ -933,10 +946,11 @@ export default function HomePage() {
                                 e.dataTransfer.setData('text/plain', p.id)
                                 e.dataTransfer.effectAllowed = 'move'
                               }}
-                              onClick={() => { setDetailPetId(p.id) }}
+                              onClick={() => { if (newPetId === p.id) setNewPetId(null); setDetailPetId(p.id) }}
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
+                              {newPetId === p.id && <div className="new-badge">NEW</div>}
                               {canThisEvolve && (
                                 <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
                               )}
@@ -1364,6 +1378,80 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ════ New Pet Popup (after hatching) ════ */}
+      {newPetId && (() => {
+        const newPet = pets.find(p => p.id === newPetId)
+        if (!newPet) return null
+        return (
+          <div style={{
+            position:'fixed', inset:0, zIndex:200,
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(0,0,0,0.8)', backdropFilter:'blur(8px)',
+            padding:16,
+          }} onClick={() => { setNewPetId(null) }}>
+            <div style={{
+              background:'#141b2d', border:`2px solid ${RARITY_COLORS[newPet.rarity]}66`,
+              borderRadius:24, padding:28, maxWidth:320, width:'100%', textAlign:'center',
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{fontSize:10, color:'#5a6d85', marginBottom:4, letterSpacing:4, textTransform:'uppercase'}}>
+                🐣 新寵物孵化！
+              </div>
+              <div style={{margin:'8px 0'}}>
+                <PixelPetCanvas
+                  seed={parseInt(newPet.speciesId) || 1}
+                  rarity={newPet.rarity}
+                  evolutionStage={newPet.evolutionStage}
+                  animation="happy"
+                  size={5}
+                />
+              </div>
+              <div className="pet-badge" style={{
+                display:'inline-block',
+                color:RARITY_COLORS[newPet.rarity],
+                background:RARITY_COLORS[newPet.rarity]+'18',
+                fontSize:10, fontWeight:700,
+                padding:'3px 14px', borderRadius:10,
+                marginBottom:8,
+              }}>
+                {RARITY_LABELS[newPet.rarity]}
+              </div>
+              <div style={{fontSize:18, fontWeight:800, color:'#f0f4f8', marginBottom:4}}>
+                #{newPet.speciesId?.slice(0,6) || '???'}
+              </div>
+              <div style={{fontSize:9, color:'#5a6d85', marginBottom:10}}>
+                Lv.{newPet.level} · {['BB','幼年','成年','完全體','傳說'][newPet.evolutionStage-1] || '初級'}
+              </div>
+              {/* Stats */}
+              <div style={{display:'flex', gap:8, justifyContent:'center', marginBottom:16}}>
+                {[
+                  { icon:'⚡', val:newPet.stats.speed },
+                  { icon:'🍀', val:newPet.stats.luck },
+                  { icon:'💜', val:newPet.stats.charm },
+                  { icon:'🔋', val:newPet.stats.energy },
+                ].map(s => (
+                  <div key={s.icon} style={{
+                    background:'#1a2338', borderRadius:10,
+                    padding:'6px 12px', textAlign:'center',
+                  }}>
+                    <div style={{fontSize:14}}>{s.icon}</div>
+                    <div style={{fontSize:10, fontWeight:700, color:'#f0f4f8'}}>{s.val}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setNewPetId(null); setTab('pets') }}
+                style={{
+                  padding:'10px 28px', border:'none',
+                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
+                  fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  borderRadius:16,
+                }}>
+                🎉 睇下寵物！
+              </button>
+            </div>
+          </div>
+        )
+      })()}
 
     </div>
   )
