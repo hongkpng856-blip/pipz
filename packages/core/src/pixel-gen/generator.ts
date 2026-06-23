@@ -153,3 +153,9 @@ export function pixelPetToDataURL(data: PixelPetData, pixelSize: number = 3): st
   renderPixelPetToCanvas(canvas, data, pixelSize, data.palette.glow)
   return canvas.toDataURL('image/png')
 }
+
+// Get the species index (0-49) from a seed, matching generatePixelPet's logic
+export function getSpeciesIndex(seed: number): number {
+  const rand = seededRandom(seed)
+  return Math.floor(rand() * 50)
+}
