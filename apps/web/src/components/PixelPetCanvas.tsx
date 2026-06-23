@@ -74,17 +74,17 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
   const seedKeyRef = useRef<number | null>(null)
-  const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
+  const [status, setStatus] = useState<'fallback' | 'png'>('fallback')
 
   const speciesIdx = getSpeciesIndex(seed)
 
   // Load PNG sprite and pre-process to remove background
   useEffect(() => {
     let cancelled = false
-    // If seed changed since last load, clear old sprite immediately
+    // If seed changed since last load, clear old sprite
     if (seedKeyRef.current !== seed) {
       offscreenRef.current = null
-      setStatus('loading')
+      setStatus('fallback')
     }
     seedKeyRef.current = seed
 

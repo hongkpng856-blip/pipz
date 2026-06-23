@@ -134,6 +134,18 @@ export default function HomePage() {
 
   useEffect(() => { setReady(true) }, [])
 
+  // Auto-detect recently created pets as "new" (safety net for localStorage miss)
+  useEffect(() => {
+    if (pets.length === 0 || newPetId) return
+    const recent = [...pets].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).find(p =>
+      p.createdAt > 0 && Date.now() - p.createdAt < 5 * 60 * 1000 && !dismissedNewPets.current.has(p.id)
+    )
+    if (recent) {
+      setNewPetId(recent.id)
+      try { localStorage.setItem('pipz_new_pet', recent.id) } catch(_){}
+    }
+  }, [pets, newPetId])
+
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
 
   const isNewPet = (petId: string, createdAt: number) => {

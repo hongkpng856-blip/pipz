@@ -7,10 +7,13 @@
 - **Click-to-skip encounter** — tapping the WalkingCanvas during encounter instantly skips to the egg popup (200ms delay)
 - **Instant debug feedback** — clicking "+500 測試步數" immediately shows log message "🔍 測試步數處理中..." instead of silent wait
 - **Other pets sorted newest first** — non-favorite pets now sorted by `createdAt` descending (newest pet appears at the top)
+- **NEW badge enlarged** — font 6→7px, padding bigger, z-index 5→10, pulsing glow shadow, bigger scale animation
+- **PixelPetCanvas instant render** — status now starts as `'fallback'` instead of `'loading'`; procedural pet art shows immediately without waiting for PNG sprite download; upgrades to PNG seamlessly when loaded
 
 ### Added
 - **NEW badge persistence** — `newPetId` now saved to `localStorage`, so the NEW badge survives page reload until the user clicks/taps the pet card
 - **NEW badge recency fallback** — pets created within the last 5 minutes also show NEW badge (even without `newPetId` match), ensuring it always appears after hatching
+- **Auto-detect recent pets on load** — extra `useEffect` scans pets for any created within 5 min and auto-sets `newPetId` (safety net for localStorage miss)
 
 ### Fixed
 - **WalkingCanvas import** — added `useCallback` import for skipEncounter handler
