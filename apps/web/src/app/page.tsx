@@ -57,7 +57,10 @@ export default function HomePage() {
   const [notifUnread, setNotifUnread] = useState(0)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
-  const [newPetId, setNewPetId] = useState<string | null>(null) // most recently hatched pet
+  const [newPetId, setNewPetId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
+    return null
+  }) // most recently hatched pet, persisted in localStorage
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
   const [marketListings, setMarketListings] = useState<Pet[]>([])
@@ -131,6 +134,11 @@ export default function HomePage() {
   useEffect(() => { setReady(true) }, [])
 
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
+
+  const dismissNewPet = () => {
+    setNewPetId(null)
+    try { localStorage.removeItem('pipz_new_pet') } catch(_){}
+  }
 
   // ── Load data when user changes ──
   useEffect(() => {
@@ -312,6 +320,7 @@ export default function HomePage() {
     setPets(v => [...v, np])
     setActiveIdx(pets.length) // point to the new pet (last index)
     setNewPetId(np.id)
+    try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
     return np.id
   }
 
@@ -845,7 +854,9 @@ export default function HomePage() {
                 const sorted = [...pets].sort((a, b) => {
                   const af = favorites.includes(a.id) ? 0 : 1
                   const bf = favorites.includes(b.id) ? 0 : 1
-                  return af - bf
+                  if (af !== bf) return af - bf
+                  // Within same group (both fav or both non-fav), newest first
+                  return (b.createdAt || 0) - (a.createdAt || 0)
                 })
                 const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).slice(0, 5)
                 const otherPets = sorted.filter(p => !favorites.includes(p.id))
@@ -891,7 +902,7 @@ export default function HomePage() {
                           if (pet) {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
-                                onClick={() => { if (newPetId === pet.id) setNewPetId(null); setDetailPetId(pet.id) }}
+                                onClick={() => { if (newPetId === pet.id) dismissNewPet(); setDetailPetId(pet.id) }}
                                 onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
@@ -949,7 +960,7 @@ export default function HomePage() {
                                 e.dataTransfer.setData('text/plain', p.id)
                                 e.dataTransfer.effectAllowed = 'move'
                               }}
-                              onClick={() => { if (newPetId === p.id) setNewPetId(null); setDetailPetId(p.id) }}
+                              onClick={() => { if (newPetId === p.id) dismissNewPet(); setDetailPetId(p.id) }}
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
@@ -1392,7 +1403,7 @@ export default function HomePage() {
             display:'flex', alignItems:'center', justifyContent:'center',
             background:'rgba(0,0,0,0.8)', backdropFilter:'blur(8px)',
             padding:16,
-          }} onClick={() => { setNewPetId(null) }}>
+          }} onClick={() => { dismissNewPet() }}>
             <div style={{
               background:'#141b2d', border:`2px solid ${RARITY_COLORS[newPet.rarity]}66`,
               borderRadius:24, padding:28, maxWidth:320, width:'100%', textAlign:'center',
@@ -1442,7 +1453,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setNewPetId(null); setTab('pets') }}
+              <button onClick={() => { dismissNewPet(); setTab('pets') }}
                 style={{
                   padding:'10px 28px', border:'none',
                   background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
