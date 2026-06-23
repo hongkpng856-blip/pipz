@@ -1,6 +1,27 @@
 # Changelog
 
-## v0.3.0 (2026-06-23)
+## v0.3.1 (2026-06-23)
+
+### Fixed (Code Review — 22 bugs)
+- **Pity system** — legendary/epic counters now actually increment (were stuck at 0)
+- **updatePet** — `user_id` no longer included in update payload (wrong destructure key)
+- **savePet** — returns `null` on error instead of error message (which corrupted pet IDs)
+- **GPS stale closure** — `addSt` now uses refs for `user`, `pets`, `pet`, `camState`, `steps` to prevent stale values in watchPosition callback
+- **Step sync race** — `scheduleSync` now uses `pendingSteps.current` instead of render-cycle `steps`
+- **Steps during encounter** — steps are no longer counted during encounter animation
+- **Evolution totalSteps inflation** — removed catch-up logic that reset evolved pets' steps
+- **WalkingCanvas** — `onEncounterEnd` stored in ref to prevent effect restart on every render
+- **Egg save race** — egg saved to DB first, then added to local state (was optimistic + .then patch)
+- **ensureProfile** — uses `maybeSingle()` + `upsert()` to prevent duplicate key errors
+- **upsertDailySteps** — uses single `upsert()` instead of select-then-insert/update (TOCTOU race)
+- **Encounter egg popup** — simplified condition to avoid timing race with state updates
+- **PixelPetCanvas** — added `cancelled` flag to prevent setState after unmount
+- **darkenColor** — handles short hex format (`#rgb`) + NaN-safe parse
+- **Auth context** — removed duplicate `setLoading(false)` call
+
+### Changed
+- **Pixel pet rendering** — hybrid system: PICO-8 PNG sprites primary, procedural fallback
+- **50 PICO-8 sprites** — all generated via Pollinations.ai + pico8 dither pipeline (~469KB total)
 
 ### Added
 - **PetCompanion** — full-screen interactive pet room (indoor scene, auto-walk, mischief, tap ❤️)
