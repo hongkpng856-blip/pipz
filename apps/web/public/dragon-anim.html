@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🐉 Dragon Walk Animation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0b1120;color:#e2e8f0;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+h1{font-size:18px;margin-bottom:4px}
+.sub{font-size:11px;color:#5a6d85;margin-bottom:20px}
+canvas{background:#1e2a45;border-radius:12px;image-rendering:pixelated;width:256px;height:256px}
+.controls{margin-top:16px;display:flex;gap:8px;align-items:center}
+.controls button{padding:6px 16px;border-radius:10px;border:1px solid #8b5cf6;background:rgba(139,92,246,0.12);color:#c084fc;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600}
+.controls button:hover{background:#8b5cf6;color:white}
+.controls label{font-size:11px;color:#5a6d85}
+.speed-val{font-size:12px;color:#94a5b8;min-width:30px;text-align:center}
+.info{margin-top:12px;font-size:10px;color:#5a6d85;text-align:center;line-height:1.6}
+.frames-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;justify-content:center}
+.frames-row canvas{width:64px;height:64px;border-radius:4px;cursor:pointer;border:2px solid transparent}
+.frames-row canvas.active{border-color:#8b5cf6}
+</style>
+</head>
+<body>
+<h1>🐉 #小龍 PICO-8 行路動畫</h1>
+<div class="sub">6 frames cycle (前後 loop)</div>
+<canvas id="anim" width="128" height="128"></canvas>
+<div class="controls">
+  <button onclick="togglePlay()">⏸ 暫停</button>
+  <label>速度:</label>
+  <input type="range" id="speedRange" min="50" max="400" value="150">
+  <span class="speed-val" id="speedVal">150ms</span>
+</div>
+<div class="frames-row" id="framesRow"></div>
+<div class="info">
+  Frame <span id="frameIdx">0</span>/6 · 
+  點擊下面 frame 可以睇單格
+</div>
+<script>
+const frames = [];
+const canvas = document.getElementById('anim');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// Load 4 frames
+const imgFiles = [
+  '/pixel-gen/pico_dragon_walk1.png',
+  '/pixel-gen/pico_dragon_walk2.png',
+  '/pixel-gen/pico_dragon_walk3.png',
+  '/pixel-gen/pico_dragon_walk4.png',
+];
+const cycle = [0, 1, 2, 3, 2, 1]; // 6-frame cycle
+
+let loaded = 0;
+let currentFrame = 0;
+let playing = true;
+let interval = null;
+
+function drawFrame(idx) {
+  const img = frames[cycle[idx]];
+  if (!img) return;
+  ctx.clearRect(0, 0, 128, 128);
+  // Center and scale
+  const s = Math.min(128/img.width, 128/img.height) * 0.8;
+  const ox = (128 - img.width*s)/2;
+  const oy = (128 - img.height*s)/2;
+  ctx.drawImage(img, ox, oy, img.width*s, img.height*s);
+  document.getElementById('frameIdx').textContent = idx + 1;
+  
+  // Highlight active frame
+  document.querySelectorAll('.frames-row canvas').forEach((c, i) => {
+    c.classList.toggle('active', i === cycle[idx]);
+  });
+}
+
+function animate() {
+  if (!playing) return;
+  currentFrame = (currentFrame + 1) % cycle.length;
+  drawFrame(currentFrame);
+}
+
+function startAnim() {
+  if (interval) clearInterval(interval);
+  const speed = parseInt(document.getElementById('speedRange').value);
+  document.getElementById('speedVal').textContent = speed + 'ms';
+  interval = setInterval(animate, speed);
+}
+
+function togglePlay() {
+  playing = !playing;
+  document.querySelector('.controls button:first-child').textContent = playing ? '⏸ 暫停' : '▶ 播放';
+  if (playing) animate();
+}
+
+document.getElementById('speedRange').addEventListener('input', startAnim);
+
+// Load images
+imgFiles.forEach((src, i) => {
+  const img = new Image();
+  img.onload = () => {
+    frames[i] = img;
+    loaded++;
+    if (loaded === 4) {
+      drawFrame(0);
+      startAnim();
+      // Build frame thumbnails
+      const row = document.getElementById('framesRow');
+      frames.forEach((f, fi) => {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        c.addEventListener('click', () => {
+          playing = false;
+          document.querySelector('.controls button:first-child').textContent = '▶ 播放';
+          // Show the first occurrence of this frame index in the cycle
+          const ci = cycle.indexOf(fi);
+          if (ci >= 0) { currentFrame = ci; drawFrame(ci); }
+        });
+        const cx = c.getContext('2d');
+        cx.imageSmoothingEnabled = false;
+        const s = Math.min(48/f.width, 48/f.height);
+        const ox = (64 - f.width*s)/2;
+        const oy = (64 - f.height*s)/2;
+        cx.drawImage(f, ox, oy, f.width*s, f.height*s);
+        row.appendChild(c);
+      });
+    }
+  };
+  img.src = src;
+});
+</script>
+</body>
+</html>
