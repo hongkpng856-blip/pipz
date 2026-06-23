@@ -157,5 +157,6 @@ export function pixelPetToDataURL(data: PixelPetData, pixelSize: number = 3): st
 // Get the species index (0-49) from a seed, matching generatePixelPet's logic
 export function getSpeciesIndex(seed: number): number {
   const rand = seededRandom(seed)
-  return Math.floor(rand() * 50)
+  rand() // skip first rand() call (palette selection in generatePixelPet)
+  return Math.floor(rand() * 50) // second rand() is body/species index
 }

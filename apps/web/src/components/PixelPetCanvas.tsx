@@ -111,23 +111,48 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
     const img = imageRef.current
     if (img && spriteLoaded) {
-      // Draw PNG sprite with animation + rarity tint
-      const maxDim = Math.min(cw, ch) - 10
-      const scale = maxDim / Math.max(img.width, img.height)
-      const dw = img.width * scale
-      const dh = img.height * scale
-      const dx = (cw - dw) / 2 + xOff
-      const dy = (ch - dh) / 2 + yOff
+      // Draw PNG sprite — calculate size maintaining aspect ratio
+      const pad = 20
+      const displaySize = Math.min(cw, ch) - pad
+      const imgScale = displaySize / Math.max(img.width, img.height)
+      const dw = Math.round(img.width * imgScale)
+      const dh = Math.round(img.height * imgScale)
+      const dx = Math.round((cw - dw) / 2 + xOff)
+      const dy = Math.round((ch - dh) / 2 + yOff)
+
+      // Draw sprite onto canvas
+      ctx.drawImage(img, dx, dy, dw, dh)
+
+      // Remove white/off-white background pixels from the drawn sprite area
+      const imageData = ctx.getImageData(dx, dy, dw, dh)
+      const pixels = imageData.data
+      for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3]
+        // If pixel is white or near-white (>230 each channel) and fully opaque, make transparent
+        if (a > 0 && r > 230 && g > 230 && b > 230) {
+          pixels[i + 3] = 0
+        }
+      }
+      ctx.putImageData(imageData, dx, dy)
 
       // Glow for high rarity
       if (RARITY_GLOWS[rarity]) {
         ctx.shadowColor = RARITY_GLOWS[rarity]
         ctx.shadowBlur = size * 3
+        // Re-draw with glow
+        ctx.drawImage(img, dx, dy, dw, dh)
+        ctx.shadowColor = 'transparent'
+        ctx.shadowBlur = 0
+        // Re-apply transparency
+        const glowData = ctx.getImageData(dx, dy, dw, dh)
+        const gp = glowData.data
+        for (let i = 0; i < gp.length; i += 4) {
+          if (gp[i] > 230 && gp[i + 1] > 230 && gp[i + 2] > 230 && gp[i + 3] > 0) {
+            gp[i + 3] = 0
+          }
+        }
+        ctx.putImageData(glowData, dx, dy)
       }
-
-      ctx.drawImage(img, dx, dy, dw, dh)
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
 
       // Rarity tint overlay
       ctx.fillStyle = RARITY_TINTS[rarity]
@@ -186,9 +211,10 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   // Size calculation
   const pixelVal = typeof size === 'number' ? size : 5
-  const baseSize = spriteLoaded ? 64 : 16 // larger base for PNG sprites
-  const canvasW = baseSize * pixelVal + 60
-  const canvasH = baseSize * pixelVal + 30
+  // PNG sprites displayed at 16px per 'size' unit (same visual footprint as procedural grid)
+  const spriteGridSize = 16
+  const canvasW = spriteGridSize * pixelVal + 40
+  const canvasH = spriteGridSize * pixelVal + 30
 
   const handleClick = () => {
     bounceRef.current = 1
