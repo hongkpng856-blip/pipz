@@ -148,14 +148,6 @@ export default function HomePage() {
 
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
 
-  const isNewPet = (petId: string, createdAt: number) => {
-    if (dismissedNewPets.current.has(petId)) return false
-    if (newPetId === petId) return true
-    // Fallback: pet created within last 5 minutes
-    if (createdAt > 0 && Date.now() - createdAt < 5 * 60 * 1000) return true
-    return false
-  }
-
   const dismissNewPet = () => {
     if (newPetId) dismissedNewPets.current.add(newPetId)
     setNewPetId(null)
@@ -882,6 +874,15 @@ export default function HomePage() {
                 })
                 const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).slice(0, 5)
                 const otherPets = sorted.filter(p => !favorites.includes(p.id))
+                // Newest non-favorite pet (for NEW badge)
+                const newestPet = otherPets.length > 0 ? otherPets.reduce((a, b) => (a.createdAt || 0) > (b.createdAt || 0) ? a : b) : null
+                const isNewBadge = (pid: string, cat: number) => {
+                  if (dismissedNewPets.current.has(pid)) return false
+                  if (newPetId === pid) return true
+                  if (cat > 0 && Date.now() - cat < 5 * 60 * 1000) return true
+                  if (newestPet && pid === newestPet.id) return true
+                  return false
+                }
                 return (
                   <>
                     {/* ⚡ 你擁有的能量 */}
@@ -930,7 +931,7 @@ export default function HomePage() {
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
                                 <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
-                                {isNewPet(pet.id, pet.createdAt) && <div className="new-badge">NEW</div>}
+                                {isNewBadge(pet.id, pet.createdAt) && <div className="new-badge">NEW</div>}
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
                                 {/* Minus button — remove from team */}
                                 <div
@@ -986,7 +987,7 @@ export default function HomePage() {
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
-                              {isNewPet(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
+                              {isNewBadge(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
                               {canThisEvolve && (
                                 <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
                               )}
