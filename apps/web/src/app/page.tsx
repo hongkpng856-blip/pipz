@@ -87,6 +87,7 @@ export default function HomePage() {
   const petsRef = useRef(pets)
   const petRef = useRef(pet)
   const camStateRef = useRef(camState)
+  const activeIdxRef = useRef(activeIdx)
   // Update refs every render
   stepsRef.current = steps
   totalStepsRef.current = totalSteps
@@ -94,6 +95,7 @@ export default function HomePage() {
   petsRef.current = pets
   petRef.current = pet
   camStateRef.current = camState
+  activeIdxRef.current = activeIdx
 
   // ── Load persisted eggs + favorites from localStorage (guest) or Supabase ──
   useEffect(() => {
@@ -284,14 +286,14 @@ export default function HomePage() {
   }
 
   // ── Step manager ──
-  const addSt = (n: number) => {
+  const addSt = (n: number, skipEncounter = false) => {
     // Don't count steps during encounter animation
     if (camStateRef.current === 'encounter') return
 
     setSteps(s => s + n)
     const curPets = petsRef.current
     const curUser = userRef.current
-    const curActiveIdx = activeIdx
+    const curActiveIdx = activeIdxRef.current
 
     // Also add steps to active pet
     if (curPets[curActiveIdx]) {
@@ -318,7 +320,7 @@ export default function HomePage() {
     encCnt.current += n
     pity.current.legendary += n
     pity.current.epic += n
-    if (encCnt.current >= ENCOUNTER_INTERVAL) {
+    if (encCnt.current >= ENCOUNTER_INTERVAL && !skipEncounter) {
       const r = rollEncounter(encCnt.current, pity.current)
       if (r) {
         encCnt.current = 0
@@ -334,7 +336,7 @@ export default function HomePage() {
     }
   }
 
-  const addDebug = () => addSt(500)
+  const addDebug = () => addSt(500, true) // skip encounters for debug
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {

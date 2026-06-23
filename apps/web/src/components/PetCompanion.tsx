@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood } from '@pipz/core'
+import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex } from '@pipz/core'
 
 interface Props {
   pet: Pet | null
@@ -40,6 +40,8 @@ export default function PetCompanion({
   const reactionRef = useRef<Reaction>('none')
   const reactionTimer = useRef(0)
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
+  const spriteImageRef = useRef<HTMLImageElement | null>(null)
+  const [spriteLoaded, setSpriteLoaded] = useState(false)
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
@@ -62,6 +64,25 @@ export default function PetCompanion({
       petDataRef.current = null
       setSpeciesName('')
     }
+  }, [pet])
+
+  // Load PNG sprite
+  useEffect(() => {
+    let cancelled = false
+    if (!pet) { setSpriteLoaded(false); return }
+    const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      if (cancelled) return
+      spriteImageRef.current = img
+      setSpriteLoaded(true)
+    }
+    img.onerror = () => {
+      if (!cancelled) setSpriteLoaded(false)
+    }
+    img.src = `/pixel-gen/sprites/${idx}.png`
+    return () => { cancelled = true }
   }, [pet])
 
   // Auto behavior cycle
@@ -187,52 +208,86 @@ export default function PetCompanion({
     ctx.fillStyle = '#3a2a5a'; r()
     ctx.strokeStyle = '#4a3a6a'; ctx.lineWidth=1; r()
 
-    // ── Draw pet ──
+    // Draw pet
     const pd = petDataRef.current
-    if (pet && pd) {
+    const spriteImg = spriteImageRef.current
+    if (pet && (spriteImg || pd)) {
       const ps = 6
-      const pw = pd.width*ps, ph = pd.height*ps
-      const gy = rugY + rugH*0.6
+      const gy = rugY + rugH * 0.6
       const bx = behaviorRef.current
-      if (bx === 'walkLeft') { xRef.current -= 1.2; if (xRef.current < -W*0.25) behaviorTimer.current = 0 }
-      if (bx === 'walkRight') { xRef.current += 1.2; if (xRef.current > W*0.25) behaviorTimer.current = 0 }
-      xRef.current = Math.max(-W*0.25, Math.min(W*0.25, xRef.current))
+      if (bx === 'walkLeft') { xRef.current -= 1.2; if (xRef.current < -W * 0.25) behaviorTimer.current = 0 }
+      if (bx === 'walkRight') { xRef.current += 1.2; if (xRef.current > W * 0.25) behaviorTimer.current = 0 }
+      xRef.current = Math.max(-W * 0.25, Math.min(W * 0.25, xRef.current))
       bounceRef.current = Math.max(0, bounceRef.current - 0.05)
 
-      const idleBob = bx === 'idle' ? Math.sin(timeRef.current*3)*1.5 : 0
-      const walkBob = (bx==='walkLeft'||bx==='walkRight') ? Math.abs(Math.sin(timeRef.current*8))*3 : 0
+      const idleBob = bx === 'idle' ? Math.sin(timeRef.current * 3) * 1.5 : 0
+      const walkBob = (bx === 'walkLeft' || bx === 'walkRight') ? Math.abs(Math.sin(timeRef.current * 8)) * 3 : 0
       let mY = 0, mRot = 0
-      if (bx === 'mischief') { mY = Math.abs(Math.sin(timeRef.current*10))*8; mRot = Math.sin(timeRef.current*6)*0.15 }
+      if (bx === 'mischief') { mY = Math.abs(Math.sin(timeRef.current * 10)) * 8; mRot = Math.sin(timeRef.current * 6) * 0.15 }
 
       // Shake effect on pet
       let shakeX = 0
       if (shake) shakeX = (Math.random() - 0.5) * 4
 
-      const cy = gy - ph/2 + idleBob + walkBob - mY + (bounceRef.current * -20)
+      const cy = gy + idleBob + walkBob - mY + (bounceRef.current * -20)
 
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.12)'
-      ctx.beginPath(); ctx.ellipse(W/2+xRef.current+shakeX, gy+2, pw*0.35, 3, 0, 0, Math.PI*2); ctx.fill()
+      ctx.beginPath(); ctx.ellipse(W / 2 + xRef.current + shakeX, gy + 2, 28, 3, 0, 0, Math.PI * 2); ctx.fill()
 
-      // Glow
-      if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 15 }
+      if (spriteImg && spriteLoaded) {
+        // ── Draw PNG sprite ──
+        const spriteSize = Math.min(80, Math.min(W, H) * 0.2)
+        const sw = spriteSize
+        const sh = spriteSize
+        const sx = W / 2 + xRef.current + shakeX - sw / 2
+        const sy = cy - sh / 2 + mRot * 20
 
-      // Draw pixels
-      ctx.save()
-      ctx.translate(W/2 + xRef.current + shakeX, cy); ctx.rotate(mRot)
-      for (let y = 0; y < pd.height; y++) {
-        for (let x = 0; x < pd.width; x++) {
-          const c = pd.grid[y][x]
-          if (c && c !== 'transparent') { ctx.fillStyle = c; ctx.fillRect(x*ps-pw/2, y*ps, ps, ps) }
+        // Glow
+        if (pd?.palette?.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 15 }
+
+        ctx.save()
+        ctx.translate(W / 2 + xRef.current + shakeX, cy + mRot * 10)
+        ctx.rotate(mRot)
+
+        ctx.drawImage(spriteImg, -sw / 2, -sh / 2, sw, sh)
+
+        // Remove white/near-white background from the drawn sprite
+        const sd = ctx.getImageData(-sw / 2 + W / 2 + xRef.current + shakeX, -sh / 2 + cy + mRot * 10, sw, sh)
+        const sp = sd.data
+        for (let i = 0; i < sp.length; i += 4) {
+          if (sp[i] > 230 && sp[i + 1] > 230 && sp[i + 2] > 230 && sp[i + 3] > 0) {
+            sp[i + 3] = 0
+          }
         }
+        ctx.putImageData(sd, -sw / 2 + W / 2 + xRef.current + shakeX, -sh / 2 + cy + mRot * 10)
+
+        ctx.restore()
+        ctx.shadowBlur = 0
+      } else if (pd) {
+        // ── Fallback: procedural pixel grid ──
+        const pw = pd.width * ps, ph = pd.height * ps
+
+        // Glow
+        if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 15 }
+
+        ctx.save()
+        ctx.translate(W / 2 + xRef.current + shakeX, cy)
+        ctx.rotate(mRot)
+        for (let y = 0; y < pd.height; y++) {
+          for (let x = 0; x < pd.width; x++) {
+            const c = pd.grid[y][x]
+            if (c && c !== 'transparent') { ctx.fillStyle = c; ctx.fillRect(x * ps - pw / 2, y * ps, ps, ps) }
+          }
+        }
+        ctx.restore()
+        ctx.shadowBlur = 0
       }
-      ctx.restore()
-      ctx.shadowBlur = 0
 
       // Mood emoji
       if (pet.mood) {
         ctx.font = '20px sans-serif'; ctx.textAlign = 'center'
-        ctx.fillText(MOOD_MAP[pet.mood] || '😊', W/2+xRef.current, cy-ph/2-14)
+        ctx.fillText(MOOD_MAP[pet.mood] || '😊', W / 2 + xRef.current, cy - 40)
       }
 
       // ── Particles ──
@@ -241,7 +296,7 @@ export default function PetCompanion({
         p.y -= 1.2; p.life -= 0.025
         ctx.globalAlpha = Math.max(0, p.life)
         ctx.font = '14px sans-serif'; ctx.textAlign = 'center'
-        ctx.fillText(p.emoji, W/2+xRef.current+p.x, cy-ph/2-30+p.y)
+        ctx.fillText(p.emoji, W / 2 + xRef.current + p.x, cy - 50 + p.y)
       }
       ctx.globalAlpha = 1
 
