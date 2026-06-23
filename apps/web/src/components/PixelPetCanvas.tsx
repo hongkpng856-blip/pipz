@@ -45,16 +45,19 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   // Load PNG sprite
   useEffect(() => {
+    let cancelled = false
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
+      if (cancelled) return
       imageRef.current = img
       setSpriteLoaded(true)
     }
     img.onerror = () => {
-      setSpriteLoaded(false)
+      if (!cancelled) setSpriteLoaded(false)
     }
     img.src = `/pixel-gen/sprites/${speciesIdx}.png`
+    return () => { cancelled = true }
   }, [speciesIdx])
 
   // Generate procedural pet data as fallback

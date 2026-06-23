@@ -80,6 +80,21 @@ export default function HomePage() {
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
   const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
 
+  // Refs for current values used in GPS callback (avoids stale closures)
+  const stepsRef = useRef(steps)
+  const totalStepsRef = useRef(totalSteps)
+  const userRef = useRef(user)
+  const petsRef = useRef(pets)
+  const petRef = useRef(pet)
+  const camStateRef = useRef(camState)
+  // Update refs every render
+  stepsRef.current = steps
+  totalStepsRef.current = totalSteps
+  userRef.current = user
+  petsRef.current = pets
+  petRef.current = pet
+  camStateRef.current = camState
+
   // ── Load persisted eggs + favorites from localStorage (guest) or Supabase ──
   useEffect(() => {
     if (loadedStorage.current) return
@@ -142,15 +157,6 @@ export default function HomePage() {
         setSteps(todaySt)
         setActiveIdx(0)
         loadedUser.current = user.id
-
-        // Catch up old pets — set pet totalSteps to user totalSteps if behind
-        if (dbPets.length > 0) {
-          const maxPetSteps = Math.max(...dbPets.map(p => p.totalSteps))
-          const userSteps = Math.max(maxPetSteps, todaySt)
-          if (todaySt > maxPetSteps) {
-            setPets(v => v.map(p => ({ ...p, totalSteps: Math.max(p.totalSteps, userSteps) })))
-          }
-        }
       } catch (e) {
         console.error('Failed to load data:', e)
         logMsg('❌ 載入數據失敗')
@@ -279,28 +285,39 @@ export default function HomePage() {
 
   // ── Step manager ──
   const addSt = (n: number) => {
+    // Don't count steps during encounter animation
+    if (camStateRef.current === 'encounter') return
+
     setSteps(s => s + n)
+    const curPets = petsRef.current
+    const curUser = userRef.current
+    const curActiveIdx = activeIdx
+
     // Also add steps to active pet
-    if (pet) {
-      setPets(v => v.map((p, i) => i === activeIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
+    if (curPets[curActiveIdx]) {
+      setPets(v => v.map((p, i) => i === curActiveIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
     }
     setTotalSteps(s => {
       const newTotal = s + n
-      if (pets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
+
+      // ── First pet check ──
+      if (curPets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
 
       // ── Milestone check ──
       const oldM = MILESTONES.filter(m => s >= m).length
       const newM = MILESTONES.filter(m => newTotal >= m).length
-      if (newM > oldM && user) {
+      if (newM > oldM && curUser) {
         const ms = MILESTONES[oldM]
-        createNotification(user.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
+        createNotification(curUser.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
         setNotifUnread(n => n + 1)
       }
 
-      scheduleSync(steps + n, newTotal)
+      scheduleSync(pendingSteps.current + n, newTotal)
       return newTotal
     })
     encCnt.current += n
+    pity.current.legendary += n
+    pity.current.epic += n
     if (encCnt.current >= ENCOUNTER_INTERVAL) {
       const r = rollEncounter(encCnt.current, pity.current)
       if (r) {
@@ -311,8 +328,8 @@ export default function HomePage() {
         setEncounterEggRarity(r)
         setCamState('encounter')
         logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
-        if (user) createNotification(user.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
-        if (user) setNotifUnread(n => n + 1)
+        if (curUser) createNotification(curUser.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
+        if (curUser) setNotifUnread(n => n + 1)
       }
     }
   }
@@ -576,19 +593,27 @@ export default function HomePage() {
                       setCamState(walking ? 'walk' : 'idle')
                       // Collect the egg from encounter
                       if (encounterEggRarity) {
-                        const newEgg: EggItem = {
-                          id: genSeed().toString(),
-                          rarity: encounterEggRarity,
-                          collectedAt: Date.now(),
-                        }
-                        // Save to Supabase if logged in
-                        if (user) {
-                          saveEgg(user.id, encounterEggRarity).then(dbId => {
-                            if (dbId) setEggs(v => v.map(e => e.id === newEgg.id ? { ...e, id: dbId } : e))
-                          })
-                        }
-                        setEggs(v => [...v, newEgg])
+                        const rarity = encounterEggRarity
                         setEncounterEggRarity(null)
+                        // Save to Supabase first, then add to local state
+                        if (user) {
+                          saveEgg(user.id, rarity).then(dbId => {
+                            const eggId = dbId || genSeed().toString()
+                            const newEgg: EggItem = {
+                              id: eggId,
+                              rarity,
+                              collectedAt: Date.now(),
+                            }
+                            setEggs(v => [...v, newEgg])
+                          })
+                        } else {
+                          const newEgg: EggItem = {
+                            id: genSeed().toString(),
+                            rarity,
+                            collectedAt: Date.now(),
+                          }
+                          setEggs(v => [...v, newEgg])
+                        }
                         setShowEncounterEgg(true)
                       }
                     }}
@@ -1211,7 +1236,7 @@ export default function HomePage() {
       )}
 
       {/* ════ Encounter Egg Popup ════ */}
-      {showEncounterEgg && encounterEggRarity === null && eggs.length > 0 && (
+      {showEncounterEgg && (
         <div style={{
           position:'fixed', inset:0, zIndex:100,
           display:'flex', alignItems:'center', justifyContent:'center',

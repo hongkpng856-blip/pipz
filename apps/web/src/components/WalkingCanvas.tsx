@@ -42,6 +42,8 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
   const encPhase = useRef(0)
   const encDone = useRef(false)
   const stepRef = useRef(0)
+  const onEncounterEndRef = useRef(onEncounterEnd)
+  onEncounterEndRef.current = onEncounterEnd
 
   const W = Math.floor(320 / size)  // base pixel width
   const H = Math.floor(180 / size)  // base pixel height
@@ -64,7 +66,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
     const encTimer = setTimeout(() => {
     if (state === 'encounter' && !encDone.current) {
       encDone.current = true
-      if (onEncounterEnd) onEncounterEnd()
+      if (onEncounterEndRef.current) onEncounterEndRef.current()
     }
     }, 4000)  // safety timeout after 4s
 
@@ -257,7 +259,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         if (encPhase.current > 1) {
           encPhase.current = 1
           encDone.current = true
-          if (onEncounterEnd) setTimeout(onEncounterEnd, 800)
+          if (onEncounterEndRef.current) setTimeout(() => onEncounterEndRef.current!(), 800)
         }
 
         const p = encPhase.current
@@ -320,7 +322,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
       cancelAnimationFrame(rafRef.current)
       clearTimeout(encTimer)
     }
-  }, [state, speed, size, pet, nearby, onEncounterEnd, CX, CY, W, H])
+  }, [state, speed, size, pet, nearby, CX, CY, W, H])
 
   return (
     <canvas
@@ -339,9 +341,13 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
 
 /* ── Helper: darken a hex colour ── */
 function darkenColor(hex: string, amount: number): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
+  // Handle short (#rgb) format by expanding
+  const fullHex = hex.length === 4
+    ? '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3]
+    : hex
+  const r = parseInt(fullHex.slice(1, 3), 16) || 0
+  const g = parseInt(fullHex.slice(3, 5), 16) || 0
+  const b = parseInt(fullHex.slice(5, 7), 16) || 0
   const nr = Math.max(0, Math.floor(r * (1 - amount)))
   const ng = Math.max(0, Math.floor(g * (1 - amount)))
   const nb = Math.max(0, Math.floor(b * (1 - amount)))

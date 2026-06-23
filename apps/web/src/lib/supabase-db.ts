@@ -60,16 +60,17 @@ export async function ensureProfile(userId: string): Promise<DbProfile | null> {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (existing) return existing as unknown as DbProfile
 
   const { data: user } = await supabase.auth.getUser()
   const username = user?.user?.email?.split('@')[0] ?? 'player'
 
+  // Use upsert to avoid race condition on concurrent calls
   const { data: created } = await supabase
     .from('profiles')
-    .insert({ id: userId, username, total_steps: 0 } as never)
+    .upsert({ id: userId, username, total_steps: 0 } as never, { onConflict: 'id', ignoreDuplicates: false })
     .select()
     .single()
 
@@ -104,25 +105,10 @@ export async function upsertDailySteps(
 ) {
   const supabase = db()
 
-  const { data: existing } = await supabase
-    .from('daily_activity')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('date', date)
-    .single()
-
-  if (existing) {
-    const { error } = await supabase
-      .from('daily_activity')
-      .update({ steps } as never)
-      .eq('user_id', userId)
-      .eq('date', date)
-    return error
-  }
-
+  // Use upsert to avoid TOCTOU race between select and insert/update
   const { error } = await supabase
     .from('daily_activity')
-    .insert({ user_id: userId, date, steps } as never)
+    .upsert({ user_id: userId, date, steps } as never, { onConflict: 'user_id,date', ignoreDuplicates: false })
   return error
 }
 
@@ -310,13 +296,16 @@ export async function savePet(userId: string, pet: Pet): Promise<string | null> 
     .select('id')
     .single()
 
-  if (error) return error.message
+  if (error) {
+    console.error('savePet error:', error.message)
+    return null
+  }
   return (data as unknown as { id: string } | null)?.id ?? null
 }
 
 export async function updatePet(pet: Pet): Promise<string | null> {
   const supabase = db()
-  const { _user_id, ...record } = petToDb(pet.userId, pet) as Record<string, unknown> & { _user_id: string }
+  const { user_id: _unused, ...record } = petToDb(pet.userId, pet) as Record<string, unknown> & { user_id: string }
 
   const { error } = await supabase
     .from('pets')
