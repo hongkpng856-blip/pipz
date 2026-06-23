@@ -289,7 +289,18 @@ Each rarity has 3 colour variants (randomly chosen):
 - High accuracy mode: `enableHighAccuracy: true, maximumAge: 5000, timeout: 10000`
 
 ### Manual Testing
-- Debug button: "+500 測試步數" adds 500 steps instantly
+- Debug button: "+500 測試步數" adds 500 steps instantly (no longer skips encounters)
+- Clicking the debug button now properly triggers the **encounter system** every 500 steps (500 = `ENCOUNTER_INTERVAL`)
+- Encounters collected as eggs, displayed via egg popup → eggs tab → hatch → **new pet popup**
+
+### Egg & Hatching Flow
+
+1. **Encounter** (every 500 steps): WalkingCanvas plays encounter animation → egg popup appears → egg saved to inventory
+2. **Hatch** (from eggs tab): Tap egg → 2-second hatching animation → pet spawned → **new pet popup appears**
+3. **New Pet Popup**: Shows pet's pixel art, rarity badge, species ID, level/stage, and 4 stats (⚡🍀💜🔋) in a bordered overlay
+4. "🎉 睇下寵物" button → closes popup + switches to pets tab
+5. **NEW badge**: Freshly hatched pets display a pulsating amber `.new-badge` (NEW) label on their card in pets tab
+6. NEW badge disappears when user clicks on that pet's card (opens detail modal) or dismisses the hatching popup
 
 ### Sync
 - Steps are debounced and synced to Supabase every 2 seconds

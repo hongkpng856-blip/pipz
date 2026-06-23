@@ -29,6 +29,7 @@ The entire app is a single page with 4 tabs and modals.
 ### Header
 - Left: "Pipz" title
 - **Golden bell 🔔** (after title): opens notification modal; color `#fbbf24` (gold) when unread > 0, `#9ca3af` (grey) when none; red badge on top-right corner (capped 99+)
+- **Unread count loads on page init** — `useEffect` runs on user login to fetch unread notifications from DB, so the bell shows correct gold/grey state even after page reload
 - Right: sync indicator, Walk button (🚶/⏹), GPS indicator, profile button 👤, steps counter 👣
 
 ### Bottom Navigation
@@ -110,7 +111,7 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
 - Click → opens Pet Detail Modal
 
 ### Debug Row
-- "+500 測試步數" button
+- "+500 測試步數" button — now triggers encounters (no longer skips `skipEncounter`)
 - "🛰️ GPS 記錄真實步數" label
 
 ### Log
@@ -142,6 +143,7 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
 - **Filled slot** (team member):
   - Rarity-colored top strip (2px)
   - Pixel pet canvas (size 1.8)
+  - **NEW badge** (if freshly hatched): amber `#f59e0b` badge, top-left, pulsating `new-pulse` animation
   - Level label bottom-center
   - **Red minus button** ("−") top-right corner (18px circle, #ef4444 bg, white text, z-index 3)
   - Click pet area → opens **PetDetailModal** for that pet
@@ -163,6 +165,7 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
 - Each card:
   - Rarity-colored top strip (2px)
   - Pixel pet canvas (size 1.6) centered
+  - **NEW badge** (if freshly hatched): amber `#f59e0b` badge, top-left, pulsating `new-pulse` animation
   - Small "▶" arrow (amber) bottom-right if evolvable
   - **`draggable`** — drag to empty team slot to add to team
   - **Click** → opens **PetDetailModal** for that pet
@@ -536,6 +539,7 @@ Each notification card shows:
 - Red badge on bell's top-right corner, capped at 99+
 - **Incremented locally** (`setNotifUnread(n => n + 1)`) after every `createNotification()` call for instant feedback
 - **Refreshed from server** on bell click (open modal) and modal close
+- **Loaded on page init**: `useEffect` with `[user?.id]` dependency fetches from `/api/notifications` on user login, ensuring correct bell state after page reload
 - Community tab `useEffect` also refreshes on tab switch (backup)
 
 ### Milestone Thresholds
@@ -544,4 +548,57 @@ export const MILESTONES = [
   1000, 5000, 10000, 25000, 50000,
   100000, 250000, 500000, 1000000
 ]
+```
+
+---
+
+## 14. New Pet Popup (inline in `page.tsx`)
+
+Full-screen overlay shown after hatching an egg (triggered by `newPetId` state).
+
+### Trigger
+- Set by `spawnPet()` via `setNewPetId(np.id)` after any pet is created
+- Covers both `hatchEgg()` (egg inventory hatch) and `hatch()` (first pet at 1000 steps)
+
+### Layout
+```
+┌──────────────────────────────┐
+│    🐣 新寵物孵化！           │  ← uppercase label
+│                              │
+│      [PixelPetCanvas]        │  ← size=5, animation="happy"
+│                              │
+│      [稀有度 Badge]          │  ← colour-coded
+│      #speciesId              │
+│      Lv.1 · BB               │
+│                              │
+│   ⚡20  🍀15  💜25  🔋18   │  ← 4 stats in mini cards
+│                              │
+│      [🎉 睇下寵物！]        │  ← button
+└──────────────────────────────┘
+```
+
+### Behaviour
+- z-index 200 (above all other modals)
+- Backdrop: `rgba(0,0,0,0.8)` with `backdrop-filter: blur(8px)`
+- Click outside → dismisses popup + clears `newPetId`
+- "🎉 睇下寵物" button → dismisses popup + switches to pets tab
+- **NEW badge** appears on the hatched pet's card in pets tab (team slot or other pets grid)
+- NEW badge disappears when user clicks on that pet's card (opens detail modal) or dismisses popup
+
+### CSS
+```css
+.new-badge {
+  position: absolute; top: -2px; left: -2px;
+  background: #f59e0b; color: #0b1120;
+  font-size: 6px; font-weight: 800;
+  padding: 1px 5px; border-radius: 4px;
+  z-index: 5; line-height: 1.2;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  animation: new-pulse 1.2s ease-in-out infinite;
+}
+@keyframes new-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
 ```

@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.2 (2026-06-24)
+
+### Fixed
+- **Debug button skipEncounter** — `addDebug()` no longer skips encounters; +500 test steps now properly triggers the encounter system (every `ENCOUNTER_INTERVAL = 500` steps)
+- **Golden bell notification count** — added `useEffect` with `[user?.id]` dependency to fetch unread notification count from DB on page load; bell now shows correct gold/grey state after page reload
+- **Missing hatch result UI** — added new pet popup overlay after hatching (shows pixel art, rarity, stats)
+
+### Added
+- **New Pet Popup** — full-screen overlay after hatching: PixelPetCanvas (size 5, anim=happy), rarity badge, species ID, level/stage, 4 stats, "🎉 睇下寵物" button
+- **NEW badge** — amber pulsating `.new-badge` on freshly hatched pet cards in pets tab; disappears on card click
+
 ## v0.3.1 (2026-06-23)
 
 ### Fixed (Code Review — 22 bugs)
