@@ -90,7 +90,9 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
 - **Idle**: pet stands with slight idle bob, ground slowly scrolls
 - **Walk**: pet legs alternate, ground scrolls at walking speed
 - **Run**: faster scrolling + leg movement
-- **Encounter**: grass shakes near pet, ❗ pops up, egg appears with sparkles (longer ~4s animation), then popup shows collected egg
+- **Encounter**: grass shakes near pet → ❗ pops up → egg appears with sparkles (~1s animation), then popup shows collected egg
+- **Click-to-skip**: tap/click the WalkingCanvas during encounter to instantly skip to egg popup (200ms)
+- **Safety timeout**: fires `onEncounterEnd` after 1.5s if animation hangs
 - After encounter: **egg popup** with rarity badge + "去蛋頁" button (not a pet yet)
 - Egg goes to inventory, hatched on Eggs tab by tapping
 - Pet status shown BELOW the canvas in a slim bar (3 action buttons: feed/pet/play)

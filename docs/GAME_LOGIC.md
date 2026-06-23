@@ -292,6 +292,12 @@ Each rarity has 3 colour variants (randomly chosen):
 - Debug button: "+500 測試步數" adds 500 steps instantly (no longer skips encounters)
 - Clicking the debug button now properly triggers the **encounter system** every 500 steps (500 = `ENCOUNTER_INTERVAL`)
 - Encounters collected as eggs, displayed via egg popup → eggs tab → hatch → **new pet popup**
+- **Instant feedback**: log message "🔍 測試步數處理中..." appears immediately on click
+
+### Encounter Animation
+- WalkingCanvas plays encounter animation (~1s) with grass shake, ❗ mark, egg + sparkles
+- **Click/tap** the canvas during animation to **skip** directly to egg popup (200ms delay)
+- After animation: egg popup appears → egg saved to inventory → user can go to eggs tab to hatch
 
 ### Egg & Hatching Flow
 

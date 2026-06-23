@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.3 (2026-06-24)
+
+### Changed
+- **Encounter animation speed** — `encPhase` increment 0.008→0.025 (3× faster), post-animation delay 800ms→300ms; safety timeout 4s→1.5s; total wait from ~2.9s to ~0.97s
+- **Click-to-skip encounter** — tapping the WalkingCanvas during encounter instantly skips to the egg popup (200ms delay)
+- **Instant debug feedback** — clicking "+500 測試步數" immediately shows log message "🔍 測試步數處理中..." instead of silent wait
+
+### Fixed
+- **WalkingCanvas import** — added `useCallback` import for skipEncounter handler
+
 ## v0.3.2 (2026-06-24)
 
 ### Fixed
