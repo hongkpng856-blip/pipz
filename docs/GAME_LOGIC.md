@@ -306,7 +306,9 @@ Each rarity has 3 colour variants (randomly chosen):
 3. **New Pet Popup**: Shows pet's pixel art, rarity badge, species ID, level/stage, and 4 stats (⚡🍀💜🔋) in a bordered overlay
 4. "🎉 睇下寵物" button → closes popup + switches to pets tab
 5. **NEW badge**: Freshly hatched pets display a pulsating amber `.new-badge` (NEW) label on their card in pets tab
-6. NEW badge disappears when user clicks on that pet's card (opens detail modal) or dismisses the hatching popup
+6. NEW badge has **3-layer detection**: `newPetId` match → `createdAt` recency (within 5 min) → dismissed set
+7. **Persists across reloads**: saved to `localStorage` key `pipz_new_pet` until dismissed
+8. **Dismissed**: clicking the pet card or closing the hatch popup removes the badge (saved to `dismissedNewPets` ref Set)
 
 ### Sync
 - Steps are debounced and synced to Supabase every 2 seconds

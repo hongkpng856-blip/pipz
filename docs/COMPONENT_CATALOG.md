@@ -585,7 +585,9 @@ Full-screen overlay shown after hatching an egg (triggered by `newPetId` state).
 - Click outside → dismisses popup + clears `newPetId`
 - "🎉 睇下寵物" button → dismisses popup + switches to pets tab
 - **NEW badge** appears on the hatched pet's card in pets tab (team slot or other pets grid)
-- NEW badge disappears when user clicks on that pet's card (opens detail modal) or dismisses popup
+- NEW badge uses **3-layer detection**: `newPetId` match → `createdAt` recency (within 5 min) → dismissed Set ref
+- **Persists across reloads**: saved to `localStorage` key `pipz_new_pet` until dismissed
+- **Dismissed**: clicking the pet card or dismissing the hatch popup removes the badge (`dismissedNewPets` ref Set + localStorage clear)
 
 ### CSS
 ```css
