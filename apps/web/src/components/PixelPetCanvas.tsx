@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, renderPixelPetToCanvas, PixelPetData, getSpeciesIndex } from '@pipz/core'
+import { generatePixelPet, PixelPetData, getSpeciesIndex } from '@pipz/core'
 
 interface Props {
   seed: number
@@ -29,9 +29,41 @@ const RARITY_GLOWS: Record<string, string> = {
   legendary: '#f59e0baa',
 }
 
+/** Sample edge pixels to detect background color, remove with ±tolerance */
+function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const id = ctx.getImageData(0, 0, w, h)
+  // Sample edge pixels (top + bottom rows) to find background color
+  const freq: Record<string, number> = {}
+  const sample = (x: number, y: number) => {
+    const i = (y * w + x) * 4
+    const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
+    freq[key] = (freq[key] || 0) + 1
+  }
+  for (let x = 0; x < w; x++) {
+    sample(x, 0)
+    sample(x, h - 1)
+  }
+  // Most common edge color = background
+  const bgKey = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0]
+  if (!bgKey) return
+  const [br, bg, bb] = bgKey.split(',').map(Number)
+  const TOL = 20 // tolerance for color match
+  for (let i = 0; i < id.data.length; i += 4) {
+    if (
+      Math.abs(id.data[i] - br) <= TOL &&
+      Math.abs(id.data[i + 1] - bg) <= TOL &&
+      Math.abs(id.data[i + 2] - bb) <= TOL &&
+      id.data[i + 3] > 0
+    ) {
+      id.data[i + 3] = 0
+    }
+  }
+  ctx.putImageData(id, 0, 0)
+}
+
 export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const imageRef = useRef<HTMLImageElement | null>(null)
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null) // pre-processed sprite
   const petDataRef = useRef<PixelPetData | null>(null)
   const frameRef = useRef<number>(0)
   const xOffsetRef = useRef(0)
@@ -39,41 +71,34 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const bounceRef = useRef(0)
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
-  const [spriteLoaded, setSpriteLoaded] = useState(false)
+  const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
 
   const speciesIdx = getSpeciesIndex(seed)
 
-  // Load PNG sprite and pre-process to remove white background
+  // Load PNG sprite and pre-process to remove background
   useEffect(() => {
     let cancelled = false
+    setStatus('loading')
+    offscreenRef.current = null
+
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       if (cancelled) return
-      // Pre-process: remove white background pixels
       const oc = document.createElement('canvas')
       oc.width = img.width
       oc.height = img.height
       const ox = oc.getContext('2d')!
       ox.drawImage(img, 0, 0)
-      const od = ox.getImageData(0, 0, img.width, img.height)
-      for (let i = 0; i < od.data.length; i += 4) {
-        if (od.data[i] > 245 && od.data[i + 1] > 245 && od.data[i + 2] > 245 && od.data[i + 3] > 0) {
-          od.data[i + 3] = 0
-        }
-      }
-      ox.putImageData(od, 0, 0)
-      const processed = new Image()
-      processed.onload = () => {
-        if (!cancelled) {
-          imageRef.current = processed
-          setSpriteLoaded(true)
-        }
-      }
-      processed.src = oc.toDataURL()
+
+      // Remove background color (detected from edge pixels)
+      removeBgOnCanvas(ox, img.width, img.height)
+
+      offscreenRef.current = oc
+      if (!cancelled) setStatus('png')
     }
     img.onerror = () => {
-      if (!cancelled) setSpriteLoaded(false)
+      if (!cancelled) setStatus('fallback')
     }
     img.src = `/pixel-gen/sprites/${speciesIdx}.png`
     return () => { cancelled = true }
@@ -128,26 +153,24 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     // Clear
     ctx.clearRect(0, 0, cw, ch)
 
-    const img = imageRef.current
-    if (img && spriteLoaded) {
-      // Draw PNG sprite — calculate size maintaining aspect ratio
+    const oc = offscreenRef.current
+    if (oc && status === 'png') {
+      // Draw pre-processed sprite (already has bg removed)
       const pad = 20
       const displaySize = Math.min(cw, ch) - pad
-      const imgScale = displaySize / Math.max(img.width, img.height)
-      const dw = Math.round(img.width * imgScale)
-      const dh = Math.round(img.height * imgScale)
+      const imgScale = displaySize / Math.max(oc.width, oc.height)
+      const dw = Math.round(oc.width * imgScale)
+      const dh = Math.round(oc.height * imgScale)
       const dx = Math.round((cw - dw) / 2 + xOff)
       const dy = Math.round((ch - dh) / 2 + yOff)
 
-      // Draw sprite onto canvas
-      ctx.drawImage(img, dx, dy, dw, dh)
+      ctx.drawImage(oc, dx, dy, dw, dh)
 
       // Glow for high rarity
       if (RARITY_GLOWS[rarity]) {
         ctx.shadowColor = RARITY_GLOWS[rarity]
         ctx.shadowBlur = size * 3
-        // Re-draw with glow
-        ctx.drawImage(img, dx, dy, dw, dh)
+        ctx.drawImage(oc, dx, dy, dw, dh)
         ctx.shadowColor = 'transparent'
         ctx.shadowBlur = 0
       }
@@ -164,8 +187,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         ctx.fillRect(dx - 1, dy, 2, dh)
         ctx.fillRect(dx + dw - 1, dy, 2, dh)
       }
-    } else {
-      // Fallback: procedural grid
+    } else if (status === 'fallback') {
+      // Fallback: procedural grid — only when PNG failed
       const petData = petDataRef.current
       if (!petData) {
         frameRef.current = requestAnimationFrame(animate)
@@ -195,9 +218,10 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
     }
+    // If status === 'loading', draw nothing — avoids flash
 
     frameRef.current = requestAnimationFrame(animate)
-  }, [animation, size, rarity, spriteLoaded, speciesIdx])
+  }, [animation, size, rarity, status, speciesIdx])
 
   // Start/stop animation loop
   useEffect(() => {

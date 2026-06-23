@@ -1245,6 +1245,48 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ════ First Pet Egg (showEgg) ════ */}
+      {showEgg && !hatching && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:100,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.75)',
+          padding:16,
+        }} onClick={() => setShowEgg(false)}>
+          <div style={{
+            background:'#141b2d', border:'2px solid #8b5cf644',
+            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:52, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
+            <div style={{fontSize:15, fontWeight:800, color:'#f0f4f8', marginBottom:4}}>
+              行夠 1,000 步啦！🎉
+            </div>
+            <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
+              第一隻寵物等緊你！孵化佢啦～
+            </div>
+            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+              <button onClick={() => setShowEgg(false)}
+                style={{
+                  padding:'10px 20px', border:'1px solid #2a3a5a',
+                  background:'#1a2338', color:'#94a5b8', fontSize:12, fontWeight:600,
+                  cursor:'pointer', fontFamily:'inherit', borderRadius:14,
+                }}>
+                睇多陣
+              </button>
+              <button onClick={hatch}
+                style={{
+                  padding:'10px 24px', border:'none',
+                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
+                  fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  borderRadius:14, display:'flex', alignItems:'center', gap:6,
+                }}>
+                🐣 孵化！
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ════ Encounter Egg Popup ════ */}
       {showEncounterEgg && (
         <div style={{
@@ -1289,7 +1331,7 @@ export default function HomePage() {
                   fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   borderRadius:12,
                 }}>
-                去蛋頁 🥚
+                🏆 獲得
               </button>
             </div>
           </div>

@@ -25,11 +25,42 @@ const MOOD_CN: Record<string, string> = {
   happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
 }
 
+/** Sample edge pixels to detect background color, remove with ±tolerance */
+function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const id = ctx.getImageData(0, 0, w, h)
+  const freq: Record<string, number> = {}
+  const sample = (x: number, y: number) => {
+    const i = (y * w + x) * 4
+    const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
+    freq[key] = (freq[key] || 0) + 1
+  }
+  for (let x = 0; x < w; x++) {
+    sample(x, 0)
+    sample(x, h - 1)
+  }
+  const bgKey = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0]
+  if (!bgKey) return
+  const [br, bg, bb] = bgKey.split(',').map(Number)
+  const TOL = 20
+  for (let i = 0; i < id.data.length; i += 4) {
+    if (
+      Math.abs(id.data[i] - br) <= TOL &&
+      Math.abs(id.data[i + 1] - bg) <= TOL &&
+      Math.abs(id.data[i + 2] - bb) <= TOL &&
+      id.data[i + 3] > 0
+    ) {
+      id.data[i + 3] = 0
+    }
+  }
+  ctx.putImageData(id, 0, 0)
+}
+
 export default function PetCompanion({
   pet, onFeed, onPet, onPlay, onRename, anim, steps, totalSteps, evolutionStage,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null) // pre-processed sprite
   const rafRef = useRef(0)
   const timeRef = useRef(0)
   const behaviorRef = useRef<Behavior>('idle')
@@ -40,8 +71,7 @@ export default function PetCompanion({
   const reactionRef = useRef<Reaction>('none')
   const reactionTimer = useRef(0)
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
-  const spriteImageRef = useRef<HTMLImageElement | null>(null)
-  const [spriteLoaded, setSpriteLoaded] = useState(false)
+  const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
@@ -50,7 +80,7 @@ export default function PetCompanion({
   const [shake, setShake] = useState(false)
   const [speciesName, setSpeciesName] = useState('')
 
-  // Generate pet pixel data
+  // Generate pet pixel data (always needed for species name + glow info)
   useEffect(() => {
     if (pet) {
       const data = generatePixelPet({
@@ -66,40 +96,31 @@ export default function PetCompanion({
     }
   }, [pet])
 
-  // Load PNG sprite and pre-process to remove white background
+  // Load PNG sprite and pre-process to remove background
   useEffect(() => {
     let cancelled = false
-    if (!pet) { setSpriteLoaded(false); return }
+    setStatus('loading')
+    offscreenRef.current = null
+    if (!pet) { setStatus('fallback'); return }
     const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       if (cancelled) return
-      // Pre-process: remove white background pixels onto an offscreen canvas
       const oc = document.createElement('canvas')
       oc.width = img.width
       oc.height = img.height
       const ox = oc.getContext('2d')!
       ox.drawImage(img, 0, 0)
-      const od = ox.getImageData(0, 0, img.width, img.height)
-      for (let i = 0; i < od.data.length; i += 4) {
-        if (od.data[i] > 245 && od.data[i + 1] > 245 && od.data[i + 2] > 245 && od.data[i + 3] > 0) {
-          od.data[i + 3] = 0
-        }
-      }
-      ox.putImageData(od, 0, 0)
-      // Convert processed canvas to image
-      const processed = new Image()
-      processed.onload = () => {
-        if (!cancelled) {
-          spriteImageRef.current = processed
-          setSpriteLoaded(true)
-        }
-      }
-      processed.src = oc.toDataURL()
+
+      // Remove background color (detected from edge pixels)
+      removeBgOnCanvas(ox, img.width, img.height)
+
+      offscreenRef.current = oc
+      if (!cancelled) setStatus('png')
     }
     img.onerror = () => {
-      if (!cancelled) setSpriteLoaded(false)
+      if (!cancelled) setStatus('fallback')
     }
     img.src = `/pixel-gen/sprites/${idx}.png`
     return () => { cancelled = true }
@@ -230,8 +251,9 @@ export default function PetCompanion({
 
     // Draw pet
     const pd = petDataRef.current
-    const spriteImg = spriteImageRef.current
-    if (pet && (spriteImg || pd)) {
+    const oc = offscreenRef.current
+    if (pet && (status !== 'loading')) {
+      // Only render when NOT loading — avoids procedural→PNG flash
       const ps = 6
       const gy = rugY + rugH * 0.6
       const bx = behaviorRef.current
@@ -255,8 +277,8 @@ export default function PetCompanion({
       ctx.fillStyle = 'rgba(0,0,0,0.12)'
       ctx.beginPath(); ctx.ellipse(W / 2 + xRef.current + shakeX, gy + 2, 28, 3, 0, 0, Math.PI * 2); ctx.fill()
 
-      if (spriteImg && spriteLoaded) {
-        // ── Draw PNG sprite ──
+      if (oc && status === 'png') {
+        // ── Draw pre-processed PNG sprite (bg already removed) ──
         const spriteSize = Math.min(80, Math.min(W, H) * 0.2)
         const sw = spriteSize
         const sh = spriteSize
@@ -270,12 +292,12 @@ export default function PetCompanion({
         ctx.translate(W / 2 + xRef.current + shakeX, cy + mRot * 10)
         ctx.rotate(mRot)
 
-        ctx.drawImage(spriteImg, -sw / 2, -sh / 2, sw, sh)
+        ctx.drawImage(oc, -sw / 2, -sh / 2, sw, sh)
 
         ctx.restore()
         ctx.shadowBlur = 0
-      } else if (pd) {
-        // ── Fallback: procedural pixel grid ──
+      } else if (pd && status === 'fallback') {
+        // ── Fallback: procedural pixel grid (only when PNG failed) ──
         const pw = pd.width * ps, ph = pd.height * ps
 
         // Glow
@@ -318,7 +340,7 @@ export default function PetCompanion({
         ctx.globalAlpha = 1
       }
 
-    } else {
+    } else if (!pet) {
       // No pet — egg
       const eb = Math.sin(timeRef.current*3)*3
       ctx.fillStyle = '#d4a0c0'
@@ -340,7 +362,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, showTapHint, shake])
+  }, [pet, anim, showTapHint, shake, status, totalSteps])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)
