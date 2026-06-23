@@ -36,6 +36,8 @@ function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const freq: Record<string, number> = {}
   const sample = (x: number, y: number) => {
     const i = (y * w + x) * 4
+    // Skip fully transparent pixels — their RGB may be garbage
+    if (id.data[i + 3] < 128) return
     const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
     freq[key] = (freq[key] || 0) + 1
   }
@@ -71,6 +73,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const bounceRef = useRef(0)
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
+  const seedKeyRef = useRef<number | null>(null)
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
 
   const speciesIdx = getSpeciesIndex(seed)
@@ -78,8 +81,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   // Load PNG sprite and pre-process to remove background
   useEffect(() => {
     let cancelled = false
-    setStatus('loading')
-    offscreenRef.current = null
+    // If seed changed since last load, clear old sprite immediately
+    if (seedKeyRef.current !== seed) {
+      offscreenRef.current = null
+      setStatus('loading')
+    }
+    seedKeyRef.current = seed
 
     const img = new Image()
     img.crossOrigin = 'anonymous'

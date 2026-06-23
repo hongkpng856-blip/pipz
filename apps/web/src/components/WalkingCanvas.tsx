@@ -41,6 +41,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
   const rafRef = useRef(0)
   const encPhase = useRef(0)
   const encDone = useRef(false)
+  const encEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stepRef = useRef(0)
   const onEncounterEndRef = useRef(onEncounterEnd)
   onEncounterEndRef.current = onEncounterEnd
@@ -175,7 +176,10 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         if (ny < 5 || ny > H - 5) continue
 
         // Rarity glow halo
-        ctx.fillStyle = `${npColor}33`
+        const npR = parseInt(npColor.slice(1, 3), 16) || 0
+        const npG = parseInt(npColor.slice(3, 5), 16) || 0
+        const npB = parseInt(npColor.slice(5, 7), 16) || 0
+        ctx.fillStyle = `rgba(${npR},${npG},${npB},0.2)`
         ctx.fillRect(nx - npSize, ny - npSize - 2, npSize * 2, npSize * 2)
 
         // Shadow
@@ -259,7 +263,8 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         if (encPhase.current > 1) {
           encPhase.current = 1
           encDone.current = true
-          if (onEncounterEndRef.current) setTimeout(() => onEncounterEndRef.current!(), 800)
+          if (encEndTimer.current) clearTimeout(encEndTimer.current)
+          encEndTimer.current = setTimeout(() => onEncounterEndRef.current!(), 800)
         }
 
         const p = encPhase.current
@@ -321,6 +326,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
     return () => {
       cancelAnimationFrame(rafRef.current)
       clearTimeout(encTimer)
+      if (encEndTimer.current) clearTimeout(encEndTimer.current)
     }
   }, [state, speed, size, pet, nearby, CX, CY, W, H])
 

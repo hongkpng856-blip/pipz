@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution, generatePixelPet } from '@pipz/core'
 import PixelPetCanvas from './PixelPetCanvas'
 
@@ -28,6 +28,9 @@ const PC: Record<string, string> = {
 const ME: Record<string, string> = {
   happy: '😊', excited: '🤩', hungry: '🍽️', sleepy: '😴', sad: '😢',
 }
+const MOOD_CN: Record<string, string> = {
+  happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
+}
 
 const STAGE_NAMES = ['BB', 'I', 'II', 'III', 'IV']
 const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
@@ -38,6 +41,9 @@ const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4:
 export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const [listPrice, setListPrice] = useState('500')
+
+  // Reset list price when pet changes
+  useEffect(() => { setListPrice('500'); setShowDelete(false) }, [pet.id])
   const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
   const speciesName = useMemo(() => {
@@ -143,7 +149,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 4 }}>
               <span>{ME[pet.mood] || '😐'}</span>
               <span style={{ fontSize: 12, color: '#22c55e' }}>
-                {pet.mood === 'happy' ? '開心' : pet.mood}
+                {MOOD_CN[pet.mood] || pet.mood}
               </span>
             </div>
 
@@ -425,13 +431,15 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
             )
           ) : null}
 
-          {/* ── Delete / Sacrifice ── */}
+          {/* ── Delete / Sacrifice — only for own pets, not market view ── */}
+          {!isMarket && (
           <div style={{ marginTop: 12, textAlign: 'center' }}>
             <button onClick={() => setShowDelete(true)}
               style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', opacity: 0.6 }}>
               🗑️ 剷除此寵物
             </button>
           </div>
+          )}
 
           </div>
       </div>

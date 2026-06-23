@@ -10,7 +10,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -71,6 +71,7 @@ export default function HomePage() {
   const loadedUser = useRef<string|null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
   const pendingSteps = useRef(0)
+  const pendingBuffer = useRef(0) // steps queued during encounter
   const loadedStorage = useRef(false)
 
   const pet = pets[activeIdx] ?? null
@@ -98,7 +99,7 @@ export default function HomePage() {
   camStateRef.current = camState
   activeIdxRef.current = activeIdx
 
-  // ── Load persisted eggs + favorites from localStorage (guest) or Supabase ──
+  // ── Load persisted data from localStorage (guest) or Supabase ──
   useEffect(() => {
     if (loadedStorage.current) return
     if (!user) {
@@ -107,18 +108,24 @@ export default function HomePage() {
         if (savedEggs) setEggs(JSON.parse(savedEggs))
         const savedFavs = localStorage.getItem('pipz_favs')
         if (savedFavs) setFavorites(JSON.parse(savedFavs))
+        const savedPets = localStorage.getItem('pipz_pets')
+        if (savedPets) setPets(JSON.parse(savedPets))
+        const savedSteps = localStorage.getItem('pipz_steps')
+        if (savedSteps) setSteps(parseInt(savedSteps, 10) || 0)
+        const savedTotal = localStorage.getItem('pipz_totalSteps')
+        if (savedTotal) setTotalSteps(parseInt(savedTotal, 10) || 0)
       } catch {}
     }
     loadedStorage.current = true
   }, [user])
 
-  // ── Persist eggs + favorites to localStorage (guest) or Supabase (logged in) ──
-  useEffect(() => {
-    if (!user) { try { localStorage.setItem('pipz_eggs', JSON.stringify(eggs)) } catch {} }
-  }, [eggs, user])
-  useEffect(() => {
-    if (!user) { try { localStorage.setItem('pipz_favs', JSON.stringify(favorites)) } catch {} }
-  }, [favorites, user])
+  // ── Persist guest data to localStorage ──
+  // (pets, steps, totalSteps, eggs, favorites)
+  useEffect(() => { if (!user) { try { localStorage.setItem('pipz_eggs', JSON.stringify(eggs)) } catch {} } }, [eggs, user])
+  useEffect(() => { if (!user) { try { localStorage.setItem('pipz_favs', JSON.stringify(favorites)) } catch {} } }, [favorites, user])
+  useEffect(() => { if (!user) { try { localStorage.setItem('pipz_pets', JSON.stringify(pets)) } catch {} } }, [pets, user])
+  useEffect(() => { if (!user) { try { localStorage.setItem('pipz_steps', String(steps)) } catch {} } }, [steps, user])
+  useEffect(() => { if (!user) { try { localStorage.setItem('pipz_totalSteps', String(totalSteps)) } catch {} } }, [totalSteps, user])
 
   useEffect(() => { setReady(true) }, [])
 
@@ -147,19 +154,21 @@ export default function HomePage() {
         await ensureProfile(user.id)
 
         // Merge any guest data into DB before overwriting with DB state
-        if (pets.length > 0 || eggs.length > 0) {
+        if (pets.length > 0 || eggs.length > 0 || favorites.length > 0) {
           await Promise.all([
             ...pets.map(p => savePet(user.id, p).catch(() => {})),
             ...eggs.map(e => saveEgg(user.id, e.rarity).catch(() => {})),
+            ...favorites.map((fid, i) => setFavoriteOrder(fid, i + 1).catch(() => {})),
           ])
         }
 
-        const [dbPets, todaySt, dbEggs, dbFavs, dbWeekly] = await Promise.all([
+        const [dbPets, todaySt, dbEggs, dbFavs, dbWeekly, dbProfile] = await Promise.all([
           loadPets(user.id),
           getTodaySteps(user.id),
           loadEggs(user.id),
           loadFavorites(user.id),
           getWeeklySteps(user.id),
+          getProfile(user.id),
         ])
 
         setPets(dbPets)
@@ -167,6 +176,8 @@ export default function HomePage() {
         setFavorites(dbFavs)
         setWeeklySteps(dbWeekly)
         setSteps(todaySt)
+        setTotalSteps(dbProfile?.total_steps ?? todaySt)
+        pendingSteps.current = todaySt
         setActiveIdx(0)
         loadedUser.current = user.id
       } catch (e) {
@@ -227,6 +238,9 @@ export default function HomePage() {
         await Promise.all([
           updateTotalSteps(user.id, ts),
           upsertDailySteps(user.id, pendingSteps.current),
+          ...(petsRef.current[activeIdxRef.current]
+            ? [updatePet(petsRef.current[activeIdxRef.current])]
+            : []),
         ])
       } catch (e) {
         console.error('Sync failed:', e)
@@ -285,17 +299,17 @@ export default function HomePage() {
       if (dbId) np.id = dbId
     }
 
-    setPets(v => {
-      const updated = [...v, np]
-      setActiveIdx(updated.length - 1)
-      return updated
-    })
+    setPets(v => [...v, np])
+    setActiveIdx(pets.length) // point to the new pet (last index)
   }
 
   // ── Step manager ──
   const addSt = (n: number, skipEncounter = false) => {
-    // Don't count steps during encounter animation
-    if (camStateRef.current === 'encounter') return
+    // Don't count steps during encounter animation — queue them instead
+    if (camStateRef.current === 'encounter') {
+      pendingBuffer.current += n
+      return
+    }
 
     setSteps(s => s + n)
     const curPets = petsRef.current
@@ -312,7 +326,7 @@ export default function HomePage() {
       // ── First pet check ──
       if (curPets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
 
-      // ── Milestone check ──
+      // Milestone check (side-effect free)
       const oldM = MILESTONES.filter(m => s >= m).length
       const newM = MILESTONES.filter(m => newTotal >= m).length
       if (newM > oldM && curUser) {
@@ -321,9 +335,10 @@ export default function HomePage() {
         setNotifUnread(n => n + 1)
       }
 
-      scheduleSync(pendingSteps.current + n, newTotal)
       return newTotal
     })
+    // ── Side-effects outside setState callback ──
+    scheduleSync(pendingSteps.current + n, totalSteps + n)
     encCnt.current += n
     pity.current.legendary += n
     pity.current.epic += n
@@ -348,12 +363,12 @@ export default function HomePage() {
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
     setEggHatchingId(egg.id)
-    // Delete from Supabase if logged in
-    if (user) await deleteEgg(egg.id)
-    // Wait for hatching animation
+    // Wait for hatching animation, then spawn, then delete from DB
     setTimeout(async () => {
       setEggs(v => v.filter(e => e.id !== egg.id))
       await spawnPet(egg.rarity)
+      // Delete from Supabase only AFTER successful spawn
+      if (user) await deleteEgg(egg.id).catch(() => {})
       setEggHatchingId(null)
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
@@ -469,7 +484,7 @@ export default function HomePage() {
 
   const handleBuy = async (petId: string, sellerId: string, price: number) => {
     if (!user) return logMsg('❌ 需要登入')
-    if (totalSteps < price) return logMsg('❌ 能量不足')
+    if (totalStepsRef.current < price) return logMsg('❌ 能量不足')
     const err = await buyPet(petId, user.id, sellerId, price)
     if (err) return logMsg(`❌ ${err}`)
     logMsg(`🎉 購買成功！花費 ⚡${formatSteps(price)}`)
@@ -601,6 +616,11 @@ export default function HomePage() {
                     speed={walkSpeed}
                     onEncounterEnd={() => {
                       setCamState(walking ? 'walk' : 'idle')
+                      // Flush any steps queued during encounter
+                      if (pendingBuffer.current > 0) {
+                        addSt(pendingBuffer.current, true)
+                        pendingBuffer.current = 0
+                      }
                       // Collect the egg from encounter
                       if (encounterEggRarity) {
                         const rarity = encounterEggRarity
@@ -1171,6 +1191,13 @@ export default function HomePage() {
             }}
             onDelete={(id) => {
               setPets(v => v.filter(p => p.id !== id))
+              // Adjust activeIdx — use setTimeout to read updated pets length
+              setTimeout(() => {
+                setActiveIdx(prev => {
+                  const newLen = pets.length - 1
+                  return prev >= newLen ? Math.max(0, newLen - 1) : prev
+                })
+              }, 0)
               setDetailPetId(null)
               if (user) deletePet(id)
               logMsg('🗑️ 寵物已剷除')

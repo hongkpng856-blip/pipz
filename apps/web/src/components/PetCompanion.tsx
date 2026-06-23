@@ -31,6 +31,8 @@ function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const freq: Record<string, number> = {}
   const sample = (x: number, y: number) => {
     const i = (y * w + x) * 4
+    // Skip fully transparent pixels — their RGB may be garbage
+    if (id.data[i + 3] < 128) return
     const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
     freq[key] = (freq[key] || 0) + 1
   }
@@ -61,6 +63,7 @@ export default function PetCompanion({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null) // pre-processed sprite
+  const petKeyRef = useRef<string | null>(null) // tracks current pet for sprite change detection
   const rafRef = useRef(0)
   const timeRef = useRef(0)
   const behaviorRef = useRef<Behavior>('idle')
@@ -90,6 +93,8 @@ export default function PetCompanion({
       })
       petDataRef.current = data
       setSpeciesName(data.speciesName)
+      // Reset position when pet changes
+      xRef.current = 0
     } else {
       petDataRef.current = null
       setSpeciesName('')
@@ -99,8 +104,13 @@ export default function PetCompanion({
   // Load PNG sprite and pre-process to remove background
   useEffect(() => {
     let cancelled = false
-    setStatus('loading')
-    offscreenRef.current = null
+    const currentPetId = pet?.id ?? null
+    // If pet changed since last load, clear old sprite immediately
+    if (petKeyRef.current !== currentPetId) {
+      offscreenRef.current = null
+      setStatus('loading')
+    }
+    petKeyRef.current = currentPetId
     if (!pet) { setStatus('fallback'); return }
     const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
     const img = new Image()
@@ -362,7 +372,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, showTapHint, shake, status, totalSteps])
+  }, [pet, anim, showTapHint, shake, status])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)
@@ -372,6 +382,7 @@ export default function PetCompanion({
   const handleCanvasClick = () => {
     if (!pet) return
     handlePet()
+    if (showTapHint) setShowTapHint(false)
   }
 
   // ── Rename handler ──
