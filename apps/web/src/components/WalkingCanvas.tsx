@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 
 type CamState = 'idle' | 'walk' | 'run' | 'encounter'
 
@@ -46,6 +46,15 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
   const onEncounterEndRef = useRef(onEncounterEnd)
   onEncounterEndRef.current = onEncounterEnd
 
+  const skipEncounter = useCallback(() => {
+    if (encPhase.current < 1) {
+      encPhase.current = 1
+      encDone.current = true
+      if (encEndTimer.current) clearTimeout(encEndTimer.current)
+      encEndTimer.current = setTimeout(() => onEncounterEndRef.current!(), 200)
+    }
+  }, [])
+
   const W = Math.floor(320 / size)  // base pixel width
   const H = Math.floor(180 / size)  // base pixel height
   const CX = W / 2
@@ -69,7 +78,7 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
       encDone.current = true
       if (onEncounterEndRef.current) onEncounterEndRef.current()
     }
-    }, 4000)  // safety timeout after 4s
+    }, 1500)  // safety timeout after 1.5s
 
     const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
     const charSize = 3 + (pet?.evolutionStage ?? 1) * 1  // 4-8px character body
@@ -259,12 +268,12 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
 
       // ════ Encounter animation ──
       if (isEnc && !encDone.current) {
-        encPhase.current += 0.008
+        encPhase.current += 0.025
         if (encPhase.current > 1) {
           encPhase.current = 1
           encDone.current = true
           if (encEndTimer.current) clearTimeout(encEndTimer.current)
-          encEndTimer.current = setTimeout(() => onEncounterEndRef.current!(), 800)
+          encEndTimer.current = setTimeout(() => onEncounterEndRef.current!(), 300)
         }
 
         const p = encPhase.current
@@ -340,7 +349,9 @@ export default function WalkingCanvas({ state, speed = 50, onEncounterEnd, size 
         height: '100%',
         imageRendering: 'pixelated',
         display: 'block',
+        cursor: state === 'encounter' ? 'pointer' : 'default',
       }}
+      onClick={() => { if (state === 'encounter') skipEncounter() }}
     />
   )
 }

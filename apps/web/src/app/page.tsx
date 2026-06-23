@@ -370,7 +370,10 @@ export default function HomePage() {
     }
   }
 
-  const addDebug = () => addSt(500)
+  const addDebug = () => {
+    logMsg('🔍 測試步數處理中...')
+    addSt(500)
+  }
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
