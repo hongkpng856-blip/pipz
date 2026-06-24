@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -795,33 +795,38 @@ export default function HomePage() {
                   if (newestPet && pid === newestPet.id) return true
                   return false
                 }
+                const activePetSkills = pets[activeIdx]?.skills ?? []
+                const energyMult = 1 + getEnergyBonus(activePetSkills)
+                const displayEnergy = Math.round(totalSteps * energyMult)
                 return (
-                  <>
-                    {/* ⚡ 你擁有的能量 */}
-                    <div className="section" style={{marginBottom:8, flexShrink:0}}>
-                      <div className="section-header">
-                        <span className="section-title">⚡ 你擁有的能量</span>
-                      </div>
-                      <div className="card" style={{padding:'10px 16px'}}>
-                        <div style={{display:'flex', alignItems:'center', gap:12}}>
-                          {/* Pixel-style lightning bolt */}
-                          <div style={{
-                            width:36, height:36, flexShrink:0, borderRadius:10,
-                            display:'flex', alignItems:'center', justifyContent:'center',
-                            background:'rgba(245,158,11,0.12)',
-                          }}>
-                            <svg width="20" height="30" viewBox="0 0 26 38" fill="none">
-                              <path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b" />
-                            </svg>
+                <>
+                  {/* ⚡ 你擁有的能量 */}
+                  <div className="section" style={{marginBottom:8, flexShrink:0}}>
+                    <div className="section-header">
+                      <span className="section-title">⚡ 你擁有的能量</span>
+                    </div>
+                    <div className="card" style={{padding:'10px 16px'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:12}}>
+                        {/* Pixel-style lightning bolt */}
+                        <div style={{
+                          width:36, height:36, flexShrink:0, borderRadius:10,
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          background:'rgba(245,158,11,0.12)',
+                        }}>
+                          <svg width="20" height="30" viewBox="0 0 26 38" fill="none">
+                            <path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div style={{fontSize:9, color:'#5a6d85', marginBottom:1}}>
+                            🔋 累積能量{energyMult > 1 ? ' ⚡能量過載' : ''}
                           </div>
-                          <div>
-                            <div style={{fontSize:9, color:'#5a6d85', marginBottom:1}}>🔋 累積能量</div>
-                            <div style={{fontSize:22, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
-                              {ready ? formatSteps(totalSteps) : '0'}
-                            </div>
+                          <div style={{fontSize:22, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
+                            {ready ? formatSteps(displayEnergy) : '0'}
                           </div>
                         </div>
                       </div>
+                    </div>
                     </div>
 
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
