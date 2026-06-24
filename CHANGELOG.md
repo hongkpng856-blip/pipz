@@ -7,9 +7,10 @@
 - **Test account created**: `pipztest@gmail.com` via Supabase Admin API (email pre-confirmed) — for development/testing use
 
 ### Changed
-- **Skills moved to canvas 2D (vertical left)**: 🎯 目前技能 now drawn directly on the pet roam canvas as a **vertical stack on the left side** using Canvas 2D API — replaces previous horizontal bottom strip
+- **Skills vertical left (no overlap)**: skills drawn on canvas 2D as vertical stack on left side; asymmetric roaming boundaries prevent pet from overlapping with skills area
+- **Sprite quality fixed**: removed `removeBg()` function that was eating sprite edges (TOL=40 was removing pixels near beige/PICO-8 gray); sprite now renders with full original edges
 - **Sprite size increased 78%**: pet sprite rendered at ~96px (up from 54px) for significantly better pixel quality and visual presence on canvas
-- **Dev Tools gated to test account only**: 🔧 Dev 工具 section in community tab now only renders when `user?.email === 'pipztest@gmail.com'` — hidden for all other users or logged-out state
+- **Dev Tools gated to test account only**: 🔧 Dev 工具 section now only renders when `user?.email === 'pipztest@gmail.com'`
 
 ### Removed
 - **Skills section from PetCompanion info panel**: removed the HTML skills section below the canvas (now drawn on canvas instead)
