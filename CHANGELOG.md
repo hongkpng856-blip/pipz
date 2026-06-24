@@ -5,6 +5,8 @@
 ### Changed
 - **Pets tab layout restructured**: ⚡ 能量 + ⭐ 主力隊伍 always visible at top, 🐾 其他寵物 scrolls independently in flex container (`calc(100dvh - 110px)` with `overflow-y: auto`)
 - **「其他寵物」title fixed**: `.section-header` moved outside scrollable wrapper, only pet grid scrolls — title + count always visible
+### Added
+- **Mobile add-to-team**: "+" button overlay on each 其他寵物 card — tap adds pet to first available team slot (stopPropagation preserves detail modal tap)
 - **Energy card compacted**: smaller icons/padding to fit fixed layout
 
 ## v0.3.9 (2026-06-24)

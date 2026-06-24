@@ -117,7 +117,11 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - "🐾 寵物" title + count (e.g., "3隻")
 - Empty state: 🥚 "未有寵物，行路孵化啦！"
 
-### Three Sections Layout
+### Three Sections Layout (flex column with independent scroll)
+
+The entire pets tab content is a **flex column** (`display:flex; flexDirection:column; height:calc(100dvh - 110px); overflow:hidden`).
+
+Only the 🐾 其他寵物 grid itself is scrollable — the energy card, team slots, and section headers all stay **fixed** and never scroll away.
 
 #### ⚡ 你擁有的能量 (top card)
 - Section title: "⚡ 你擁有的能量"
@@ -151,19 +155,20 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter(Boolean).slice(0, 5)
   ```
 
-#### 🐾 其他寵物 (unselected pets)
-- Section title: "🐾 其他寵物" with count
+#### 🐾 其他寵物 (unselected pets, scrollable grid only)
+- Section title: **fixed** (doesn't scroll away), only the pet grid scrolls independently
 - **4-column grid** of tiny square cards (gap 8px)
 - Each card:
   - Rarity-colored top strip (2px)
   - Pixel pet canvas (size 1.6) centered
   - **NEW badge** (if freshly hatched): amber `#f59e0b` badge, top-left, pulsating `new-pulse` animation
   - Small "▶" arrow (amber) bottom-right if evolvable
-  - **`draggable`** — drag to empty team slot to add to team
+  - **`draggable`** — drag to empty team slot to add to team (desktop)
+  - **➕ button** bottom-right corner (24px, amber `#f59e0b` + icon overlay) — **tap to add to team** (mobile-friendly, `stopPropagation` preserves detail modal tap)
   - **Click** → opens **PetDetailModal** for that pet
   - On drag start: sets `dataTransfer` with pet ID
   - Active pet highlighted with brighter border
-- All pets not in `favorites` array
+- All pets not in `favorites` array (filtered out automatically)
 
 ### PixelPetCanvas (`PixelPetCanvas.tsx`)
 
@@ -199,18 +204,25 @@ Canvas-based pet renderer with hybrid PNG sprite + procedural fallback.
 - `onClick`: sets bounceRef + callback
 
 ### Interaction Rules (critical)
-| Zone | Click | Drag | Minus button |
-|------|-------|------|--------------|
-| ⚡ Energy card | Nothing | N/A | N/A |
-| ⭐ Team slot (filled) | Open detail modal | N/A (prevented) | **Remove from team** |
-| ⭐ Team slot (empty) | Nothing | **Drop target** → insert at this slot position | N/A |
-| 🐾 Other pet | Open detail modal | **Drag source** → move to team | N/A |
+| Zone | Click/tap | Drag | Minus button | + button |
+|------|-----------|------|--------------|---------|
+| ⚡ Energy card | Nothing | N/A | N/A | N/A |
+| ⭐ Team slot (filled) | Open detail modal | N/A (prevented) | **Remove from team** | N/A |
+| ⭐ Team slot (empty) | Nothing | **Drop target** → insert at this slot position | N/A | N/A |
+| 🐾 Other pet | Open detail modal | **Drag source** → move to team | N/A | **Add to team** (mobile-friendly) |
 
 ### Drag & Drop Implementation
 - **Source**: `onDragStart` on other pets — `e.dataTransfer.setData('text/plain', pet.id)`
 - **Target**: `onDragOver` (preventDefault) + `onDrop` on empty team slots
 - **Positional insert**: dropped pet is inserted at the specific slot index via `splice(slotIdx, 0, pid)`
 - **Guard**: no duplicates (`!favorites.includes(pid)`), max 5 (`favorites.length < 5`)
+
+### Mobile Add-to-Team (➕ button)
+- Each 🐾 other-pet card has a **➕ overlay** in the bottom-right corner (`.pet-add-btn` CSS class)
+- **Tap** → calls `toggleFavorite(p.id)` which appends pet to `favorites` array (first available slot)
+- `stopPropagation` prevents the tap from also opening the detail modal
+- If team is full (≥5), the button does nothing (no error feedback)
+- The pet **disappears** from "其他寵物" once added (filtered by `!favorites.includes(p.id)`)
 - **DB sync**: `setFavoriteOrder(pid, slotIdx + 1)` on drop
 
 ---
