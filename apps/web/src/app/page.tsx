@@ -576,6 +576,23 @@ export default function HomePage() {
               }
             }
             break
+          case 'item_gain':
+            if (eff.itemId && user) {
+              const isEquip = EQUIPMENT_POOL.some(e => e.id === eff.itemId)
+              addInventoryItem(user.id, eff.itemId, isEquip ? 'equipment' : 'help', 1).catch(() => {})
+            }
+            break
+          case 'item_loss':
+            if (user) {
+              // Remove a random item from inventory
+              loadInventory(user.id).then(items => {
+                if (items.length > 0) {
+                  const randomItem = items[Math.floor(Math.random() * items.length)]
+                  removeInventoryItem(user.id, randomItem.itemId, 1).catch(() => {})
+                }
+              })
+            }
+            break
         }
       }
       setPets(v => v.map((p, i) => i === activeIdx ? updatedPet : p))
