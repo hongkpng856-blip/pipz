@@ -16,7 +16,7 @@
 - **Reaction system removed**: `triggerReaction()`, particle effects (❤️💕✨⭐), bounce, and shake animations — no longer needed without action buttons
 
 ### Added
-- **Steps walked together badge**: 👣 overlay at bottom-center of canvas showing `pet.totalSteps` in a large glass-morphism pill with 「一起行咗」 label — prominently displays total steps walked with this pet
+- **Steps walked together header**: 👣 hero section at **top of card** (above canvas) showing `pet.totalSteps` in 32px bold with 「一起走過的日子」subtitle — moved from canvas overlay to full-width card-top header
 - **One-click test login button**: 🔑 一鍵登入測試帳號 button in auth modal — directly calls `signInWithPassword` with test credentials (pipztest@gmail.com / Test123456!)
 - **Test account created**: `pipztest@gmail.com` via Supabase Admin API (email pre-confirmed) — for development/testing use
 

@@ -52,7 +52,7 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 |  - **Skills**: displayed as pill badges in a clean wrap layout **below the stat grid** (moved out of canvas overlay)
 |  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
 |  - **Rarity badge**: overlaid on canvas top-right (coloured bg)
-|- **Steps walked together badge**: 👣 overlay at bottom-center of canvas showing pet's accumulated steps (`pet.totalSteps`) in a blurred glass pill — large font, 「一起行咗」label
+|- **Steps walked together header**: 👣 hero section at **very top of card** (above canvas) showing pet's accumulated steps (`pet.totalSteps`) in 32px bold with 「一起走過的日子」subtitle — represents days spent together with this pet
 |- **Sprite**: rendered at ~96px with crisp pixel edges (`imageSmoothingEnabled=false`)
 |- **⤵ Below canvas — clean info panel** (no action buttons):
 |  1. **Row 1**: mood emoji + % + mood bar + Lv. + evolution stage
@@ -61,6 +61,10 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 ```
 ┌─────────────────────────────────┐
+│          👣                      │
+│        999,999                  │ ← 32px hero header
+│     一起走過的日子               │
+├─────────────────────────────────┤
 │ Canvas 400×280                  │
 │  (#水晶 badge top-left)  [傳說]  │
 │         🐱 walking sprite        │
