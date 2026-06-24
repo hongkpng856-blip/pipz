@@ -878,6 +878,7 @@ export default function HomePage() {
                               const origIdx = pets.indexOf(p)
                               const sc = RARITY_COLORS[p.rarity]
                               const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
+                              const teamFull = favorites.length >= 5
                               return (
                               <div key={p.id} className="pet-card-other"
                                 draggable
@@ -893,6 +894,19 @@ export default function HomePage() {
                                 {canThisEvolve && (
                                   <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
                                 )}
+                                {/* + button: add to team (mobile friendly) */}
+                                <div className="pet-add-btn"
+                                  onClick={e => {
+                                    e.stopPropagation()
+                                    if (teamFull) return
+                                    toggleFavorite(p.id)
+                                  }}
+                                  title="加入隊伍">
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <line x1="6" y1="0" x2="6" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                    <line x1="0" y1="6" x2="12" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                  </svg>
+                                </div>
                               </div>
                             )})}
                           </div>

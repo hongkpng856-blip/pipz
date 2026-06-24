@@ -551,6 +551,26 @@ body { position: fixed; }
 }
 .pet-card-other:active { transform: scale(0.9); cursor: grabbing; }
 
+/* ── Add-to-team + button (mobile friendly) ── */
+.pet-add-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245,158,11,0.2);
+  color: #f59e0b;
+  border-radius: 8px 0 0 0;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+.pet-add-btn:active { background: rgba(245,158,11,0.4); transform: scale(0.85); }
+
 /* ── Team slot minus button ── */
 .team-slot-minus {
   position: absolute;
