@@ -205,17 +205,17 @@ Pets use a **hybrid rendering system**: PNG sprites (PICO-8 style) as primary, p
 
 ### PNG Sprite System (Primary)
 
-50 unique PICO-8 style sprites generated via Pollinations.ai API + pico8 dither pipeline:
+50 unique PICO-8 style sprites (resized to 128×128 for performance):
 
 | Asset | Location | Format |
 |-------|----------|--------|
-| Sprites | `apps/web/public/pixel-gen/sprites/{0-49}.png` | PICO-8 dithered PNG |
-| Total size | ~469KB (avg ~9KB/sprite) | 32×32 → dithered |
-| Generation | Pollinations.ai free API + `pixel_art(preset='pico8')` | |
+| Sprites | `apps/web/public/pixel-gen/sprites/{0-49}.png` | PICO-8 dithered PNG, 128×128 RGBA |
+| Total size | ~250KB (avg ~5KB/sprite) | ~2-7KB/sprite compressed |
+| Generation | Pollinations.ai free API + pico8 dither → resized to 128×128 | |
 
 **Sprite generation pipeline:**
 ```
-Pollinations.ai API → raw PNG (~30-50KB) → pico8 dither → output PNG (~8-11KB)
+Pollinations.ai API → raw PNG (~30-50KB) → pico8 dither → resized 128×128 → output PNG (~2-7KB)
 ```
 
 **Species list (0-49):**
@@ -224,13 +224,15 @@ Pollinations.ai API → raw PNG (~30-50KB) → pico8 dither → output PNG (~8-1
 **Species index lookup:** `getSpeciesIndex(seed) % 50` determines which sprite file to load.
 
 ### Canvas Rendering (`PixelPetCanvas.tsx`)
-- Loads PNG via `new Image()` from `/pixel-gen/sprites/${speciesIdx}.png`
-- On `onload`: draws PNG with canvas scaling (fits to `maxDim = min(cw, ch) - 10`)
-- On `onerror`: falls back to procedural `generatePixelPet()`
+- **Global sprite cache**: all `PixelPetCanvas` instances share a `Map<speciesIdx, Canvas>` — same species loads only once
+- **128×128 source sprites** — no `removeBg()` needed (already have RGBA transparency)
+- Loads PNG via `new Image()` from `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
+- On `onload`: draws PNG 1:1 to offscreen canvas, cached globally
+- On `onerror`: falls back to procedural `generatePixelPet()` **(lazy: only generated when PNG fails)**
 - **Rarity tint overlay**: `fillRect` with rgba colour per rarity
 - **Rarity glow**: `ctx.shadowBlur` with rarity glow colour
 - **Legendary**: gold border + sparkle effect (corner highlights)
-- Canvas size: `(64 * pixelSize) + 60` when sprite loaded, `(16 * pixelSize) + 60` when fallback
+- Canvas size: `(16 * pixelSize + 40)` wide × `(16 * pixelSize + 30)` tall
 - Animation loop: idle bob, walk offset, happy bounce, jump arc
 - `imageRendering: 'pixelated'` CSS for sharp pixel scaling
 
