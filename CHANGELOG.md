@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.6 (2026-06-24)
+
+### Fixed
+- **PICO-8 gray background remnants in sprites (root cause)** — all 50 species sprites had `rgb(194,195,199)` (#C2C3C7) PICO-8 light gray pixels that appeared as "white dots" on dark app background (#0b1120):
+  - **Source PNGs:** Bulk-removed all `rgb(194,195,199)` pixels → transparent in all 50 sprite files
+  - **`removeBg()` safety net:** Updated both `PixelPetCanvas.tsx` and `PetCompanion.tsx` to remove `rgb(194,195,199)` at render time (exact match, no tolerance) in addition to existing warm-beige `rgb(255,241,232)` ±40 pass
+  - **Cache busting:** Bumped `SPRITE_VERSION` to `v5` so SW cache serves fresh sprites
+  - **Verification:** Production sprite 0.png confirmed 0 light pixels (r>180,g>180,b>180), Vision AI confirms "no white dots or artifacts"
+
 ## v0.3.5 (2026-06-24)
 
 ### Fixed

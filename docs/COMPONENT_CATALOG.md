@@ -180,8 +180,11 @@ Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animati
 Canvas-based pet renderer with hybrid PNG sprite + procedural fallback.
 
 **Sprite loading:**
-- Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
-- `onload` → draws PNG with canvas scaling, enables larger canvas (`64 * size + 60`)
+- Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png?v=SPRITE_VERSION` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
+- `onload` → draws PNG to offscreen canvas → **`removeBg()`** removes two background colors as safety net:
+  - Warm beige `rgb(255,241,232)` ±40 tolerance (original AI generation bg)
+  - PICO-8 gray `rgb(194,195,199)` exact match (`#C2C3C7`, sprite bg color)
+- Enables larger canvas (`64 * size + 60`)
 - `onerror` → falls back to procedural `generatePixelPet()` with smaller canvas (`16 * size + 60`)
 
 **Rarity effects:**
