@@ -1,16 +1,17 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
 import EventModal from '../components/EventModal'
+import InventoryModal from '../components/InventoryModal'
 import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -67,6 +68,9 @@ export default function HomePage() {
   const [marketListings, setMarketListings] = useState<Pet[]>([])
   const [myListings, setMyListings] = useState<Pet[]>([])
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
+  // ── Roguelike: inventory ──
+  const [showInventory, setShowInventory] = useState(false)
+  const [inventory, setInventory] = useState<{itemId: string; itemType: 'equipment' | 'help'; quantity: number}[]>([])
   // ── Roguelike: events ──
   const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null)
   const eventStepCounter = useRef(0)
@@ -583,6 +587,50 @@ export default function HomePage() {
     if (user) logEvent(user.id, ev.id, pet?.id, choiceIndex).catch(() => {})
   }
 
+  // ── Roguelike: open inventory ──
+  const openInventory = async () => {
+    if (user) {
+      const items = await loadInventory(user.id)
+      setInventory(items as any)
+    }
+    setShowInventory(true)
+  }
+
+  // ── Roguelike: use help item ──
+  const useHelpItem = async (item: typeof HELP_ITEM_POOL[0]) => {
+    if (!user || !pet) return
+    setShowInventory(false)
+    await removeInventoryItem(user.id, item.id, 1)
+
+    let updatedPet = { ...pet }
+    switch (item.effect) {
+      case 'restore_mood':
+        updatedPet = { ...updatedPet, mood: Mood.Happy, moodValue: Math.min(100, updatedPet.moodValue + item.power) }
+        logMsg(`🫐 使用 ${item.name}，心情 +${item.power}%`)
+        break
+      case 'heal_xp':
+        updatedPet = { ...updatedPet, xp: updatedPet.xp + item.power }
+        logMsg(`✨ 使用 ${item.name}，+${item.power}XP`)
+        break
+      default:
+        logMsg(`🧪 使用 ${item.name}`)
+    }
+    setPets(v => v.map((p, i) => i === activeIdx ? updatedPet : p))
+    if (user) updatePet(updatedPet)
+  }
+
+  // ── Roguelike: equip item ──
+  const handleEquipItem = async (item: typeof EQUIPMENT_POOL[0]) => {
+    if (!user || !pet) return
+    setShowInventory(false)
+    await equipItem(user.id, pet.id, item.id, item.slot)
+
+    logMsg(`👕 裝備 ${item.name} 到 ${item.slot}`)
+    // Re-load inventory
+    const items = await loadInventory(user.id)
+    setInventory(items as any)
+  }
+
   // ── Toggle favorite (max 5) ──
   const toggleFavorite = (petId: string) => {
     setFavorites(prev => {
@@ -735,6 +783,15 @@ export default function HomePage() {
             )}
             {user ? (
               <>
+                <button onClick={() => openInventory()}
+                  style={{
+                    background:'none', border:'none',
+                    cursor:'pointer', color:'#5a6d85',
+                    fontSize: 14, padding: '2px 4px',
+                    fontFamily:'inherit',
+                  }}>
+                  🎒
+                </button>
                 <button onClick={() => setShowProfile(true)}
                   style={{
                     background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
@@ -1368,7 +1425,17 @@ export default function HomePage() {
 
       <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
 
-      {/* ════ Pet Detail Modal ════ */}
+      {/* ════ Inventory ── */}
+      {showInventory && (
+        <InventoryModal
+          inventory={inventory}
+          onUseHelpItem={useHelpItem}
+          onEquipItem={handleEquipItem}
+          onClose={() => setShowInventory(false)}
+        />
+      )}
+
+      {/* ════ Pet detail modal ── */}
       {detailPetId && (() => {
         const detailPet = pets.find(p => p.id === detailPetId) ?? marketListings.find(p => p.id === detailPetId)
         if (!detailPet) return null
