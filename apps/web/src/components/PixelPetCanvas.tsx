@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { generatePixelPet, PixelPetData, getSpeciesIndex } from '@pipz/core'
 
-const SPRITE_VERSION = 'v5' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
 
 interface Props {
   seed: number
@@ -31,39 +31,45 @@ const RARITY_GLOWS: Record<string, string> = {
   legendary: '#f59e0baa',
 }
 
-/**
- * Remove warm-beige background (rgb(255,241,232)) and PICO-8 bg gray
- * (rgb(194,195,199)) from AI-generated PICO-8 style sprites.
- */
-function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const id = ctx.getImageData(0, 0, w, h)
-  const TOL = 40
-  const br = 255, bg = 241, bb = 232
-  const pico_r = 194, pico_g = 195, pico_b = 199
-  for (let i = 0; i < id.data.length; i += 4) {
-    const a = id.data[i + 3]
-    if (a === 0) continue
-    const r = id.data[i], g = id.data[i + 1], b = id.data[i + 2]
-    // Warm beige removal
-    if (
-      Math.abs(r - br) <= TOL &&
-      Math.abs(g - bg) <= TOL &&
-      Math.abs(b - bb) <= TOL
-    ) {
-      id.data[i + 3] = 0
-      continue
+// ── Global sprite cache ──
+// Shared across all PixelPetCanvas instances so the same species only loads once.
+// Key: speciesIdx, Value: pre-processed offscreen canvas (or null if PNG failed)
+const spriteCache = new Map<number, HTMLCanvasElement | null>()
+const pendingLoads = new Map<number, Promise<HTMLCanvasElement | null>>()
+
+function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
+  // Return cached if already loaded
+  if (spriteCache.has(speciesIdx)) return Promise.resolve(spriteCache.get(speciesIdx)!)
+  // Deduplicate in-flight loads
+  if (pendingLoads.has(speciesIdx)) return pendingLoads.get(speciesIdx)!
+
+  const promise = new Promise<HTMLCanvasElement | null>((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const oc = document.createElement('canvas')
+      oc.width = img.width
+      oc.height = img.height
+      const ox = oc.getContext('2d')!
+      ox.drawImage(img, 0, 0)
+      spriteCache.set(speciesIdx, oc)
+      resolve(oc)
     }
-    // PICO-8 bg gray (#C2C3C7) removal
-    if (r === pico_r && g === pico_g && b === pico_b) {
-      id.data[i + 3] = 0
+    img.onerror = () => {
+      spriteCache.set(speciesIdx, null) // null = fallback needed
+      resolve(null)
     }
-  }
-  ctx.putImageData(id, 0, 0)
+    img.src = `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
+  })
+
+  pendingLoads.set(speciesIdx, promise)
+  promise.finally(() => pendingLoads.delete(speciesIdx))
+  return promise
 }
 
 export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const offscreenRef = useRef<HTMLCanvasElement | null>(null) // pre-processed sprite
+  const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null) // cached sprite
   const petDataRef = useRef<PixelPetData | null>(null)
   const frameRef = useRef<number>(0)
   const xOffsetRef = useRef(0)
@@ -71,48 +77,40 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const bounceRef = useRef(0)
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
-  const seedKeyRef = useRef<number | null>(null)
-  const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>('loading')
+  const loadedRef = useRef(false)
+  const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
+    spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading'
+  )
 
   const speciesIdx = getSpeciesIndex(seed)
 
-  // Load PNG sprite and pre-process to remove background
+  // Load PNG sprite (with cache)
   useEffect(() => {
     let cancelled = false
-    // If seed changed since last load, clear old sprite
-    if (seedKeyRef.current !== seed) {
-      offscreenRef.current = null
-      setStatus('loading')
-    }
-    seedKeyRef.current = seed
 
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
+    // Check cache first
+    const cached = spriteCache.get(speciesIdx)
+    if (cached !== undefined) {
+      spriteCanvasRef.current = cached
+      if (!cancelled) setStatus(cached ? 'png' : 'fallback')
+      return
+    }
+
+    loadSprite(speciesIdx).then((oc) => {
       if (cancelled) return
-      const oc = document.createElement('canvas')
-      oc.width = img.width
-      oc.height = img.height
-      const ox = oc.getContext('2d')!
-      ox.drawImage(img, 0, 0)
+      spriteCanvasRef.current = oc
+      setStatus(oc ? 'png' : 'fallback')
+    })
 
-      // Remove warm-beige background (safety net — sprites should already be transparent)
-      removeBg(ox, img.width, img.height)
-
-      offscreenRef.current = oc
-      if (!cancelled) setStatus('png')
-    }
-    img.onerror = () => {
-      if (!cancelled) setStatus('fallback')
-    }
-    img.src = `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
     return () => { cancelled = true }
   }, [speciesIdx])
 
-  // Generate procedural pet data as fallback
+  // Generate procedural pet data as fallback (lazy: only when PNG fails)
   useEffect(() => {
-    petDataRef.current = generatePixelPet({ seed, rarity, evolutionStage })
-  }, [seed, rarity, evolutionStage])
+    if (status === 'fallback') {
+      petDataRef.current = generatePixelPet({ seed, rarity, evolutionStage })
+    }
+  }, [status, seed, rarity, evolutionStage])
 
   // Animation loop
   const animate = useCallback(() => {
@@ -157,25 +155,26 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
     // Clear
     ctx.clearRect(0, 0, cw, ch)
+    loadedRef.current = true
 
-    const oc = offscreenRef.current
-    if (oc && status === 'png') {
-      // Draw pre-processed sprite (already has bg removed)
+    const sprite = spriteCanvasRef.current
+    if (sprite && status === 'png') {
+      // Draw cached sprite
       const pad = 20
       const displaySize = Math.min(cw, ch) - pad
-      const imgScale = displaySize / Math.max(oc.width, oc.height)
-      const dw = Math.round(oc.width * imgScale)
-      const dh = Math.round(oc.height * imgScale)
+      const imgScale = displaySize / Math.max(sprite.width, sprite.height)
+      const dw = Math.round(sprite.width * imgScale)
+      const dh = Math.round(sprite.height * imgScale)
       const dx = Math.round((cw - dw) / 2 + xOff)
       const dy = Math.round((ch - dh) / 2 + yOff)
 
-      ctx.drawImage(oc, dx, dy, dw, dh)
+      ctx.drawImage(sprite, dx, dy, dw, dh)
 
       // Glow for high rarity
       if (RARITY_GLOWS[rarity]) {
         ctx.shadowColor = RARITY_GLOWS[rarity]
         ctx.shadowBlur = size * 3
-        ctx.drawImage(oc, dx, dy, dw, dh)
+        ctx.drawImage(sprite, dx, dy, dw, dh)
         ctx.shadowColor = 'transparent'
         ctx.shadowBlur = 0
       }
@@ -222,8 +221,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
-    } else if (status === 'loading') {
-      // Draw pulsing skeleton placeholder — instant visual feedback
+    } else {
+      // loading: draw pulsing skeleton placeholder
       const breathe = 0.5 + Math.sin(timeRef.current * 2) * 0.2
       ctx.fillStyle = `rgba(255,255,255,${0.04 * breathe})`
       const r = 8
@@ -255,7 +254,6 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   // Size calculation
   const pixelVal = typeof size === 'number' ? size : 5
-  // PNG sprites displayed at 16px per 'size' unit (same visual footprint as procedural grid)
   const spriteGridSize = 16
   const canvasW = spriteGridSize * pixelVal + 40
   const canvasH = spriteGridSize * pixelVal + 30
