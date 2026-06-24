@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -418,6 +418,63 @@ export default function HomePage() {
   const addDebug = () => {
     logMsg('🔍 測試步數處理中...')
     addSt(500)
+  }
+
+  // ── Create test pet with ALL skills for development testing ──
+  const createTestPet = async () => {
+    const seed = genSeed()
+    const np: Pet = {
+      id: seed.toString(), userId: user?.id ?? 'local', name: '',
+      speciesId: seed.toString(), imageUrl: '',
+      rarity: Rarity.Legendary, level: 99, xp: 99999, totalSteps: 999999, evolutionStage: 5,
+      status: PetStatus.Legendary,
+      stats: { speed: 999, luck: 999, charm: 999, energy: 999 },
+      skills: generateAllSkills(99),
+      mood: Mood.Happy, moodValue: 100,
+      lastFedAt: Date.now(), lastInteractionAt: Date.now(), createdAt: Date.now(),
+      isForSale: false, price: 0,
+    }
+
+    if (user) {
+      const dbId = await savePet(user.id, np)
+      if (dbId) np.id = dbId
+    }
+
+    setPets(v => [...v, np])
+    setActiveIdx(pets.length)
+    setNewPetId(np.id)
+    try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
+    logMsg(`🧪 全能測試寵物誕生！（全部 ${np.skills.length} 個技能）`)
+  }
+
+  // ── Quick modify helpers ──
+  const levelUpPet = () => {
+    const cur = pets[activeIdx]
+    if (!cur) return
+    setPets(v => v.map((p, i) => i === activeIdx ? { ...p, level: p.level + 1, xp: p.xp + 100 } : p))
+    logMsg(`⬆️ 寵物升至 Lv.${pets[activeIdx]?.level + 1}`)
+  }
+  const addPetSteps = (n: number) => {
+    const cur = pets[activeIdx]
+    if (!cur) return
+    setPets(v => v.map((p, i) => i === activeIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
+    logMsg(`👣 寵物步數 +${n}`)
+  }
+  const evolvePet = () => {
+    const cur = pets[activeIdx]
+    if (!cur || cur.evolutionStage >= 5) return
+    setPets(v => v.map((p, i) => i === activeIdx ? { ...p, evolutionStage: p.evolutionStage + 1 } : p))
+    logMsg(`🌟 寵物進化至階段 ${(pets[activeIdx]?.evolutionStage ?? 0) + 1}`)
+  }
+  const maxOutPet = () => {
+    const cur = pets[activeIdx]
+    if (!cur) return
+    setPets(v => v.map((p, i) => i === activeIdx ? {
+      ...p, level: 99, xp: 99999, totalSteps: 999999, evolutionStage: 5,
+      stats: { speed: 999, luck: 999, charm: 999, energy: 999 },
+      mood: Mood.Happy, moodValue: 100,
+    } : p))
+    logMsg('💪 寵物已 MAX！')
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
@@ -1131,20 +1188,49 @@ export default function HomePage() {
                 </button>
                 {showDevTools && (
                   <div className="card" style={{padding:12}}>
-                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8}}>
+                    {/* ── Walk Simulation + Steps ── */}
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
                       <button className="btn btn-ghost" onClick={addDebug}
-                        style={{fontSize:10, padding:'4px 12px'}}>
-                        +500 測試步數
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        +500 步
                       </button>
                       <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
                         onClick={() => setSimulating(v => !v)}
-                        style={{fontSize:10, padding:'4px 12px', minWidth: 80}}>
-                        {simulating ? '⏹ 停止' : '🚶 模擬行路'}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        {simulating ? '⏹ 停止' : '🚶 模擬'}
                       </button>
-                      <span style={{fontSize:9, color:'#5a6d85'}}>
-                        {simulating ? '🟢 模擬中...' : '🛰️ GPS 記錄真實步數'}
+                      <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
+                        {simulating ? '🟢 模擬中' : '🛰️ GPS'}
                       </span>
                     </div>
+
+                    {/* ── Test Pet ── */}
+                    <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
+                      <button className="btn btn-primary" onClick={createTestPet}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        🧪 全能測試寵物
+                      </button>
+                    </div>
+
+                    {/* ── Quick Modify (only when pet exists) ── */}
+                    {pets[activeIdx] && (
+                      <div style={{background:'#1a2338', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
+                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                          ⚡ 快速修改 — Lv.{pets[activeIdx].level} Stage.{pets[activeIdx].evolutionStage}
+                        </div>
+                        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                          <button className="btn btn-ghost" onClick={levelUpPet}
+                            style={{fontSize:9, padding:'3px 8px'}}>⬆️ 升 Lv</button>
+                          <button className="btn btn-ghost" onClick={() => addPetSteps(10000)}
+                            style={{fontSize:9, padding:'3px 8px'}}>👣 +10K 步</button>
+                          <button className="btn btn-ghost" onClick={evolvePet}
+                            style={{fontSize:9, padding:'3px 8px'}}>🌟 進化</button>
+                          <button className="btn btn-ghost" onClick={maxOutPet}
+                            style={{fontSize:9, padding:'3px 8px'}}>💪 MAX</button>
+                        </div>
+                      </div>
+                    )}
+
                     {log.length > 0 && (
                       <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
                         <div style={{fontSize:8, color:'#5a6d85', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em'}}>記錄</div>

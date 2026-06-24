@@ -195,6 +195,20 @@ export function generateSkills(rarity: Rarity, level: number): PetSkill[] {
   }))
 }
 
+/** Return ALL skills for test/development pet */
+export function generateAllSkills(level: number): PetSkill[] {
+  return SKILL_POOL.map((s, i) => ({
+    id: s.id,
+    name: s.name,
+    description: s.description,
+    icon: s.icon,
+    stat: s.stat,
+    power: s.basePower + Math.floor(level * 1.5),
+    unlockedAtLevel: 1, // all unlocked immediately
+    effect: s.effect,
+  }))
+}
+
 export function getSkillBonus(skills: PetSkill[], stat: keyof PetStats): number {
   return skills
     .filter(s => s.stat === stat || s.stat === 'all')

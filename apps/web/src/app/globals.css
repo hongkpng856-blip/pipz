@@ -209,6 +209,7 @@ body { position: fixed; }
 .btn-green { background: #16a34a; color: white; }
 .btn-blue { background: #2563eb; color: white; }
 .btn-amber { background: #d97706; color: white; }
+.btn-danger { background: #dc2626; color: white; }
 
 /* ── Debug row ── */
 .debug-row {
