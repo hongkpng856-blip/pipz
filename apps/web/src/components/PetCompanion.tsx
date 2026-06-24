@@ -24,9 +24,10 @@ const MOOD_MAP: Record<string, string> = {
 const MOOD_CN: Record<string, string> = {
   happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
 }
+const EVO_LABELS = ['BB', '幼年', '成年', '完全體', '傳說']
 
 const SPRITE_VERSION = 'v5'
-const MARGIN = 50 // px from edge so sprite doesn't clip
+const MARGIN = 50
 
 export default function PetCompanion({
   pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage, skills,
@@ -47,7 +48,6 @@ export default function PetCompanion({
   const reactionRef = useRef<Reaction>('none')
   const reactionTimer = useRef(0)
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
-  const skillsRef = useRef(skills); skillsRef.current = skills
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
@@ -64,9 +64,8 @@ export default function PetCompanion({
       })
       petDataRef.current = data
       setSpeciesName(data.speciesName)
-      // Random starting position within roam bounds
-      xRef.current = (Math.random() - 0.5) * 0.6
-      yRef.current = (Math.random() - 0.5) * 0.4
+      xRef.current = (Math.random() - 0.5) * 0.3
+      yRef.current = (Math.random() - 0.5) * 0.2
     } else {
       petDataRef.current = null
       setSpeciesName('')
@@ -103,13 +102,12 @@ export default function PetCompanion({
     return () => { cancelled = true }
   }, [pet])
 
-  // ── Auto behavior cycle (full 2D roaming) ──
+  // Auto behavior cycle
   useEffect(() => {
     if (!pet) return
     const pick = () => {
       const r = Math.random()
       if (r < 0.40) {
-        // Walk in a random direction
         const dirs: Behavior[] = ['walkLeft', 'walkRight', 'walkUp', 'walkDown']
         const dir = dirs[Math.floor(Math.random() * dirs.length)]
         behaviorRef.current = dir
@@ -128,70 +126,42 @@ export default function PetCompanion({
     return () => clearInterval(iv)
   }, [pet])
 
-  // Timer dec
   useEffect(() => {
     if (!pet) return
     const iv = setInterval(() => { behaviorTimer.current = Math.max(0, behaviorTimer.current - 0.2) }, 200)
     return () => clearInterval(iv)
   }, [pet])
 
-  // Trigger reaction from external anim change
   useEffect(() => {
     if (anim === 'happy') triggerReaction('heart')
   }, [anim])
 
-  // ── Reaction system ──
   const triggerReaction = useCallback((type: Reaction) => {
     reactionRef.current = type
     reactionTimer.current = 1.5
     if (type === 'heart') {
       for (let i = 0; i < 5; i++) {
         particlesRef.current.push({
-          x: (Math.random() - 0.5) * 40,
-          y: 0,
-          life: 1,
+          x: (Math.random() - 0.5) * 40, y: 0, life: 1,
           emoji: ['❤️','💕','💖','💗','✨'][Math.floor(Math.random()*5)],
         })
       }
     } else if (type === 'sparkle') {
       for (let i = 0; i < 3; i++) {
-        particlesRef.current.push({
-          x: (Math.random() - 0.5) * 30,
-          y: 0,
-          life: 1,
-          emoji: '✨',
-        })
+        particlesRef.current.push({ x: (Math.random() - 0.5) * 30, y: 0, life: 1, emoji: '✨' })
       }
     } else if (type === 'bounce') {
       bounceRef.current = 1
       for (let i = 0; i < 3; i++) {
-        particlesRef.current.push({
-          x: (Math.random() - 0.5) * 25,
-          y: 0,
-          life: 1,
-          emoji: '⭐',
-        })
+        particlesRef.current.push({ x: (Math.random() - 0.5) * 25, y: 0, life: 1, emoji: '⭐' })
       }
     }
   }, [])
 
-  const handleFeed = useCallback(() => {
-    onFeed()
-    triggerReaction('heart')
-  }, [onFeed, triggerReaction])
+  const handleFeed = useCallback(() => { onFeed(); triggerReaction('heart') }, [onFeed, triggerReaction])
+  const handlePet = useCallback(() => { onPet(); triggerReaction('sparkle'); setShake(true); setTimeout(() => setShake(false), 300) }, [onPet, triggerReaction])
+  const handlePlay = useCallback(() => { onPlay(); triggerReaction('bounce') }, [onPlay, triggerReaction])
 
-  const handlePet = useCallback(() => {
-    onPet()
-    triggerReaction('sparkle')
-    setShake(true); setTimeout(() => setShake(false), 300)
-  }, [onPet, triggerReaction])
-
-  const handlePlay = useCallback(() => {
-    onPlay()
-    triggerReaction('bounce')
-  }, [onPlay, triggerReaction])
-
-  // ── Mood decay check ──
   const getMoodValue = useCallback(() => {
     if (!pet) return 100
     const hoursSinceFed = (Date.now() - pet.lastFedAt) / 3600000
@@ -208,22 +178,8 @@ export default function PetCompanion({
     const W = canvas.width, H = canvas.height
     timeRef.current += 0.02
 
-    // ── Card background (uniform dark) ──
-    ctx.fillStyle = '#141b2d'; ctx.fillRect(0, 0, W, H)
-
-    // Subtle paw-print / circle decorations
-    ctx.fillStyle = 'rgba(255,255,255,0.015)'
-    const decoPositions = [
-      [W*0.08, H*0.12], [W*0.92, H*0.08], [W*0.15, H*0.85],
-      [W*0.85, H*0.82], [W*0.50, H*0.05],
-    ]
-    for (const [dx, dy] of decoPositions) {
-      ctx.beginPath(); ctx.arc(dx, dy, 3, 0, Math.PI * 2); ctx.fill()
-    }
-
-    // Bottom accent line
-    ctx.fillStyle = '#1e2a45'
-    ctx.fillRect(0, H - 1, W, 1)
+    // Clear
+    ctx.clearRect(0, 0, W, H)
 
     // Draw pet
     const pd = petDataRef.current
@@ -232,19 +188,16 @@ export default function PetCompanion({
       const bx = behaviorRef.current
       const speed = 1.0
 
-      // ── Roaming boundaries (asymmetric: leave room for left skills) ──
-      const SKILLS_AREA_W = 75  // approx width of vertical skills column
-      const maxRX = (W / 2) - MARGIN  // right side can go full: 150
-      const maxLX = (W / 2) - MARGIN - SKILLS_AREA_W  // left side restricted: 70
+      // Roaming boundaries (symmetric)
+      const maxR = (W / 2) - MARGIN
       const maxY = (H / 2) - MARGIN
 
-      if (bx === 'walkLeft') { xRef.current -= speed; if (xRef.current < -maxLX) behaviorTimer.current = 0 }
-      if (bx === 'walkRight') { xRef.current += speed; if (xRef.current > maxRX) behaviorTimer.current = 0 }
+      if (bx === 'walkLeft') { xRef.current -= speed; if (xRef.current < -maxR) behaviorTimer.current = 0 }
+      if (bx === 'walkRight') { xRef.current += speed; if (xRef.current > maxR) behaviorTimer.current = 0 }
       if (bx === 'walkUp') { yRef.current -= speed; if (yRef.current < -maxY) behaviorTimer.current = 0 }
       if (bx === 'walkDown') { yRef.current += speed; if (yRef.current > maxY) behaviorTimer.current = 0 }
 
-      // Hard clamp to edges (safety)
-      xRef.current = Math.max(-maxLX, Math.min(maxRX, xRef.current))
+      xRef.current = Math.max(-maxR, Math.min(maxR, xRef.current))
       yRef.current = Math.max(-maxY, Math.min(maxY, yRef.current))
 
       bounceRef.current = Math.max(0, bounceRef.current - 0.05)
@@ -258,21 +211,22 @@ export default function PetCompanion({
       let shakeX = 0
       if (shake) shakeX = (Math.random() - 0.5) * 4
 
-      // Final position: center of canvas + offset
       const cx = W / 2 + xRef.current + shakeX
       const cy = H / 2 + yRef.current + idleBob + walkBob + walkBobY - mY + (bounceRef.current * -20)
 
-      // Shadow (below pet)
+      // Shadow
       const shadowY = H / 2 + yRef.current + 2
       ctx.fillStyle = 'rgba(0,0,0,0.1)'
       ctx.beginPath(); ctx.ellipse(cx, shadowY, 24 + Math.abs(walkBob) * 3, 3, 0, 0, Math.PI * 2); ctx.fill()
 
+      // ── PIXEL CRISP ──
+      ctx.imageSmoothingEnabled = false
+
       if (oc && status === 'png') {
-        const spriteSize = Math.min(110, Math.min(W, H) * 0.32)
+        const spriteSize = Math.min(120, Math.min(W, H) * 0.38)
         const sw = spriteSize
         const sh = spriteSize
 
-        // Glow
         if (pd?.palette?.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
 
         ctx.save()
@@ -285,9 +239,7 @@ export default function PetCompanion({
       } else if (pd && status === 'fallback') {
         const ps = 7
         const pw = pd.width * ps, ph = pd.height * ps
-
         if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
-
         ctx.save()
         ctx.translate(cx, cy)
         ctx.rotate(mRot)
@@ -301,13 +253,13 @@ export default function PetCompanion({
         ctx.shadowBlur = 0
       }
 
-      // Mood emoji
+      // Mood emoji above sprite
       if (pet.mood) {
-        ctx.font = '18px sans-serif'; ctx.textAlign = 'center'
-        ctx.fillText(MOOD_MAP[pet.mood] || '😊', cx, cy - 36)
+        ctx.font = '16px sans-serif'; ctx.textAlign = 'center'
+        ctx.fillText(MOOD_MAP[pet.mood] || '😊', cx, cy - 38)
       }
 
-      // ── Particles ──
+      // Particles
       particlesRef.current = particlesRef.current.filter(p => p.life > 0)
       for (const p of particlesRef.current) {
         p.y -= 1.2; p.life -= 0.025
@@ -317,49 +269,11 @@ export default function PetCompanion({
       }
       ctx.globalAlpha = 1
 
-      // ── Skills on canvas (vertical left) ──
-      const curSkills = skillsRef.current
-      if (curSkills.length > 0) {
-        let pillY = 32
-        const pillX = 5
-        const pillH = 16
-        const pillR = 4
-        const gap = 5
-        ctx.textBaseline = 'middle'
-        for (const s of curSkills) {
-          const label = `${s.icon} ${s.name}`
-          ctx.font = 'bold 8px sans-serif'
-          const tw = ctx.measureText(label).width
-          let pw = tw + 14
-          if (s.effect) pw += 26
-          // Background pill
-          ctx.fillStyle = 'rgba(11,17,32,0.75)'
-          ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.fill()
-          ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 0.5
-          ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.stroke()
-          // Text
-          ctx.fillStyle = '#e8edf4'; ctx.textAlign = 'left'
-          ctx.fillText(label, pillX + 6, pillY + pillH / 2)
-          // "加成中" badge
-          if (s.effect) {
-            const badge = '加成中'
-            ctx.font = '5px sans-serif'
-            const bw = ctx.measureText(badge).width + 5
-            const badgeX = pillX + pw - bw - 3
-            ctx.fillStyle = 'rgba(245,158,11,0.18)'
-            ctx.beginPath(); ctx.roundRect(badgeX, pillY + 2, bw, pillH - 4, 2); ctx.fill()
-            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '5px sans-serif'
-            ctx.fillText(badge, badgeX + bw / 2, pillY + pillH / 2)
-          }
-          pillY += pillH + gap
-        }
-      }
-
-      // ── Tap hint ──
+      // Tap hint
       if (showTapHint) {
         ctx.globalAlpha = 0.4 + Math.sin(timeRef.current*4)*0.2
         ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#94a5b8'
-        ctx.fillText('👆 禁下我啦', W/2, H-20)
+        ctx.fillText('👆 禁下我啦', W/2, H-16)
         ctx.globalAlpha = 1
       }
 
@@ -398,19 +312,27 @@ export default function PetCompanion({
     if (showTapHint) setShowTapHint(false)
   }
 
+  // Stats for display
+  const statEntries = pet ? [
+    { icon: '⚡', label: '速度', val: pet.stats.speed },
+    { icon: '🍀', label: '運氣', val: pet.stats.luck },
+    { icon: '💜', label: '魅力', val: pet.stats.charm },
+    { icon: '🔋', label: '能量', val: pet.stats.energy },
+  ] : []
+
   return (
     <div style={{ width:'100%', background:'#141b2d', borderRadius:16, overflow:'hidden', position:'relative' }}>
-      {/* ── Canvas (shorter/wider play area) ── */}
+      {/* ── Canvas ── */}
       <canvas
         ref={canvasRef}
-        width={400} height={300}
+        width={400} height={280}
         onClick={handleCanvasClick}
         style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'pixelated' }}
       />
 
-      {/* ── Species name badge (overlaid on canvas) ── */}
+      {/* ── Species name badge (overlaid) ── */}
       {pet && (
-        <div style={{ position:'absolute', top:10, left:10, right:10, display:'flex', alignItems:'center', gap:6 }}>
+        <div style={{ position:'absolute', top:10, left:10, display:'flex', alignItems:'center', gap:6 }}>
           <div style={{
             background:'rgba(11,17,32,0.7)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8,
             color:'#f0f4f8', fontSize:12, fontWeight:700, padding:'3px 10px',
@@ -418,71 +340,101 @@ export default function PetCompanion({
           }}>
             #{speciesName}
           </div>
-          <div style={{ flex:1 }} />
         </div>
       )}
 
-      {/* ── Always-visible info panel ── */}
+      {/* ── Rarity badge (overlaid, top right) ── */}
       {pet && (
-        <div style={{ padding:'10px 12px 8px', display:'flex', flexDirection:'column', gap:6 }}>
-          {/* Row 1: Mood + Stats */}
-          <div style={{ display:'flex', gap:8, alignItems:'stretch' }}>
-            {/* Mood column */}
-            <div style={{ flex:1, display:'flex', flexDirection:'column', gap:4 }}>
-              <div style={{ display:'flex', justifyContent:'space-between' }}>
-                <span style={{ fontSize:8, color:'#94a5b8' }}>😊 {MOOD_CN[pet.mood] || pet.mood}</span>
-                <span style={{ fontSize:8, color:'#5a6d85' }}>{getMoodValue()}%</span>
-              </div>
-              <div className="progress-wrap" style={{ height:2 }}>
-                <div className="progress-bar"><div className="progress-fill" style={{
-                  width:`${getMoodValue()}%`,
-                  background: getMoodValue() > 60 ? 'linear-gradient(90deg,#22c55e,#4ade80)' :
-                             getMoodValue() > 30 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
-                             'linear-gradient(90deg,#ef4444,#f87171)',
-                }}/></div>
-              </div>
-              {/* Evolution + Rarity */}
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:2 }}>
-                <span style={{ fontSize:8, color:'#94a5b8' }}>
-                  🌟 {['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1]||'初級'} · Lv.{pet.level}
-                </span>
-                <span className="pet-badge" style={{ color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:7 }}>{RARITY_LABELS[pet.rarity]}</span>
-              </div>
-            </div>
-            {/* 4 Stats */}
-            <div style={{ display:'flex', gap:4 }}>
-              {[
-                { icon:'⚡', label:'速度', val:pet.stats.speed },
-                { icon:'🍀', label:'運氣', val:pet.stats.luck },
-                { icon:'💜', label:'魅力', val:pet.stats.charm },
-                { icon:'🔋', label:'能量', val:pet.stats.energy },
-              ].map(s => (
-                <div key={s.label} style={{ textAlign:'center', background:'rgba(20,27,45,0.6)', borderRadius:6, padding:'3px 5px', minWidth:38 }}>
-                  <div style={{ fontSize:11 }}>{s.icon}</div>
-                  <div style={{ fontSize:6, color:'#5a6d85', marginTop:0 }}>{s.label}</div>
-                  <div style={{ fontSize:8, fontWeight:700, color:'#f0f4f8' }}>{s.val}</div>
-                </div>
-              ))}
-            </div>
+        <div style={{ position:'absolute', top:10, right:10 }}>
+          <div style={{
+            fontSize:8, fontWeight:700, padding:'3px 8px', borderRadius:8, lineHeight:'12px',
+            color: RARITY_COLORS[pet.rarity],
+            background: RARITY_COLORS[pet.rarity] + '18',
+            border: `1px solid ${RARITY_COLORS[pet.rarity]}33`,
+          }}>
+            {RARITY_LABELS[pet.rarity]}
           </div>
         </div>
       )}
 
-      {/* ── Bottom: action buttons ── */}
+      {/* ── Info panel (clean, reference-inspired) ── */}
       {pet && (
-        <div style={{ display:'flex', gap:4, justifyContent:'center', padding:'0 12px 10px' }}>
-          <button className="btn btn-green" onClick={(e)=>{e.stopPropagation(); handleFeed()}}
-            style={{ fontSize:9, padding:'4px 10px', borderRadius:14, display:'flex', alignItems:'center', gap:3 }}>
-            🍖 餵食
-          </button>
-          <button className="btn btn-blue" onClick={(e)=>{e.stopPropagation(); handlePet()}}
-            style={{ fontSize:9, padding:'4px 10px', borderRadius:14, display:'flex', alignItems:'center', gap:3 }}>
-            ✋ 摸頭
-          </button>
-          <button className="btn btn-amber" onClick={(e)=>{e.stopPropagation(); handlePlay()}}
-            style={{ fontSize:9, padding:'4px 10px', borderRadius:14, display:'flex', alignItems:'center', gap:3 }}>
-            🎾 玩
-          </button>
+        <div style={{ padding: '0 16px 12px' }}>
+          {/* Divider */}
+          <div style={{ height:1, background:'#1e2a45', marginBottom:10 }} />
+
+          {/* Top row: mood + evolution */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+              <span style={{ fontSize:10 }}>{MOOD_MAP[pet.mood]}</span>
+              <span style={{ fontSize:10, color:'#94a5b8' }}>{MOOD_CN[pet.mood] || pet.mood}</span>
+              <span style={{ fontSize:8, color:'#5a6d85' }}>{getMoodValue()}%</span>
+              <div className="progress-wrap" style={{ width:50, height:3 }}>
+                <div className="progress-bar" style={{ height:3 }}>
+                  <div className="progress-fill" style={{
+                    width:`${getMoodValue()}%`, height:3,
+                    background: getMoodValue() > 60 ? '#22c55e' : getMoodValue() > 30 ? '#f59e0b' : '#ef4444',
+                    borderRadius: 2,
+                  }}/>
+                </div>
+              </div>
+            </div>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:9, color:'#5a6d85' }}>Lv.{pet.level}</span>
+              <span style={{ fontSize:9, color:'#94a5b8' }}>·</span>
+              <span style={{ fontSize:9, color:'#94a5b8' }}>🌟 {EVO_LABELS[pet.evolutionStage-1]||'初級'}</span>
+            </div>
+          </div>
+
+          {/* ── Stats grid (2x2, clean) ── */}
+          <div style={{
+            display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:10,
+          }}>
+            {statEntries.map(s => (
+              <div key={s.label} style={{
+                display:'flex', alignItems:'center', gap:6,
+                background:'rgba(11,17,32,0.5)', borderRadius:8, padding:'5px 10px',
+              }}>
+                <span style={{ fontSize:12 }}>{s.icon}</span>
+                <span style={{ fontSize:9, color:'#5a6d85', flex:1 }}>{s.label}</span>
+                <span style={{ fontSize:13, fontWeight:700, color:'#f0f4f8', fontVariantNumeric:'tabular-nums' }}>{s.val}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Skills (clean list below stats, if any) ── */}
+          {skills.length > 0 && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>
+              {skills.slice(0, 6).map((s, i) => (
+                <div key={i} style={{
+                  fontSize:8, color:'#94a5b8', padding:'2px 8px',
+                  background:'rgba(11,17,32,0.5)', borderRadius:6,
+                  border:'1px solid rgba(255,255,255,0.06)',
+                  display:'flex', alignItems:'center', gap:3,
+                }}>
+                  <span>{s.icon}</span>
+                  <span>{s.name}</span>
+                  {s.effect && <span style={{ color:'#f59e0b', fontSize:6, marginLeft:1 }}>●</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Action buttons ── */}
+          <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
+            <button className="btn btn-green" onClick={(e)=>{e.stopPropagation(); handleFeed()}}
+              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
+              🍖 餵食
+            </button>
+            <button className="btn btn-blue" onClick={(e)=>{e.stopPropagation(); handlePet()}}
+              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
+              ✋ 摸頭
+            </button>
+            <button className="btn btn-amber" onClick={(e)=>{e.stopPropagation(); handlePlay()}}
+              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
+              🎾 玩
+            </button>
+          </div>
         </div>
       )}
     </div>

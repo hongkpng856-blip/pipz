@@ -155,6 +155,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
     // Clear
     ctx.clearRect(0, 0, cw, ch)
+    ctx.imageSmoothingEnabled = false
     loadedRef.current = true
 
     const sprite = spriteCanvasRef.current
