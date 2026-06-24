@@ -292,7 +292,7 @@ export default function PetCompanion({
       ctx.beginPath(); ctx.ellipse(cx, shadowY, 24 + Math.abs(walkBob) * 3, 3, 0, 0, Math.PI * 2); ctx.fill()
 
       if (oc && status === 'png') {
-        const spriteSize = Math.min(72, Math.min(W, H) * 0.18)
+        const spriteSize = Math.min(110, Math.min(W, H) * 0.32)
         const sw = spriteSize
         const sh = spriteSize
 
@@ -307,7 +307,7 @@ export default function PetCompanion({
         ctx.shadowBlur = 0
 
       } else if (pd && status === 'fallback') {
-        const ps = 6
+        const ps = 7
         const pw = pd.width * ps, ph = pd.height * ps
 
         if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
@@ -341,41 +341,42 @@ export default function PetCompanion({
       }
       ctx.globalAlpha = 1
 
-      // ── Skills on canvas (bottom strip) ──
+      // ── Skills on canvas (vertical left) ──
       const curSkills = skillsRef.current
       if (curSkills.length > 0) {
-        const pillY = H - 20
-        let pillX = 8
-        const pillH = 14
+        let pillY = 32  // start below species name badge
+        const pillX = 6
+        const pillH = 13
         const pillR = 5
+        const gap = 4
+        ctx.textBaseline = 'middle'
         for (const s of curSkills) {
           const label = `${s.icon} ${s.name}`
-          ctx.font = 'bold 8px sans-serif'
+          ctx.font = 'bold 7px sans-serif'
           const tw = ctx.measureText(label).width
-          const pw = tw + 14
+          let pw = tw + 12
+          // If has effect badge, add extra width
+          if (s.effect) pw += 24
           // Background pill
-          ctx.fillStyle = 'rgba(11,17,32,0.65)'
-          ctx.beginPath(); ctx.roundRect(pillX, pillY - pillH, pw, pillH, pillR); ctx.fill()
+          ctx.fillStyle = 'rgba(11,17,32,0.7)'
+          ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.fill()
           ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5
-          ctx.beginPath(); ctx.roundRect(pillX, pillY - pillH, pw, pillH, pillR); ctx.stroke()
+          ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.stroke()
           // Text
-          ctx.fillStyle = '#f0f4f8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
-          ctx.fillText(label, pillX + 6, pillY - pillH / 2)
-          // "加成中" badge if has effect
+          ctx.fillStyle = '#f0f4f8'; ctx.textAlign = 'left'
+          ctx.fillText(label, pillX + 5, pillY + pillH / 2)
+          // "加成中" badge
           if (s.effect) {
-            ctx.fillStyle = 'rgba(245,158,11,0.15)'; ctx.strokeStyle = 'transparent'
             const badge = '加成中'
-            ctx.font = '6px sans-serif'
-            const bw = ctx.measureText(badge).width + 6
-            ctx.beginPath(); ctx.roundRect(pillX + pw - bw - 3, pillY - pillH + 2, bw, pillH - 4, 2); ctx.fill()
-            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '5px sans-serif'
-            ctx.fillText(badge, pillX + pw - bw / 2 - 3, pillY - pillH / 2)
-            pillX += pw + 3
-            ctx.font = 'bold 8px sans-serif'
-            ctx.textAlign = 'left'; ctx.fillStyle = '#f0f4f8'
-          } else {
-            pillX += pw + 3
+            ctx.font = '5px sans-serif'
+            const bw = ctx.measureText(badge).width + 5
+            const badgeX = pillX + pw - bw - 3
+            ctx.fillStyle = 'rgba(245,158,11,0.15)'
+            ctx.beginPath(); ctx.roundRect(badgeX, pillY + 2, bw, pillH - 4, 2); ctx.fill()
+            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '4px sans-serif'
+            ctx.fillText(badge, badgeX + bw / 2, pillY + pillH / 2)
           }
+          pillY += pillH + gap
         }
       }
 
