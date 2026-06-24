@@ -78,6 +78,7 @@ export default function HomePage() {
   const pendingBuffer = useRef(0) // steps queued during encounter
   const loadedStorage = useRef(false)
   const dismissedNewPets = useRef<Set<string>>(new Set())
+  const badgeDismissed = useRef<Set<string>>(new Set())
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -877,8 +878,7 @@ export default function HomePage() {
                 // Newest non-favorite pet (for NEW badge)
                 const newestPet = otherPets.length > 0 ? otherPets.reduce((a, b) => (a.createdAt || 0) > (b.createdAt || 0) ? a : b) : null
                 const isNewBadge = (pid: string, cat: number) => {
-                  if (dismissedNewPets.current.has(pid)) return false
-                  if (newPetId === pid) return true
+                  if (badgeDismissed.current.has(pid)) return false
                   if (cat > 0 && Date.now() - cat < 5 * 60 * 1000) return true
                   if (newestPet && pid === newestPet.id) return true
                   return false
@@ -925,7 +925,7 @@ export default function HomePage() {
                           if (pet) {
                             return (
                               <div key={pet.id} className="team-slot team-slot-filled"
-                                onClick={() => { if (newPetId === pet.id) dismissNewPet(); setDetailPetId(pet.id) }}
+                                onClick={() => { badgeDismissed.current.add(pet.id); setDetailPetId(pet.id) }}
                                 onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
@@ -983,7 +983,7 @@ export default function HomePage() {
                                 e.dataTransfer.setData('text/plain', p.id)
                                 e.dataTransfer.effectAllowed = 'move'
                               }}
-                              onClick={() => { if (newPetId === p.id) dismissNewPet(); setDetailPetId(p.id) }}
+                              onClick={() => { badgeDismissed.current.add(p.id); setDetailPetId(p.id) }}
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
                               <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
@@ -1476,7 +1476,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setNewPetId(null); try { localStorage.removeItem('pipz_new_pet') } catch(_){}; setTab('pets') }}
+              <button onClick={() => { dismissNewPet(); setTab('pets') }}
                 style={{
                   padding:'10px 28px', border:'none',
                   background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
