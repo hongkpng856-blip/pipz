@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.1 (2026-06-25)
+
+### Added
+- **Skills display in PetCompanion info panel**: when 📊 詳情 is toggled, shows all active skills (icons + names) with 🟡「加成中」badge on gameplay effects
+- **Skill effect hints on Stats Card**: 👟 雙倍步伐 / 💨 疾步如飛 shown below today's steps; ⚡ 能量過載 shown below total steps — always visible without toggling
+- **Skills always active**: clarified that skill effects (DoubleSteps, EnergyBonus, StepBonus, EncounterUp, HatchSpeed, MoodGuard) apply to the active map pet continuously — not only during simulation mode
+### Changed
+- **Today steps shows full number**: uses `toLocaleString()` instead of `formatSteps()` (which abbreviates to K/M) — user sees exact step count for achievement tracking
+- **PetCompanion info overlay restructured**: added 🎯 目前技能 section after evolution info; skills wrap in a flex grid with effect badges
+
 ## v0.4.0 (2026-06-24)
 
 ### Changed

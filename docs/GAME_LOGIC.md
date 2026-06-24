@@ -84,7 +84,7 @@ Skills are random abilities assigned on hatch. There are two types:
 
 **Stat buffs** — boost pet stats (speed/luck/charm/energy). These increase the raw stat value.
 
-**Gameplay effects** — modify game mechanics while the pet is active on the map:
+**Gameplay effects** — modify game mechanics **continuously** while the pet is active on the map (always active, not only during simulation):
 
 | Effect | Icon | Description | Formula |
 |--------|------|-------------|---------|

@@ -69,8 +69,18 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 │                                 │
 │ ⚡ 20  🍀 15  💜 25  🔋 18    │  ← 4 stats
 │                                 │
-│ 🌟 BB              Lv.3        │
+| 🌟 BB              Lv.3        │
 │ ██████░░░░░░░  (evolution bar)  │
+│                                 │
+│ 🎯 目前技能                      │
+│ ┌───────────────────────────┐   │
+│ │ ⚡ 疾速衝刺  🟡加成中      │   │
+│ │ 👟 雙倍步伐  🟡加成中      │   │
+│ │ 💨 疾步如飛  🟡加成中      │   │
+│ │ 🧲 寵物磁鐵  🟡加成中      │   │
+│ │ 🔥 溫暖孵化  🟡加成中      │   │
+│ │ … (flex-wrap, all 18 max) │   │
+│ └───────────────────────────┘   │
 └─────────────────────────────────┘
 ```
 - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
@@ -78,6 +88,7 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 - **Rarity badge**: colour-coded pill
 - **4 Stats**: ⚡ Speed / 🍀 Luck / 💜 Charm / 🔋 Energy, each in mini cards
 - **Evolution stage**: label + progress bar toward next stage (amber `#f59e0b`)
+- **🎯 目前技能 section**: flex-wrap grid of skill pills (icon + name); skills with a gameplay effect (`effect` field) show an amber 🟡「加成中」badge
 
 **Action Buttons (bottom strip):**
 - 🍖 餵食 / ✋ 摸頭 / 🎾 玩 — compact pill buttons, no footer bar
@@ -90,6 +101,9 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 ### Stats Card
 - Bigger card with **bar chart visualization**
 - Top row: today's steps | total steps (divided by vertical line)
+  - **Today steps**: uses `steps.toLocaleString()` (full number, no K/M abbreviation)
+  - **Skill hints below today steps**: amber `👟 雙倍步伐` + cyan `💨 疾步如飛` badges (shown automatically when active pet has the effect)
+  - **Skill hints below total steps**: amber `⚡ 能量過載` badge (shown automatically when active pet has the effect)
 - Three bars:
   - 📊 **今日進度**: today's steps / 5,000 goal
   - 📈 **總步數進度**: total steps / 10,000 milestone
