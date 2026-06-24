@@ -1476,7 +1476,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => { dismissNewPet(); setTab('pets') }}
+              <button onClick={() => { setNewPetId(null); try { localStorage.removeItem('pipz_new_pet') } catch(_){}; setTab('pets') }}
                 style={{
                   padding:'10px 28px', border:'none',
                   background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
