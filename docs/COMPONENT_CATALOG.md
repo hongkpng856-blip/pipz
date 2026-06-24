@@ -102,12 +102,17 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - Each: thumbnail + rarity name + CP + level
 - Click → opens Pet Detail Modal
 
-### Debug Row
-- "+500 測試步數" button — now triggers encounters (no longer skips `skipEncounter`)
-- "🛰️ GPS 記錄真實步數" label
-
-### Log
-- Shows last 3 log messages (encounters, actions, etc.)
+### Dev Tools (collapsible, always visible)
+- **🔧 Dev 工具** toggle button at bottom of Community tab
+- **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous 1-4 steps every 800ms (≈ real walking speed)
+- **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
+- **Quick Modify** (when pet selected):
+  - ⬆️ 升 Lv — level +1
+  - 👣 +10K 步 — add 10,000 steps to active pet
+  - 🌟 進化 — advance evolution stage
+  - 💪 MAX — max out all stats + level
+- **+500 步** button — adds 500 steps (triggers encounters)
+- **Log** — shows last 3 log messages (encounters, actions, etc.)
 
 ---
 

@@ -95,7 +95,7 @@ Skills are random abilities assigned on hatch. There are two types:
 | `HatchSpeed` | 🔥 溫暖孵化 | Faster egg hatching | `hatchSteps × 0.75` |
 | `MoodGuard` | 🛡️ 平靜光環 | Mood decays slower | `moodDecay × 0.5` |
 
-**Skill pool (18 total):**
+**Skill pool (18 total, plus `generateAllSkills(level)` for development):**
 ```
 
 ## Evolution System

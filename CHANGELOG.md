@@ -8,6 +8,7 @@
 ### Added
 - **Mobile add-to-team**: "+" button overlay on each 其他寵物 card — tap adds pet to first available team slot (stopPropagation preserves detail modal tap)
 - **Random passive skills**: 6 new gameplay-effect skills (雙倍步伐, 能量過載, 疾步如飛, 寵物磁鐵, 溫暖孵化, 平靜光環) assigned randomly on hatch — effects apply to active map pet
+- **Dev Tools: Test Pet + Quick Modify**: "🧪 全能測試寵物" spawns Legendary pet with all 18 skills; quick modify panel (⬆️升Lv, 👣+10K步, 🌟進化, 💪MAX)
 ### Performance
 - **Sprite loading 36× faster**: resized all sprites from 768×768 → 128×128, removed `removeBg()` pixel scan (sprites already have alpha), added global sprite cache so same species loads only once
 - **Energy card compacted**: smaller icons/padding to fit fixed layout
