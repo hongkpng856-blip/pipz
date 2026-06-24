@@ -11,7 +11,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -68,6 +68,8 @@ export default function HomePage() {
   const [marketListings, setMarketListings] = useState<Pet[]>([])
   const [myListings, setMyListings] = useState<Pet[]>([])
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
+  // ── Roguelike: pet equipment ──
+  const [petEquipment, setPetEquipment] = useState<{equipmentId: string; slot: string}[]>([])
   // ── Roguelike: inventory ──
   const [showInventory, setShowInventory] = useState(false)
   const [inventory, setInventory] = useState<{itemId: string; itemType: 'equipment' | 'help'; quantity: number}[]>([])
@@ -81,6 +83,13 @@ export default function HomePage() {
   const [stepArrows, setStepArrows] = useState<{id:number;type:'normal'|'skill'}[]>([])
   const stepArrowId = useRef(0)
   const { user, signOut } = useAuth()
+
+  // ── Load pet equipment when detail modal opens ──
+  useEffect(() => {
+    if (detailPetId && user) {
+      loadPetEquipment(detailPetId).then(setPetEquipment).catch(() => setPetEquipment([]))
+    }
+  }, [detailPetId, user])
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
@@ -646,6 +655,14 @@ export default function HomePage() {
     // Re-load inventory
     const items = await loadInventory(user.id)
     setInventory(items as any)
+  }
+
+  // ── Roguelike: unequip item ──
+  const handleUnequip = async (slot: string) => {
+    if (!user || !detailPetId) return
+    await unequipSlot(detailPetId, slot)
+    setPetEquipment(prev => prev.filter(e => e.slot !== slot))
+    logMsg(`👕 脫下 ${slot} 裝備`)
   }
 
   // ── Toggle favorite (max 5) ──
@@ -1475,8 +1492,9 @@ export default function HomePage() {
               }, 0)
               setDetailPetId(null)
               if (user) deletePet(id)
-              logMsg('🗑️ 寵物已剷除')
             }}
+            equipment={petEquipment}
+            onUnequip={handleUnequip}
             onList={user && isOwnPet ? handleList : undefined}
             onUnlist={user && isOwnPet ? handleUnlist : undefined}
             onBuy={user && isMarketView && !isOwnPet ? handleBuy : undefined}

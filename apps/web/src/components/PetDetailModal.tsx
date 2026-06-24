@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution, generatePixelPet } from '@pipz/core'
+import { Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, EVOLUTION_STEPS, calculateEvolution, generatePixelPet, EQUIPMENT_POOL, EquipmentDef, EquipmentSlot } from '@pipz/core'
 import PixelPetCanvas from './PixelPetCanvas'
 
 interface Props {
@@ -16,6 +16,8 @@ interface Props {
   isMarket?: boolean
   sellerId?: string
   currentUserId?: string
+  equipment?: { equipmentId: string; slot: string }[]   // currently equipped items
+  onUnequip?: (slot: string) => void
 }
 
 const PC: Record<string, string> = {
@@ -35,7 +37,7 @@ const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 // Evolution step requirements
 const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4: 100000, 5: 999999 }
 
-export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId }: Props) {
+export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId, equipment, onUnequip }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const [listPrice, setListPrice] = useState('500')
 
@@ -314,6 +316,54 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               </div>
             )}
           </div>
+
+          {/* ── Equipment ── */}
+          {!isMarket && equipment && (
+            <div style={{
+              background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+              padding: 16, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
+                👕 裝備
+              </div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {(['head', 'body', 'feet', 'accessory'] as const).map(slot => {
+                  const label = { head: '👑 頭部', body: '👕 身體', feet: '👟 腳部', accessory: '📿 飾品' }[slot]
+                  const equipped = equipment.find(e => e.slot === slot)
+                  const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
+                  return (
+                    <div key={slot} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      background: '#1a2338', borderRadius: 10,
+                      padding: '6px 10px',
+                    }}>
+                      <span style={{ fontSize: 9, color: '#5a6d85', width: 50 }}>{label}</span>
+                      {def ? (
+                        <>
+                          <span style={{ fontSize: 14 }}>{def.icon}</span>
+                          <span style={{ fontSize: 11, color: '#f0f4f8', flex: 1 }}>{def.name}</span>
+                          <span style={{ fontSize: 9, color: RARITY_COLORS[def.rarity] }}>+{def.bonusValue}</span>
+                          {onUnequip && (
+                            <button onClick={() => onUnequip(slot)}
+                              style={{
+                                fontSize: 9, padding: '2px 8px', borderRadius: 6,
+                                border: '1px solid rgba(239,68,68,0.3)',
+                                background: 'transparent', color: '#ef4444',
+                                cursor: 'pointer', fontFamily: 'inherit',
+                              }}>
+                              脫下
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <span style={{ fontSize: 10, color: '#2a3a5a' }}>— 空置 —</span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Total Stats ── */}
           <div style={{
