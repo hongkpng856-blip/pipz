@@ -7,6 +7,8 @@
 - **「其他寵物」title fixed**: `.section-header` moved outside scrollable wrapper, only pet grid scrolls — title + count always visible
 ### Added
 - **Mobile add-to-team**: "+" button overlay on each 其他寵物 card — tap adds pet to first available team slot (stopPropagation preserves detail modal tap)
+### Performance
+- **Sprite loading 36× faster**: resized all sprites from 768×768 → 128×128, removed `removeBg()` pixel scan (sprites already have alpha), added global sprite cache so same species loads only once
 - **Energy card compacted**: smaller icons/padding to fit fixed layout
 
 ## v0.3.9 (2026-06-24)

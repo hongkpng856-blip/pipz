@@ -172,15 +172,14 @@ Only the 🐾 其他寵物 grid itself is scrollable — the energy card, team s
 
 ### PixelPetCanvas (`PixelPetCanvas.tsx`)
 
-Canvas-based pet renderer with hybrid PNG sprite + procedural fallback.
+Canvas-based pet renderer with PNG sprite (primary) + procedural fallback.
 
-**Sprite loading:**
+**Sprite loading (optimized):**
+- **Global sprite cache**: all `PixelPetCanvas` instances share a `Map<speciesIdx, Canvas>` — the same species only loads once across the entire page
+- **128×128 source sprites** (resized from 768×768) — 36× fewer pixels to decode
 - Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png?v=SPRITE_VERSION` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
-- `onload` → draws PNG to offscreen canvas → **`removeBg()`** removes two background colors as safety net:
-  - Warm beige `rgb(255,241,232)` ±40 tolerance (original AI generation bg)
-  - PICO-8 gray `rgb(194,195,199)` exact match (`#C2C3C7`, sprite bg color)
-- Enables larger canvas (`64 * size + 60`)
-- `onerror` → falls back to procedural `generatePixelPet()` with smaller canvas (`16 * size + 60`)
+- `onload` → draws PNG to offscreen canvas at 1:1 (no `removeBg()` — sprites already have proper RGBA transparency)
+- `onerror` → falls back to procedural `generatePixelPet()` (generated **lazily**, only when PNG fails)
 
 **Rarity effects:**
 - Tint overlay: `fillRect` with rgba (common=`transparent`, uncommon=`#22c55e14`, rare=`#3b82f61a`, epic=`#8b5cf61f`, legendary=`#f59e0b26`)
