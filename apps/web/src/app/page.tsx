@@ -1,15 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
+import EventModal from '../components/EventModal'
 import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, MILESTONES } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -66,6 +67,10 @@ export default function HomePage() {
   const [marketListings, setMarketListings] = useState<Pet[]>([])
   const [myListings, setMyListings] = useState<Pet[]>([])
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
+  // ── Roguelike: events ──
+  const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null)
+  const eventStepCounter = useRef(0)
+  const INV = 800 // event check interval (steps)
   // ── Step visual effects ──
   const [stepAnimTick, setStepAnimTick] = useState(0)
   const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
@@ -418,6 +423,13 @@ export default function HomePage() {
         if (curUser) setNotifUnread(n => n + 1)
       }
     }
+    // ── Roguelike: event check ──
+    eventStepCounter.current += Math.round(n * encMult)
+    if (eventStepCounter.current >= INV && !currentEvent && pet) {
+      eventStepCounter.current = 0
+      const ev = rollEvent(totalStepsRef.current)
+      if (ev) setCurrentEvent(ev)
+    }
     // ── Step visual effects ──
     setStepAnimTick(t => t + 1)
     const hasSkillEffects = finalSteps > n || bonus > 0
@@ -521,6 +533,54 @@ export default function HomePage() {
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
       if (user) { createNotification(user.id, 'egg_hatched', '🥚 蛋孵化咗！', `${RARITY_LABELS[egg.rarity]}新寵物出世啦！快啲去寵物欄睇下`); setNotifUnread(n => n + 1) }
     }, 2000)
+  }
+
+  // ── Roguelike: handle event ──
+  const handleEventChoice = (choiceIndex?: number) => {
+    const ev = currentEvent
+    if (!ev) return
+    const chosenEffects = (choiceIndex !== undefined && ev.choices)
+      ? ev.choices[choiceIndex].effects
+      : ev.effects
+
+    // Apply effects to active pet
+    if (pet) {
+      let updatedPet = { ...pet }
+      for (const eff of chosenEffects) {
+        switch (eff.type) {
+          case 'mood_change':
+            updatedPet = { ...updatedPet, moodValue: Math.max(0, Math.min(100, updatedPet.moodValue + eff.value)) }
+            if (eff.value > 0 && updatedPet.mood !== Mood.Happy) updatedPet.mood = Mood.Happy
+            if (eff.value < 0 && updatedPet.mood === Mood.Happy) updatedPet.mood = Mood.Sad
+            break
+          case 'step_bonus':
+            setSteps(s => s + eff.value)
+            setTotalSteps(s => s + eff.value)
+            break
+          case 'step_loss':
+            setSteps(s => Math.max(0, s - eff.value))
+            setTotalSteps(s => Math.max(0, s - eff.value))
+            break
+          case 'xp_gain':
+            updatedPet = { ...updatedPet, xp: updatedPet.xp + eff.value }
+            break
+          case 'stat_boost':
+            if (eff.target) {
+              updatedPet = {
+                ...updatedPet,
+                stats: { ...updatedPet.stats, [eff.target]: updatedPet.stats[eff.target] + eff.value },
+              }
+            }
+            break
+        }
+      }
+      setPets(v => v.map((p, i) => i === activeIdx ? updatedPet : p))
+      if (user) updatePet(updatedPet)
+    }
+
+    setCurrentEvent(null)
+    logMsg(`🎲 ${ev.name} — ${choiceIndex !== undefined ? `選擇: ${ev.choices?.[choiceIndex]?.label}` : '已處理'}`)
+    if (user) logEvent(user.id, ev.id, pet?.id, choiceIndex).catch(() => {})
   }
 
   // ── Toggle favorite (max 5) ──
@@ -1443,6 +1503,15 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ════ Roguelike event ── */}
+      {currentEvent && (
+        <EventModal
+          event={currentEvent}
+          onChoose={handleEventChoice}
+          onDismiss={() => setCurrentEvent(null)}
+        />
       )}
 
       {/* ════ First Pet Egg (showEgg) ════ */}

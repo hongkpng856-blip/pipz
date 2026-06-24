@@ -268,3 +268,146 @@ export function rollStepBonus(skills: PetSkill[]): number {
   if (!hasEffect(skills, SkillEffect.StepBonus)) return 0
   return Math.random() < 0.15 ? Math.floor(Math.random() * 10) + 5 : 0 // 15% chance for 5-14 bonus steps
 }
+
+// ── Roguelike: Equipment Definitions ──
+
+import { EquipmentSlot, EquipmentDef, HelpItemDef, HelpEffect, GameEvent, EventEffect, EventType } from '../types'
+
+export const EQUIPMENT_POOL: EquipmentDef[] = [
+  // ── Head ──
+  { id: 'leaf_crown', name: '樹葉冠冕', description: '森林精靈編織嘅葉冠，提升運氣', icon: '🌿', slot: EquipmentSlot.Head, rarity: Rarity.Common, statBonuses: { luck: 5 }, bonusValue: 5 },
+  { id: 'bone_helm', name: '骨製頭盔', description: '堅硬嘅骨頭保護，提升體力', icon: '🦴', slot: EquipmentSlot.Head, rarity: Rarity.Uncommon, statBonuses: { energy: 10 }, bonusValue: 10 },
+  { id: 'crystal_circlet', name: '水晶額環', description: '閃爍水晶提升魅力', icon: '💎', slot: EquipmentSlot.Head, rarity: Rarity.Rare, statBonuses: { charm: 15 }, bonusValue: 15, eventOnly: true },
+  { id: 'crown_of_thorns', name: '荊棘冠', description: '傳說級頭冠，全能力提升', icon: '👑', slot: EquipmentSlot.Head, rarity: Rarity.Legendary, statBonuses: { speed: 10, luck: 10, charm: 10, energy: 10 }, bonusValue: 40, eventOnly: true },
+  // ── Body ──
+  { id: 'leaf_cloak', name: '樹葉披風', description: '輕巧嘅葉披風，行得更快', icon: '🍃', slot: EquipmentSlot.Body, rarity: Rarity.Common, statBonuses: { speed: 5 }, bonusValue: 5 },
+  { id: 'bone_armor', name: '骨甲', description: '堅固骨甲保護，提升體力', icon: '🛡️', slot: EquipmentSlot.Body, rarity: Rarity.Uncommon, statBonuses: { energy: 10 }, bonusValue: 10 },
+  { id: 'silk_robe', name: '絲綢法袍', description: '柔軟絲袍，充滿魅力', icon: '👘', slot: EquipmentSlot.Body, rarity: Rarity.Rare, statBonuses: { charm: 15 }, bonusValue: 15 },
+  { id: 'dragon_scale', name: '龍鱗甲', description: '龍鱗打造嘅終極護甲', icon: '🐉', slot: EquipmentSlot.Body, rarity: Rarity.Legendary, statBonuses: { speed: 10, energy: 20, charm: 10 }, bonusValue: 40, eventOnly: true },
+  // ── Feet ──
+  { id: 'grass_sandals', name: '草鞋', description: '簡單草鞋，輕快步伐', icon: '👡', slot: EquipmentSlot.Feet, rarity: Rarity.Common, statBonuses: { speed: 5 }, bonusValue: 5 },
+  { id: 'rabbit_boots', name: '兔毛靴', description: '兔毛製成，跳得更快', icon: '🐇', slot: EquipmentSlot.Feet, rarity: Rarity.Uncommon, statBonuses: { speed: 10 }, bonusValue: 10 },
+  { id: 'wind_greaves', name: '風之脛甲', description: '灌注風之力量，極速移動', icon: '🌪️', slot: EquipmentSlot.Feet, rarity: Rarity.Epic, statBonuses: { speed: 20, luck: 5 }, bonusValue: 25, eventOnly: true },
+  // ── Accessory ──
+  { id: 'lucky_coin', name: '幸運硬幣', description: '古老硬幣帶嚟好運', icon: '🪙', slot: EquipmentSlot.Accessory, rarity: Rarity.Common, statBonuses: { luck: 5 }, bonusValue: 5 },
+  { id: 'moon_pendant', name: '月亮吊墜', description: '月光祝福，魅力提升', icon: '🌙', slot: EquipmentSlot.Accessory, rarity: Rarity.Uncommon, statBonuses: { charm: 10 }, bonusValue: 10 },
+  { id: 'four_leaf_clover', name: '四葉草', description: '傳說中嘅幸運物', icon: '🍀', slot: EquipmentSlot.Accessory, rarity: Rarity.Epic, statBonuses: { luck: 20, charm: 5 }, bonusValue: 25, eventOnly: true },
+]
+
+// ── Roguelike: Help Items Definitions ──
+
+export const HELP_ITEM_POOL: HelpItemDef[] = [
+  { id: 'berry', name: '魔法莓果', description: '回復心情 30%', icon: '🫐', rarity: Rarity.Common, effect: HelpEffect.RestoreMood, power: 30 },
+  { id: 'power_herb', name: '力量藥草', description: '暫時提升全能力 +10', icon: '🌿', rarity: Rarity.Uncommon, effect: HelpEffect.TempStatBoost, power: 10, duration: 500 },
+  { id: 'swift_potion', name: '疾走藥水', description: '步數 x2 持續 200 步', icon: '🧪', rarity: Rarity.Rare, effect: HelpEffect.StepMultiplier, power: 2, duration: 200 },
+  { id: 'attract_incense', name: '吸引香薰', description: '遭遇率提升 200 步', icon: '🪔', rarity: Rarity.Uncommon, effect: HelpEffect.EncounterBoost, power: 2, duration: 200 },
+  { id: 'xp_elixir', name: '經驗靈藥', description: '立即獲得 50 XP', icon: '✨', rarity: Rarity.Common, effect: HelpEffect.HealXp, power: 50 },
+]
+
+// ── Roguelike: Event Definitions ──
+
+export const EVENT_POOL: GameEvent[] = [
+  // ── Positive Events ──
+  {
+    id: 'sunny_meadow', name: '陽光草原', description: '你同寵物穿越一片溫暖嘅陽光草原，心情大好！', icon: '🌞', type: 'positive', weight: 15, minSteps: 0,
+    effects: [{ type: 'mood_change', value: 20 }, { type: 'step_bonus', value: 50 }],
+  },
+  {
+    id: 'rainbow_trail', name: '彩虹小徑', description: '天空出現彩虹，寵物興奮地奔跑，獲得額外步數！', icon: '🌈', type: 'positive', weight: 12, minSteps: 100,
+    effects: [{ type: 'step_bonus', value: 100 }, { type: 'mood_change', value: 10 }],
+  },
+  {
+    id: 'treasure_chest', name: '寶藏箱', description: '路邊發現一個古老寶箱！', icon: '📦', type: 'positive', weight: 10, minSteps: 500,
+    effects: [{ type: 'step_bonus', value: 200 }],
+    choices: [
+      { label: '打開佢', effects: [{ type: 'item_gain', value: 0, itemId: 'lucky_coin' }, { type: 'step_bonus', value: 50 }] },
+      { label: '唔好亂掂', effects: [{ type: 'step_bonus', value: 20 }] },
+    ],
+  },
+  {
+    id: 'wandering_merchant', name: '流浪商人', description: '一個神秘商人出現，送你一份禮物！', icon: '🧳', type: 'positive', weight: 8, minSteps: 1000,
+    effects: [{ type: 'item_gain', value: 0, itemId: 'berry' }, { type: 'xp_gain', value: 20 }],
+  },
+  {
+    id: 'healing_spring', name: '治癒泉水', description: '發現一眼閃閃發光嘅泉水，寵物完全回復！', icon: '⛲', type: 'positive', weight: 10, minSteps: 300,
+    effects: [{ type: 'mood_change', value: 50 }, { type: 'xp_gain', value: 30 }],
+  },
+  {
+    id: 'lucky_shooting_star', name: '流星', description: '一顆流星劃過天際，快啲許願！', icon: '⭐', type: 'positive', weight: 5, minSteps: 2000,
+    effects: [{ type: 'step_bonus', value: 500 }, { type: 'mood_change', value: 30 }],
+    eventOnly: true,
+  },
+
+  // ── Negative Events ──
+  {
+    id: 'mud_puddle', name: '泥濘水氹', description: '踩到一個大泥氹，行路變慢咗！', icon: '💧', type: 'negative', weight: 15, minSteps: 0,
+    effects: [{ type: 'step_loss', value: 30 }, { type: 'mood_change', value: -10 }],
+  },
+  {
+    id: 'thorn_bush', name: '荊棘叢', description: '穿過荊棘叢，寵物受傷了！', icon: '🌵', type: 'negative', weight: 12, minSteps: 100,
+    effects: [{ type: 'mood_change', value: -20 }],
+    choices: [
+      { label: '慢慢通過', effects: [{ type: 'mood_change', value: -10 }, { type: 'step_loss', value: 50 }] },
+      { label: '繞路行', effects: [{ type: 'step_loss', value: 100 }] },
+    ],
+  },
+  {
+    id: 'rain_storm', name: '暴風雨', description: '突然落大雨，寵物好驚！', icon: '🌧️', type: 'negative', weight: 12, minSteps: 200,
+    effects: [{ type: 'mood_change', value: -15 }, { type: 'step_loss', value: 50 }],
+  },
+  {
+    id: 'lost_path', name: '迷路', description: '喺森林入面迷路咗…', icon: '🧭', type: 'negative', weight: 8, minSteps: 500,
+    effects: [{ type: 'step_loss', value: 150 }],
+    choices: [
+      { label: '原路折返', effects: [{ type: 'step_loss', value: 100 }] },
+      { label: '繼續向前', effects: [{ type: 'step_loss', value: 200 }, { type: 'stat_boost', target: 'luck', value: 3 }] },
+    ],
+  },
+  {
+    id: 'goblin_ambush', name: '哥布林偷襲', description: '一隻哥布林跳出嚟偷走咗你嘅道具！', icon: '👺', type: 'negative', weight: 5, minSteps: 1500,
+    effects: [{ type: 'item_loss', value: 0 }, { type: 'step_loss', value: 100 }],
+    eventOnly: true,
+  },
+  {
+    id: 'rock_slide', name: '山崩', description: '前方山體滑坡，要繞好大個圈！', icon: '⛰️', type: 'negative', weight: 6, minSteps: 1000,
+    effects: [{ type: 'step_loss', value: 300 }, { type: 'mood_change', value: -10 }],
+  },
+]
+
+/** Calculate total stat bonuses from equipped items */
+export function calculateEquipmentBonus(
+  equipped: EquipmentDef[],
+  stat: keyof PetStats
+): number {
+  return equipped.reduce((sum, eq) => sum + ((eq.statBonuses[stat] as number) || 0), 0)
+}
+
+/** Roll a random event based on current state */
+export function rollEvent(totalSteps: number): GameEvent | null {
+  const available = EVENT_POOL.filter(e => totalSteps >= e.minSteps)
+  if (available.length === 0) return null
+
+  const totalWeight = available.reduce((s, e) => s + e.weight, 0)
+  let roll = Math.random() * totalWeight
+
+  for (const ev of available) {
+    roll -= ev.weight
+    if (roll <= 0) return ev
+  }
+
+  return available[available.length - 1]
+}
+
+/** Roll random equipment drop */
+export function rollEquipmentDrop(rarity: Rarity): EquipmentDef | null {
+  const available = EQUIPMENT_POOL.filter(e => !e.eventOnly)
+  if (available.length === 0) return null
+
+  // Higher rarity = better equipment
+  const rarityOrder: Record<string, number> = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 }
+  const maxRarity = rarityOrder[rarity] ?? 0
+  const candidates = available.filter(e => rarityOrder[e.rarity] <= maxRarity)
+
+  if (candidates.length === 0) return null
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}

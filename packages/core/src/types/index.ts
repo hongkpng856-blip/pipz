@@ -128,3 +128,82 @@ export interface DailyActivity {
   petsEncountered: number
   achievements: string[]
 }
+
+// ── Roguelike: Equipment ──
+export enum EquipmentSlot {
+  Head = 'head',
+  Body = 'body',
+  Feet = 'feet',
+  Accessory = 'accessory',
+}
+
+export interface EquipmentDef {
+  id: string
+  name: string
+  description: string
+  icon: string
+  slot: EquipmentSlot
+  rarity: Rarity
+  statBonuses: Partial<PetStats>  // which stats get boosted
+  bonusValue: number              // base bonus value
+  eventOnly?: boolean             // only obtainable via events
+}
+
+export interface EquippedItem {
+  equipmentId: string
+  petId: string
+  equippedAt: number
+}
+
+// ── Roguelike: Help Items (Consumables) ──
+export enum HelpEffect {
+  RestoreMood = 'restore_mood',
+  TempStatBoost = 'temp_stat_boost',
+  StepMultiplier = 'step_multiplier',
+  EncounterBoost = 'encounter_boost',
+  HealXp = 'heal_xp',
+}
+
+export interface HelpItemDef {
+  id: string
+  name: string
+  description: string
+  icon: string
+  rarity: Rarity
+  effect: HelpEffect
+  power: number           // magnitude of effect
+  duration?: number       // steps duration (0 = instant)
+}
+
+export interface InventoryEntry {
+  itemId: string
+  itemType: 'equipment' | 'help'
+  quantity: number
+}
+
+// ── Roguelike: Events ──
+export type EventType = 'positive' | 'negative'
+
+export interface EventEffect {
+  type: 'stat_boost' | 'mood_change' | 'step_bonus' | 'step_loss' | 'item_gain' | 'item_loss' | 'xp_gain'
+  target?: keyof PetStats
+  value: number
+  itemId?: string
+}
+
+export interface GameEvent {
+  id: string
+  name: string
+  description: string
+  icon: string
+  type: EventType
+  weight: number            // probability weight
+  minSteps: number          // minimum total steps to unlock
+  effects: EventEffect[]
+  eventOnly?: boolean       // only triggered by special conditions
+  choices?: {               // branch choices (optional)
+    label: string
+    effects: EventEffect[]
+  }[]
+}
+

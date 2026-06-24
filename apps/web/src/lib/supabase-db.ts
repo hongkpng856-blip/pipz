@@ -436,3 +436,103 @@ export async function createNotification(
 export const MILESTONES = [
   1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000,
 ]
+
+// ── Roguelike: Equipment ──
+
+export async function equipItem(
+  userId: string,
+  petId: string,
+  equipmentId: string,
+  slot: string
+): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('pet_equipment')
+    .upsert({ user_id: userId, pet_id: petId, equipment_id: equipmentId, slot } as never,
+      { onConflict: 'pet_id,slot', ignoreDuplicates: false })
+  return error?.message ?? null
+}
+
+export async function unequipSlot(petId: string, slot: string): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('pet_equipment')
+    .delete()
+    .eq('pet_id', petId)
+    .eq('slot', slot)
+  return error?.message ?? null
+}
+
+export async function loadPetEquipment(petId: string): Promise<{equipmentId: string; slot: string}[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('pet_equipment')
+    .select('equipment_id, slot')
+    .eq('pet_id', petId)
+  return ((data as unknown as {equipment_id: string; slot: string}[]) ?? []).map(d => ({
+    equipmentId: d.equipment_id, slot: d.slot,
+  }))
+}
+
+// ── Roguelike: Inventory ──
+
+export async function addInventoryItem(
+  userId: string,
+  itemId: string,
+  itemType: 'equipment' | 'help',
+  quantity: number = 1,
+): Promise<string | null> {
+  const supabase = db()
+  // Try insert first (fails if exists)
+  const { error: insertError } = await supabase
+    .from('inventory')
+    .insert({ user_id: userId, item_id: itemId, item_type: itemType, quantity } as never)
+
+  if (insertError?.message?.includes('duplicate key')) {
+    // Already exists — increment quantity
+    const { error: updateError } = await supabase.rpc('increment_inventory', {
+      p_user_id: userId, p_item_id: itemId, p_quantity: quantity,
+    } as never)
+    return updateError?.message ?? null
+  }
+  return insertError?.message ?? null
+}
+
+export async function removeInventoryItem(
+  userId: string,
+  itemId: string,
+  quantity: number = 1,
+): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase.rpc('decrement_inventory', {
+    p_user_id: userId, p_item_id: itemId, p_quantity: quantity,
+  } as never)
+  return error?.message ?? null
+}
+
+export async function loadInventory(userId: string): Promise<{itemId: string; itemType: string; quantity: number}[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('inventory')
+    .select('item_id, item_type, quantity')
+    .eq('user_id', userId)
+    .gt('quantity', 0)
+  return ((data as unknown as {item_id: string; item_type: string; quantity: number}[]) ?? []).map(d => ({
+    itemId: d.item_id, itemType: d.item_type, quantity: d.quantity,
+  }))
+}
+
+// ── Roguelike: Event Log ──
+
+export async function logEvent(
+  userId: string,
+  eventId: string,
+  petId?: string,
+  choiceIndex?: number,
+): Promise<void> {
+  const supabase = db()
+  await supabase.from('event_log').insert({
+    user_id: userId, event_id: eventId,
+    pet_id: petId ?? null, choice_index: choiceIndex ?? null,
+  } as never)
+}
