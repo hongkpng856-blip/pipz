@@ -9,6 +9,7 @@
   - **Cache busting:** Bumped `SPRITE_VERSION` to `v5` so SW cache serves fresh sprites
   - **Verification:** Production sprite 0.png confirmed 0 light pixels (r>180,g>180,b>180), Vision AI confirms "no white dots or artifacts"
 - **Stale canvas sprite on pets tab** — added `key={pet.id}` to all `PixelPetCanvas` instances so React properly unmounts/remounts the canvas when pet changes, preventing brief flash of wrong sprite on tab switch
+- **Fallback grid flash on mount** — changed initial sprite state from `'fallback'` to `'loading'` in `PixelPetCanvas.tsx` so the low-res procedural grid doesn't briefly show before the PNG sprite loads; canvas stays empty until PNG is ready, then draws directly
 
 ## v0.3.5 (2026-06-24)
 

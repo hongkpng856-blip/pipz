@@ -222,8 +222,25 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
+    } else if (status === 'loading') {
+      // Draw pulsing skeleton placeholder — instant visual feedback
+      const breathe = 0.5 + Math.sin(timeRef.current * 2) * 0.2
+      ctx.fillStyle = `rgba(255,255,255,${0.04 * breathe})`
+      const r = 8
+      const rx = 2, ry = 2, rw = cw - 4, rh = ch - 4
+      ctx.beginPath()
+      ctx.moveTo(rx + r, ry)
+      ctx.lineTo(rx + rw - r, ry)
+      ctx.arcTo(rx + rw, ry, rx + rw, ry + r, r)
+      ctx.lineTo(rx + rw, ry + rh - r)
+      ctx.arcTo(rx + rw, ry + rh, rx + rw - r, ry + rh, r)
+      ctx.lineTo(rx + r, ry + rh)
+      ctx.arcTo(rx, ry + rh, rx, ry + rh - r, r)
+      ctx.lineTo(rx, ry + r)
+      ctx.arcTo(rx, ry, rx + r, ry, r)
+      ctx.closePath()
+      ctx.fill()
     }
-    // If status === 'loading', draw nothing — avoids flash
 
     frameRef.current = requestAnimationFrame(animate)
   }, [animation, size, rarity, status, speciesIdx])
