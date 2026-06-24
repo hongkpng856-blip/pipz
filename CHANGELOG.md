@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.8 (2026-06-24)
+
+### Changed
+- **PetCompanion card redesigned:**
+  - Canvas shortened from 460px to 300px (wider play area ratio)
+  - Pet roams in **full 2D** (x + y axes) — can reach any pixel position within the card
+  - Added up/down walking behaviors + full directional roaming
+  - Randomised spawn position on pet change
+  - Shadow follows pet position dynamically (2D)
+  - Info overlay moved to bottom (slides up from action bar)
+  - Action buttons and overlays restyled for compact card layout
+  - Added subtle decorative paw-print dots on background
+
 ## v0.3.7 (2026-06-24)
 
 ### Changed

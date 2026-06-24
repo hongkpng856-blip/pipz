@@ -43,17 +43,19 @@ The entire app is a single page with 4 tabs and modals.
 
 ### Main View: Single State (PetCompanion)
 
-#### State A — PetCompanion (🐱 always-visible interactive pet card)
-Always rendered on the map tab (GPS on or off). Rendered by `PetCompanion.tsx`.
+#### State A — PetCompanion (🐱 full-screen interactive play card)
+Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 **Layout:**
-- Full-width canvas with **uniform dark card background** (`#141b2d`) + subtle dot texture, consistent with card border (`#1e2a45`)
-- **Pet character** (drawn via pixel-gen PNG sprite) walks freely across **~84% of the card width** (±42% canvas)
-- Pet can do **mischief jumps** — random bounce animation
+- Full-width canvas with **uniform dark card background** (`#141b2d`) + subtle paw-print decoration dots, card border (`#1e2a45`)
+- Canvas is **shorter/wider** (400×300, down from 400×460) for a spacious play area
+- **Pet character** (drawn via pixel-gen PNG sprite) roams freely in **full 2D** — any x,y position within the card, with 50px sprite margin
+- 4 walking directions: left / right / up / down + mischief jumps
+- Random spawn position when pet first appears
 - **Tap anywhere** on pet → ❤️ heart particles + sparkle effect
-- **No pet state**: egg at center + "未有寵物" text + progress bar toward first hatch
+- Shadow follows pet dynamically (2D ellipse under pet)
 
-**Info Panel (浮動 overlay, top-left):**
+**Info Panel (slide-up overlay from bottom):**
 - **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (no "未命名" fallback)
 - **Toggle button**: 📊 詳情 / 隱藏 (top-right corner)
 
@@ -77,9 +79,8 @@ Always rendered on the map tab (GPS on or off). Rendered by `PetCompanion.tsx`.
 - **4 Stats**: ⚡ Speed / 🍀 Luck / 💜 Charm / 🔋 Energy, each in mini cards
 - **Evolution stage**: label + progress bar toward next stage (amber `#f59e0b`)
 
-**Action Buttons (bottom):**
-- 🍖 餵食 / ✋ 摸頭 / 🎾 玩
-- Footer: 👣 steps · ❤️ mood% · rarity badge
+**Action Buttons (bottom strip):**
+- 🍖 餵食 / ✋ 摸頭 / 🎾 玩 — compact pill buttons, no footer bar
 
 #### State B — ~~WalkingCanvas~~ *(removed — no longer used)*
 Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by PetCompanion which is now always visible.
