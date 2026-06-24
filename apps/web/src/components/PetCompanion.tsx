@@ -384,7 +384,7 @@ export default function PetCompanion({
   }
 
   return (
-    <div style={{ width:'100%', background:'#141b2d', borderRadius:16, overflow:'hidden' }}>
+    <div style={{ width:'100%', background:'#141b2d', borderRadius:16, overflow:'hidden', position:'relative' }}>
       {/* ── Canvas (shorter/wider play area) ── */}
       <canvas
         ref={canvasRef}
@@ -407,7 +407,31 @@ export default function PetCompanion({
         </div>
       )}
 
-      {/* ── Always-visible info + skills panel ── */}
+      {/* ── Skills overlay (bottom of canvas) ── */}
+      {pet && skills.length > 0 && (
+        <div style={{
+          position:'absolute', bottom:4, left:8, right:8,
+          display:'flex', gap:3, flexWrap:'wrap', alignItems:'center',
+        }}>
+          <span style={{ fontSize:7, color:'#5a6d85', marginRight:1 }}>🎯</span>
+          {skills.map(s => (
+            <div key={s.id} style={{
+              background:'rgba(11,17,32,0.7)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:6,
+              padding:'2px 6px', display:'flex', alignItems:'center', gap:3, fontSize:8,
+            }}>
+              <span>{s.icon}</span>
+              <span style={{ color:'#f0f4f8', fontWeight:600 }}>{s.name}</span>
+              {s.effect && (
+                <span style={{ fontSize:6, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 3px' }}>
+                  加成中
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Always-visible info panel ── */}
       {pet && (
         <div style={{ padding:'10px 12px 8px', display:'flex', flexDirection:'column', gap:6 }}>
           {/* Row 1: Mood + Stats */}
@@ -450,29 +474,6 @@ export default function PetCompanion({
               ))}
             </div>
           </div>
-
-          {/* ── Skills section ── */}
-          {skills.length > 0 && (
-            <div>
-              <div style={{ fontSize:8, color:'#5a6d85', marginBottom:3 }}>🎯 目前技能</div>
-              <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
-                {skills.map(s => (
-                  <div key={s.id} style={{
-                    background:'rgba(20,27,45,0.6)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:6,
-                    padding:'2px 6px', display:'flex', alignItems:'center', gap:3, fontSize:8,
-                  }}>
-                    <span>{s.icon}</span>
-                    <span style={{ color:'#f0f4f8', fontWeight:600 }}>{s.name}</span>
-                    {s.effect && (
-                      <span style={{ fontSize:6, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 3px' }}>
-                        加成中
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
