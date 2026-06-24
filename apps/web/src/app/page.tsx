@@ -1220,7 +1220,8 @@ export default function HomePage() {
                 </>
               )}
 
-              {/* ── Dev Tools (collapsible — always visible even when logged out) ── */}
+              {/* ── Dev Tools (test account only) ── */}
+              {user?.email === 'pipztest@gmail.com' && (
               <div className="section" style={{marginTop:16}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
@@ -1286,6 +1287,7 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
+            )}
             </div>
           )}
           </>
