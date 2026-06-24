@@ -1,7 +1,7 @@
-// Pipz Service Worker — v2
+// Pipz Service Worker — v3
 // Cache-first for static assets, network-first for everything else
 
-const CACHE = 'pipz-v2'
+const CACHE = 'pipz-v3'
 const STATIC = [
   '/',
   '/manifest.json',
