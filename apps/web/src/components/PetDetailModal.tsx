@@ -172,6 +172,114 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               </div>
             </div>
 
+            {/* ── Equipment — WoW slots inside pet image card ── */}
+            {equipment && (
+              <div style={{ marginTop: 14 }} onDragOver={e => e.preventDefault()}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {(['head', 'body', 'feet', 'accessory'] as const).map(slot => {
+                    const label = { head: '頭', body: '身', feet: '腳', accessory: '飾' }[slot]
+                    const slotIcon = { head: '👑', body: '👕', feet: '👟', accessory: '📿' }[slot]
+                    const equipped = equipment.find(e => e.slot === slot)
+                    const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
+                    const rarColor = def ? RARITY_COLORS[def.rarity] : '#2a3a5a'
+                    const isDragOver = dragOverSlot === slot
+                    return (
+                      <div key={slot}
+                        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverSlot(slot) }}
+                        onDragLeave={() => setDragOverSlot(null)}
+                        onDrop={e => {
+                          e.preventDefault(); setDragOverSlot(null)
+                          const data = e.dataTransfer.getData('text/plain')
+                          if (data && onEquipToSlot) onEquipToSlot(slot, data)
+                        }}
+                        style={{
+                          aspectRatio: '1', borderRadius: 14,
+                          background: def
+                            ? `radial-gradient(circle at 50% 40%, ${rarColor}18, transparent 80%)`
+                            : '#1a2338',
+                          border: def
+                            ? `2px solid ${rarColor}55`
+                            : isDragOver
+                              ? '2px dashed #8b5cf688'
+                              : '2px dashed #2a3a5a',
+                          display: 'flex', flexDirection: 'column',
+                          alignItems: 'center', justifyContent: 'center',
+                          gap: 2, cursor: def ? 'pointer' : 'default',
+                          position: 'relative',
+                          transition: 'border-color 0.15s, background 0.15s',
+                          minHeight: 70,
+                        }}
+                        onClick={() => {
+                          if (def && onUnequip) onUnequip(slot)
+                          else if (!def && onOpenInventory) onOpenInventory()
+                        }}
+                      >
+                        {def ? (
+                          <>
+                            <span style={{ fontSize: 24, lineHeight: 1 }}>{def.icon}</span>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: rarColor, lineHeight: 1.1, textAlign: 'center', padding: '0 4px' }}>{def.name}</span>
+                            <span style={{ fontSize: 8, color: '#22c55e', lineHeight: 1 }}>+{def.bonusValue}</span>
+                            {onUnequip && (
+                              <div style={{
+                                position: 'absolute', top: 4, right: 4,
+                                width: 16, height: 16, borderRadius: 8,
+                                background: 'rgba(239,68,68,0.15)',
+                                border: '1px solid rgba(239,68,68,0.3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 8, color: '#ef4444', cursor: 'pointer', lineHeight: 1,
+                              }}
+                                onClick={e => { e.stopPropagation(); onUnequip(slot) }}
+                              >
+                                ✕
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ fontSize: 18, opacity: 0.25 }}>{slotIcon}</span>
+                            <span style={{ fontSize: 8, color: isDragOver ? '#8b5cf6' : '#3a4d65', fontWeight: 600 }}>{label}</span>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Available equipment — draggable */}
+                {availableEquipment && availableEquipment.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 9, color: '#5a6d85', marginBottom: 6, fontWeight: 600 }}>
+                      📦 可用裝備（拖到 slot 上）
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                      {availableEquipment.map(item => (
+                        <div key={item.id} draggable="true"
+                          onDragStart={e => {
+                            e.dataTransfer.setData('text/plain', item.id)
+                            e.dataTransfer.effectAllowed = 'move'
+                          }}
+                          style={{ flexShrink: 0, width: 44, textAlign: 'center', cursor: 'grab' }}
+                        >
+                          <div style={{
+                            width: 40, height: 40, borderRadius: 10,
+                            background: `${RARITY_COLORS[item.rarity]}15`,
+                            border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 18, margin: '0 auto',
+                          }}>
+                            {item.icon}
+                          </div>
+                          <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {item.name}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
 
           {/* ── Stats ── */}
@@ -330,139 +438,6 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               </div>
             )}
           </div>
-
-          {/* ── Equipment — WoW-style square slots ── */}
-          {!isMarket && equipment && (
-            <div style={{
-              background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
-              padding: 16, marginBottom: 12,
-            }}
-              onDragOver={e => e.preventDefault()}
-            >
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
-                👕 裝備
-              </div>
-              {/* 2×2 grid of square slots */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr',
-                gap: 8,
-              }}>
-                {(['head', 'body', 'feet', 'accessory'] as const).map(slot => {
-                  const label = { head: '頭', body: '身', feet: '腳', accessory: '飾' }[slot]
-                  const slotIcon = { head: '👑', body: '👕', feet: '👟', accessory: '📿' }[slot]
-                  const equipped = equipment.find(e => e.slot === slot)
-                  const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
-                  const rarColor = def ? RARITY_COLORS[def.rarity] : '#2a3a5a'
-                  const isDragOver = dragOverSlot === slot
-                  return (
-                    <div key={slot}
-                      onDragOver={e => {
-                        e.preventDefault()
-                        e.dataTransfer.dropEffect = 'move'
-                        setDragOverSlot(slot)
-                      }}
-                      onDragLeave={() => setDragOverSlot(null)}
-                      onDrop={e => {
-                        e.preventDefault()
-                        setDragOverSlot(null)
-                        const data = e.dataTransfer.getData('text/plain')
-                        if (data && onEquipToSlot) {
-                          onEquipToSlot(slot, data)
-                        }
-                      }}
-                      style={{
-                        aspectRatio: '1', borderRadius: 14,
-                        background: def
-                          ? `radial-gradient(circle at 50% 40%, ${rarColor}18, transparent 80%)`
-                          : '#1a2338',
-                        border: def
-                          ? `2px solid ${rarColor}55`
-                          : isDragOver
-                            ? '2px dashed #8b5cf688'
-                            : '2px dashed #2a3a5a',
-                        display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center',
-                        gap: 2, cursor: def ? 'pointer' : 'default',
-                        position: 'relative',
-                        transition: 'border-color 0.15s, background 0.15s',
-                        minHeight: 70,
-                      }}
-                      onClick={() => {
-                        if (def && onUnequip) {
-                          onUnequip(slot)
-                        } else if (!def && onOpenInventory) {
-                          onOpenInventory()
-                        }
-                      }}
-                    >
-                      {def ? (
-                        <>
-                          <span style={{ fontSize: 24, lineHeight: 1 }}>{def.icon}</span>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: rarColor, lineHeight: 1.1, textAlign: 'center', padding: '0 4px' }}>{def.name}</span>
-                          <span style={{ fontSize: 8, color: '#22c55e', lineHeight: 1 }}>+{def.bonusValue}</span>
-                          {onUnequip && (
-                            <div style={{
-                              position: 'absolute', top: 4, right: 4,
-                              width: 16, height: 16, borderRadius: 8,
-                              background: 'rgba(239,68,68,0.15)',
-                              border: '1px solid rgba(239,68,68,0.3)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 8, color: '#ef4444', cursor: 'pointer',
-                              lineHeight: 1,
-                            }}
-                              onClick={e => { e.stopPropagation(); onUnequip(slot) }}
-                            >
-                              ✕
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span style={{ fontSize: 18, opacity: 0.25 }}>{slotIcon}</span>
-                          <span style={{ fontSize: 8, color: isDragOver ? '#8b5cf6' : '#3a4d65', fontWeight: 600 }}>{label}</span>
-                        </>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Available equipment from inventory — draggable */}
-              {availableEquipment && availableEquipment.length > 0 && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 9, color: '#5a6d85', marginBottom: 6, fontWeight: 600 }}>
-                    📦 可用裝備（拖到 slot 上）
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                    {availableEquipment.map(item => (
-                      <div key={item.id} draggable="true"
-                        onDragStart={e => {
-                          e.dataTransfer.setData('text/plain', item.id)
-                          e.dataTransfer.effectAllowed = 'move'
-                        }}
-                        style={{
-                          flexShrink: 0, width: 44, textAlign: 'center', cursor: 'grab',
-                        }}
-                      >
-                        <div style={{
-                          width: 40, height: 40, borderRadius: 10,
-                          background: `${RARITY_COLORS[item.rarity]}15`,
-                          border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 18, margin: '0 auto',
-                        }}>
-                          {item.icon}
-                        </div>
-                        <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.name}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* ── Total Stats ── */}
           <div style={{

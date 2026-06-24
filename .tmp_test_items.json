@@ -1,0 +1,11 @@
+[
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"leaf_crown","item_type":"equipment","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"leaf_cloak","item_type":"equipment","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"grass_sandals","item_type":"equipment","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"lucky_coin","item_type":"equipment","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"bone_helm","item_type":"equipment","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"berry","item_type":"help","quantity":3},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"power_herb","item_type":"help","quantity":2},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"swift_potion","item_type":"help","quantity":1},
+  {"user_id":"0ca58feb-4714-4695-9395-d846f869126f","item_id":"xp_elixir","item_type":"help","quantity":5}
+]

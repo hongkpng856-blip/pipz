@@ -29,7 +29,7 @@ interface EggItem {
   collectedAt: number
 }
 
-type Tab = 'map' | 'pets' | 'eggs' | 'community'
+type Tab = 'map' | 'pets' | 'eggs' | 'community' | 'inventory'
 
 export default function HomePage() {
   const [steps, setSteps] = useState(0)
@@ -1012,79 +1012,6 @@ export default function HomePage() {
                   })()}
                 </div>
               </div>
-
-              {/* ════ Inventory Card at bottom ════ */}
-              {user && (
-                <div className="section" style={{marginTop:12}}>
-                  <div
-                    onClick={() => openInventory()}
-                    style={{
-                      background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
-                      padding: '12px 14px', cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
-                      <span style={{fontSize:12, fontWeight:700, color:'#f0f4f8'}}>🎒 背包</span>
-                      <span style={{fontSize:10, color:'#5a6d85'}}>
-                        {inventory.filter(e => e.itemType === 'help').length}道具 · {inventory.filter(e => e.itemType === 'equipment').length}裝備
-                      </span>
-                    </div>
-                    {inventory.length === 0 ? (
-                      <div style={{fontSize:11, color:'#3a4d65', textAlign:'center', padding:'12px 0'}}>
-                        未有物品 — 行路探索拎道具！
-                      </div>
-                    ) : (
-                      <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4}}>
-                        {(() => {
-                          const HELP_ITEM_POOL_LOCAL = HELP_ITEM_POOL
-                          const EQUIPMENT_POOL_LOCAL = EQUIPMENT_POOL
-                          const shown = inventory.slice(0, 8).map(e => {
-                            const def = e.itemType === 'help'
-                              ? HELP_ITEM_POOL_LOCAL.find(d => d.id === e.itemId)
-                              : EQUIPMENT_POOL_LOCAL.find(d => d.id === e.itemId)
-                            return { ...e, def }
-                          }).filter(e => e.def)
-                          return shown.map((item, i) => {
-                            const def = item.def!
-                            const rarColor = 'rarity' in def && def.rarity ? (RARITY_COLORS[def.rarity as Rarity] || '#9ca3af') : '#9ca3af'
-                            return (
-                              <div key={item.itemId + i} style={{
-                                flexShrink:0, textAlign:'center', width: 44,
-                                position: 'relative',
-                              }}>
-                                <div style={{
-                                  width:40, height:40, borderRadius:10,
-                                  background: `${rarColor}15`,
-                                  border: `1px solid ${rarColor}22`,
-                                  display:'flex', alignItems:'center', justifyContent:'center',
-                                  fontSize:18, margin:'0 auto',
-                                }}>
-                                  {(def as any).icon}
-                                </div>
-                                {item.quantity > 1 && (
-                                  <span style={{
-                                    position:'absolute', bottom: -2, right: 2,
-                                    fontSize:7, fontWeight:700, color:'#f0f4f8',
-                                    background:'#0b1120', borderRadius:6,
-                                    padding:'0 4px', lineHeight:'14px',
-                                    border:'1px solid #1e2a45',
-                                  }}>x{item.quantity}</span>
-                                )}
-                              </div>
-                            )
-                          })
-                        })()}
-                        {inventory.length > 8 && (
-                          <div style={{flexShrink:0, width:36, height:40, display:'flex', alignItems:'center', justifyContent:'center', color:'#5a6d85', fontSize:10}}>
-                            +{inventory.length - 8}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
             </div>
           )}
 
@@ -1496,6 +1423,93 @@ export default function HomePage() {
             )}
             </div>
           )}
+
+          {/* ════ INVENTORY TAB ════ */}
+          {tab === 'inventory' && user && (
+            <div className="fade-up" style={{paddingBottom: 20}}>
+              <div className="section-header">
+                <span className="section-title">🎒 背包</span>
+                <span className="section-count">
+                  {inventory.filter((i: any) => i.itemType === 'help').length}道具 · {inventory.filter((i: any) => i.itemType === 'equipment').length}裝備
+                </span>
+              </div>
+
+              {inventory.length === 0 ? (
+                <div className="card empty-state">
+                  <div className="empty-icon">📭</div>
+                  <div className="empty-text">未有物品 — 行路探索拎道具啦！</div>
+                </div>
+              ) : (
+                <div style={{display:'flex', flexDirection:'column', gap:8, padding:'0 4px'}}>
+                  {(() => {
+                    const items = inventory.map((e: any) => {
+                      const def = e.itemType === 'help'
+                        ? HELP_ITEM_POOL.find(d => d.id === e.itemId)
+                        : EQUIPMENT_POOL.find(d => d.id === e.itemId)
+                      return { ...e, def }
+                    }).filter((x: any) => x.def)
+
+                    return items.map((item: any, i: number) => {
+                      const def = item.def
+                      const isHelp = 'effect' in def
+                      const rarColor = def.rarity ? (RARITY_COLORS[def.rarity as Rarity] || '#9ca3af') : '#9ca3af'
+                      return (
+                        <div key={item.itemId + i} style={{
+                          background: '#141b2d', border: `1px solid ${rarColor}22`, borderRadius: 14,
+                          padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10,
+                        }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: `${rarColor}15`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 18, flexShrink: 0,
+                          }}>
+                            {def.icon}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8' }}>{def.name}</span>
+                              <span style={{ fontSize: 8, color: rarColor, fontWeight: 600 }}>
+                                {RARITY_LABELS[def.rarity as Rarity] || ''}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 10, color: '#5a6d85', marginTop: 1, lineHeight: 1.3 }}>
+                              {def.description || ''}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                            {item.quantity > 1 && (
+                              <span style={{ fontSize: 10, color: '#94a5b8' }}>x{item.quantity}</span>
+                            )}
+                            {isHelp ? (
+                              <button onClick={() => { useHelpItem(def); setTab('map') }}
+                                style={{
+                                  fontSize: 8, fontWeight: 700, padding: '3px 10px', borderRadius: 8,
+                                  border: '1px solid #22c55e44', background: 'rgba(34,197,94,0.12)',
+                                  color: '#22c55e', cursor: 'pointer', fontFamily: 'inherit',
+                                }}>
+                                使用
+                              </button>
+                            ) : (
+                              <button onClick={() => setDetailPetId(pets[0]?.id)}
+                                style={{
+                                  fontSize: 8, fontWeight: 700, padding: '3px 10px', borderRadius: 8,
+                                  border: '1px solid #3b82f644', background: 'rgba(59,130,246,0.12)',
+                                  color: '#3b82f6', cursor: 'pointer', fontFamily: 'inherit',
+                                }}>
+                                裝備
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           </>
           )}
 
@@ -1511,6 +1525,7 @@ export default function HomePage() {
               { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
               { k: 'eggs' as Tab, icon: '🥚', label: '蛋' },
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
+              { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
               <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
