@@ -15,6 +15,9 @@
 - **WoW-style square equipment slots**: 2×2 grid in PetDetailModal, shows equipped item icon + rarity border, empty slots as dashed frames with slot label
 - **Drag-and-drop equipping**: "available equipment" row in PetDetailModal with draggable items; drop onto slot to equip; drag-over highlighting
 - **Click-to-equip/unequip**: click empty slot opens inventory; click equipped item shows ✕ to unequip
+- **Backpack as 5th nav tab**: moved from header button + bottom card to its own tab (地圖→寵物→蛋→社群→背包); nav grid expanded to 5 columns
+- **Equipment slots inside pet image card**: moved WoW-style 2×2 square grid from separate card into the pet display card (below mood bar)
+- **Test account items**: seeded `pipztest@gmail.com` with 5 equipment + 4 help items for drag-drop testing
 
 ### Changed
 - **Walking loop**: now also rolls for roguelike events alongside egg encounters (`eventStepCounter` every ~800 steps)
