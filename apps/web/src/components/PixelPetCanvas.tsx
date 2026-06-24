@@ -29,27 +29,14 @@ const RARITY_GLOWS: Record<string, string> = {
   legendary: '#f59e0baa',
 }
 
-/** Sample edge pixels to detect background color, remove with ±tolerance */
-function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
+/**
+ * Remove warm-beige background color (rgb(255,241,232)) from AI-generated
+ * PICO-8 style sprites — hardcoded for reliability instead of edge-sampling.
+ */
+function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const id = ctx.getImageData(0, 0, w, h)
-  // Sample edge pixels (top + bottom rows) to find background color
-  const freq: Record<string, number> = {}
-  const sample = (x: number, y: number) => {
-    const i = (y * w + x) * 4
-    // Skip fully transparent pixels — their RGB may be garbage
-    if (id.data[i + 3] < 128) return
-    const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
-    freq[key] = (freq[key] || 0) + 1
-  }
-  for (let x = 0; x < w; x++) {
-    sample(x, 0)
-    sample(x, h - 1)
-  }
-  // Most common edge color = background
-  const bgKey = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0]
-  if (!bgKey) return
-  const [br, bg, bb] = bgKey.split(',').map(Number)
-  const TOL = 20 // tolerance for color match
+  const TOL = 40 // tolerance for bg color match
+  const br = 255, bg = 241, bb = 232
   for (let i = 0; i < id.data.length; i += 4) {
     if (
       Math.abs(id.data[i] - br) <= TOL &&
@@ -98,8 +85,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       const ox = oc.getContext('2d')!
       ox.drawImage(img, 0, 0)
 
-      // Remove background color (detected from edge pixels)
-      removeBgOnCanvas(ox, img.width, img.height)
+      // Remove warm-beige background (safety net — sprites should already be transparent)
+      removeBg(ox, img.width, img.height)
 
       offscreenRef.current = oc
       if (!cancelled) setStatus('png')
@@ -257,9 +244,9 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       height={canvasH}
       onClick={handleClick}
       style={{
-        display: 'block',
-        cursor: onClick ? 'pointer' : 'default',
+        width: canvasW, height: canvasH,
         imageRendering: 'pixelated',
+        borderRadius: 12, cursor: onClick ? 'pointer' : undefined,
         ...style,
       }}
     />
