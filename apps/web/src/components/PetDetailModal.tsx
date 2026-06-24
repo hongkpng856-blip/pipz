@@ -44,7 +44,6 @@ const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4:
 export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId, equipment, onUnequip, onEquipToSlot, availableEquipment, hasInventory, onOpenInventory }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const [listPrice, setListPrice] = useState('500')
-  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
 
   // Reset list price when pet changes
   useEffect(() => { setListPrice('500'); setShowDelete(false) }, [pet.id])
@@ -174,7 +173,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
 
             {/* ── Equipment — WoW slots inside pet image card ── */}
             {equipment && (
-              <div style={{ marginTop: 14 }} onDragOver={e => e.preventDefault()}>
+              <div style={{ marginTop: 14 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {(['head', 'body', 'feet', 'accessory'] as const).map(slot => {
                     const label = { head: '頭', body: '身', feet: '腳', accessory: '飾' }[slot]
@@ -182,16 +181,8 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                     const equipped = equipment.find(e => e.slot === slot)
                     const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
                     const rarColor = def ? RARITY_COLORS[def.rarity] : '#2a3a5a'
-                    const isDragOver = dragOverSlot === slot
                     return (
                       <div key={slot}
-                        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverSlot(slot) }}
-                        onDragLeave={() => setDragOverSlot(null)}
-                        onDrop={e => {
-                          e.preventDefault(); setDragOverSlot(null)
-                          const data = e.dataTransfer.getData('text/plain')
-                          if (data && onEquipToSlot) onEquipToSlot(slot, data)
-                        }}
                         style={{
                           aspectRatio: '1', borderRadius: 14,
                           background: def
@@ -199,12 +190,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                             : '#1a2338',
                           border: def
                             ? `2px solid ${rarColor}55`
-                            : isDragOver
-                              ? '2px dashed #8b5cf688'
-                              : '2px dashed #2a3a5a',
+                            : '2px dashed #2a3a5a',
                           display: 'flex', flexDirection: 'column',
                           alignItems: 'center', justifyContent: 'center',
-                          gap: 2, cursor: def ? 'pointer' : 'default',
+                          gap: 2, cursor: 'pointer',
                           position: 'relative',
                           transition: 'border-color 0.15s, background 0.15s',
                           minHeight: 70,
@@ -237,7 +226,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                         ) : (
                           <>
                             <span style={{ fontSize: 18, opacity: 0.25 }}>{slotIcon}</span>
-                            <span style={{ fontSize: 8, color: isDragOver ? '#8b5cf6' : '#3a4d65', fontWeight: 600 }}>{label}</span>
+                            <span style={{ fontSize: 8, color: '#3a4d65', fontWeight: 600 }}>{label}</span>
                           </>
                         )}
                       </div>
@@ -245,35 +234,48 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                   })}
                 </div>
 
-                {/* Available equipment — draggable */}
+                {/* Available equipment — tap to equip */}
                 {availableEquipment && availableEquipment.length > 0 && (
                   <div style={{ marginTop: 10 }}>
                     <div style={{ fontSize: 9, color: '#5a6d85', marginBottom: 6, fontWeight: 600 }}>
-                      📦 可用裝備（拖到 slot 上）
+                      📦 可用裝備（點擊裝備）
                     </div>
                     <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                      {availableEquipment.map(item => (
-                        <div key={item.id} draggable="true"
-                          onDragStart={e => {
-                            e.dataTransfer.setData('text/plain', item.id)
-                            e.dataTransfer.effectAllowed = 'move'
-                          }}
-                          style={{ flexShrink: 0, width: 44, textAlign: 'center', cursor: 'grab' }}
-                        >
-                          <div style={{
-                            width: 40, height: 40, borderRadius: 10,
-                            background: `${RARITY_COLORS[item.rarity]}15`,
-                            border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 18, margin: '0 auto',
-                          }}>
-                            {item.icon}
+                      {availableEquipment.map(item => {
+                        // Find first empty slot matching this item's slot type
+                        const findSlot = () => {
+                          const eqSlot = item.slot
+                          const isEquipped = equipment.some(e => e.slot === eqSlot)
+                          return isEquipped ? null : eqSlot
+                        }
+                        return (
+                          <div key={item.id}
+                            onClick={() => {
+                              const targetSlot = findSlot()
+                              if (targetSlot && onEquipToSlot) {
+                                onEquipToSlot(targetSlot, item.id)
+                              }
+                            }}
+                            style={{
+                              flexShrink: 0, width: 44, textAlign: 'center', cursor: 'pointer',
+                              opacity: item.slot && equipment.some(e => e.slot === item.slot) ? 0.4 : 1,
+                            }}
+                          >
+                            <div style={{
+                              width: 40, height: 40, borderRadius: 10,
+                              background: `${RARITY_COLORS[item.rarity]}15`,
+                              border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 18, margin: '0 auto',
+                            }}>
+                              {item.icon}
+                            </div>
+                            <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {item.name}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {item.name}
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
