@@ -49,8 +49,9 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 **Layout:**
 |- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`
 |- **Canvas** (400×300): pixel pet roams freely in full 2D with shadow, mood emoji, tap reactions
-  - **Skills pill strip**: drawn directly on canvas 2D at bottom-left (semi-transparent dark pills with icon + name; gameplay effects show amber 🟡「加成中」badge)
+  - **Skills pill strip**: drawn on canvas 2D at **left side** (vertical stack of semi-transparent dark pills with icon + name; gameplay effects show amber 🟡「加成中」badge)
   - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
+|- **Sprite**: rendered at ~96px (was 54px) — larger, higher-quality pet display
 |- **⤵ Below canvas — always-visible info panel** (no toggle, no skills section):
   1. **Row 1** (flex, side-by-side):
      - **Mood column**: 😊 mood emoji + %, gradient mood bar (green/amber/red), 🌟 evolution stage + Lv., rarity badge
@@ -61,8 +62,9 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 ┌─────────────────────────────────┐
 │ Canvas 400×300                  │
 │  (#水晶 badge top-left)          │
+│  [⚔️突進]                        │ ← skills vertical left
 │         🐱 walking sprite        │
-│  [⚔️突進] [🛡️護盾] [👟雙倍步]  │ ← skills drawn on canvas 2D
+│  [🛡️護盾]                        │
 ├─────────────────────────────────┤
 │ 😊 開心  100%      ⚡🍀💜🔋    │
 │ ████████████       999 999 999  │ ← mood bar + 4 stats(mini)
