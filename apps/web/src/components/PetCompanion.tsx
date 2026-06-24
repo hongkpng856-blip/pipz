@@ -25,6 +25,8 @@ const MOOD_CN: Record<string, string> = {
   happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
 }
 
+const SPRITE_VERSION = 'v4' // Bump when sprite assets change (forces cache refresh)
+
 /** Remove warm-beige background (rgb(255,241,232)) from AI-generated sprites */
 function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const id = ctx.getImageData(0, 0, w, h)
@@ -118,7 +120,7 @@ export default function PetCompanion({
     img.onerror = () => {
       if (!cancelled) setStatus('fallback')
     }
-    img.src = `/pixel-gen/sprites/${idx}.png`
+    img.src = `/pixel-gen/sprites/${idx}.png?v=${SPRITE_VERSION}`
     return () => { cancelled = true }
   }, [pet])
 

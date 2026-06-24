@@ -3,6 +3,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { generatePixelPet, PixelPetData, getSpeciesIndex } from '@pipz/core'
 
+const SPRITE_VERSION = 'v4' // Bump when sprite assets change (forces cache refresh)
+
 interface Props {
   seed: number
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
@@ -94,7 +96,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     img.onerror = () => {
       if (!cancelled) setStatus('fallback')
     }
-    img.src = `/pixel-gen/sprites/${speciesIdx}.png`
+    img.src = `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
     return () => { cancelled = true }
   }, [speciesIdx])
 
