@@ -230,26 +230,19 @@ export default function PetCompanion({
     const W = canvas.width, H = canvas.height
     timeRef.current += 0.02
 
-    // ── Draw room ──
-    const floorY = H * 0.38
-    ctx.fillStyle = '#16122a'; ctx.fillRect(0, 0, W, floorY)
-    ctx.fillStyle = '#1e1a35'
-    for (let i = 0; i < 8; i++) ctx.fillRect((i/8)*W, 0, 1, floorY)
-    ctx.fillStyle = '#2a2550'; ctx.fillRect(0, floorY-4, W, 4)
-    // Floor tiles
-    const tile = 24
-    for (let y = 0; y < Math.ceil((H-floorY)/tile)+1; y++) {
-      for (let x = 0; x < Math.ceil(W/tile)+1; x++) {
-        ctx.fillStyle = (x+y)%2===0 ? '#2a2040' : '#1e1835'
-        ctx.fillRect(x*tile, floorY+y*tile, tile, tile)
+    // ── Card background (uniform dark) ──
+    const cardBg = '#141b2d'
+    ctx.fillStyle = cardBg; ctx.fillRect(0, 0, W, H)
+    // Subtle grid dots for texture
+    ctx.fillStyle = 'rgba(255,255,255,0.02)'
+    for (let x = 30; x < W; x += 30) {
+      for (let y = 40; y < H; y += 40) {
+        ctx.fillRect(x, y, 1.5, 1.5)
       }
     }
-    // Rug
-    const rugW = W*0.75, rugH = H*0.2, rugX = (W-rugW)/2
-    const rugY = floorY + (H-floorY-rugH)*0.2
-    const r = () => { ctx.beginPath(); ctx.roundRect(rugX, rugY, rugW, rugH, 12); ctx.fill() }
-    ctx.fillStyle = '#3a2a5a'; r()
-    ctx.strokeStyle = '#4a3a6a'; ctx.lineWidth=1; r()
+    // Bottom accent line (card border style)
+    ctx.fillStyle = '#1e2a45'
+    ctx.fillRect(0, H - 1, W, 1)
 
     // Draw pet
     const pd = petDataRef.current
@@ -257,11 +250,11 @@ export default function PetCompanion({
     if (pet && (status !== 'loading')) {
       // Only render when NOT loading — avoids procedural→PNG flash
       const ps = 6
-      const gy = rugY + rugH * 0.6
+      const gy = H * 0.52
       const bx = behaviorRef.current
-      if (bx === 'walkLeft') { xRef.current -= 1.2; if (xRef.current < -W * 0.25) behaviorTimer.current = 0 }
-      if (bx === 'walkRight') { xRef.current += 1.2; if (xRef.current > W * 0.25) behaviorTimer.current = 0 }
-      xRef.current = Math.max(-W * 0.25, Math.min(W * 0.25, xRef.current))
+      if (bx === 'walkLeft') { xRef.current -= 1.2; if (xRef.current < -W * 0.42) behaviorTimer.current = 0 }
+      if (bx === 'walkRight') { xRef.current += 1.2; if (xRef.current > W * 0.42) behaviorTimer.current = 0 }
+      xRef.current = Math.max(-W * 0.42, Math.min(W * 0.42, xRef.current))
       bounceRef.current = Math.max(0, bounceRef.current - 0.05)
 
       const idleBob = bx === 'idle' ? Math.sin(timeRef.current * 3) * 1.5 : 0
@@ -378,7 +371,7 @@ export default function PetCompanion({
   }
 
   return (
-    <div style={{ width:'100%', position:'relative', overflow:'hidden', background:'#0b1120' }}>
+    <div style={{ width:'100%', position:'relative', overflow:'hidden', background:'#141b2d' }}>
       <canvas
         ref={canvasRef}
         width={400} height={460}
@@ -392,8 +385,7 @@ export default function PetCompanion({
           <div style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10,
             color:'#f0f4f8', fontSize:14, fontWeight:700, padding:'4px 12px',
             fontFamily:'inherit', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', gap:6 }}>
-            {pet.name || '未命名'}
-            <span style={{ fontSize:8, fontWeight:400, color:'#5a6d85', marginLeft:4 }}>#{speciesName}</span>
+            <span style={{ fontSize:12, fontWeight:700 }}>#{speciesName}</span>
           </div>
 
           <div style={{ flex:1 }} />
