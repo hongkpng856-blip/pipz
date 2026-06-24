@@ -54,6 +54,8 @@ export default function HomePage() {
   const [showEncounterEgg, setShowEncounterEgg] = useState(false)
   const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [showDevTools, setShowDevTools] = useState(false)
+  const [simulating, setSimulating] = useState(false)
+  const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [newPetId, setNewPetId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
@@ -419,6 +421,20 @@ export default function HomePage() {
   }
 
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
+
+  // ── Walk simulation: continuous steps for testing ──
+  useEffect(() => {
+    if (simulating) {
+      simRef.current = setInterval(() => {
+        // Simulate real walking: 1-4 steps every 800ms (≈ 4,500-18,000 steps/hr)
+        const steps = Math.floor(Math.random() * 4) + 1
+        addSt(steps)
+      }, 800)
+    } else {
+      if (simRef.current) { clearInterval(simRef.current); simRef.current = null }
+    }
+    return () => { if (simRef.current) { clearInterval(simRef.current); simRef.current = null } }
+  }, [simulating])
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
@@ -1120,7 +1136,14 @@ export default function HomePage() {
                         style={{fontSize:10, padding:'4px 12px'}}>
                         +500 測試步數
                       </button>
-                      <span style={{fontSize:9, color:'#5a6d85'}}>🛰️ GPS 記錄真實步數</span>
+                      <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
+                        onClick={() => setSimulating(v => !v)}
+                        style={{fontSize:10, padding:'4px 12px', minWidth: 80}}>
+                        {simulating ? '⏹ 停止' : '🚶 模擬行路'}
+                      </button>
+                      <span style={{fontSize:9, color:'#5a6d85'}}>
+                        {simulating ? '🟢 模擬中...' : '🛰️ GPS 記錄真實步數'}
+                      </span>
                     </div>
                     {log.length > 0 && (
                       <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
