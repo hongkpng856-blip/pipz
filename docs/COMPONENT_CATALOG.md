@@ -582,12 +582,13 @@ Full-screen overlay shown after hatching an egg (triggered by `newPetId` state).
 ### Behaviour
 - z-index 200 (above all other modals)
 - Backdrop: `rgba(0,0,0,0.8)` with `backdrop-filter: blur(8px)`
-- Click outside → dismisses popup + clears `newPetId`
-- "🎉 睇下寵物" button → dismisses popup + switches to pets tab
-- **NEW badge** appears on the hatched pet's card in pets tab (team slot or other pets grid)
-- NEW badge uses **3-layer detection**: `newPetId` match → `createdAt` recency (within 5 min) → dismissed Set ref
-- **Persists across reloads**: saved to `localStorage` key `pipz_new_pet` until dismissed
-- **Dismissed**: clicking the pet card or dismissing the hatch popup removes the badge (`dismissedNewPets` ref Set + localStorage clear)
+|- Click outside → dismisses popup + clears `newPetId` (adds to `dismissedNewPets` Set to prevent auto-detect re-creation)
+|- "🎉 睇下寵物" button → `dismissNewPet()` + switches to pets tab (closes popup, prevents auto-detect loop)
+|- **NEW badge** appears on the hatched pet's card in pets tab (team slot or other pets grid)
+|- NEW badge uses **2-layer detection**: `createdAt` recency (within 5 min) → `newestPet` fallback (newest non-favorite)
+|- Badge is **independent of popup state** — uses dedicated `badgeDismissed` ref instead of `dismissedNewPets`/`newPetId`
+|- **Dismissed**: clicking the pet card adds to `badgeDismissed` ref → badge disappears immediately
+|- **Auto-expires**: badge auto-hides 5 min after pet creation (recency check timeout)
 
 ### CSS
 ```css
