@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex } from '@pipz/core'
+import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex, PetSkill, SkillEffect } from '@pipz/core'
 
 interface Props {
   pet: Pet | null
@@ -12,6 +12,7 @@ interface Props {
   steps: number
   totalSteps: number
   evolutionStage: number
+  skills: PetSkill[]
 }
 
 type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief' | 'happy'
@@ -53,7 +54,7 @@ function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 export default function PetCompanion({
-  pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage,
+  pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage, skills,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
@@ -461,6 +462,29 @@ export default function PetCompanion({
             </span>
             <span className="pet-badge" style={{ color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:8 }}>{RARITY_LABELS[pet.rarity]}</span>
           </div>
+
+          {/* ── Active Skills ── */}
+          {skills.length > 0 && (
+            <div style={{ marginTop:6 }}>
+              <div style={{ fontSize:8, color:'#5a6d85', marginBottom:4 }}>🎯 目前技能</div>
+              <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                {skills.map(s => (
+                  <div key={s.id} style={{
+                    background:'rgba(20,27,45,0.6)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:6,
+                    padding:'3px 7px', display:'flex', alignItems:'center', gap:4, fontSize:9,
+                  }}>
+                    <span>{s.icon}</span>
+                    <span style={{ color:'#f0f4f8', fontWeight:600 }}>{s.name}</span>
+                    {s.effect && (
+                      <span style={{ fontSize:7, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 4px' }}>
+                        加成中
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

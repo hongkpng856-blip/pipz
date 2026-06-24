@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -740,6 +740,7 @@ export default function HomePage() {
                     steps={steps}
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
+                    skills={pet?.skills ?? []}
                   />
                 </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
@@ -749,11 +750,22 @@ export default function HomePage() {
                     <div style={{textAlign:'center'}}>
                       <div className="steps-num">{ready ? steps.toLocaleString() : '0'}</div>
                       <div className="steps-label" style={{marginTop:2}}>今日步數</div>
+                      {/* Skill effect hints for today steps */}
+                      {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (
+                        <div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>👟 雙倍步伐</div>
+                      )}
+                      {pet?.skills?.some(s => s.effect === SkillEffect.StepBonus) && (
+                        <div style={{fontSize:7, color:'#22d3ee', marginTop:1}}>💨 疾步如飛</div>
+                      )}
                     </div>
                     <div style={{width:1, background:'#1e2a45'}} />
                     <div style={{textAlign:'center'}}>
                       <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
                       <div className="steps-label" style={{marginTop:2}}>總步數</div>
+                      {/* Energy bonus hint */}
+                      {pet?.skills?.some(s => s.effect === SkillEffect.EnergyBonus) && (
+                        <div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>⚡ 能量過載</div>
+                      )}
                     </div>
                     <div style={{width:1, background:'#1e2a45'}} />
                     <div style={{textAlign:'center'}}>
