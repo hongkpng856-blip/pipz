@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.9 (2026-06-24)
+
+### Changed
+- **Dev tools moved to community tab**: "+500 測試步數" button + log moved from map tab to a collapsible 🔧 Dev section at the bottom of 🏪 社群 tab (hidden by default, click to reveal)
+
 ## v0.3.8 (2026-06-24)
 
 ### Changed
