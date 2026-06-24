@@ -25,20 +25,27 @@ const MOOD_CN: Record<string, string> = {
   happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
 }
 
-const SPRITE_VERSION = 'v4' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v5' // Bump when sprite assets change (forces cache refresh)
 
-/** Remove warm-beige background (rgb(255,241,232)) from AI-generated sprites */
+/** Remove warm-beige background (rgb(255,241,232)) and PICO-8 bg gray (rgb(194,195,199)) */
 function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const id = ctx.getImageData(0, 0, w, h)
   const TOL = 40
   const br = 255, bg = 241, bb = 232
+  const pico_r = 194, pico_g = 195, pico_b = 199
   for (let i = 0; i < id.data.length; i += 4) {
+    const a = id.data[i + 3]
+    if (a === 0) continue
+    const r = id.data[i], g = id.data[i + 1], b = id.data[i + 2]
     if (
-      Math.abs(id.data[i] - br) <= TOL &&
-      Math.abs(id.data[i + 1] - bg) <= TOL &&
-      Math.abs(id.data[i + 2] - bb) <= TOL &&
-      id.data[i + 3] > 0
+      Math.abs(r - br) <= TOL &&
+      Math.abs(g - bg) <= TOL &&
+      Math.abs(b - bb) <= TOL
     ) {
+      id.data[i + 3] = 0
+      continue
+    }
+    if (r === pico_r && g === pico_g && b === pico_b) {
       id.data[i + 3] = 0
     }
   }
