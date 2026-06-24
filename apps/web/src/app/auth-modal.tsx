@@ -160,6 +160,20 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               </button>
             </div>
 
+            {/* ── One-click test login ── */}
+            <button onClick={() => {
+              setEmail('pipztest@gmail.com')
+              setPassword('Test123456!')
+              setTimeout(() => handlePasswordAuth(), 100)
+            }} style={{
+              width:'100%', padding:'8px 0', borderRadius:10, border:'1px solid rgba(34,197,94,0.3)',
+              background:'rgba(34,197,94,0.1)', color:'#22c55e', fontSize:11, fontWeight:600,
+              cursor:'pointer', fontFamily:'inherit', marginBottom:10, display:'flex',
+              alignItems:'center', justifyContent:'center', gap:4,
+            }}>
+              <span>🔑 一鍵登入測試帳號</span>
+            </button>
+
             {/* Email */}
             <input
               type="email" placeholder="你嘅電郵"
