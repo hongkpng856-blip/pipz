@@ -78,23 +78,24 @@ stat = floor(base * baseMultiplier * (1 + levelBonus))
 
 Each stat (speed, luck, charm, energy) is rolled independently.
 
-### Skill Generation
+### Skill Generation (Passive Effects)
 
-```
-available = all skills where skill.minRarity <= pet.rarity
-shuffled = random shuffle of available
+Skills are random abilities assigned on hatch. There are two types:
 
-count = {
-    Common: 1,
-    Uncommon: 1 or 2 (50%),
-    Rare: 2,
-    Epic: 2 or 3 (50%),
-    Legendary: 3,
-}
+**Stat buffs** — boost pet stats (speed/luck/charm/energy). These increase the raw stat value.
 
-skills = first `count` skills from shuffled
-Each skill: power = basePower + floor(level * 1.5)
-            unlockedAtLevel = max(1, index * 3 + 1)
+**Gameplay effects** — modify game mechanics while the pet is active on the map:
+
+| Effect | Icon | Description | Formula |
+|--------|------|-------------|---------|
+| `DoubleSteps` | 👟 雙倍步伐 | Each step counts as 2 | `finalSteps = steps × 2` |
+| `EnergyBonus` | ⚡ 能量過載 | Bonus energy per step | `energy += steps × 1.5` |
+| `StepBonus` | 💨 疾步如飛 | Random bonus steps | 15% chance for 5-14 extra steps |
+| `EncounterUp` | 🧲 寵物磁鐵 | More egg encounters | `encounterRate × 1.5` |
+| `HatchSpeed` | 🔥 溫暖孵化 | Faster egg hatching | `hatchSteps × 0.75` |
+| `MoodGuard` | 🛡️ 平靜光環 | Mood decays slower | `moodDecay × 0.5` |
+
+**Skill pool (18 total):**
 ```
 
 ## Evolution System
