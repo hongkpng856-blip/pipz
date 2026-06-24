@@ -25,25 +25,11 @@ const MOOD_CN: Record<string, string> = {
   happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
 }
 
-/** Sample edge pixels to detect background color, remove with ±tolerance */
-function removeBgOnCanvas(ctx: CanvasRenderingContext2D, w: number, h: number) {
+/** Remove warm-beige background (rgb(255,241,232)) from AI-generated sprites */
+function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
   const id = ctx.getImageData(0, 0, w, h)
-  const freq: Record<string, number> = {}
-  const sample = (x: number, y: number) => {
-    const i = (y * w + x) * 4
-    // Skip fully transparent pixels — their RGB may be garbage
-    if (id.data[i + 3] < 128) return
-    const key = `${id.data[i]},${id.data[i + 1]},${id.data[i + 2]}`
-    freq[key] = (freq[key] || 0) + 1
-  }
-  for (let x = 0; x < w; x++) {
-    sample(x, 0)
-    sample(x, h - 1)
-  }
-  const bgKey = Object.entries(freq).sort((a, b) => b[1] - a[1])[0]?.[0]
-  if (!bgKey) return
-  const [br, bg, bb] = bgKey.split(',').map(Number)
-  const TOL = 20
+  const TOL = 40
+  const br = 255, bg = 241, bb = 232
   for (let i = 0; i < id.data.length; i += 4) {
     if (
       Math.abs(id.data[i] - br) <= TOL &&
@@ -124,7 +110,7 @@ export default function PetCompanion({
       ox.drawImage(img, 0, 0)
 
       // Remove background color (detected from edge pixels)
-      removeBgOnCanvas(ox, img.width, img.height)
+      removeBg(ox, img.width, img.height)
 
       offscreenRef.current = oc
       if (!cancelled) setStatus('png')
