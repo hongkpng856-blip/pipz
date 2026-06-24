@@ -18,6 +18,7 @@
 - **Backpack as 5th nav tab**: moved from header button + bottom card to its own tab (地圖→寵物→蛋→社群→背包); nav grid expanded to 5 columns
 - **Equipment slots inside pet image card**: moved WoW-style 2×2 square grid from separate card into the pet display card (below mood bar)
 - **Test account items**: seeded `pipztest@gmail.com` with 5 equipment + 4 help items for drag-drop testing
+- **Mobile-friendly tap-to-equip**: replaced HTML5 drag-and-drop with click-to-equip — tap an available equipment item to auto-equip to matching empty slot; dimmed items show when slot type is occupied
 
 ### Changed
 - **Walking loop**: now also rolls for roguelike events alongside egg encounters (`eventStepCounter` every ~800 steps)
