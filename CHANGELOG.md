@@ -8,6 +8,7 @@
   - **`removeBg()` safety net:** Updated both `PixelPetCanvas.tsx` and `PetCompanion.tsx` to remove `rgb(194,195,199)` at render time (exact match, no tolerance) in addition to existing warm-beige `rgb(255,241,232)` ±40 pass
   - **Cache busting:** Bumped `SPRITE_VERSION` to `v5` so SW cache serves fresh sprites
   - **Verification:** Production sprite 0.png confirmed 0 light pixels (r>180,g>180,b>180), Vision AI confirms "no white dots or artifacts"
+- **Stale canvas sprite on pets tab** — added `key={pet.id}` to all `PixelPetCanvas` instances so React properly unmounts/remounts the canvas when pet changes, preventing brief flash of wrong sprite on tab switch
 
 ## v0.3.5 (2026-06-24)
 
