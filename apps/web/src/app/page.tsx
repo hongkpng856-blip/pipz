@@ -1066,39 +1066,39 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* ── Dev Tools (collapsible) ── */}
-                  <div className="section" style={{marginTop:16}}>
-                    <button onClick={() => setShowDevTools(!showDevTools)}
-                      style={{
-                        background:'none', border:'none', color:'#3a4d65',
-                        fontSize:10, cursor:'pointer', fontFamily:'inherit',
-                        padding:'4px 0', width:'100%', textAlign:'center',
-                      }}>
-                      🔧 {showDevTools ? '收起 Dev 工具' : 'Dev 工具'}
-                    </button>
-                    {showDevTools && (
-                      <div className="card" style={{padding:12}}>
-                        <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8}}>
-                          <button className="btn btn-ghost" onClick={addDebug}
-                            style={{fontSize:10, padding:'4px 12px'}}>
-                            +500 測試步數
-                          </button>
-                          <span style={{fontSize:9, color:'#5a6d85'}}>🛰️ GPS 記錄真實步數</span>
-                        </div>
-                        {log.length > 0 && (
-                          <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
-                            <div style={{fontSize:8, color:'#5a6d85', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em'}}>記錄</div>
-                            {log.slice(0, 3).map((m,i) => (
-                              <div key={i} style={{fontSize:10, color:'#94a5b8', padding:'1px 0'}}>{m}</div>
-                            ))}
-                          </div>
-                        )}
+                </>
+              )}
+
+              {/* ── Dev Tools (collapsible — always visible even when logged out) ── */}
+              <div className="section" style={{marginTop:16}}>
+                <button onClick={() => setShowDevTools(!showDevTools)}
+                  style={{
+                    background:'none', border:'none', color:'#3a4d65',
+                    fontSize:10, cursor:'pointer', fontFamily:'inherit',
+                    padding:'4px 0', width:'100%', textAlign:'center',
+                  }}>
+                  🔧 {showDevTools ? '收起 Dev 工具' : 'Dev 工具'}
+                </button>
+                {showDevTools && (
+                  <div className="card" style={{padding:12}}>
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8}}>
+                      <button className="btn btn-ghost" onClick={addDebug}
+                        style={{fontSize:10, padding:'4px 12px'}}>
+                        +500 測試步數
+                      </button>
+                      <span style={{fontSize:9, color:'#5a6d85'}}>🛰️ GPS 記錄真實步數</span>
+                    </div>
+                    {log.length > 0 && (
+                      <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
+                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em'}}>記錄</div>
+                        {log.slice(0, 3).map((m,i) => (
+                          <div key={i} style={{fontSize:10, color:'#94a5b8', padding:'1px 0'}}>{m}</div>
+                        ))}
                       </div>
                     )}
                   </div>
-
-                </>
-              )}
+                )}
+              </div>
             </div>
           )}
           </>
