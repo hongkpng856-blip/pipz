@@ -308,8 +308,9 @@ Full-screen overlay, max-width: 24rem centered.
   - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
   - Percentage shown (e.g., 92%)
 - **No action buttons**: feed/pet/play have been removed from the detail view
-- **Equipment slots (WoW-style square grid)**: 2×2 grid below the mood bar, inside the same card:
-  - 4 slots: 頭 (Head), 身 (Body), 腳 (Feet), 飾 (Accessory)
+- **Equipment slots (WoW-style square grid)**: 2×2 grid flanking the pet canvas in the top row of the same card:
+  - Layout: `[head+body stacked left] [PET CANVAS] [feet+accessory stacked right]`
+  - 4 slots: 頭 (Head) + 身 (Body) on left, 腳 (Feet) + 飾 (Accessory) on right
   - Equipped items show icon + rarity border + stat bonus
   - Empty slots show dashed border + slot icon + label
   - Drag-over highlights slot border in purple (`#8b5cf6`)
