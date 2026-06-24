@@ -161,10 +161,11 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             </div>
 
             {/* ── One-click test login ── */}
-            <button onClick={() => {
-              setEmail('pipztest@gmail.com')
-              setPassword('Test123456!')
-              setTimeout(() => handlePasswordAuth(), 100)
+            <button onClick={async () => {
+              setSending(true); setError('')
+              const err = await signInWithPassword('pipztest@gmail.com', 'Test123456!')
+              if (err) { setError(err); setSending(false) }
+              else { onClose() }
             }} style={{
               width:'100%', padding:'8px 0', borderRadius:10, border:'1px solid rgba(34,197,94,0.3)',
               background:'rgba(34,197,94,0.1)', color:'#22c55e', fontSize:11, fontWeight:600,
