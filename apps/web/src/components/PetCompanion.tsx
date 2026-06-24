@@ -268,6 +268,27 @@ export default function PetCompanion({
 
   return (
     <div style={{ width:'100%', background:'#141b2d', borderRadius:16, overflow:'hidden', position:'relative' }}>
+      {/* ── Hero: steps walked together (card top) ── */}
+      {pet && (
+        <div style={{
+          background:'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, transparent 100%)',
+          borderBottom:'1px solid #1e2a45',
+          textAlign:'center', padding:'18px 16px 14px',
+        }}>
+          <div style={{ fontSize:22, marginBottom:2 }}>👣</div>
+          <div style={{
+            fontSize:32, fontWeight:900, color:'#f0f4f8',
+            fontVariantNumeric:'tabular-nums', letterSpacing:'-0.03em',
+            lineHeight:1.1,
+          }}>
+            {formatSteps(pet.totalSteps)}
+          </div>
+          <div style={{ fontSize:11, color:'#94a5b8', marginTop:2 }}>
+            一起走過的日子
+          </div>
+        </div>
+      )}
+
       {/* ── Canvas ── */}
       <canvas
         ref={canvasRef}
@@ -299,26 +320,6 @@ export default function PetCompanion({
             border: `1px solid ${RARITY_COLORS[pet.rarity]}33`,
           }}>
             {RARITY_LABELS[pet.rarity]}
-          </div>
-        </div>
-      )}
-
-      {/* ── Steps walked together (overlaid, bottom-center of canvas) ── */}
-      {pet && (
-        <div style={{
-          position:'absolute', bottom:8, left:0, right:0,
-          display:'flex', justifyContent:'center', pointerEvents:'none',
-        }}>
-          <div style={{
-            background:'rgba(11,17,32,0.7)', backdropFilter:'blur(4px)',
-            border:'1px solid rgba(255,255,255,0.08)', borderRadius:12,
-            padding:'4px 14px', display:'flex', alignItems:'center', gap:6,
-          }}>
-            <span style={{ fontSize:11 }}>👣</span>
-            <span style={{ fontSize:13, fontWeight:800, color:'#f0f4f8', fontVariantNumeric:'tabular-nums' }}>
-              {formatSteps(pet.totalSteps)}
-            </span>
-            <span style={{ fontSize:8, color:'#94a5b8' }}>一起行咗</span>
           </div>
         </div>
       )}
