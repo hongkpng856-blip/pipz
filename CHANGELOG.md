@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.4.3 (2026-06-24)
+
+### Added
+- **One-click test login button**: 🔑 一鍵登入測試帳號 button in auth modal — directly calls `signInWithPassword` with test credentials (pipztest@gmail.com / Test123456!)
+- **Test account created**: `pipztest@gmail.com` via Supabase Admin API (email pre-confirmed) — for development/testing use
+
+### Changed
+- **Skills moved to canvas 2D**: 🎯 目前技能 now drawn directly on the pet roam canvas (bottom-left pill strip) using Canvas 2D API instead of HTML overlay or info panel section — skills render inside the rAF loop via `skillsRef` to avoid animation restart
+- **Dev Tools gated to test account only**: 🔧 Dev 工具 section in community tab now only renders when `user?.email === 'pipztest@gmail.com'` — hidden for all other users or logged-out state
+
+### Removed
+- **Skills section from PetCompanion info panel**: removed the HTML skills section below the canvas (now drawn on canvas instead)
+- **Skills section from pets tab**: skills no longer appear in 🐾 寵物 tab (only on map page canvas)
+
 ## v0.4.2 (2026-06-25)
 
 ### Fixed

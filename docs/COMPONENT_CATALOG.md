@@ -47,34 +47,26 @@ The entire app is a single page with 4 tabs and modals.
 Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 **Layout:**
-- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`
-- **Canvas** (400×300): pixel pet roams freely in full 2D with shadow, mood emoji, tap reactions
-- **⤵ Below canvas — always-visible info panel** (no toggle needed):
+|- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`
+|- **Canvas** (400×300): pixel pet roams freely in full 2D with shadow, mood emoji, tap reactions
+  - **Skills pill strip**: drawn directly on canvas 2D at bottom-left (semi-transparent dark pills with icon + name; gameplay effects show amber 🟡「加成中」badge)
+  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
+|- **⤵ Below canvas — always-visible info panel** (no toggle, no skills section):
   1. **Row 1** (flex, side-by-side):
      - **Mood column**: 😊 mood emoji + %, gradient mood bar (green/amber/red), 🌟 evolution stage + Lv., rarity badge
      - **4 stat pills**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (compact stacked layout)
-  2. **🎯 目前技能**: flex-wrap grid of skill pills (icon + name); skills with gameplay effect show amber 🟡「加成中」badge
-- **Action buttons** (below info panel): 🍖 餵食 / ✋ 摸頭 / 🎾 玩
-
-**Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg, no toggle button)
+|- **Action buttons** (below info panel): 🍖 餵食 / ✋ 摸頭 / 🎾 玩
 
 ```
 ┌─────────────────────────────────┐
 │ Canvas 400×300                  │
 │  (#水晶 badge top-left)          │
 │         🐱 walking sprite        │
-│                                 │
+│  [⚔️突進] [🛡️護盾] [👟雙倍步]  │ ← skills drawn on canvas 2D
 ├─────────────────────────────────┤
 │ 😊 開心  100%      ⚡🍀💜🔋    │
 │ ████████████       999 999 999  │ ← mood bar + 4 stats(mini)
 │ 🌟 傳說 · Lv.99  [傳說]         │ ← evolution + rarity
-│                                 │
-│ 🎯 目前技能                      │
-│ ⚡疾速衝刺  🍀幸運搜尋  👟雙倍← all skills always visible
-│ 步伐🟡加成中  ⚡能量過載🟡加    │
-│ 成中  💨疾步如飛🟡加成中  ...   │
-│                                 │
-│ [🍖餵食] [✋摸頭] [🎾玩]        │ ← action buttons
 └─────────────────────────────────┘
 ```
 
@@ -109,8 +101,8 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - Each: thumbnail + rarity name + CP + level
 - Click → opens Pet Detail Modal
 
-### Dev Tools (collapsible, always visible)
-- **🔧 Dev 工具** toggle button at bottom of Community tab
+### Dev Tools (test account only: pipztest@gmail.com)
+- **🔧 Dev 工具** toggle button at bottom of Community tab — only renders when `user?.email === 'pipztest@gmail.com'`
 - **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous 1-4 steps every 800ms (≈ real walking speed)
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
@@ -343,8 +335,9 @@ Full-screen overlay, max-width: 24rem centered.
 - Sent: Success message
 
 ### Login Form
-- Two tabs: "密碼" / "Magic Link"
-- Email input (autoFocus)
+|- Two tabs: "密碼" / "Magic Link"
+|- **One-click test login**: 🔑 一鍵登入測試帳號 button (green outline, between tabs and email input) — directly calls `signInWithPassword('pipztest@gmail.com', 'Test123456!')`
+|- Email input (autoFocus)
 - Password input (password mode only)
 - Error message display
 - Submit: "登入" / "註冊" / "發送 Magic Link"
