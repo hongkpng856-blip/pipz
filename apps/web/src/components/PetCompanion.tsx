@@ -72,6 +72,7 @@ export default function PetCompanion({
   const reactionRef = useRef<Reaction>('none')
   const reactionTimer = useRef(0)
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
+  const skillsRef = useRef(skills); skillsRef.current = skills
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
@@ -340,6 +341,44 @@ export default function PetCompanion({
       }
       ctx.globalAlpha = 1
 
+      // ── Skills on canvas (bottom strip) ──
+      const curSkills = skillsRef.current
+      if (curSkills.length > 0) {
+        const pillY = H - 20
+        let pillX = 8
+        const pillH = 14
+        const pillR = 5
+        for (const s of curSkills) {
+          const label = `${s.icon} ${s.name}`
+          ctx.font = 'bold 8px sans-serif'
+          const tw = ctx.measureText(label).width
+          const pw = tw + 14
+          // Background pill
+          ctx.fillStyle = 'rgba(11,17,32,0.65)'
+          ctx.beginPath(); ctx.roundRect(pillX, pillY - pillH, pw, pillH, pillR); ctx.fill()
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5
+          ctx.beginPath(); ctx.roundRect(pillX, pillY - pillH, pw, pillH, pillR); ctx.stroke()
+          // Text
+          ctx.fillStyle = '#f0f4f8'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'
+          ctx.fillText(label, pillX + 6, pillY - pillH / 2)
+          // "加成中" badge if has effect
+          if (s.effect) {
+            ctx.fillStyle = 'rgba(245,158,11,0.15)'; ctx.strokeStyle = 'transparent'
+            const badge = '加成中'
+            ctx.font = '6px sans-serif'
+            const bw = ctx.measureText(badge).width + 6
+            ctx.beginPath(); ctx.roundRect(pillX + pw - bw - 3, pillY - pillH + 2, bw, pillH - 4, 2); ctx.fill()
+            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '5px sans-serif'
+            ctx.fillText(badge, pillX + pw - bw / 2 - 3, pillY - pillH / 2)
+            pillX += pw + 3
+            ctx.font = 'bold 8px sans-serif'
+            ctx.textAlign = 'left'; ctx.fillStyle = '#f0f4f8'
+          } else {
+            pillX += pw + 3
+          }
+        }
+      }
+
       // ── Tap hint ──
       if (showTapHint) {
         ctx.globalAlpha = 0.4 + Math.sin(timeRef.current*4)*0.2
@@ -404,30 +443,6 @@ export default function PetCompanion({
             #{speciesName}
           </div>
           <div style={{ flex:1 }} />
-        </div>
-      )}
-
-      {/* ── Skills overlay (bottom of canvas) ── */}
-      {pet && skills.length > 0 && (
-        <div style={{
-          position:'absolute', bottom:4, left:8, right:8,
-          display:'flex', gap:3, flexWrap:'wrap', alignItems:'center',
-        }}>
-          <span style={{ fontSize:7, color:'#5a6d85', marginRight:1 }}>🎯</span>
-          {skills.map(s => (
-            <div key={s.id} style={{
-              background:'rgba(11,17,32,0.7)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:6,
-              padding:'2px 6px', display:'flex', alignItems:'center', gap:3, fontSize:8,
-            }}>
-              <span>{s.icon}</span>
-              <span style={{ color:'#f0f4f8', fontWeight:600 }}>{s.name}</span>
-              {s.effect && (
-                <span style={{ fontSize:6, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 3px' }}>
-                  加成中
-                </span>
-              )}
-            </div>
-          ))}
         </div>
       )}
 
