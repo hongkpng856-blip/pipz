@@ -930,7 +930,7 @@ export default function HomePage() {
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
-                                <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
+                                <PixelPetCanvas key={pet.id} seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
                                 {isNewBadge(pet.id, pet.createdAt) && <div className="new-badge">NEW</div>}
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
                                 {/* Minus button — remove from team */}
@@ -986,7 +986,7 @@ export default function HomePage() {
                               onClick={() => { badgeDismissed.current.add(p.id); setDetailPetId(p.id) }}
                               style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                               <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
-                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
+                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
                               {isNewBadge(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
                               {canThisEvolve && (
                                 <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
@@ -1126,7 +1126,7 @@ export default function HomePage() {
                             style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
                             <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
                             <div className="pet-card-icon" style={{width:32, height:32}}>
-                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
                             <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
@@ -1156,7 +1156,7 @@ export default function HomePage() {
                             style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
                             <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
                             <div className="pet-card-icon" style={{width:32, height:32}}>
-                              <PixelPetCanvas seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
                             <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
