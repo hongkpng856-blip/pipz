@@ -863,37 +863,41 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* 🐾 其他寵物 — scrollable area */}
+                    {/* 🐾 其他寵物 — title fixed, only grid scrolls */}
                     {otherPets.length > 0 && (
-                      <div className="section" style={{flex:1, overflowY:'auto', minHeight:0, marginBottom:0}}>
-                        <div className="section-header">
-                          <span className="section-title">🐾 其他寵物</span>
-                          <span className="section-count">{otherPets.length}隻</span>
+                      <>
+                        <div className="section" style={{flexShrink:0, marginBottom:0}}>
+                          <div className="section-header">
+                            <span className="section-title">🐾 其他寵物</span>
+                            <span className="section-count">{otherPets.length}隻</span>
+                          </div>
                         </div>
-                        <div className="pet-grid pet-grid-other">
-                          {otherPets.map(p => {
-                            const origIdx = pets.indexOf(p)
-                            const sc = RARITY_COLORS[p.rarity]
-                            const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
-                            return (
-                            <div key={p.id} className="pet-card-other"
-                              draggable
-                              onDragStart={e => {
-                                e.dataTransfer.setData('text/plain', p.id)
-                                e.dataTransfer.effectAllowed = 'move'
-                              }}
-                              onClick={() => { badgeDismissed.current.add(p.id); setDetailPetId(p.id) }}
-                              style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
-                              <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
-                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
-                              {isNewBadge(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
-                              {canThisEvolve && (
-                                <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
-                              )}
-                            </div>
-                          )})}
+                        <div style={{flex:1, overflowY:'auto', minHeight:0}}>
+                          <div className="pet-grid pet-grid-other" style={{paddingTop:8}}>
+                            {otherPets.map(p => {
+                              const origIdx = pets.indexOf(p)
+                              const sc = RARITY_COLORS[p.rarity]
+                              const canThisEvolve = calculateEvolution(p.totalSteps, p.evolutionStage, p.stats)
+                              return (
+                              <div key={p.id} className="pet-card-other"
+                                draggable
+                                onDragStart={e => {
+                                  e.dataTransfer.setData('text/plain', p.id)
+                                  e.dataTransfer.effectAllowed = 'move'
+                                }}
+                                onClick={() => { badgeDismissed.current.add(p.id); setDetailPetId(p.id) }}
+                                style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
+                                <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
+                                <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
+                                {isNewBadge(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
+                                {canThisEvolve && (
+                                  <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
+                                )}
+                              </div>
+                            )})}
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
                   </>
                 )
