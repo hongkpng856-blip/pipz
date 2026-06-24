@@ -88,6 +88,8 @@ export default function HomePage() {
   useEffect(() => {
     if (detailPetId && user) {
       loadPetEquipment(detailPetId).then(setPetEquipment).catch(() => setPetEquipment([]))
+      // Also load inventory for available equipment display
+      loadInventory(user.id).then(items => setInventory(items as any)).catch(() => {})
     }
   }, [detailPetId, user])
 
@@ -205,14 +207,16 @@ export default function HomePage() {
           ])
         }
 
-        const [dbPets, todaySt, dbEggs, dbFavs, dbWeekly, dbProfile] = await Promise.all([
+        const [dbPets, todaySt, dbEggs, dbFavs, dbWeekly, dbProfile, dbInv] = await Promise.all([
           loadPets(user.id),
           getTodaySteps(user.id),
           loadEggs(user.id),
           loadFavorites(user.id),
           getWeeklySteps(user.id),
           getProfile(user.id),
+          loadInventory(user.id),
         ])
+        setInventory(dbInv as any)
 
         setPets(dbPets)
         setEggs(dbEggs as EggItem[])
@@ -665,6 +669,20 @@ export default function HomePage() {
     logMsg(`👕 脫下 ${slot} 裝備`)
   }
 
+  // ── Roguelike: equip item on a specific slot (drag-drop or click) ──
+  const handleEquipToSlot = async (slot: string, equipmentId: string) => {
+    if (!user || !detailPetId) return
+    await equipItem(user.id, detailPetId, equipmentId, slot)
+    // Reload pet equipment + inventory
+    const [eq, inv] = await Promise.all([
+      loadPetEquipment(detailPetId),
+      loadInventory(user.id),
+    ])
+    setPetEquipment(eq)
+    setInventory(inv as any)
+    logMsg(`👕 拖放裝備完成`)
+  }
+
   // ── Toggle favorite (max 5) ──
   const toggleFavorite = (petId: string) => {
     setFavorites(prev => {
@@ -817,15 +835,6 @@ export default function HomePage() {
             )}
             {user ? (
               <>
-                <button onClick={() => openInventory()}
-                  style={{
-                    background:'none', border:'none',
-                    cursor:'pointer', color:'#5a6d85',
-                    fontSize: 14, padding: '2px 4px',
-                    fontFamily:'inherit',
-                  }}>
-                  🎒
-                </button>
                 <button onClick={() => setShowProfile(true)}
                   style={{
                     background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)',
@@ -1003,6 +1012,78 @@ export default function HomePage() {
                   })()}
                 </div>
               </div>
+
+              {/* ════ Inventory Card at bottom ════ */}
+              {user && (
+                <div className="section" style={{marginTop:12}}>
+                  <div
+                    onClick={() => openInventory()}
+                    style={{
+                      background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 16,
+                      padding: '12px 14px', cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8}}>
+                      <span style={{fontSize:12, fontWeight:700, color:'#f0f4f8'}}>🎒 背包</span>
+                      <span style={{fontSize:10, color:'#5a6d85'}}>
+                        {inventory.filter(e => e.itemType === 'help').length}道具 · {inventory.filter(e => e.itemType === 'equipment').length}裝備
+                      </span>
+                    </div>
+                    {inventory.length === 0 ? (
+                      <div style={{fontSize:11, color:'#3a4d65', textAlign:'center', padding:'12px 0'}}>
+                        未有物品 — 行路探索拎道具！
+                      </div>
+                    ) : (
+                      <div style={{display:'flex', gap:8, overflowX:'auto', paddingBottom:4}}>
+                        {(() => {
+                          const HELP_ITEM_POOL_LOCAL = HELP_ITEM_POOL
+                          const EQUIPMENT_POOL_LOCAL = EQUIPMENT_POOL
+                          const shown = inventory.slice(0, 8).map(e => {
+                            const def = e.itemType === 'help'
+                              ? HELP_ITEM_POOL_LOCAL.find(d => d.id === e.itemId)
+                              : EQUIPMENT_POOL_LOCAL.find(d => d.id === e.itemId)
+                            return { ...e, def }
+                          }).filter(e => e.def)
+                          return shown.map((item, i) => {
+                            const def = item.def!
+                            const rarColor = 'rarity' in def && def.rarity ? (RARITY_COLORS[def.rarity as Rarity] || '#9ca3af') : '#9ca3af'
+                            return (
+                              <div key={item.itemId + i} style={{
+                                flexShrink:0, textAlign:'center', width: 44,
+                                position: 'relative',
+                              }}>
+                                <div style={{
+                                  width:40, height:40, borderRadius:10,
+                                  background: `${rarColor}15`,
+                                  border: `1px solid ${rarColor}22`,
+                                  display:'flex', alignItems:'center', justifyContent:'center',
+                                  fontSize:18, margin:'0 auto',
+                                }}>
+                                  {(def as any).icon}
+                                </div>
+                                {item.quantity > 1 && (
+                                  <span style={{
+                                    position:'absolute', bottom: -2, right: 2,
+                                    fontSize:7, fontWeight:700, color:'#f0f4f8',
+                                    background:'#0b1120', borderRadius:6,
+                                    padding:'0 4px', lineHeight:'14px',
+                                    border:'1px solid #1e2a45',
+                                  }}>x{item.quantity}</span>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
+                        {inventory.length > 8 && (
+                          <div style={{flexShrink:0, width:36, height:40, display:'flex', alignItems:'center', justifyContent:'center', color:'#5a6d85', fontSize:10}}>
+                            +{inventory.length - 8}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
             </div>
           )}
@@ -1475,6 +1556,12 @@ export default function HomePage() {
         if (!detailPet) return null
         const isMarketView = isMarketPet(detailPet.id)
         const isOwnPet = user ? detailPet.userId === user.id : false
+        // Compute available equipment (items not currently equipped on this pet)
+        const equippedIds = new Set(petEquipment.map(e => e.equipmentId))
+        const availEquip = EQUIPMENT_POOL.filter(d =>
+          inventory.some((i: any) => i.itemId === d.id && i.itemType === 'equipment')
+          && !equippedIds.has(d.id)
+        )
         return (
           <PetDetailModal
             pet={detailPet}
@@ -1495,6 +1582,10 @@ export default function HomePage() {
             }}
             equipment={petEquipment}
             onUnequip={handleUnequip}
+            onEquipToSlot={handleEquipToSlot}
+            availableEquipment={availEquip}
+            hasInventory={inventory.some((i: any) => i.itemType === 'equipment')}
+            onOpenInventory={() => setShowInventory(true)}
             onList={user && isOwnPet ? handleList : undefined}
             onUnlist={user && isOwnPet ? handleUnlist : undefined}
             onBuy={user && isMarketView && !isOwnPet ? handleBuy : undefined}
