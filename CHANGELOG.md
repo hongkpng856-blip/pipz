@@ -1,6 +1,15 @@
 # Changelog
 
-## v0.4.3 (2026-06-24)
+## v0.5.0 (2026-06-25)
+
+### Fixed
+- **Pixel crispness (root cause)**: added `ctx.imageSmoothingEnabled = false` in both `PetCompanion.tsx` and `PixelPetCanvas.tsx`. Canvas default is bilinear (smooth) interpolation which blurs pixel art — disabling it restores sharp, square pixel edges
+- **Card layout simplified**: removed cluttered 4-column stat grid, decorative paw prints, and skills overlay from canvas. Replaced with clean 2×2 stat grid, pill-style skills below, and better spacing — inspired by reference clean game UI
+
+### Changed
+- **Card layout redesigned**: moved skills out of canvas into a clean pill list below stats; species name badge + rarity badge overlaid on canvas; mood bar + evolution info in a single clean row; 2×2 stat grid with tabular-nums alignment
+- **Canvas height reduced**: 300px → 280px for tighter sprite area
+- **Roaming boundaries now symmetric**: since skills are no longer drawn on canvas, the roaming area is equal on both sides
 
 ### Added
 - **One-click test login button**: 🔑 一鍵登入測試帳號 button in auth modal — directly calls `signInWithPassword` with test credentials (pipztest@gmail.com / Test123456!)
