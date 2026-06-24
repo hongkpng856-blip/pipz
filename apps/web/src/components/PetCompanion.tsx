@@ -303,6 +303,26 @@ export default function PetCompanion({
         </div>
       )}
 
+      {/* ── Steps walked together (overlaid, bottom-center of canvas) ── */}
+      {pet && (
+        <div style={{
+          position:'absolute', bottom:8, left:0, right:0,
+          display:'flex', justifyContent:'center', pointerEvents:'none',
+        }}>
+          <div style={{
+            background:'rgba(11,17,32,0.7)', backdropFilter:'blur(4px)',
+            border:'1px solid rgba(255,255,255,0.08)', borderRadius:12,
+            padding:'4px 14px', display:'flex', alignItems:'center', gap:6,
+          }}>
+            <span style={{ fontSize:11 }}>👣</span>
+            <span style={{ fontSize:13, fontWeight:800, color:'#f0f4f8', fontVariantNumeric:'tabular-nums' }}>
+              {formatSteps(pet.totalSteps)}
+            </span>
+            <span style={{ fontSize:8, color:'#94a5b8' }}>一起行咗</span>
+          </div>
+        </div>
+      )}
+
       {/* ── Info panel ── */}
       {pet && (
         <div style={{ padding: '0 16px 12px' }}>
