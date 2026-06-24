@@ -755,8 +755,8 @@ export default function HomePage() {
 
           {/* ════ PETS TAB ════ */}
           {tab === 'pets' && (
-            <div className="fade-up">
-              <div className="section-header">
+            <div className="fade-up" style={{display:'flex', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden'}}>
+              <div className="section-header" style={{flexShrink:0}}>
                 <span className="section-title">🐾 寵物</span>
                 <span className="section-count">{pets.length}隻</span>
               </div>
@@ -786,35 +786,34 @@ export default function HomePage() {
                 return (
                   <>
                     {/* ⚡ 你擁有的能量 */}
-                    <div className="section" style={{marginBottom:12}}>
+                    <div className="section" style={{marginBottom:8, flexShrink:0}}>
                       <div className="section-header">
                         <span className="section-title">⚡ 你擁有的能量</span>
                       </div>
-                      <div className="card" style={{padding:'14px 20px'}}>
-                        <div style={{display:'flex', alignItems:'center', gap:16}}>
+                      <div className="card" style={{padding:'10px 16px'}}>
+                        <div style={{display:'flex', alignItems:'center', gap:12}}>
                           {/* Pixel-style lightning bolt */}
                           <div style={{
-                            width:48, height:48, flexShrink:0, borderRadius:14,
+                            width:36, height:36, flexShrink:0, borderRadius:10,
                             display:'flex', alignItems:'center', justifyContent:'center',
                             background:'rgba(245,158,11,0.12)',
                           }}>
-                            <svg width="26" height="38" viewBox="0 0 26 38" fill="none">
+                            <svg width="20" height="30" viewBox="0 0 26 38" fill="none">
                               <path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b" />
                             </svg>
                           </div>
                           <div>
-                            <div style={{fontSize:10, color:'#5a6d85', marginBottom:2}}>🔋 累積能量</div>
-                            <div style={{fontSize:28, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
+                            <div style={{fontSize:9, color:'#5a6d85', marginBottom:1}}>🔋 累積能量</div>
+                            <div style={{fontSize:22, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
                               {ready ? formatSteps(totalSteps) : '0'}
                             </div>
-                            <div style={{fontSize:9, color:'#5a6d85', marginTop:2}}>步數 = 能量</div>
                           </div>
                         </div>
                       </div>
                     </div>
 
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
-                    <div className="section" style={{marginBottom:12}}>
+                    <div className="section" style={{marginBottom:8, flexShrink:0}}>
                       <div className="section-header">
                         <span className="section-title">⭐ 主力隊伍</span>
                         <span className="section-count">{favorites.length}/5</span>
@@ -864,9 +863,9 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* 🐾 其他寵物 — tiny draggable squares */}
+                    {/* 🐾 其他寵物 — scrollable area */}
                     {otherPets.length > 0 && (
-                      <div className="section" style={{marginBottom:10}}>
+                      <div className="section" style={{flex:1, overflowY:'auto', minHeight:0, marginBottom:0}}>
                         <div className="section-header">
                           <span className="section-title">🐾 其他寵物</span>
                           <span className="section-count">{otherPets.length}隻</span>
