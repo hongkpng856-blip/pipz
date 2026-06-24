@@ -1,6 +1,20 @@
 # Changelog
 
-## v0.5.0 (2026-06-25)
+## v0.6.0 (2026-06-25)
+
+### Added
+- **Roguelike events**: 12 random events (6 positive, 6 negative) trigger every ~800 steps while walking; events affect mood/steps/XP/stats; some have branching choices with different outcomes
+- **EventModal UI**: full-screen popup with type badge (✨正面/⚠️負面), event icon, description, effect preview, and choice buttons
+- **Equipment system (data)**: 15 equipment items across 4 slots (head/body/feet/accessory) with stat bonuses, rarities from Common to Legendary; some are event-only
+- **Help items (data)**: 5 consumable items (berry, power herb, swift potion, attract incense, XP elixir) with different effects
+- **DB tables**: `pet_equipment`, `inventory`, `event_log` with RPC functions for atomic quantity updates
+- **DB CRUD**: equip/unequip items, add/remove inventory, load equipment/inventory, log events
+- **Core types**: `EquipmentDef`, `EquipmentSlot`, `HelpItemDef`, `HelpEffect`, `GameEvent`, `EventEffect`, `InventoryEntry`, `EquippedItem`
+- **Core formulas**: `rollEvent()`, `rollEquipmentDrop()`, `calculateEquipmentBonus()`, event/equipment/help item pools
+
+### Changed
+- **Walking loop**: now also rolls for roguelike events alongside egg encounters (`eventStepCounter` every ~800 steps)
+- **Console**: simulation mode events also trigger event rolls
 
 ### Fixed
 - **Pixel crispness (root cause)**: added `ctx.imageSmoothingEnabled = false` in both `PetCompanion.tsx` and `PixelPetCanvas.tsx`. Canvas default is bilinear (smooth) interpolation which blurs pixel art — disabling it restores sharp, square pixel edges

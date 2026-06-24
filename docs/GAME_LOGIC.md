@@ -309,3 +309,55 @@ Each rarity has 3 colour variants (randomly chosen):
 ```
 CP = speed + luck + charm + energy
 ```
+
+## Roguelike Systems (v0.6.0)
+
+### Random Events
+
+Every ~800 steps while walking, a random event may trigger. Events are drawn from a pool of 12 (6 positive, 6 negative), weighted by probability:
+
+| Event | Type | Weight | Min Steps | Effects |
+|-------|------|--------|-----------|---------|
+| 🌞 陽光草原 | Positive | 15 | 0 | ❤️+20 mood, 👣+50 steps |
+| 🌈 彩虹小徑 | Positive | 12 | 100 | 👣+100 steps, ❤️+10 mood |
+| 📦 寶藏箱 | Positive | 10 | 500 | Choice: open (item + steps) or leave (steps) |
+| 🧳 流浪商人 | Positive | 8 | 1000 | 📦 gain item (berry), ✨+20 XP |
+| ⛲ 治癒泉水 | Positive | 10 | 300 | ❤️+50 mood, ✨+30 XP |
+| ⭐ 流星 | Positive | 5 | 2000 | 👣+500 steps, ❤️+30 mood |
+| 💧 泥濘水氹 | Negative | 15 | 0 | 👣-30 steps, 💔-10 mood |
+| 🌵 荊棘叢 | Negative | 12 | 100 | Choice: slow through (less damage) or detour (more steps lost) |
+| 🌧️ 暴風雨 | Negative | 12 | 200 | 💔-15 mood, 👣-50 steps |
+| 🧭 迷路 | Negative | 8 | 500 | Choice: backtrack (less steps) or push forward (risk/reward) |
+| 👺 哥布林偷襲 | Negative | 5 | 1500 | 📦 lose item, 👣-100 steps |
+| ⛰️ 山崩 | Negative | 6 | 1000 | 👣-300 steps, 💔-10 mood |
+
+Events with a **Choice** present 2 buttons — each leads to different outcomes.
+
+### Equipment System
+
+4 equipment slots per pet:
+| Slot | Label | Examples |
+|------|-------|---------|
+| Head | 👑 頭部 | 樹葉冠冕, 骨製頭盔, 水晶額環, 荊棘冠 |
+| Body | 👕 身體 | 樹葉披風, 骨甲, 絲綢法袍, 龍鱗甲 |
+| Feet | 👟 腳部 | 草鞋, 兔毛靴, 風之脛甲 |
+| Accessory | 📿 飾品 | 幸運硬幣, 月亮吊墜, 四葉草 |
+
+Equipment stat bonuses apply when equipped:
+```
+effectiveStat = pet.baseStat + equippedBonuses[stat]
+```
+
+### Help Items (Consumables)
+
+| Item | Effect | Rarity | Duration |
+|------|--------|--------|----------|
+| 🫐 魔法莓果 | Restore 30% mood | Common | Instant |
+| 🌿 力量藥草 | +10 all stats temporarily | Uncommon | 500 steps |
+| 🧪 疾走藥水 | Steps ×2 | Rare | 200 steps |
+| 🪔 吸引香薰 | Encounter rate ×2 | Uncommon | 200 steps |
+| ✨ 經驗靈藥 | +50 XP instantly | Common | Instant |
+
+### Event Drops
+
+Some events grant items as rewards (e.g., 流浪商人 gives 🫐 魔法莓果, 寶藏箱 may contain 🪙 幸運硬幣). Items go to the player's inventory for later use.
