@@ -305,6 +305,7 @@ Full-screen overlay, max-width: 24rem centered.
 ### Skills Section
 - "🎯 技能" title
 - List of skill cards (icon + name + description + power + level)
+- Skills with **gameplay effects** (e.g., 雙倍步伐, 能量過載) show an amber "效" badge next to name
 - Empty state: "未有技能"
 
 ### Evolution Section
