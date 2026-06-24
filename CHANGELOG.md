@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.4 (2026-06-24)
+
+### Fixed
+- **NEW badge dismissed before pets tab renders** — hatch popup "睇下寵物！" button called `dismissNewPet()` before navigating to pets tab, which added pet to `dismissedNewPets` Set, causing `isNewBadge()` to return false before the badge was ever seen. Fixed by replacing `dismissNewPet()` with just clearing `newPetId` + localStorage (without adding to dismissed set), so the auto-detect effect or recency/newestPet conditions can show the badge on the pets tab.
+
 ## v0.3.3 (2026-06-24)
 
 ### Changed
