@@ -946,37 +946,6 @@ export default function HomePage() {
                     </div>
                     </div>
 
-                    {/* 🎯 目前技能 (active pet skills) */}
-                    {pets.length > 0 && pets[activeIdx]?.skills?.length > 0 && (
-                      <div className="section" style={{marginBottom:8, flexShrink:0}}>
-                        <div className="section-header">
-                          <span className="section-title">🎯 目前技能</span>
-                          <span className="section-count">{pets[activeIdx]!.skills.length}個</span>
-                        </div>
-                        <div className="card" style={{padding:'10px 12px'}}>
-                          <div style={{display:'flex', gap:4, flexWrap:'wrap'}}>
-                            {pets[activeIdx]!.skills.map(s => (
-                              <div key={s.id} style={{
-                                background:'rgba(20,27,45,0.8)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8,
-                                padding:'4px 8px', display:'flex', alignItems:'center', gap:4, fontSize:9,
-                              }}>
-                                <span style={{fontSize:12}}>{s.icon}</span>
-                                <span style={{color:'#f0f4f8', fontWeight:600}}>{s.name}</span>
-                                {s.effect && (
-                                  <span style={{
-                                    fontSize:7, color:'#f59e0b', background:'rgba(245,158,11,0.15)',
-                                    borderRadius:4, padding:'1px 5px', fontWeight:600,
-                                  }}>
-                                    加成中
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
                     <div className="section" style={{marginBottom:8, flexShrink:0}}>
                       <div className="section-header">
