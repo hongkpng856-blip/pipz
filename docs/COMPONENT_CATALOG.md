@@ -47,48 +47,36 @@ The entire app is a single page with 4 tabs and modals.
 Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 **Layout:**
-- Full-width canvas with **uniform dark card background** (`#141b2d`) + subtle paw-print decoration dots, card border (`#1e2a45`)
-- Canvas is **shorter/wider** (400×300, down from 400×460) for a spacious play area
-- **Pet character** (drawn via pixel-gen PNG sprite) roams freely in **full 2D** — any x,y position within the card, with 50px sprite margin
-- 4 walking directions: left / right / up / down + mischief jumps
-- Random spawn position when pet first appears
-- **Tap anywhere** on pet → ❤️ heart particles + sparkle effect
-- Shadow follows pet dynamically (2D ellipse under pet)
+- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`
+- **Canvas** (400×300): pixel pet roams freely in full 2D with shadow, mood emoji, tap reactions
+- **⤵ Below canvas — always-visible info panel** (no toggle needed):
+  1. **Row 1** (flex, side-by-side):
+     - **Mood column**: 😊 mood emoji + %, gradient mood bar (green/amber/red), 🌟 evolution stage + Lv., rarity badge
+     - **4 stat pills**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (compact stacked layout)
+  2. **🎯 目前技能**: flex-wrap grid of skill pills (icon + name); skills with gameplay effect show amber 🟡「加成中」badge
+- **Action buttons** (below info panel): 🍖 餵食 / ✋ 摸頭 / 🎾 玩
 
-**Info Panel (slide-up overlay from bottom):**
-- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (no "未命名" fallback)
-- **Toggle button**: 📊 詳情 / 隱藏 (top-right corner)
+**Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg, no toggle button)
 
-**Info Panel Detail (when expanded):**
 ```
 ┌─────────────────────────────────┐
-│ 😊 開心                 92%    │
-│ ██████████░░░░░  (mood bar)     │
+│ Canvas 400×300                  │
+│  (#水晶 badge top-left)          │
+│         🐱 walking sprite        │
 │                                 │
-│ #圓貓                [普通]     │
-│                                 │
-│ ⚡ 20  🍀 15  💜 25  🔋 18    │  ← 4 stats
-│                                 │
-| 🌟 BB              Lv.3        │
-│ ██████░░░░░░░  (evolution bar)  │
+├─────────────────────────────────┤
+│ 😊 開心  100%      ⚡🍀💜🔋    │
+│ ████████████       999 999 999  │ ← mood bar + 4 stats(mini)
+│ 🌟 傳說 · Lv.99  [傳說]         │ ← evolution + rarity
 │                                 │
 │ 🎯 目前技能                      │
-│ ┌───────────────────────────┐   │
-│ │ ⚡ 疾速衝刺  🟡加成中      │   │
-│ │ 👟 雙倍步伐  🟡加成中      │   │
-│ │ 💨 疾步如飛  🟡加成中      │   │
-│ │ 🧲 寵物磁鐵  🟡加成中      │   │
-│ │ 🔥 溫暖孵化  🟡加成中      │   │
-│ │ … (flex-wrap, all 18 max) │   │
-│ └───────────────────────────┘   │
+│ ⚡疾速衝刺  🍀幸運搜尋  👟雙倍← all skills always visible
+│ 步伐🟡加成中  ⚡能量過載🟡加    │
+│ 成中  💨疾步如飛🟡加成中  ...   │
+│                                 │
+│ [🍖餵食] [✋摸頭] [🎾玩]        │ ← action buttons
 └─────────────────────────────────┘
 ```
-- **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
-- **Species name**: `#` + `speciesName` from pixel-gen engine
-- **Rarity badge**: colour-coded pill
-- **4 Stats**: ⚡ Speed / 🍀 Luck / 💜 Charm / 🔋 Energy, each in mini cards
-- **Evolution stage**: label + progress bar toward next stage (amber `#f59e0b`)
-- **🎯 目前技能 section**: flex-wrap grid of skill pills (icon + name); skills with a gameplay effect (`effect` field) show an amber 🟡「加成中」badge
 
 **Action Buttons (bottom strip):**
 - 🍖 餵食 / ✋ 摸頭 / 🎾 玩 — compact pill buttons, no footer bar
@@ -102,6 +90,11 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - Bigger card with **bar chart visualization**
 - Top row: today's steps | total steps (divided by vertical line)
   - **Today steps**: uses `steps.toLocaleString()` (full number, no K/M abbreviation)
+  - **Step visual effects** (when `addSt()` fires):
+    - **Green flash** overlay (`.step-flash` / `.step-flash-skill`)
+    - **Floating ↑ arrows** animating up + fade (`.arrow-float` / `.arrow-float-skill`)
+    - **Bounce animation** on number (`.step-bounce`)
+    - Skill-triggered steps → larger arrows, brighter flash, longer duration
   - **Skill hints below today steps**: amber `👟 雙倍步伐` + cyan `💨 疾步如飛` badges (shown automatically when active pet has the effect)
   - **Skill hints below total steps**: amber `⚡ 能量過載` badge (shown automatically when active pet has the effect)
 - Three bars:

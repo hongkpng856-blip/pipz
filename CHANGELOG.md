@@ -1,14 +1,24 @@
 # Changelog
 
+## v0.4.2 (2026-06-25)
+
+### Fixed
+- **Pet skills lost on hard refresh (root cause)**: DB had no `skills` column — `petToDb()` never saved skills, `dbToPet()` returned `skills: []`. Added JSONB `skills` column, serialise/deserialise in both functions. Now skills survive Command+Shift+R.
+### Changed
+- **PetCompanion always shows skills + stats**: removed 📊 詳情 toggle button — mood bar, 4 stats, evolution info, and 🎯 目前技能 section are now **always visible** directly below the pet canvas
+- **Step counter visual effects**: when steps increase (GPS or simulation), today steps number shows:
+  - **Green flash** overlay on the counter (`.step-flash` / `.step-flash-skill`)
+  - **Floating ↑ arrows** that animate upward and fade out (`.arrow-float` / `.arrow-float-skill` — skill-triggered arrows are larger, brighter, fly higher)
+  - **Bounce animation** on the number (`.step-bounce` — scale 1→1.18→0.95→1)
+- **Skills always active**: clarified that skill effects (DoubleSteps, EnergyBonus, StepBonus, EncounterUp, HatchSpeed, MoodGuard) apply to the active map pet continuously — not only during simulation mode
+
 ## v0.4.1 (2026-06-25)
 
 ### Added
 - **Skills display in PetCompanion info panel**: when 📊 詳情 is toggled, shows all active skills (icons + names) with 🟡「加成中」badge on gameplay effects
 - **Skill effect hints on Stats Card**: 👟 雙倍步伐 / 💨 疾步如飛 shown below today's steps; ⚡ 能量過載 shown below total steps — always visible without toggling
-- **Skills always active**: clarified that skill effects (DoubleSteps, EnergyBonus, StepBonus, EncounterUp, HatchSpeed, MoodGuard) apply to the active map pet continuously — not only during simulation mode
 ### Changed
 - **Today steps shows full number**: uses `toLocaleString()` instead of `formatSteps()` (which abbreviates to K/M) — user sees exact step count for achievement tracking
-- **PetCompanion info overlay restructured**: added 🎯 目前技能 section after evolution info; skills wrap in a flex grid with effect badges
 
 ## v0.4.0 (2026-06-24)
 
