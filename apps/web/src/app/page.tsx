@@ -537,30 +537,7 @@ export default function HomePage() {
     })
   }
 
-  // ── Pet actions ──
-  const feed = () => {
-    if (!pet) return
-    const wasHungry = pet.moodValue < 40 || pet.mood !== Mood.Happy
-    const updated = { ...pet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: pet.xp + 10 }
-    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
-    if (user) updatePet(updated)
-    if (user && wasHungry) { createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${pet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, pet.id); setNotifUnread(n => n + 1) }
-    setPetAnim('happy'); logMsg('🍖 餵食咗！+10XP'); setTimeout(() => setPetAnim('idle'), 1500)
-  }
-  const petAction = () => {
-    if (!pet) return
-    const updated = { ...pet, mood: Mood.Happy, moodValue: Math.min(100, pet.moodValue + 15) }
-    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
-    if (user) updatePet(updated)
-    setPetAnim('happy'); logMsg('✋ 摸頭～'); setTimeout(() => setPetAnim('idle'), 1500)
-  }
-  const playAction = () => {
-    if (!pet) return
-    const updated = { ...pet, mood: Mood.Excited, moodValue: Math.min(100, pet.moodValue + 20), xp: pet.xp + 5 }
-    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
-    if (user) updatePet(updated)
-    setPetAnim('happy'); logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 1500)
-  }
+  // ── Pet action helpers (deprecated: removed feed/pet/play) ──
 
   const hatch = () => {
     setHatching(true)
@@ -747,9 +724,6 @@ export default function HomePage() {
                 }}>
                   <PetCompanion
                     pet={pet}
-                    onFeed={feed}
-                    onPet={petAction}
-                    onPlay={playAction}
                     anim={petAnim}
                     steps={steps}
                     totalSteps={totalSteps}
@@ -1346,21 +1320,6 @@ export default function HomePage() {
             totalSteps={totalSteps}
             onClose={() => { setDetailPetId(null); setMarketSellerId(null) }}
             onEvolve={() => { setDetailPetId(null); setActiveIdx(pets.indexOf(detailPet)); setShowEvolve(true) }}
-            onFeed={() => {
-              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: p.xp + 10 } : p))
-              if (user) { updatePet({ ...detailPet, mood: Mood.Happy, moodValue: 100, lastFedAt: Date.now(), xp: detailPet.xp + 10 } as Pet); createNotification(user.id, 'pet_care', '🍖 寵物餵食咗', `${detailPet.name || '你嘅寵物'}好開心！心情回復返晒 +10XP`, detailPet.id); setNotifUnread(n => n + 1) }
-              logMsg('🍖 餵食咗！+10XP')
-            }}
-            onPet={() => {
-              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Happy, moodValue: Math.min(100, p.moodValue + 15) } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Happy, moodValue: Math.min(100, detailPet.moodValue + 15) } as Pet)
-              logMsg('✋ 摸頭～')
-            }}
-            onPlay={() => {
-              setPets(v => v.map(p => p.id === detailPet.id ? { ...p, mood: Mood.Excited, moodValue: Math.min(100, p.moodValue + 20), xp: p.xp + 5 } : p))
-              if (user) updatePet({ ...detailPet, mood: Mood.Excited, moodValue: Math.min(100, detailPet.moodValue + 20), xp: detailPet.xp + 5 } as Pet)
-              logMsg('🎾 玩緊！+5XP')
-            }}
             onDelete={(id) => {
               setPets(v => v.filter(p => p.id !== id))
               // Adjust activeIdx — use setTimeout to read updated pets length

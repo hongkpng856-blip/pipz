@@ -9,9 +9,6 @@ interface Props {
   totalSteps: number
   onClose: () => void
   onEvolve: () => void
-  onFeed: () => void
-  onPet: () => void
-  onPlay: () => void
   onDelete: (petId: string) => void
   onList?: (petId: string, price: number) => void
   onUnlist?: (petId: string) => void
@@ -38,7 +35,7 @@ const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 // Evolution step requirements
 const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4: 100000, 5: 999999 }
 
-export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onFeed, onPet, onPlay, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId }: Props) {
+export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const [listPrice, setListPrice] = useState('500')
 
@@ -168,24 +165,6 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
               </div>
             </div>
 
-            {/* ── Actions ── */}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
-              <button onClick={onFeed}
-                style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
-                  background: '#16a34a', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                🍖餵食
-              </button>
-              <button onClick={onPet}
-                style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
-                  background: '#2563eb', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                ✋摸頭
-              </button>
-              <button onClick={onPlay}
-                style={{ padding: '6px 14px', borderRadius: 16, border: 'none',
-                  background: '#d97706', color: 'white', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                🎾玩
-              </button>
-            </div>
           </div>
 
           {/* ── Stats ── */}

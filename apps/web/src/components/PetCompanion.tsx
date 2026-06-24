@@ -1,13 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex, PetSkill, SkillEffect } from '@pipz/core'
+import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex, PetSkill } from '@pipz/core'
 
 interface Props {
   pet: Pet | null
-  onFeed: () => void
-  onPet: () => void
-  onPlay: () => void
   anim: 'idle' | 'walk' | 'happy'
   steps: number
   totalSteps: number
@@ -15,7 +12,7 @@ interface Props {
   skills: PetSkill[]
 }
 
-type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief' | 'happy'
+type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief'
 type Reaction = 'none' | 'heart' | 'sparkle' | 'bounce'
 
 const MOOD_MAP: Record<string, string> = {
@@ -30,7 +27,7 @@ const SPRITE_VERSION = 'v5'
 const MARGIN = 50
 
 export default function PetCompanion({
-  pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage, skills,
+  pet, anim, steps, totalSteps, evolutionStage, skills,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
@@ -42,16 +39,11 @@ export default function PetCompanion({
   const behaviorTimer = useRef(0)
   const xRef = useRef(0)
   const yRef = useRef(0)
-  const walkDirX = useRef(1)
-  const walkDirY = useRef(1)
   const bounceRef = useRef(0)
-  const reactionRef = useRef<Reaction>('none')
-  const reactionTimer = useRef(0)
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
-  const [shake, setShake] = useState(false)
   const [speciesName, setSpeciesName] = useState('')
 
   // Generate pet pixel data
@@ -111,8 +103,6 @@ export default function PetCompanion({
         const dirs: Behavior[] = ['walkLeft', 'walkRight', 'walkUp', 'walkDown']
         const dir = dirs[Math.floor(Math.random() * dirs.length)]
         behaviorRef.current = dir
-        walkDirX.current = Math.random() > 0.5 ? 1 : -1
-        walkDirY.current = Math.random() > 0.5 ? 1 : -1
       } else if (r < 0.55) {
         behaviorRef.current = 'mischief'
       } else {
@@ -131,36 +121,6 @@ export default function PetCompanion({
     const iv = setInterval(() => { behaviorTimer.current = Math.max(0, behaviorTimer.current - 0.2) }, 200)
     return () => clearInterval(iv)
   }, [pet])
-
-  useEffect(() => {
-    if (anim === 'happy') triggerReaction('heart')
-  }, [anim])
-
-  const triggerReaction = useCallback((type: Reaction) => {
-    reactionRef.current = type
-    reactionTimer.current = 1.5
-    if (type === 'heart') {
-      for (let i = 0; i < 5; i++) {
-        particlesRef.current.push({
-          x: (Math.random() - 0.5) * 40, y: 0, life: 1,
-          emoji: ['❤️','💕','💖','💗','✨'][Math.floor(Math.random()*5)],
-        })
-      }
-    } else if (type === 'sparkle') {
-      for (let i = 0; i < 3; i++) {
-        particlesRef.current.push({ x: (Math.random() - 0.5) * 30, y: 0, life: 1, emoji: '✨' })
-      }
-    } else if (type === 'bounce') {
-      bounceRef.current = 1
-      for (let i = 0; i < 3; i++) {
-        particlesRef.current.push({ x: (Math.random() - 0.5) * 25, y: 0, life: 1, emoji: '⭐' })
-      }
-    }
-  }, [])
-
-  const handleFeed = useCallback(() => { onFeed(); triggerReaction('heart') }, [onFeed, triggerReaction])
-  const handlePet = useCallback(() => { onPet(); triggerReaction('sparkle'); setShake(true); setTimeout(() => setShake(false), 300) }, [onPet, triggerReaction])
-  const handlePlay = useCallback(() => { onPlay(); triggerReaction('bounce') }, [onPlay, triggerReaction])
 
   const getMoodValue = useCallback(() => {
     if (!pet) return 100
@@ -208,10 +168,7 @@ export default function PetCompanion({
       let mY = 0, mRot = 0
       if (bx === 'mischief') { mY = Math.abs(Math.sin(timeRef.current * 10)) * 10; mRot = Math.sin(timeRef.current * 6) * 0.2 }
 
-      let shakeX = 0
-      if (shake) shakeX = (Math.random() - 0.5) * 4
-
-      const cx = W / 2 + xRef.current + shakeX
+      const cx = W / 2 + xRef.current
       const cy = H / 2 + yRef.current + idleBob + walkBob + walkBobY - mY + (bounceRef.current * -20)
 
       // Shadow
@@ -259,16 +216,6 @@ export default function PetCompanion({
         ctx.fillText(MOOD_MAP[pet.mood] || '😊', cx, cy - 38)
       }
 
-      // Particles
-      particlesRef.current = particlesRef.current.filter(p => p.life > 0)
-      for (const p of particlesRef.current) {
-        p.y -= 1.2; p.life -= 0.025
-        ctx.globalAlpha = Math.max(0, p.life)
-        ctx.font = '14px sans-serif'; ctx.textAlign = 'center'
-        ctx.fillText(p.emoji, cx + p.x, cy - 50 + p.y)
-      }
-      ctx.globalAlpha = 1
-
       // Tap hint
       if (showTapHint) {
         ctx.globalAlpha = 0.4 + Math.sin(timeRef.current*4)*0.2
@@ -299,7 +246,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, showTapHint, shake, status])
+  }, [pet, anim, showTapHint, status])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)
@@ -308,7 +255,6 @@ export default function PetCompanion({
 
   const handleCanvasClick = () => {
     if (!pet) return
-    handlePet()
     if (showTapHint) setShowTapHint(false)
   }
 
@@ -357,7 +303,7 @@ export default function PetCompanion({
         </div>
       )}
 
-      {/* ── Info panel (clean, reference-inspired) ── */}
+      {/* ── Info panel ── */}
       {pet && (
         <div style={{ padding: '0 16px 12px' }}>
           {/* Divider */}
@@ -386,7 +332,7 @@ export default function PetCompanion({
             </div>
           </div>
 
-          {/* ── Stats grid (2x2, clean) ── */}
+          {/* ── Stats grid (2x2) ── */}
           <div style={{
             display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:10,
           }}>
@@ -402,7 +348,7 @@ export default function PetCompanion({
             ))}
           </div>
 
-          {/* ── Skills (clean list below stats, if any) ── */}
+          {/* ── Skills (clean pill list) ── */}
           {skills.length > 0 && (
             <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>
               {skills.slice(0, 6).map((s, i) => (
@@ -419,22 +365,6 @@ export default function PetCompanion({
               ))}
             </div>
           )}
-
-          {/* ── Action buttons ── */}
-          <div style={{ display:'flex', gap:4, justifyContent:'center' }}>
-            <button className="btn btn-green" onClick={(e)=>{e.stopPropagation(); handleFeed()}}
-              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
-              🍖 餵食
-            </button>
-            <button className="btn btn-blue" onClick={(e)=>{e.stopPropagation(); handlePet()}}
-              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
-              ✋ 摸頭
-            </button>
-            <button className="btn btn-amber" onClick={(e)=>{e.stopPropagation(); handlePlay()}}
-              style={{ fontSize:10, padding:'5px 14px', borderRadius:16, display:'flex', alignItems:'center', gap:4 }}>
-              🎾 玩
-            </button>
-          </div>
         </div>
       )}
     </div>
