@@ -72,7 +72,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
   const seedKeyRef = useRef<number | null>(null)
-  const [status, setStatus] = useState<'fallback' | 'png'>('fallback')
+  const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>('loading')
 
   const speciesIdx = getSpeciesIndex(seed)
 
@@ -82,7 +82,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     // If seed changed since last load, clear old sprite
     if (seedKeyRef.current !== seed) {
       offscreenRef.current = null
-      setStatus('fallback')
+      setStatus('loading')
     }
     seedKeyRef.current = seed
 
