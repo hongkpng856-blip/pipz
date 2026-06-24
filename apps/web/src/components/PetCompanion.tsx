@@ -258,17 +258,19 @@ export default function PetCompanion({
       const bx = behaviorRef.current
       const speed = 1.0
 
-      // ── Full 2D roaming (no boundaries except sprite margin) ──
-      const maxX = (W / 2) - MARGIN
+      // ── Roaming boundaries (asymmetric: leave room for left skills) ──
+      const SKILLS_AREA_W = 75  // approx width of vertical skills column
+      const maxRX = (W / 2) - MARGIN  // right side can go full: 150
+      const maxLX = (W / 2) - MARGIN - SKILLS_AREA_W  // left side restricted: 70
       const maxY = (H / 2) - MARGIN
 
-      if (bx === 'walkLeft') { xRef.current -= speed; if (xRef.current < -maxX) behaviorTimer.current = 0 }
-      if (bx === 'walkRight') { xRef.current += speed; if (xRef.current > maxX) behaviorTimer.current = 0 }
+      if (bx === 'walkLeft') { xRef.current -= speed; if (xRef.current < -maxLX) behaviorTimer.current = 0 }
+      if (bx === 'walkRight') { xRef.current += speed; if (xRef.current > maxRX) behaviorTimer.current = 0 }
       if (bx === 'walkUp') { yRef.current -= speed; if (yRef.current < -maxY) behaviorTimer.current = 0 }
       if (bx === 'walkDown') { yRef.current += speed; if (yRef.current > maxY) behaviorTimer.current = 0 }
 
       // Hard clamp to edges (safety)
-      xRef.current = Math.max(-maxX, Math.min(maxX, xRef.current))
+      xRef.current = Math.max(-maxLX, Math.min(maxRX, xRef.current))
       yRef.current = Math.max(-maxY, Math.min(maxY, yRef.current))
 
       bounceRef.current = Math.max(0, bounceRef.current - 0.05)
@@ -344,36 +346,35 @@ export default function PetCompanion({
       // ── Skills on canvas (vertical left) ──
       const curSkills = skillsRef.current
       if (curSkills.length > 0) {
-        let pillY = 32  // start below species name badge
-        const pillX = 6
-        const pillH = 13
-        const pillR = 5
-        const gap = 4
+        let pillY = 32
+        const pillX = 5
+        const pillH = 16
+        const pillR = 4
+        const gap = 5
         ctx.textBaseline = 'middle'
         for (const s of curSkills) {
           const label = `${s.icon} ${s.name}`
-          ctx.font = 'bold 7px sans-serif'
+          ctx.font = 'bold 8px sans-serif'
           const tw = ctx.measureText(label).width
-          let pw = tw + 12
-          // If has effect badge, add extra width
-          if (s.effect) pw += 24
+          let pw = tw + 14
+          if (s.effect) pw += 26
           // Background pill
-          ctx.fillStyle = 'rgba(11,17,32,0.7)'
+          ctx.fillStyle = 'rgba(11,17,32,0.75)'
           ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.fill()
-          ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 0.5
           ctx.beginPath(); ctx.roundRect(pillX, pillY, pw, pillH, pillR); ctx.stroke()
           // Text
-          ctx.fillStyle = '#f0f4f8'; ctx.textAlign = 'left'
-          ctx.fillText(label, pillX + 5, pillY + pillH / 2)
+          ctx.fillStyle = '#e8edf4'; ctx.textAlign = 'left'
+          ctx.fillText(label, pillX + 6, pillY + pillH / 2)
           // "加成中" badge
           if (s.effect) {
             const badge = '加成中'
             ctx.font = '5px sans-serif'
             const bw = ctx.measureText(badge).width + 5
             const badgeX = pillX + pw - bw - 3
-            ctx.fillStyle = 'rgba(245,158,11,0.15)'
+            ctx.fillStyle = 'rgba(245,158,11,0.18)'
             ctx.beginPath(); ctx.roundRect(badgeX, pillY + 2, bw, pillH - 4, 2); ctx.fill()
-            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '4px sans-serif'
+            ctx.fillStyle = '#f59e0b'; ctx.textAlign = 'center'; ctx.font = '5px sans-serif'
             ctx.fillText(badge, badgeX + bw / 2, pillY + pillH / 2)
           }
           pillY += pillH + gap
@@ -430,7 +431,7 @@ export default function PetCompanion({
         ref={canvasRef}
         width={400} height={300}
         onClick={handleCanvasClick}
-        style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'pixelated' }}
+        style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'auto' }}
       />
 
       {/* ── Species name badge (overlaid on canvas) ── */}
