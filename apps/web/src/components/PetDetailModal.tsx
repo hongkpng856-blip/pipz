@@ -175,30 +175,39 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
             padding: 16, marginBottom: 12,
           }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8', marginBottom: 10 }}>
-              📊 能力值
+              📊 能力值 <span style={{ fontSize: 9, color: '#5a6d85', fontWeight: 400 }}>（含裝備加成）</span>
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
-              {[
+              {([
                 { label: '⚡ 速度', value: pet.stats.speed, key: 'speed' },
                 { label: '🍀 運氣', value: pet.stats.luck, key: 'luck' },
                 { label: '💜 魅力', value: pet.stats.charm, key: 'charm' },
                 { label: '🔋 體力', value: pet.stats.energy, key: 'energy' },
-              ].map(s => (
-                <div key={s.key}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
-                    <span style={{ color: '#94a5b8' }}>{s.label}</span>
-                    <span style={{ color: '#f0f4f8', fontWeight: 700 }}>{s.value}</span>
+              ] as const).map(s => {
+                const bonus = equipment ? EQUIPMENT_POOL
+                  .filter(e => equipment.some(eq => eq.equipmentId === e.id))
+                  .reduce((sum, e) => sum + ((e.statBonuses[s.key as keyof typeof e.statBonuses] as number) || 0), 0) : 0
+                const effective = s.value + bonus
+                return (
+                  <div key={s.key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 3 }}>
+                      <span style={{ color: '#94a5b8' }}>{s.label}</span>
+                      <span>
+                        <span style={{ color: '#f0f4f8', fontWeight: 700 }}>{effective}</span>
+                        {bonus > 0 && <span style={{ color: '#22c55e', fontSize: 9, marginLeft: 4 }}>+{bonus}</span>}
+                      </span>
+                    </div>
+                    <div style={{ height: 6, borderRadius: 3, background: '#1a2338', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 3,
+                        width: `${Math.min(100, (effective / 200) * 100)}%`,
+                        background: 'linear-gradient(90deg, #8b5cf6, #22d3ee)',
+                        transition: 'width 0.3s',
+                      }} />
+                    </div>
                   </div>
-                  <div style={{ height: 6, borderRadius: 3, background: '#1a2338', overflow: 'hidden' }}>
-                    <div style={{
-                      height: '100%', borderRadius: 3,
-                      width: `${Math.min(100, (s.value / 200) * 100)}%`,
-                      background: 'linear-gradient(90deg, #8b5cf6, #22d3ee)',
-                      transition: 'width 0.3s',
-                    }} />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
