@@ -62,6 +62,64 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
 
   const stepsRemaining = Math.max(0, nextReq - pet.totalSteps)
 
+  // ── Render a single equipment slot ──
+  const slotRender = (slot: 'head' | 'body' | 'feet' | 'accessory') => {
+    const label = { head: '頭', body: '身', feet: '腳', accessory: '飾' }[slot]
+    const slotIcon = { head: '👑', body: '👕', feet: '👟', accessory: '📿' }[slot]
+    const equipped = equipment?.find(e => e.slot === slot)
+    const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
+    const rarColor = def ? RARITY_COLORS[def.rarity] : '#2a3a5a'
+    return (
+      <div key={slot}
+        onClick={() => {
+          if (def && onUnequip) onUnequip(slot)
+          else if (!def && onOpenInventory) onOpenInventory()
+        }}
+        style={{
+          width: '100%', aspectRatio: '1', borderRadius: 12,
+          background: def
+            ? `radial-gradient(circle at 50% 40%, ${rarColor}18, transparent 80%)`
+            : '#1a2338',
+          border: def
+            ? `2px solid ${rarColor}55`
+            : '2px dashed #2a3a5a',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 1, cursor: 'pointer',
+          position: 'relative',
+          transition: 'border-color 0.15s, background 0.15s',
+        }}
+      >
+        {def ? (
+          <>
+            <span style={{ fontSize: 20, lineHeight: 1 }}>{def.icon}</span>
+            <span style={{ fontSize: 7, fontWeight: 700, color: rarColor, lineHeight: 1.1, textAlign: 'center', padding: '0 2px' }}>{def.name}</span>
+            <span style={{ fontSize: 7, color: '#22c55e', lineHeight: 1 }}>+{def.bonusValue}</span>
+            {onUnequip && (
+              <div style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 14, height: 14, borderRadius: 7,
+                background: 'rgba(239,68,68,0.15)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 7, color: '#ef4444', cursor: 'pointer', lineHeight: 1,
+              }}
+                onClick={e => { e.stopPropagation(); onUnequip(slot) }}
+              >
+                ✕
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 16, opacity: 0.2 }}>{slotIcon}</span>
+            <span style={{ fontSize: 7, color: '#3a4d65', fontWeight: 600 }}>{label}</span>
+          </>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
@@ -109,26 +167,42 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
 
           {/* ── Pet Display ── */}
           <div style={{
-            textAlign: 'center',
             background: '#141b2d', border: '1px solid #1e2a45', borderRadius: 20,
             padding: 24, marginBottom: 12,
           }}>
-            <div style={{
-              background: `radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`,
-              width: 100, height: 100, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto',
-            }}>
-              <PixelPetCanvas
-                seed={parseInt(pet.speciesId) || 1}
-                rarity={pet.rarity}
-                evolutionStage={pet.evolutionStage}
-                animation="happy"
-                size={6}
-              />
+            {/* Top row: [slot] [canvas] [slot] */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
+
+              {/* Left slots: Head + Body */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 68, flexShrink: 0 }}>
+                {(['head', 'body'] as const).map(slot => slotRender(slot))}
+              </div>
+
+              {/* Center: Pet Canvas */}
+              <div style={{
+                background: `radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`,
+                width: 100, height: 100, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 4px', flexShrink: 0,
+              }}>
+                <PixelPetCanvas
+                  seed={parseInt(pet.speciesId) || 1}
+                  rarity={pet.rarity}
+                  evolutionStage={pet.evolutionStage}
+                  animation="happy"
+                  size={6}
+                />
+              </div>
+
+              {/* Right slots: Feet + Accessory */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: 68, flexShrink: 0 }}>
+                {(['feet', 'accessory'] as const).map(slot => slotRender(slot))}
+              </div>
+
             </div>
 
-            <div style={{ marginTop: 8 }}>
+            {/* Rarity + Species + Level info */}
+            <div style={{ marginTop: 10, textAlign: 'center' }}>
               <span className="pet-badge" style={{
                 color: RARITY_COLORS[pet.rarity], background: RARITY_COLORS[pet.rarity] + '18',
                 fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 700,
@@ -137,7 +211,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               </span>
             </div>
 
-            <div style={{ marginTop: 6, fontSize: 11, color: '#5a6d85' }}>
+            <div style={{ marginTop: 6, fontSize: 11, color: '#5a6d85', textAlign: 'center' }}>
               #{speciesName}
             </div>
 
@@ -171,114 +245,42 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               </div>
             </div>
 
-            {/* ── Equipment — WoW slots inside pet image card ── */}
-            {equipment && (
+            {/* Available equipment — tap to equip */}
+            {equipment && availableEquipment && availableEquipment.length > 0 && (
               <div style={{ marginTop: 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {(['head', 'body', 'feet', 'accessory'] as const).map(slot => {
-                    const label = { head: '頭', body: '身', feet: '腳', accessory: '飾' }[slot]
-                    const slotIcon = { head: '👑', body: '👕', feet: '👟', accessory: '📿' }[slot]
-                    const equipped = equipment.find(e => e.slot === slot)
-                    const def = equipped ? EQUIPMENT_POOL.find(d => d.id === equipped.equipmentId) : null
-                    const rarColor = def ? RARITY_COLORS[def.rarity] : '#2a3a5a'
+                <div style={{ fontSize: 9, color: '#5a6d85', marginBottom: 6, fontWeight: 600 }}>
+                  📦 可用裝備（點擊裝備）
+                </div>
+                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                  {availableEquipment.map(item => {
+                    const slotOccupied = equipment.some(e => e.slot === item.slot)
                     return (
-                      <div key={slot}
-                        style={{
-                          aspectRatio: '1', borderRadius: 14,
-                          background: def
-                            ? `radial-gradient(circle at 50% 40%, ${rarColor}18, transparent 80%)`
-                            : '#1a2338',
-                          border: def
-                            ? `2px solid ${rarColor}55`
-                            : '2px dashed #2a3a5a',
-                          display: 'flex', flexDirection: 'column',
-                          alignItems: 'center', justifyContent: 'center',
-                          gap: 2, cursor: 'pointer',
-                          position: 'relative',
-                          transition: 'border-color 0.15s, background 0.15s',
-                          minHeight: 70,
-                        }}
+                      <div key={item.id}
                         onClick={() => {
-                          if (def && onUnequip) onUnequip(slot)
-                          else if (!def && onOpenInventory) onOpenInventory()
+                          if (!slotOccupied && onEquipToSlot) onEquipToSlot(item.slot, item.id)
+                        }}
+                        style={{
+                          flexShrink: 0, width: 44, textAlign: 'center',
+                          cursor: slotOccupied ? 'default' : 'pointer',
+                          opacity: slotOccupied ? 0.35 : 1,
                         }}
                       >
-                        {def ? (
-                          <>
-                            <span style={{ fontSize: 24, lineHeight: 1 }}>{def.icon}</span>
-                            <span style={{ fontSize: 9, fontWeight: 700, color: rarColor, lineHeight: 1.1, textAlign: 'center', padding: '0 4px' }}>{def.name}</span>
-                            <span style={{ fontSize: 8, color: '#22c55e', lineHeight: 1 }}>+{def.bonusValue}</span>
-                            {onUnequip && (
-                              <div style={{
-                                position: 'absolute', top: 4, right: 4,
-                                width: 16, height: 16, borderRadius: 8,
-                                background: 'rgba(239,68,68,0.15)',
-                                border: '1px solid rgba(239,68,68,0.3)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 8, color: '#ef4444', cursor: 'pointer', lineHeight: 1,
-                              }}
-                                onClick={e => { e.stopPropagation(); onUnequip(slot) }}
-                              >
-                                ✕
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <span style={{ fontSize: 18, opacity: 0.25 }}>{slotIcon}</span>
-                            <span style={{ fontSize: 8, color: '#3a4d65', fontWeight: 600 }}>{label}</span>
-                          </>
-                        )}
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 10,
+                          background: `${RARITY_COLORS[item.rarity]}15`,
+                          border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 18, margin: '0 auto',
+                        }}>
+                          {item.icon}
+                        </div>
+                        <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.name}
+                        </div>
                       </div>
                     )
                   })}
                 </div>
-
-                {/* Available equipment — tap to equip */}
-                {availableEquipment && availableEquipment.length > 0 && (
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 9, color: '#5a6d85', marginBottom: 6, fontWeight: 600 }}>
-                      📦 可用裝備（點擊裝備）
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                      {availableEquipment.map(item => {
-                        // Find first empty slot matching this item's slot type
-                        const findSlot = () => {
-                          const eqSlot = item.slot
-                          const isEquipped = equipment.some(e => e.slot === eqSlot)
-                          return isEquipped ? null : eqSlot
-                        }
-                        return (
-                          <div key={item.id}
-                            onClick={() => {
-                              const targetSlot = findSlot()
-                              if (targetSlot && onEquipToSlot) {
-                                onEquipToSlot(targetSlot, item.id)
-                              }
-                            }}
-                            style={{
-                              flexShrink: 0, width: 44, textAlign: 'center', cursor: 'pointer',
-                              opacity: item.slot && equipment.some(e => e.slot === item.slot) ? 0.4 : 1,
-                            }}
-                          >
-                            <div style={{
-                              width: 40, height: 40, borderRadius: 10,
-                              background: `${RARITY_COLORS[item.rarity]}15`,
-                              border: `1px solid ${RARITY_COLORS[item.rarity]}33`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 18, margin: '0 auto',
-                            }}>
-                              {item.icon}
-                            </div>
-                            <div style={{ fontSize: 7, color: RARITY_COLORS[item.rarity], marginTop: 2, lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {item.name}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
