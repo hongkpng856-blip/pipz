@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -336,17 +336,28 @@ export default function HomePage() {
 
   // ── Step manager ──
   const addSt = (n: number) => {
-    setSteps(s => s + n)
+    // Apply active pet's skill effects
     const curPets = petsRef.current
-    const curUser = userRef.current
     const curActiveIdx = activeIdxRef.current
+    const activePet = curPets[curActiveIdx]
+    const activeSkills = activePet?.skills ?? []
 
-    // Also add steps to active pet
-    if (curPets[curActiveIdx]) {
-      setPets(v => v.map((p, i) => i === curActiveIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
+    // Double steps effect
+    const stepMult = calculateStepMultiplier(activeSkills)
+    const finalSteps = n * stepMult
+
+    // Random step bonus
+    const bonus = rollStepBonus(activeSkills)
+
+    setSteps(s => s + finalSteps + bonus)
+    const curUser = userRef.current
+
+    // Add steps to active pet (with multiplier)
+    if (activePet) {
+      setPets(v => v.map((p, i) => i === curActiveIdx ? { ...p, totalSteps: p.totalSteps + finalSteps } : p))
     }
     setTotalSteps(s => {
-      const newTotal = s + n
+      const newTotal = s + finalSteps
 
       // ── First pet check ──
       if (curPets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
@@ -363,10 +374,11 @@ export default function HomePage() {
       return newTotal
     })
     // ── Side-effects outside setState callback ──
-    scheduleSync(pendingSteps.current + n, totalSteps + n)
-    encCnt.current += n
-    pity.current.legendary += n
-    pity.current.epic += n
+    const encMult = getEncounterMultiplier(activeSkills)
+    scheduleSync(pendingSteps.current + finalSteps, totalSteps + finalSteps)
+    encCnt.current += Math.round(n * encMult)
+    pity.current.legendary += Math.round(n * encMult)
+    pity.current.epic += Math.round(n * encMult)
     if (encCnt.current >= ENCOUNTER_INTERVAL) {
       const r = rollEncounter(encCnt.current, pity.current)
       if (r) {

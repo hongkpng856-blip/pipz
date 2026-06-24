@@ -14,6 +14,15 @@ export enum Mood {
   Excited = 'excited',
 }
 
+export enum SkillEffect {
+  DoubleSteps = 'double_steps',      // 每步當兩步
+  EnergyBonus = 'energy_bonus',      // 步數→能量轉換加成
+  StepBonus = 'step_bonus',          // 隨機額外步數
+  EncounterUp = 'encounter_up',      // 遇到寵物機率提升
+  HatchSpeed = 'hatch_speed',        // 孵化加速
+  MoodGuard = 'mood_guard',          // 心情下降減半
+}
+
 export enum PetStatus {
   Egg = 'egg',
   Hatching = 'hatching',
@@ -32,6 +41,7 @@ export interface PetSkill {
   stat: keyof PetStats | 'all'
   power: number
   unlockedAtLevel: number
+  effect?: SkillEffect      // gameplay effect (beyond stat boost)
 }
 
 export interface PetStats {

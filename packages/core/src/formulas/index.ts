@@ -1,5 +1,4 @@
-import { PetStats, PetStatus, Rarity, PetSkill } from '../types'
-
+import { PetSkill, PetStats, PetStatus, Rarity, SkillEffect } from '../types'
 // 孵化第一隻寵物需要嘅步數
 export const FIRST_PET_STEPS = 1000
 
@@ -139,9 +138,11 @@ interface SkillDef {
   stat: keyof PetStats | 'all'
   minRarity: Rarity
   basePower: number
+  effect?: SkillEffect      // gameplay effect (beyond stat boost)
 }
 
 const SKILL_POOL: SkillDef[] = [
+  // ── Stat buffs (existing) ──
   { id: 'quick_dash', name: '疾速衝刺', description: '速度提升，行得更快', icon: '⚡', stat: 'speed', minRarity: Rarity.Common, basePower: 10 },
   { id: 'lucky_find', name: '幸運搜尋', description: '遇到稀有寵物機率提升', icon: '🍀', stat: 'luck', minRarity: Rarity.Common, basePower: 10 },
   { id: 'charm_wave', name: '魅力波動', description: '寵物心情更容易變好', icon: '💜', stat: 'charm', minRarity: Rarity.Common, basePower: 10 },
@@ -154,6 +155,14 @@ const SKILL_POOL: SkillDef[] = [
   { id: 'shadow_step', name: '暗影步', description: '移動速度極大幅提升', icon: '🌙', stat: 'speed', minRarity: Rarity.Epic, basePower: 25 },
   { id: 'nature_gift', name: '自然恩賜', description: '運氣大幅提升', icon: '🌿', stat: 'luck', minRarity: Rarity.Rare, basePower: 18 },
   { id: 'moonlight_serenade', name: '月光小夜曲', description: '魅惑效果加倍', icon: '🌙', stat: 'charm', minRarity: Rarity.Uncommon, basePower: 12 },
+
+  // ── Gameplay effects (new) ──
+  { id: 'double_step', name: '雙倍步伐', description: '每步當兩步計！行路效率加倍', icon: '👟', stat: 'speed', minRarity: Rarity.Uncommon, basePower: 5, effect: SkillEffect.DoubleSteps },
+  { id: 'energy_overload', name: '能量過載', description: '獲得更多能量！步數轉換率提升', icon: '⚡', stat: 'energy', minRarity: Rarity.Common, basePower: 5, effect: SkillEffect.EnergyBonus },
+  { id: 'step_rush', name: '疾步如飛', description: '隨機獲得額外步數獎勵', icon: '💨', stat: 'speed', minRarity: Rarity.Rare, basePower: 10, effect: SkillEffect.StepBonus },
+  { id: 'pet_magnet', name: '寵物磁鐵', description: '更容易遇到寵物蛋', icon: '🧲', stat: 'luck', minRarity: Rarity.Uncommon, basePower: 5, effect: SkillEffect.EncounterUp },
+  { id: 'warm_incubator', name: '溫暖孵化', description: '蛋孵化所需步數減少', icon: '🔥', stat: 'energy', minRarity: Rarity.Common, basePower: 5, effect: SkillEffect.HatchSpeed },
+  { id: 'calm_aura', name: '平靜光環', description: '心情下降速度減半', icon: '🛡️', stat: 'charm', minRarity: Rarity.Common, basePower: 5, effect: SkillEffect.MoodGuard },
 ]
 
 const RARITY_ORDER: Record<Rarity, number> = {
@@ -182,6 +191,7 @@ export function generateSkills(rarity: Rarity, level: number): PetSkill[] {
     stat: s.stat,
     power: s.basePower + Math.floor(level * 1.5),
     unlockedAtLevel: Math.max(1, i * 3 + 1),
+    effect: s.effect,
   }))
 }
 
@@ -205,4 +215,42 @@ export function calculateMoodDecay(
   if (hoursSinceInteraction > 2) decay += (hoursSinceInteraction - 2) * 3
 
   return Math.min(decay, 100)
+}
+
+// ── Skill effects query ──
+
+/** Check if any active pet skills provide a given effect */
+export function hasEffect(skills: PetSkill[], effect: SkillEffect): boolean {
+  return skills.some(s => s.effect === effect)
+}
+
+/** Step multiplier from DoubleSteps effect (1 = normal, 2 = double) */
+export function calculateStepMultiplier(skills: PetSkill[]): number {
+  return hasEffect(skills, SkillEffect.DoubleSteps) ? 2 : 1
+}
+
+/** Encounter rate multiplier (1 = normal, >1 = more encounters) */
+export function getEncounterMultiplier(skills: PetSkill[]): number {
+  return hasEffect(skills, SkillEffect.EncounterUp) ? 1.5 : 1
+}
+
+/** Hatch speed multiplier (1 = normal, <1 = faster) */
+export function getHatchSpeedMultiplier(skills: PetSkill[]): number {
+  return hasEffect(skills, SkillEffect.HatchSpeed) ? 0.75 : 1
+}
+
+/** Whether mood decay is halved */
+export function hasMoodGuard(skills: PetSkill[]): boolean {
+  return hasEffect(skills, SkillEffect.MoodGuard)
+}
+
+/** Bonus energy per step (extra percentage points) */
+export function getEnergyBonus(skills: PetSkill[]): number {
+  return hasEffect(skills, SkillEffect.EnergyBonus) ? 0.5 : 0 // +50% energy per step
+}
+
+/** Random step bonus: returns bonus steps or 0 */
+export function rollStepBonus(skills: PetSkill[]): number {
+  if (!hasEffect(skills, SkillEffect.StepBonus)) return 0
+  return Math.random() < 0.15 ? Math.floor(Math.random() * 10) + 5 : 0 // 15% chance for 5-14 bonus steps
 }

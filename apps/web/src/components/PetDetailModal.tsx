@@ -242,7 +242,16 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onF
                   }}>
                     <span style={{ fontSize: 20 }}>{skill.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8' }}>{skill.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#f0f4f8' }}>{skill.name}</span>
+                        {skill.effect && (
+                          <span style={{
+                            fontSize: 8, fontWeight: 700, color: '#f59e0b',
+                            background: 'rgba(245,158,11,0.15)',
+                            borderRadius: 4, padding: '1px 6px',
+                          }}>效</span>
+                        )}
+                      </div>
                       <div style={{ fontSize: 10, color: '#5a6d85' }}>{skill.description}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
