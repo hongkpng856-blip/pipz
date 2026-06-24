@@ -11,6 +11,10 @@
 - **DB CRUD**: equip/unequip items, add/remove inventory, load equipment/inventory, log events
 - **Core types**: `EquipmentDef`, `EquipmentSlot`, `HelpItemDef`, `HelpEffect`, `GameEvent`, `EventEffect`, `InventoryEntry`, `EquippedItem`
 - **Core formulas**: `rollEvent()`, `rollEquipmentDrop()`, `calculateEquipmentBonus()`, event/equipment/help item pools
+- **Bottom inventory card**: compact backpack card at bottom of map tab, shows first 8 items with icons + quantities, click opens full InventoryModal
+- **WoW-style square equipment slots**: 2×2 grid in PetDetailModal, shows equipped item icon + rarity border, empty slots as dashed frames with slot label
+- **Drag-and-drop equipping**: "available equipment" row in PetDetailModal with draggable items; drop onto slot to equip; drag-over highlighting
+- **Click-to-equip/unequip**: click empty slot opens inventory; click equipped item shows ✕ to unequip
 
 ### Changed
 - **Walking loop**: now also rolls for roguelike events alongside egg encounters (`eventStepCounter` every ~800 steps)
