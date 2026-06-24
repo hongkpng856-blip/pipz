@@ -28,31 +28,6 @@ const MOOD_CN: Record<string, string> = {
 const SPRITE_VERSION = 'v5'
 const MARGIN = 50 // px from edge so sprite doesn't clip
 
-/** Remove warm-beige background (rgb(255,241,232)) and PICO-8 bg gray (rgb(194,195,199)) */
-function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
-  const id = ctx.getImageData(0, 0, w, h)
-  const TOL = 40
-  const br = 255, bg = 241, bb = 232
-  const pico_r = 194, pico_g = 195, pico_b = 199
-  for (let i = 0; i < id.data.length; i += 4) {
-    const a = id.data[i + 3]
-    if (a === 0) continue
-    const r = id.data[i], g = id.data[i + 1], b = id.data[i + 2]
-    if (
-      Math.abs(r - br) <= TOL &&
-      Math.abs(g - bg) <= TOL &&
-      Math.abs(b - bb) <= TOL
-    ) {
-      id.data[i + 3] = 0
-      continue
-    }
-    if (r === pico_r && g === pico_g && b === pico_b) {
-      id.data[i + 3] = 0
-    }
-  }
-  ctx.putImageData(id, 0, 0)
-}
-
 export default function PetCompanion({
   pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage, skills,
 }: Props) {
@@ -118,7 +93,6 @@ export default function PetCompanion({
       oc.height = img.height
       const ox = oc.getContext('2d')!
       ox.drawImage(img, 0, 0)
-      removeBg(ox, img.width, img.height)
       offscreenRef.current = oc
       if (!cancelled) setStatus('png')
     }
@@ -431,7 +405,7 @@ export default function PetCompanion({
         ref={canvasRef}
         width={400} height={300}
         onClick={handleCanvasClick}
-        style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'auto' }}
+        style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'pixelated' }}
       />
 
       {/* ── Species name badge (overlaid on canvas) ── */}
