@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.5 (2026-06-24)
+
+### Fixed
+- **NEW badge not showing after hatching (root cause)** — complete rewrite of badge logic:
+  - **Popup button:** calls `dismissNewPet()` correctly (adds to `dismissedNewPets` to prevent auto-detect loop, closes popup)
+  - **isNewBadge:** no longer checks `dismissedNewPets` or `newPetId`. Uses dedicated `badgeDismissed` ref + recency (5 min) + newestPet detection — badge is independent of popup state
+  - **Pet card click:** uses `badgeDismissed` ref instead of `dismissNewPet()` — clicking a pet dismisses its badge without affecting popup or auto-detect
+  - **Fix verified in browser:** NEW badge shows correctly on pets tab after hatching
+
 ## v0.3.4 (2026-06-24)
 
 ### Fixed
