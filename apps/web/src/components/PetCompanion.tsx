@@ -75,7 +75,6 @@ export default function PetCompanion({
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
-  const [showInfo, setShowInfo] = useState(false)
   const [shake, setShake] = useState(false)
   const [speciesName, setSpeciesName] = useState('')
 
@@ -385,7 +384,7 @@ export default function PetCompanion({
   }
 
   return (
-    <div style={{ width:'100%', position:'relative', overflow:'hidden', background:'#141b2d' }}>
+    <div style={{ width:'100%', background:'#141b2d', borderRadius:16, overflow:'hidden' }}>
       {/* ── Canvas (shorter/wider play area) ── */}
       <canvas
         ref={canvasRef}
@@ -394,7 +393,7 @@ export default function PetCompanion({
         style={{ width:'100%', height:'auto', display:'block', cursor:pet?'pointer':'default', imageRendering:'pixelated' }}
       />
 
-      {/* ── Top overlay: species name + info toggle ── */}
+      {/* ── Species name badge (overlaid on canvas) ── */}
       {pet && (
         <div style={{ position:'absolute', top:10, left:10, right:10, display:'flex', alignItems:'center', gap:6 }}>
           <div style={{
@@ -404,79 +403,68 @@ export default function PetCompanion({
           }}>
             #{speciesName}
           </div>
-
           <div style={{ flex:1 }} />
-
-          <button onClick={() => setShowInfo(!showInfo)}
-            style={{
-              background:'rgba(11,17,32,0.7)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8,
-              color:'#94a5b8', fontSize:9, padding:'3px 8px', cursor:'pointer', fontFamily:'inherit',
-              backdropFilter:'blur(4px)', display:'flex', alignItems:'center', gap:3
-            }}>
-            📊 {showInfo ? '隱藏' : '詳情'}
-          </button>
         </div>
       )}
 
-      {/* ── Info overlay (compact, slides up) ── */}
-      {pet && showInfo && (
-        <div style={{
-          position:'absolute', bottom:44, left:10, right:10,
-          background:'rgba(11,17,32,0.92)', backdropFilter:'blur(8px)', borderRadius:14,
-          border:'1px solid #1e2a45', padding:12, display:'flex', flexDirection:'column', gap:6, zIndex:10,
-        }}>
-          {/* Mood bar */}
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:1 }}>
-            <span style={{ fontSize:8, color:'#94a5b8' }}>😊 {MOOD_CN[pet.mood] || pet.mood}</span>
-            <span style={{ fontSize:8, color:'#5a6d85' }}>{getMoodValue()}%</span>
-          </div>
-          <div className="progress-wrap" style={{ height:3 }}>
-            <div className="progress-bar"><div className="progress-fill" style={{
-              width:`${getMoodValue()}%`,
-              background: getMoodValue() > 60 ? 'linear-gradient(90deg,#22c55e,#4ade80)' :
-                         getMoodValue() > 30 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
-                         'linear-gradient(90deg,#ef4444,#f87171)',
-            }}/></div>
-          </div>
-
-          {/* Stats row */}
-          <div style={{ display:'flex', gap:8 }}>
-            {[
-              { icon:'⚡', label:'速度', val:pet.stats.speed },
-              { icon:'🍀', label:'運氣', val:pet.stats.luck },
-              { icon:'💜', label:'魅力', val:pet.stats.charm },
-              { icon:'🔋', label:'能量', val:pet.stats.energy },
-            ].map(s => (
-              <div key={s.label} style={{ flex:1, textAlign:'center', background:'rgba(20,27,45,0.6)', borderRadius:6, padding:'4px 2px' }}>
-                <div style={{ fontSize:12 }}>{s.icon}</div>
-                <div style={{ fontSize:7, color:'#5a6d85', marginTop:1 }}>{s.label}</div>
-                <div style={{ fontSize:9, fontWeight:700, color:'#f0f4f8' }}>{s.val}</div>
+      {/* ── Always-visible info + skills panel ── */}
+      {pet && (
+        <div style={{ padding:'10px 12px 8px', display:'flex', flexDirection:'column', gap:6 }}>
+          {/* Row 1: Mood + Stats */}
+          <div style={{ display:'flex', gap:8, alignItems:'stretch' }}>
+            {/* Mood column */}
+            <div style={{ flex:1, display:'flex', flexDirection:'column', gap:4 }}>
+              <div style={{ display:'flex', justifyContent:'space-between' }}>
+                <span style={{ fontSize:8, color:'#94a5b8' }}>😊 {MOOD_CN[pet.mood] || pet.mood}</span>
+                <span style={{ fontSize:8, color:'#5a6d85' }}>{getMoodValue()}%</span>
               </div>
-            ))}
+              <div className="progress-wrap" style={{ height:2 }}>
+                <div className="progress-bar"><div className="progress-fill" style={{
+                  width:`${getMoodValue()}%`,
+                  background: getMoodValue() > 60 ? 'linear-gradient(90deg,#22c55e,#4ade80)' :
+                             getMoodValue() > 30 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
+                             'linear-gradient(90deg,#ef4444,#f87171)',
+                }}/></div>
+              </div>
+              {/* Evolution + Rarity */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:2 }}>
+                <span style={{ fontSize:8, color:'#94a5b8' }}>
+                  🌟 {['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1]||'初級'} · Lv.{pet.level}
+                </span>
+                <span className="pet-badge" style={{ color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:7 }}>{RARITY_LABELS[pet.rarity]}</span>
+              </div>
+            </div>
+            {/* 4 Stats */}
+            <div style={{ display:'flex', gap:4 }}>
+              {[
+                { icon:'⚡', label:'速度', val:pet.stats.speed },
+                { icon:'🍀', label:'運氣', val:pet.stats.luck },
+                { icon:'💜', label:'魅力', val:pet.stats.charm },
+                { icon:'🔋', label:'能量', val:pet.stats.energy },
+              ].map(s => (
+                <div key={s.label} style={{ textAlign:'center', background:'rgba(20,27,45,0.6)', borderRadius:6, padding:'3px 5px', minWidth:38 }}>
+                  <div style={{ fontSize:11 }}>{s.icon}</div>
+                  <div style={{ fontSize:6, color:'#5a6d85', marginTop:0 }}>{s.label}</div>
+                  <div style={{ fontSize:8, fontWeight:700, color:'#f0f4f8' }}>{s.val}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Evolution row */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ fontSize:8, color:'#94a5b8' }}>
-              🌟 {['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1]||'初級'} · Lv.{pet.level}
-            </span>
-            <span className="pet-badge" style={{ color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:8 }}>{RARITY_LABELS[pet.rarity]}</span>
-          </div>
-
-          {/* ── Active Skills ── */}
+          {/* ── Skills section ── */}
           {skills.length > 0 && (
-            <div style={{ marginTop:6 }}>
-              <div style={{ fontSize:8, color:'#5a6d85', marginBottom:4 }}>🎯 目前技能</div>
-              <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+            <div>
+              <div style={{ fontSize:8, color:'#5a6d85', marginBottom:3 }}>🎯 目前技能</div>
+              <div style={{ display:'flex', gap:3, flexWrap:'wrap' }}>
                 {skills.map(s => (
                   <div key={s.id} style={{
                     background:'rgba(20,27,45,0.6)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:6,
-                    padding:'3px 7px', display:'flex', alignItems:'center', gap:4, fontSize:9,
+                    padding:'2px 6px', display:'flex', alignItems:'center', gap:3, fontSize:8,
                   }}>
                     <span>{s.icon}</span>
                     <span style={{ color:'#f0f4f8', fontWeight:600 }}>{s.name}</span>
                     {s.effect && (
-                      <span style={{ fontSize:7, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 4px' }}>
+                      <span style={{ fontSize:6, color:'#f59e0b', background:'rgba(245,158,11,0.15)', borderRadius:3, padding:'0 3px' }}>
                         加成中
                       </span>
                     )}
@@ -490,7 +478,7 @@ export default function PetCompanion({
 
       {/* ── Bottom: action buttons ── */}
       {pet && (
-        <div style={{ position:'absolute', bottom:8, left:10, right:10, display:'flex', gap:4, justifyContent:'center' }}>
+        <div style={{ display:'flex', gap:4, justifyContent:'center', padding:'0 12px 10px' }}>
           <button className="btn btn-green" onClick={(e)=>{e.stopPropagation(); handleFeed()}}
             style={{ fontSize:9, padding:'4px 10px', borderRadius:14, display:'flex', alignItems:'center', gap:3 }}>
             🍖 餵食

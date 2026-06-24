@@ -66,6 +66,11 @@ export default function HomePage() {
   const [marketListings, setMarketListings] = useState<Pet[]>([])
   const [myListings, setMyListings] = useState<Pet[]>([])
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
+  // ── Step visual effects ──
+  const [stepAnimTick, setStepAnimTick] = useState(0)
+  const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
+  const [stepArrows, setStepArrows] = useState<{id:number;type:'normal'|'skill'}[]>([])
+  const stepArrowId = useRef(0)
   const { user, signOut } = useAuth()
 
   const wid = useRef<number|null>(null)
@@ -413,6 +418,15 @@ export default function HomePage() {
         if (curUser) setNotifUnread(n => n + 1)
       }
     }
+    // ── Step visual effects ──
+    setStepAnimTick(t => t + 1)
+    const hasSkillEffects = finalSteps > n || bonus > 0
+    setStepFlashType(hasSkillEffects ? 'skill' : 'normal')
+    const arrowType = hasSkillEffects ? 'skill' : 'normal'
+    const arrowId = ++stepArrowId.current
+    setStepArrows(v => [...v.slice(-4), {id: arrowId, type: arrowType}])
+    setTimeout(() => setStepFlashType('none'), hasSkillEffects ? 900 : 700)
+    setTimeout(() => setStepArrows(v => v.filter(a => a.id !== arrowId)), 1200)
   }
 
   const addDebug = () => {
@@ -746,9 +760,27 @@ export default function HomePage() {
               <div className="section card" style={{padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
-                  <div style={{display:'flex', justifyContent:'space-around', marginBottom:14}}>
-                    <div style={{textAlign:'center'}}>
-                      <div className="steps-num">{ready ? steps.toLocaleString() : '0'}</div>
+                  <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
+                    <div style={{textAlign:'center', position:'relative'}}>
+                      <div className="steps-num step-bounce"
+                        key={stepAnimTick}>
+                        {ready ? steps.toLocaleString() : '0'}
+                      </div>
+                      {/* Flash overlay */}
+                      {stepFlashType !== 'none' && (
+                        <div className={stepFlashType === 'skill' ? 'step-flash-skill' : 'step-flash'}
+                          style={{position:'absolute', inset:-8, borderRadius:8, pointerEvents:'none', zIndex:2}} />
+                      )}
+                      {/* Floating arrows */}
+                      {stepArrows.map((a, i) => (
+                        <div key={a.id} className={a.type === 'skill' ? 'arrow-float-skill' : 'arrow-float'}
+                          style={{
+                            position:'absolute', fontSize:14, fontWeight:700, color:'#22c55e',
+                            left:`${-20 + i * 14}px`, top:0, pointerEvents:'none', zIndex:3,
+                          }}>
+                          ↑
+                        </div>
+                      ))}
                       <div className="steps-label" style={{marginTop:2}}>今日步數</div>
                       {/* Skill effect hints for today steps */}
                       {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (

@@ -49,6 +49,7 @@ interface DbPet {
   created_at: string
   is_for_sale: boolean
   price: number
+  skills?: any // JSONB — array of PetSkill
 }
 
 // ── Profile ──
@@ -245,6 +246,7 @@ function petToDb(userId: string, p: Pet): Record<string, unknown> {
     last_interaction_at: new Date(p.lastInteractionAt).toISOString(),
     is_for_sale: p.isForSale,
     price: p.price,
+    skills: p.skills,
   }
 }
 
@@ -267,7 +269,7 @@ function dbToPet(d: DbPet): Pet {
       charm: d.charm,
       energy: d.energy,
     },
-    skills: [],
+    skills: d.skills ? (Array.isArray(d.skills) ? d.skills as PetSkill[] : []) : [],
     mood: d.mood as Pet['mood'],
     moodValue: d.mood_value,
     lastFedAt: new Date(d.last_fed_at).getTime(),
