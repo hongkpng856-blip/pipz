@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { FIRST_PET_STEPS, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
-import WalkingCanvas from '../components/WalkingCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
 import ProfileModal from '../components/ProfileModal'
@@ -43,19 +42,15 @@ export default function HomePage() {
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
   const [ready, setReady] = useState(false)
-  const [camState, setCamState] = useState<'idle'|'walk'|'encounter'>('idle')
-  const [walkSpeed, setWalkSpeed] = useState(0)
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [showEvolve, setShowEvolve] = useState(false)
   const [evolvingId, setEvolvingId] = useState<string | null>(null)
   const [detailPetId, setDetailPetId] = useState<string | null>(null)
-  const [showEncounterEgg, setShowEncounterEgg] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
-  const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [newPetId, setNewPetId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
@@ -70,12 +65,9 @@ export default function HomePage() {
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
-  const encCnt = useRef(0)
-  const pity = useRef<Record<string,number>>({legendary:0,epic:0})
   const loadedUser = useRef<string|null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
   const pendingSteps = useRef(0)
-  const pendingBuffer = useRef(0) // steps queued during encounter
   const loadedStorage = useRef(false)
   const dismissedNewPets = useRef<Set<string>>(new Set())
   const badgeDismissed = useRef<Set<string>>(new Set())
@@ -87,22 +79,18 @@ export default function HomePage() {
   const nearby = pets.length > 0 ? pets.slice(-4).reverse() : []
   const canEvolve = pet ? calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats) : null
 
-  // Refs for current values used in GPS callback (avoids stale closures)
   const stepsRef = useRef(steps)
   const totalStepsRef = useRef(totalSteps)
   const userRef = useRef(user)
   const petsRef = useRef(pets)
   const petRef = useRef(pet)
-  const camStateRef = useRef(camState)
   const activeIdxRef = useRef(activeIdx)
-  const lastEggRarityRef = useRef<Rarity | null>(null)
   // Update refs every render
   stepsRef.current = steps
   totalStepsRef.current = totalSteps
   userRef.current = user
   petsRef.current = pets
   petRef.current = pet
-  camStateRef.current = camState
   activeIdxRef.current = activeIdx
 
   // ── Load persisted data from localStorage (guest) or Supabase ──
@@ -291,9 +279,11 @@ export default function HomePage() {
   }, [])
 
   // ── Walk ──
+
+  // ── Pet spawn ──
   const walkStart = () => {
     if (!navigator.geolocation) return logMsg('❌ 唔支援 GPS')
-    setWalking(true); setCamState('walk'); setWalkSpeed(30); setPetAnim('walk'); logMsg('🚶 開始行路！')
+    setWalking(true); setPetAnim('walk'); logMsg('🚶 開始行路！')
     wid.current = navigator.geolocation.watchPosition(
       pos => {
         if (pos.coords.accuracy > 100) return
@@ -304,16 +294,15 @@ export default function HomePage() {
         }
         last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
       },
-      () => { setWalking(false); setCamState('idle'); setWalkSpeed(0); setPetAnim('idle') },
+      () => { setWalking(false); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     )
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setCamState('idle'); setWalkSpeed(0); setPetAnim('idle'); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); logMsg('⏹ 停低咗')
   }
 
-  // ── Pet spawn ──
   const spawnPet = async (r: Rarity) => {
     const seed = genSeed()
     const np: Pet = {
@@ -340,13 +329,7 @@ export default function HomePage() {
   }
 
   // ── Step manager ──
-  const addSt = (n: number, skipEncounter = false) => {
-    // Don't count steps during encounter animation — queue them instead
-    if (camStateRef.current === 'encounter') {
-      pendingBuffer.current += n
-      return
-    }
-
+  const addSt = (n: number) => {
     setSteps(s => s + n)
     const curPets = petsRef.current
     const curUser = userRef.current
@@ -375,29 +358,14 @@ export default function HomePage() {
     })
     // ── Side-effects outside setState callback ──
     scheduleSync(pendingSteps.current + n, totalSteps + n)
-    encCnt.current += n
-    pity.current.legendary += n
-    pity.current.epic += n
-    if (encCnt.current >= ENCOUNTER_INTERVAL && !skipEncounter) {
-      const r = rollEncounter(encCnt.current, pity.current)
-      if (r) {
-        encCnt.current = 0
-        if (r === Rarity.Legendary) pity.current.legendary = 0
-        if (r === Rarity.Epic) pity.current.epic = 0
-        // Store rarity for the encounter — don't spawn pet yet
-        setEncounterEggRarity(r)
-        setCamState('encounter')
-        logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
-        if (curUser) createNotification(curUser.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
-        if (curUser) setNotifUnread(n => n + 1)
-      }
-    }
   }
 
   const addDebug = () => {
     logMsg('🔍 測試步數處理中...')
     addSt(500)
   }
+
+  useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
@@ -453,14 +421,6 @@ export default function HomePage() {
     if (user) updatePet(updated)
     setPetAnim('happy'); logMsg('🎾 玩緊！+5XP'); setTimeout(() => setPetAnim('idle'), 1500)
   }
-  // ── Rename pet ──
-  const renamePet = (name: string) => {
-    if (!pet) return
-    const updated = { ...pet, name }
-    setPets(v => v.map((p,i) => i === activeIdx ? updated : p))
-    if (user) updatePet(updated)
-    logMsg(`✏️ 改名做「${name}」`)
-  }
 
   const hatch = () => {
     setHatching(true)
@@ -498,7 +458,6 @@ export default function HomePage() {
     }, 1200)
   }
 
-  useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
 
   // ── Market actions ──
   const handleList = async (petId: string, price: number) => {
@@ -642,88 +601,7 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* ── When walking: show WalkingCanvas ── */}
-              {(walking || camState === 'encounter') ? (
-                <>
-                {/* Walking Canvas */}
-                <div className="section card" style={{
-                  padding:0, overflow:'hidden', position:'relative',
-                  aspectRatio:'4/3', width:'100%',
-                }}>
-                  <WalkingCanvas
-                    state={camState}
-                    speed={walkSpeed}
-                    onEncounterEnd={() => {
-                      setCamState(walking ? 'walk' : 'idle')
-                      // Flush any steps queued during encounter
-                      if (pendingBuffer.current > 0) {
-                        addSt(pendingBuffer.current, true)
-                        pendingBuffer.current = 0
-                      }
-                      // Collect the egg from encounter
-                      if (encounterEggRarity) {
-                        const rarity = encounterEggRarity
-                        lastEggRarityRef.current = rarity
-                        setEncounterEggRarity(null)
-                        // Save to Supabase first, then add to local state
-                        if (user) {
-                          saveEgg(user.id, rarity).then(dbId => {
-                            const eggId = dbId || genSeed().toString()
-                            const newEgg: EggItem = {
-                              id: eggId,
-                              rarity,
-                              collectedAt: Date.now(),
-                            }
-                            setEggs(v => [...v, newEgg])
-                          })
-                        } else {
-                          const newEgg: EggItem = {
-                            id: genSeed().toString(),
-                            rarity,
-                            collectedAt: Date.now(),
-                          }
-                          setEggs(v => [...v, newEgg])
-                        }
-                        setShowEncounterEgg(true)
-                      }
-                    }}
-                    size={3}
-                    pet={pet ? { rarity: pet.rarity, evolutionStage: pet.evolutionStage } : null}
-                    nearby={nearby.slice(0, 3).map(p => ({ rarity: p.rarity, evolutionStage: p.evolutionStage }))}
-                  />
-                </div>
-
-                {/* Pet status bar (walking mode) */}
-                {pet && camState !== 'encounter' && (
-                <div className="section card card-pad-sm">
-                  <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:4}}>
-                    <div style={{width:28, height:28, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
-                      background:`radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`, borderRadius:6}}>
-                      <PixelPetCanvas seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={2} animation={petAnim} />
-                    </div>
-                    <span className="pet-badge" style={{color:RARITY_COLORS[pet.rarity], background:RARITY_COLORS[pet.rarity]+'18', fontSize:9}}>{RARITY_LABELS[pet.rarity]}</span>
-                    <span style={{fontSize:11, fontWeight:700, color:'#f0f4f8'}}>Lv.{pet.level}</span>
-                    <span style={{fontSize:11, fontWeight:700, color:'#f59e0b'}}>CP {cp(pet)}</span>
-                    <span style={{flex:1}} />
-                    <span>{ME[pet.mood] || '😐'}</span>
-                    <span style={{fontSize:9, color:'#22c55e'}}>{pet.mood === 'happy' ? '開心' : pet.mood}</span>
-                  </div>
-                  <div style={{display:'flex', alignItems:'center', gap:6, fontSize:9, color:'#5a6d85', marginBottom:4}}>
-                    <span>👣 {formatSteps(pet.totalSteps)}步</span>
-                    <span>|</span>
-                    <span>{['BB','幼年','成年','完全體','傳說'][pet.evolutionStage-1] || '初級'}</span>
-                  </div>
-                  <div style={{display:'flex', gap:4}}>
-                    <button className="btn btn-green" onClick={feed} style={{fontSize:8, padding:'2px 8px'}}>🍖 餵食</button>
-                    <button className="btn btn-blue" onClick={petAction} style={{fontSize:8, padding:'2px 8px'}}>✋ 摸頭</button>
-                    <button className="btn btn-amber" onClick={playAction} style={{fontSize:8, padding:'2px 8px'}}>🎾 玩</button>
-                  </div>
-                </div>
-                )}
-                </>
-              ) : (
-                <>
-                {/* ── When NOT walking: show PetCompanion ── */}
+                              {/* ── PetCompanion card ── */}
                 <div className="section card" style={{
                   padding:0, overflow:'hidden', position:'relative', width:'100%',
                 }}>
@@ -732,17 +610,12 @@ export default function HomePage() {
                     onFeed={feed}
                     onPet={petAction}
                     onPlay={playAction}
-                    onRename={renamePet}
                     anim={petAnim}
                     steps={steps}
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
                   />
-                </div>
-                </>
-              )}
-
-              {/* 📊 Stats Card — with weekly bar chart (health app style) */}
+                </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
@@ -1365,57 +1238,6 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ════ Encounter Egg Popup ════ */}
-      {showEncounterEgg && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:100,
-          display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.75)',
-          padding:16,
-        }} onClick={() => setShowEncounterEgg(false)}>
-          <div style={{
-            background:'#141b2d', border:`2px solid ${PC[lastEggRarityRef.current || 'common']}44`,
-            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{fontSize:48, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
-            <div style={{fontSize:13, fontWeight:700, marginBottom:4}}>
-              發現蛋！🥚
-            </div>
-            <div style={{
-              fontSize:11, fontWeight:700,
-              color: PC[lastEggRarityRef.current || 'common'],
-              background: `${PC[lastEggRarityRef.current || 'common']}18`,
-              display:'inline-block', padding:'2px 12px', borderRadius:10,
-              marginBottom:8,
-            }}>
-              {RARITY_LABELS[lastEggRarityRef.current || 'common']}
-            </div>
-            <div style={{fontSize:11, color:'#94a5b8', marginBottom:16}}>
-              已收錄到蛋列表！去蛋頁面孵化啦
-            </div>
-            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
-              <button onClick={() => setShowEncounterEgg(false)}
-                style={{
-                  padding:'8px 16px', border:'1px solid #2a3a5a',
-                  background:'#1a2338', color:'#94a5b8', fontSize:11, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit', borderRadius:12,
-                }}>
-                關閉
-              </button>
-              <button onClick={() => { setShowEncounterEgg(false); setTab('eggs') }}
-                style={{
-                  padding:'8px 16px', border:'none',
-                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
-                  fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  borderRadius:12,
-                }}>
-                🏆 獲得
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ════ New Pet Popup (after hatching) ════ */}
       {newPetId && (() => {
         const newPet = pets.find(p => p.id === newPetId)
@@ -1496,8 +1318,9 @@ export default function HomePage() {
 
 function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLng = ((lng2 - lng1) * Math.PI) / 180
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  const toRad = (d: number) => d * Math.PI / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLng = toRad(lng2 - lng1)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }

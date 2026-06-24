@@ -8,7 +8,6 @@ interface Props {
   onFeed: () => void
   onPet: () => void
   onPlay: () => void
-  onRename?: (name: string) => void
   anim: 'idle' | 'walk' | 'happy'
   steps: number
   totalSteps: number
@@ -53,7 +52,7 @@ function removeBg(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 export default function PetCompanion({
-  pet, onFeed, onPet, onPlay, onRename, anim, steps, totalSteps, evolutionStage,
+  pet, onFeed, onPet, onPlay, anim, steps, totalSteps, evolutionStage,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
@@ -73,8 +72,6 @@ export default function PetCompanion({
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [showTapHint, setShowTapHint] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
-  const [renaming, setRenaming] = useState(false)
-  const [nameInput, setNameInput] = useState('')
   const [shake, setShake] = useState(false)
   const [speciesName, setSpeciesName] = useState('')
 
@@ -380,14 +377,6 @@ export default function PetCompanion({
     if (showTapHint) setShowTapHint(false)
   }
 
-  // ── Rename handler ──
-  const submitRename = () => {
-    if (nameInput.trim() && onRename) {
-      onRename(nameInput.trim())
-    }
-    setRenaming(false)
-  }
-
   return (
     <div style={{ width:'100%', position:'relative', overflow:'hidden', background:'#0b1120' }}>
       <canvas
@@ -400,30 +389,12 @@ export default function PetCompanion({
       {/* ── Top overlay: name + info toggle ── */}
       {pet && (
         <div style={{ position:'absolute', top:12, left:12, right:12, display:'flex', alignItems:'center', gap:8 }}>
-          {renaming ? (
-            <div style={{ display:'flex', gap:4, alignItems:'center', background:'rgba(0,0,0,0.7)', padding:'4px 8px', borderRadius:10 }}>
-              <input
-                autoFocus
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => e.key==='Enter' && submitRename()}
-                style={{ background:'#141b2d', border:'1px solid #8b5cf6', borderRadius:6, color:'white',
-                  fontSize:12, padding:'3px 6px', width:100, fontFamily:'inherit', outline:'none' }}
-              />
-              <button onClick={submitRename} style={{ background:'#8b5cf6', border:'none', borderRadius:6,
-                color:'white', fontSize:10, padding:'3px 8px', cursor:'pointer', fontFamily:'inherit' }}>✓</button>
-              <button onClick={()=>setRenaming(false)} style={{ background:'none', border:'none',
-                color:'#5a6d85', fontSize:10, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
-            </div>
-          ) : (
-            <button onClick={() => { setNameInput(pet.name || ''); setRenaming(true) }}
-              style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10,
-                color:'#f0f4f8', fontSize:14, fontWeight:700, padding:'4px 12px', cursor:'pointer',
-                fontFamily:'inherit', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', gap:6 }}>
-              {pet.name || '未命名'} ✏️
-              <span style={{ fontSize:8, fontWeight:400, color:'#5a6d85', marginLeft:4 }}>#{speciesName}</span>
-            </button>
-          )}
+          <div style={{ background:'rgba(0,0,0,0.5)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10,
+            color:'#f0f4f8', fontSize:14, fontWeight:700, padding:'4px 12px',
+            fontFamily:'inherit', backdropFilter:'blur(4px)', display:'flex', alignItems:'center', gap:6 }}>
+            {pet.name || '未命名'}
+            <span style={{ fontSize:8, fontWeight:400, color:'#5a6d85', marginLeft:4 }}>#{speciesName}</span>
+          </div>
 
           <div style={{ flex:1 }} />
 
@@ -434,9 +405,7 @@ export default function PetCompanion({
             📊 {showInfo ? '隱藏' : '詳情'}
           </button>
         </div>
-      )}
-
-      {/* ── Info overlay ── */}
+      )}      {/* ── Info overlay ── */}
       {pet && showInfo && (
         <div style={{ position:'absolute', top:60, left:12, right:12,
           background:'rgba(11,17,32,0.92)', backdropFilter:'blur(8px)', borderRadius:16,
