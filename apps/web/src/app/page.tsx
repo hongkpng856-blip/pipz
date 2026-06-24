@@ -747,7 +747,7 @@ export default function HomePage() {
                   {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14}}>
                     <div style={{textAlign:'center'}}>
-                      <div className="steps-num">{ready ? formatSteps(steps) : '0'}</div>
+                      <div className="steps-num">{ready ? steps.toLocaleString() : '0'}</div>
                       <div className="steps-label" style={{marginTop:2}}>今日步數</div>
                     </div>
                     <div style={{width:1, background:'#1e2a45'}} />
