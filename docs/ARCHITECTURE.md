@@ -28,7 +28,7 @@ Pipz/
 │   └── web/                    # Next.js web app
 │       ├── src/
 │       │   ├── app/
-│       │   │   ├── page.tsx            # Main page (4 tabs)
+│   │   │   ├── page.tsx            # Main page (5 tabs)
 │       │   │   ├── layout.tsx          # Root layout
 │       │   │   ├── auth-modal.tsx       # Login modal
 │       │   │   ├── auth-wrapper.tsx     # Auth guard wrapper

@@ -4,7 +4,7 @@
 
 ## 1. Main Page (`page.tsx`)
 
-The entire app is a single page with 4 tabs and modals.
+The entire app is a single page with 5 tabs and modals.
 
 ### Layout Structure
 
@@ -22,7 +22,7 @@ The entire app is a single page with 4 tabs and modals.
 │  └───────────────────────┘  │
 │                              │
 ├──────────────────────────────┤
-│   Bottom Navigation (fixed)  │  ← 4 tabs: 地圖 🐾 蛋 🥚 社群 🏪
+│   Bottom Navigation (fixed)  │  ← 5 tabs: 地圖 🐾 蛋 🥚 社群 🏪 背包 🎒
 └──────────────────────────────┘
 ```
 
@@ -33,7 +33,8 @@ The entire app is a single page with 4 tabs and modals.
 - Right: sync indicator, Walk button (🚶/⏹), GPS indicator, profile button 👤, steps counter 👣
 
 ### Bottom Navigation
-- 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community)
+- 5 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community), 背包 (Inventory)
+- Nav grid uses `grid-template-columns: 1fr 1fr 1fr 1fr 1fr` (5 equal columns)
 - Active tab: purple highlight
 - Navigation is `position: absolute; bottom: 0`
 
@@ -307,6 +308,16 @@ Full-screen overlay, max-width: 24rem centered.
   - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
   - Percentage shown (e.g., 92%)
 - **No action buttons**: feed/pet/play have been removed from the detail view
+- **Equipment slots (WoW-style square grid)**: 2×2 grid below the mood bar, inside the same card:
+  - 4 slots: 頭 (Head), 身 (Body), 腳 (Feet), 飾 (Accessory)
+  - Equipped items show icon + rarity border + stat bonus
+  - Empty slots show dashed border + slot icon + label
+  - Drag-over highlights slot border in purple (`#8b5cf6`)
+  - Equipped item has ✕ button (top-right) to unequip
+  - Click empty slot → opens inventory to pick equipment
+  - **Drag-drop row**: "可用裝備（拖到 slot 上）" shows draggable equipment items from inventory
+  - Items use HTML5 `draggable="true"` with `DataTransfer` API
+  - Equip flow: drag → drop → `onEquipToSlot(slot, equipmentId)` → DB update → re-render
 
 ### Stats Section
 - "📊 能力值" title
@@ -626,3 +637,31 @@ Full-screen overlay shown after hatching an egg (triggered by `newPetId` state).
   50% { transform: scale(1.15); }
 }
 ```
+
+---
+
+## 15. Inventory Tab (`tab === 'inventory'`)
+
+Full-page inventory view accessible as the 5th bottom nav tab (🎒 背包).
+
+### Header
+- "🎒 背包" title with count: `{helpCount}道具 · {equipCount}裝備`
+
+### States
+- **Empty**: 📭 icon + "未有物品 — 行路探索拎道具啦！" message
+- **Items**: Scrollable list of item cards, each showing:
+  - **Icon**: 36px rounded square with rarity-tinted background
+  - **Name**: bold 12px + rarity label
+  - **Description**: 10px grey text
+  - **Quantity**: shown when > 1 (e.g., "x3")
+  - **Action button**:
+    - Help items: green "使用" button → calls `useHelpItem()`, switches to map tab
+    - Equipment: blue "裝備" button → opens PetDetailModal for first pet
+
+### Data Source
+- `inventory` state loaded from `loadInventory(user.id)` on login and when PetDetailModal opens
+- Items resolved against `HELP_ITEM_POOL` and `EQUIPMENT_POOL` by `itemId`
+
+### Required Auth
+- Tab content only renders when `user` is logged in (`{tab === 'inventory' && user && ...}`)
+- Non-logged-in users see the 5th nav button but no inventory content

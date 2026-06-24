@@ -332,10 +332,10 @@ Every ~800 steps while walking, a random event may trigger. Events are drawn fro
 | ⛰️ 山崩 | Negative | 6 | 1000 | 👣-300 steps, 💔-10 mood |
 
 Events with a **Choice** present 2 buttons — each leads to different outcomes.
-
 ### Equipment System
 
 4 equipment slots per pet:
+
 | Slot | Label | Examples |
 |------|-------|---------|
 | Head | 👑 頭部 | 樹葉冠冕, 骨製頭盔, 水晶額環, 荊棘冠 |
@@ -343,7 +343,17 @@ Events with a **Choice** present 2 buttons — each leads to different outcomes.
 | Feet | 👟 腳部 | 草鞋, 兔毛靴, 風之脛甲 |
 | Accessory | 📿 飾品 | 幸運硬幣, 月亮吊墜, 四葉草 |
 
+**Equipment slots** are displayed as a 2×2 grid of square WoW-style slots inside the pet image card (PetDetailModal), below the mood bar.
+
+**Drag-and-drop equipping:** Available equipment from inventory appears as a draggable row below the slots. Drag an item onto a slot to equip it instantly. Empty slots show dashed borders with slot label; dragging over highlights in purple.
+
+**Equip/Unequip flow:**
+- Click an empty slot → opens full inventory to pick equipment
+- Click an equipped item → shows ✕ button (top-right) to unequip back to inventory
+- Drag an equipment item from the "可用裝備" row → drop onto the target slot
+
 Equipment stat bonuses apply when equipped:
+
 ```
 effectiveStat = pet.baseStat + equippedBonuses[stat]
 ```
