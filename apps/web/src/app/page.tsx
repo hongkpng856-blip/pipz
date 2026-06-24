@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
+import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -51,6 +51,8 @@ export default function HomePage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
+  const [showEncounterEgg, setShowEncounterEgg] = useState(false)
+  const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
   const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
   const [newPetId, setNewPetId] = useState<string | null>(() => {
     if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
@@ -71,6 +73,9 @@ export default function HomePage() {
   const loadedStorage = useRef(false)
   const dismissedNewPets = useRef<Set<string>>(new Set())
   const badgeDismissed = useRef<Set<string>>(new Set())
+  const lastEggRarityRef = useRef<Rarity | null>(null)
+  const encCnt = useRef(0)
+  const pity = useRef<Record<string,number>>({legendary:0,epic:0})
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -358,6 +363,41 @@ export default function HomePage() {
     })
     // ── Side-effects outside setState callback ──
     scheduleSync(pendingSteps.current + n, totalSteps + n)
+    encCnt.current += n
+    pity.current.legendary += n
+    pity.current.epic += n
+    if (encCnt.current >= ENCOUNTER_INTERVAL) {
+      const r = rollEncounter(encCnt.current, pity.current)
+      if (r) {
+        encCnt.current = 0
+        if (r === Rarity.Legendary) pity.current.legendary = 0
+        if (r === Rarity.Epic) pity.current.epic = 0
+        setEncounterEggRarity(r)
+        setShowEncounterEgg(true)
+        // Save egg immediately
+        if (curUser) {
+          saveEgg(curUser.id, r).then(dbId => {
+            const eggId = dbId || genSeed().toString()
+            const newEgg: EggItem = {
+              id: eggId,
+              rarity: r,
+              collectedAt: Date.now(),
+            }
+            setEggs(v => [...v, newEgg])
+          })
+        } else {
+          const newEgg: EggItem = {
+            id: genSeed().toString(),
+            rarity: r,
+            collectedAt: Date.now(),
+          }
+          setEggs(v => [...v, newEgg])
+        }
+        logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
+        if (curUser) createNotification(curUser.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
+        if (curUser) setNotifUnread(n => n + 1)
+      }
+    }
   }
 
   const addDebug = () => {
@@ -1192,6 +1232,48 @@ export default function HomePage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ════ Encounter Egg Popup ════ */}
+      {showEncounterEgg && encounterEggRarity && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:100,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.75)',
+          padding:16,
+        }} onClick={() => setShowEncounterEgg(false)}>
+          <div style={{
+            background:'#141b2d', border:`2px solid ${PC[encounterEggRarity || 'common']}44`,
+            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:48, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
+            <div style={{fontSize:13, fontWeight:700, marginBottom:4}}>
+              發現蛋！🥚
+            </div>
+            <div style={{
+              fontSize:11, fontWeight:700,
+              color: PC[encounterEggRarity || 'common'],
+              background: `${PC[encounterEggRarity || 'common']}18`,
+              display:'inline-block', padding:'2px 12px', borderRadius:10,
+              marginBottom:8,
+            }}>
+              {RARITY_LABELS[encounterEggRarity || 'common']}
+            </div>
+            <div style={{fontSize:11, color:'#94a5b8', marginBottom:16}}>
+              已收錄到蛋列表！去蛋頁面孵化啦
+            </div>
+            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+              <button onClick={() => setShowEncounterEgg(false)}
+                style={{
+                  padding:'8px 16px', border:'1px solid #2a3a5a',
+                  background:'#1a2338', color:'#94a5b8', fontSize:11, fontWeight:600,
+                  borderRadius:14, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                ✅ 收埋
+              </button>
+            </div>
           </div>
         </div>
       )}
