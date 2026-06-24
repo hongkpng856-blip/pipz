@@ -295,13 +295,15 @@ Each rarity has 3 colour variants (randomly chosen):
 - **Instant feedback**: log message "🔍 測試步數處理中..." appears immediately on click
 
 ### Encounter Animation
-- WalkingCanvas plays encounter animation (~1s) with grass shake, ❗ mark, egg + sparkles
-- **Click/tap** the canvas during animation to **skip** directly to egg popup (200ms delay)
-- After animation: egg popup appears → egg saved to inventory → user can go to eggs tab to hatch
+- **No** WalkingCanvas encounter animation — egg popup appears **immediately** when encounter triggers (every 500 steps)
+- **Egg popup**: Shows 🥚 with rarity badge (common/uncommon/rare/epic/legendary) + "已收錄到蛋列表" message
+- Popup dismissed by clicking ✅收埋 button or tapping outside
+- Egg is saved to Supabase DB **immediately** on discovery (logged-in users) or localStorage (guests)
+- Notification sent: "🥚 發現新蛋！行路途中發現咗 {rarity}蛋！快啲去收咗佢"
 
 ### Egg & Hatching Flow
 
-1. **Encounter** (every 500 steps): WalkingCanvas plays encounter animation → egg popup appears → egg saved to inventory
+1. **Encounter** (every 500 steps): popup appears immediately → egg saved to inventory → user dismisses popup
 2. **Hatch** (from eggs tab): Tap egg → 2-second hatching animation → pet spawned → **new pet popup appears**
 3. **New Pet Popup**: Shows pet's pixel art, rarity badge, species ID, level/stage, and 4 stats (⚡🍀💜🔋) in a bordered overlay
 4. "🎉 睇下寵物" button → closes popup + switches to pets tab

@@ -41,21 +41,20 @@ The entire app is a single page with 4 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Main View: Two States
+### Main View: Single State (PetCompanion)
 
-#### State A — PetCompanion (idle, not walking → full-screen interactive pet)
-Replaces WalkingCanvas when user is **not actively walking** (GPS off). Rendered by `PetCompanion.tsx`.
+#### State A — PetCompanion (🐱 always-visible interactive pet card)
+Always rendered on the map tab (GPS on or off). Rendered by `PetCompanion.tsx`.
 
 **Layout:**
-- Full-width canvas with **indoor room scene** (dark purple walls, tiled floor)
-- **Pet character** (drawn via pixel-gen) walks randomly within the room
+- Full-width canvas with **uniform dark card background** (`#141b2d`) + subtle dot texture, consistent with card border (`#1e2a45`)
+- **Pet character** (drawn via pixel-gen PNG sprite) walks freely across **~84% of the card width** (±42% canvas)
 - Pet can do **mischief jumps** — random bounce animation
 - **Tap anywhere** on pet → ❤️ heart particles + sparkle effect
 - **No pet state**: egg at center + "未有寵物" text + progress bar toward first hatch
 
 **Info Panel (浮動 overlay, top-left):**
-- **Name + rename**: shows pet name (or "未命名"), ✏️ click → inline input with ✓/✕ buttons
-- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. — rendered immediately after name
+- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (no "未命名" fallback)
 - **Toggle button**: 📊 詳情 / 隱藏 (top-right corner)
 
 **Info Panel Detail (when expanded):**
@@ -82,20 +81,10 @@ Replaces WalkingCanvas when user is **not actively walking** (GPS off). Rendered
 - 🍖 餵食 / ✋ 摸頭 / 🎾 玩
 - Footer: 👣 steps · ❤️ mood% · rarity badge
 
-#### State B — WalkingCanvas (walking/encounter → top-down pixel view)
-Displayed when GPS is **active** (🚶/⏹ toggle) or during **encounter animation**.
+#### State B — ~~WalkingCanvas~~ *(removed — no longer used)*
+Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by PetCompanion which is now always visible.
 
-- Top-down 2D pixel art environment (grass, winding path, trees, bushes)
-- **Pet character** drawn with rarity colour + evolution stage size
-- **Idle**: pet stands with slight idle bob, ground slowly scrolls
-- **Walk**: pet legs alternate, ground scrolls at walking speed
-- **Run**: faster scrolling + leg movement
-- **Encounter**: grass shakes near pet → ❗ pops up → egg appears with sparkles (~1s animation), then popup shows collected egg
-- **Click-to-skip**: tap/click the WalkingCanvas during encounter to instantly skip to egg popup (200ms)
-- **Safety timeout**: fires `onEncounterEnd` after 1.5s if animation hangs
-- After encounter: **egg popup** with rarity badge + "去蛋頁" button (not a pet yet)
-- Egg goes to inventory, hatched on Eggs tab by tapping
-- Pet status shown BELOW the canvas in a slim bar (3 action buttons: feed/pet/play)
+**Encounter eggs** are now handled entirely through a popup modal — no animation canvas needed.
 
 ### Stats Card
 - Bigger card with **bar chart visualization**
@@ -371,9 +360,11 @@ Full-screen overlay, max-width: 24rem centered.
 
 ---
 
-## 11. WalkingCanvas (`WalkingCanvas.tsx`)
+## 11. ~~WalkingCanvas~~ (`WalkingCanvas.tsx`) *(deprecated — no longer used in app)*
 
-Canvas-based top-down pixel art view (VS Code Pixel Agents style).
+Previously a canvas-based top-down pixel art view (VS Code Pixel Agents style). **No longer imported or rendered** — removed from map page in v0.3.6.
+
+Encounter system now uses a direct popup modal instead of animation canvas.
 
 ### States
 - **idle**: Pet stands with slight idle bob, ground slowly scrolls

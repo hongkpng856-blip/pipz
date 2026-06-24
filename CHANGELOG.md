@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.7 (2026-06-24)
+
+### Changed
+- **PetCompanion card UI revamp:**
+  - Removed "未命名" fallback text → shows species name (`#speciesName`) only
+  - Removed room scene background (walls, floor tiles, rug) → uniform card bg `#141b2d` with subtle dot texture
+  - Expanded pet roaming range from ±25% canvas width to ±42% (nearly full card width)
+  - Outer container bg consistent with card bg (`#141b2d`)
+
 ## v0.3.6 (2026-06-24)
 
 ### Fixed
