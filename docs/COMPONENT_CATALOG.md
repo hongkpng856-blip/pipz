@@ -48,32 +48,31 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 **Layout:**
 |- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`
-|- **Canvas** (400×300): pixel pet roams freely in full 2D with shadow, mood emoji, tap reactions
-  - **Skills pill strip**: drawn on canvas 2D at **left side** (vertical stack of semi-transparent dark pills with icon + name; gameplay effects show amber 🟡「加成中」badge)
-  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
-|- **Sprite**: rendered at ~96px (was 54px) — larger, higher-quality pet display
-|- **⤵ Below canvas — always-visible info panel** (no toggle, no skills section):
-  1. **Row 1** (flex, side-by-side):
-     - **Mood column**: 😊 mood emoji + %, gradient mood bar (green/amber/red), 🌟 evolution stage + Lv., rarity badge
-     - **4 stat pills**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (compact stacked layout)
-|- **Action buttons** (below info panel): 🍖 餵食 / ✋ 摸頭 / 🎾 玩
+|- **Canvas** (400×280): pixel pet roams freely in full 2D with shadow, mood emoji above sprite
+|  - **Skills**: displayed as pill badges in a clean wrap layout **below the stat grid** (moved out of canvas overlay)
+|  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
+|  - **Rarity badge**: overlaid on canvas top-right (coloured bg)
+|- **Sprite**: rendered at ~96px with crisp pixel edges (`imageSmoothingEnabled=false`)
+|- **⤵ Below canvas — clean info panel** (no action buttons):
+|  1. **Row 1**: mood emoji + % + mood bar + Lv. + evolution stage
+|  2. **2×2 stat grid**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (each in a rounded bg cell)
+|  3. **Skills**: horizontal wrap of pill badges (icon + name, amber dot for active effects)
 
 ```
 ┌─────────────────────────────────┐
-│ Canvas 400×300                  │
-│  (#水晶 badge top-left)          │
-│  [⚔️突進]                        │ ← skills vertical left
+│ Canvas 400×280                  │
+│  (#水晶 badge top-left)  [傳說]  │ ← rarity badge top-right
 │         🐱 walking sprite        │
-│  [🛡️護盾]                        │
+│         (mood emoji above)       │
 ├─────────────────────────────────┤
-│ 😊 開心  100%      ⚡🍀💜🔋    │
-│ ████████████       999 999 999  │ ← mood bar + 4 stats(mini)
-│ 🌟 傳說 · Lv.99  [傳說]         │ ← evolution + rarity
+│ 😊 開心  92% ████  Lv.99 · 🌟  │
+├─────────────────────────────────┤
+│ ⚡速度  999  🍀運氣  999        │
+│ 💜魅力  999  🔋能量  999        │ ← 2×2 grid
+├─────────────────────────────────┤
+│ [⚡疾速衝刺] [🍀幸運搜尋] ...   │ ← skills pills wrap
 └─────────────────────────────────┘
-```
 
-**Action Buttons (bottom strip):**
-- 🍖 餵食 / ✋ 摸頭 / 🎾 玩 — compact pill buttons, no footer bar
 
 #### State B — ~~WalkingCanvas~~ *(removed — no longer used)*
 Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by PetCompanion which is now always visible.
@@ -301,7 +300,7 @@ Full-screen overlay, max-width: 24rem centered.
   - Mood emoji (😊/🤩/😋/😴/😢) + mood label (開心/興奮/肚餓/眼瞓/傷心)
   - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
   - Percentage shown (e.g., 92%)
-- 3 action buttons: 🍖餵食 ✋摸頭 🎾玩
+- **No action buttons**: feed/pet/play have been removed from the detail view
 
 ### Stats Section
 - "📊 能力值" title

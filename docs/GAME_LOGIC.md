@@ -151,22 +151,7 @@ function calculateEvolution(userTotalSteps, currentStage, currentStats):
 
 ## Pet Interactions
 
-### Feed (餵食)
-- Sets mood to `Happy`
-- Sets moodValue to 100
-- Adds **10 XP**
-- Updates lastFedAt
-
-### Pet (摸頭)
-- Sets mood to `Happy`
-- Increases moodValue by 15 (capped at 100)
-- Updates lastInteractionAt
-
-### Play (玩)
-- Sets mood to `Excited`
-- Increases moodValue by 20 (capped at 100)
-- Adds **5 XP**
-- Updates lastInteractionAt
+> ⚠️ **Removed in v0.5.0**: Feed/Pet/Play action buttons and their associated UI have been stripped from both PetCompanion (map card) and PetDetailModal. The game no longer has manual interaction buttons.
 
 ### Mood Decay
 

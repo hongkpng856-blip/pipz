@@ -11,6 +11,10 @@
 - **Canvas height reduced**: 300px → 280px for tighter sprite area
 - **Roaming boundaries now symmetric**: since skills are no longer drawn on canvas, the roaming area is equal on both sides
 
+### Removed
+- **餵食/摸頭/玩 actions removed entirely**: stripped `feed()`, `petAction()`, `playAction()` functions, their UI buttons in both PetCompanion and PetDetailModal, and all associated reaction/particle/shake effects — simplifies the card to a clean display-only view
+- **Reaction system removed**: `triggerReaction()`, particle effects (❤️💕✨⭐), bounce, and shake animations — no longer needed without action buttons
+
 ### Added
 - **One-click test login button**: 🔑 一鍵登入測試帳號 button in auth modal — directly calls `signInWithPassword` with test credentials (pipztest@gmail.com / Test123456!)
 - **Test account created**: `pipztest@gmail.com` via Supabase Admin API (email pre-confirmed) — for development/testing use
