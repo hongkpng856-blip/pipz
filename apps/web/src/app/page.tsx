@@ -458,6 +458,19 @@ export default function HomePage() {
     setTimeout(() => setStepArrows(v => v.filter(a => a.id !== arrowId)), 1200)
   }
 
+  // ── Roguelike: force event for testing ──
+  const forceEvent = () => {
+    if (!pet) { logMsg('❌ 未有寵物，唔可以觸發事件'); return }
+    if (currentEvent) { logMsg('❌ 已經有事件進行中'); return }
+    const ev = rollEvent(totalStepsRef.current)
+    if (ev) {
+      setCurrentEvent(ev)
+      logMsg(`🎲 測試強制觸發：${ev.name}`)
+    } else {
+      logMsg('❌ 事件擲骰失敗，再試一次')
+    }
+  }
+
   const addDebug = () => {
     logMsg('🔍 測試步數處理中...')
     addSt(500)
@@ -906,6 +919,7 @@ export default function HomePage() {
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
                     skills={pet?.skills ?? []}
+                    onTripleTap={forceEvent}
                   />
                 </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
@@ -1385,6 +1399,10 @@ export default function HomePage() {
                   <div className="card" style={{padding:12}}>
                     {/* ── Walk Simulation + Steps ── */}
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                      <button className="btn btn-ghost" onClick={forceEvent}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        🎲 Event
+                      </button>
                       <button className="btn btn-ghost" onClick={addDebug}
                         style={{fontSize:10, padding:'4px 10px'}}>
                         +500 步

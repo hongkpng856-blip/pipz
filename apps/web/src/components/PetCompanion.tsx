@@ -10,6 +10,7 @@ interface Props {
   totalSteps: number
   evolutionStage: number
   skills: PetSkill[]
+  onTripleTap?: () => void
 }
 
 type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief'
@@ -27,7 +28,7 @@ const SPRITE_VERSION = 'v5'
 const MARGIN = 50
 
 export default function PetCompanion({
-  pet, anim, steps, totalSteps, evolutionStage, skills,
+  pet, anim, steps, totalSteps, evolutionStage, skills, onTripleTap,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
@@ -253,9 +254,20 @@ export default function PetCompanion({
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
   }, [animate])
 
+  const tapTimes = useRef<number[]>([])
+
   const handleCanvasClick = () => {
     if (!pet) return
     if (showTapHint) setShowTapHint(false)
+    // Triple-tap detection for test event trigger
+    const now = Date.now()
+    tapTimes.current.push(now)
+    // Keep only taps within last 1.5s
+    tapTimes.current = tapTimes.current.filter(t => now - t < 1500)
+    if (tapTimes.current.length >= 3 && onTripleTap) {
+      tapTimes.current = []
+      onTripleTap()
+    }
   }
 
   // Stats for display
