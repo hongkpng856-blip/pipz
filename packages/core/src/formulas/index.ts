@@ -374,7 +374,7 @@ export const EVENT_POOL: GameEvent[] = [
   },
   // ── Interactive: Risk Ladder ──
   {
-    id: 'risk_ladder', name: '連環寶箱', description: '發現一排古老寶箱！逐個開，隨時停手拎走獎勵。㩒中💣就乜都冇。', icon: '📦', type: 'positive', weight: 6, minSteps: 500,
+    id: 'risk_ladder', name: '連環寶箱', description: '發現一排古老寶箱！逐個開，隨時停手拎走獎勵。㩒中💣就乜都冇。', icon: '📦', type: 'positive', weight: 60, minSteps: 500,
     effects: [{ type: 'step_bonus', value: 0 }],
     eventOnly: true,
   },
