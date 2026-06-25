@@ -20,6 +20,7 @@
 - **Test account items**: seeded `pipztest@gmail.com` with 5 equipment + 4 help items for drag-drop testing
 - **Mobile-friendly tap-to-equip**: replaced HTML5 drag-and-drop with click-to-equip — tap an available equipment item to auto-equip to matching empty slot; dimmed items show when slot type is occupied
 - **Pet center + slots on sides layout**: redesigned pet display card to match reference — [slot] [PET CANVAS] [slot] in flex row; head+body on left, feet+accessory on right
+- **Risk Ladder interactive mini-game**: new roguelike event — 5 chests (1 bomb), opens one by one; player chooses "拎走" or "繼續" after each safe chest; bomb loses all accumulated rewards; rewards scale from +50 to +800 steps per chest
 
 ### Changed
 - **Walking loop**: now also rolls for roguelike events alongside egg encounters (`eventStepCounter` every ~800 steps)
