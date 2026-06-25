@@ -1384,7 +1384,7 @@ export default function HomePage() {
               )}
 
               {/* ── Dev Tools (test account only) ── */}
-              {user?.email === 'pipztest@gmail.com' && (
+              {user?.email?.toLowerCase() === 'pipztest@gmail.com' && (
               <div className="section" style={{marginTop:16}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
