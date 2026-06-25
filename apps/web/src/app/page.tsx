@@ -919,7 +919,6 @@ export default function HomePage() {
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
                     skills={pet?.skills ?? []}
-                    onTripleTap={forceEvent}
                   />
                 </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
