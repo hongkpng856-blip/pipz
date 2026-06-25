@@ -556,6 +556,23 @@ export default function HomePage() {
   const handleEventChoice = (choiceIndex?: number) => {
     const ev = currentEvent
     if (!ev) return
+
+    // Special: Risk Ladder — choiceIndex = accumulated steps
+    if (ev.id === 'risk_ladder' && choiceIndex !== undefined && choiceIndex > 0) {
+      // Apply accumulated steps
+      setSteps(s => s + choiceIndex)
+      setTotalSteps(s => s + choiceIndex)
+      logMsg(`📦 連環寶箱：拎走 👣 +${choiceIndex} 步！`)
+      setCurrentEvent(null)
+      return
+    }
+    if (ev.id === 'risk_ladder') {
+      // Busted or 0 — no reward
+      logMsg(`💥 連環寶箱：爆咗！`)
+      setCurrentEvent(null)
+      return
+    }
+
     const chosenEffects = (choiceIndex !== undefined && ev.choices)
       ? ev.choices[choiceIndex].effects
       : ev.effects
