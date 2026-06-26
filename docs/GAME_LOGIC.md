@@ -373,3 +373,31 @@ effectiveStat = pet.baseStat + equippedBonuses[stat]
 ### Event Drops
 
 Some events grant items as rewards (e.g., 流浪商人 gives 🫐 魔法莓果, 寶藏箱 may contain 🪙 幸運硬幣). Items go to the player's inventory for later use.
+
+---
+
+## Animation System
+
+### Current approach (v0.8.0+)
+
+Canvas-based pixel art rendering with hand-authored pixel data:
+
+| Property | Value |
+|----------|-------|
+| Sprite size | 24×24 pixels |
+| Palette | PICO-8 (16 colors) |
+| Animation loop | `requestAnimationFrame` (vsync) |
+| Frame duration | 180ms per frame |
+| Walk cycle | 4 frames (stand → left step → stand → right step) |
+
+### Architecture
+
+1. **Pixel data** is stored as 2D string arrays (24 rows, each with 24 palette-index digits)
+2. **`drawSprite(ctx, frame, scale)`** — renders a single frame to canvas
+3. **`requestAnimationFrame` loop** — cycles through frames, updates on time threshold
+
+### Integration paths
+
+- **AI base sprite**: once Pollinations.ai or another API reliably produces pixel art, the hand-drawn pixel data can be replaced by AI-generated data
+- **Pixel manipulation**: `scripts/gen_anim.py` handles: download AI image → downscale to 32×32 → quantize to PICO-8 → create 4 walk frames → output sprite sheet + animated GIF
+- **Additional animations**: blink (closed eyes), sleep (half-closed), jump (vertical arc) can be added as additional frame sets

@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.8.0 (2026-06-27)
+
+### Added
+- **`/anim-test` page**: standalone canvas-based pixel art walk cycle animation demo
+  - 24×24 pixel cat with PICO-8 palette, 4-frame walk cycle
+  - Hand-drawn pixel data on HTML5 Canvas with `requestAnimationFrame`
+  - AI-generated sprite replacement ready architecture (swap pixel data when AI API works reliably)
+- **`scripts/gen_anim.py`**: Python tool to download Pollinations.ai base sprite, downscale to pixel art, quantize to PICO-8 palette, and generate 4 walk frames via pixel manipulation
+
+### Changed
+- **Animation strategy**: shifted from Pollinations-only sprite sheet generation to canvas-based pixel art rendering — more reliable, faster loading, full animation control
+
+### Fixed
+- `/anim-test` page: TypeScript strict mode errors (null refs, closure captures)
+
 ## v0.7.0 (2026-06-26)
 
 ### Added

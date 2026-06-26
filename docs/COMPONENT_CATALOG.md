@@ -642,7 +642,37 @@ Full-screen overlay shown after hatching an egg (triggered by `newPetId` state).
 
 ---
 
-## 15. Inventory Tab (`tab === 'inventory'`)
+## 16. Anim Test Page (`/anim-test`)
+
+Standalone canvas-based pixel art animation demo for testing walk cycles.
+
+| Property | Value |
+|----------|-------|
+| Route | `/anim-test` |
+| Sprite | 24×24 pixel cat, PICO-8 palette |
+| Animation | 4-frame walk cycle (stand → left → stand → right) |
+| Renderer | HTML5 Canvas + `requestAnimationFrame` |
+| Frame duration | 180ms per frame |
+
+### Data flow
+
+```
+Pixel grid (string[] of 24 palette-index chars)
+  → drawSprite(ctx, frame, 8× scale)
+    → requestAnimationFrame loop
+      → 192×192 canvas display
+```
+
+### Expandability
+
+- Add blink frames (overlay closed eyes)
+- Add sleep frames (half-closed eyes + Y bob)
+- Add jump frames (vertical arc)
+- Replace pixel data with AI-generated sprite when API is reliable
+
+---
+
+## 17. Inventory Tab (`tab === 'inventory'`)
 
 Full-page inventory view accessible as the 5th bottom nav tab (🎒 背包).
 
