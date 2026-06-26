@@ -49,16 +49,16 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 
 **Layout:**
 |- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`
-- **Canvas** (400×280): pixel pet roams freely in full 2D with shadow
-  - **Skills**: displayed as pill badges in a clean wrap layout **below the stat grid** (moved out of canvas overlay)
+|- **Canvas** (400×280): pixel pet roams freely in full 2D with shadow, mood emoji above sprite
+|  - **Skills**: displayed as pill badges in a clean wrap layout **below the stat grid** (moved out of canvas overlay)
 |  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
 |  - **Rarity badge**: overlaid on canvas top-right (coloured bg)
 |- **Steps walked together header**: 👣 hero section at **very top of card** (above canvas) showing pet's accumulated steps (`pet.totalSteps`) in 32px bold with 「一起走過的日子」subtitle — represents days spent together with this pet
 |- **Sprite**: rendered at ~96px with crisp pixel edges (`imageSmoothingEnabled=false`)
-- **⤵ Below canvas — clean info panel** (no action buttons):
-  1. **Row 1**: Lv. + evolution stage
-  2. **2×2 stat grid**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (each in a rounded bg cell)
-  3. **Skills**: horizontal wrap of pill badges (icon + name, amber dot for active effects)
+|- **⤵ Below canvas — clean info panel** (no action buttons):
+|  1. **Row 1**: mood emoji + % + mood bar + Lv. + evolution stage
+|  2. **2×2 stat grid**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (each in a rounded bg cell)
+|  3. **Skills**: horizontal wrap of pill badges (icon + name, amber dot for active effects)
 
 ```
 ┌─────────────────────────────────┐
@@ -69,9 +69,10 @@ Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
 │ Canvas 400×280                  │
 │  (#水晶 badge top-left)  [傳說]  │
 │         🐱 walking sprite        │
+│         (mood emoji above)       │
 │      [👣 999,999  一起行咗]     │ ← steps badge overlay
 ├─────────────────────────────────┤
-│ Lv.99 · 🌟                      │
+│ 😊 開心  92% ████  Lv.99 · 🌟  │
 ├─────────────────────────────────┤
 │ ⚡速度  999  🍀運氣  999        │
 │ 💜魅力  999  🔋能量  999        │ ← 2×2 grid
@@ -303,8 +304,11 @@ Full-screen overlay, max-width: 24rem centered.
 - Rarity badge
 - **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (rendered via `D({seed, rarity, stage}).speciesName`)
 - Level, CP, Stage name
+- **Mood emoji + text + mood bar**:
+  - Mood emoji (😊/🤩/😋/😴/😢) + mood label (開心/興奮/肚餓/眼瞓/傷心)
+  - **Mood bar**: green `#22c55e` (>60) / amber `#eab308` (30-60) / red `#ef4444` (<30), gradient fill
+  - Percentage shown (e.g., 92%)
 - **No action buttons**: feed/pet/play have been removed from the detail view
-- **No mood display**: mood emoji, mood bar, and mood percentage have been removed from the detail view (v0.7.1)
 - **Equipment slots (WoW-style square grid)**: 2×2 grid flanking the pet canvas in the top row of the same card:
   - Layout: `[head+body stacked left] [PET CANVAS] [feet+accessory stacked right]`
   - 4 slots: 頭 (Head) + 身 (Body) on left, 腳 (Feet) + 飾 (Accessory) on right

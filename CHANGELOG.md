@@ -1,12 +1,5 @@
 # Changelog
 
-## v0.7.1 (2026-06-27)
-
-### Removed
-- **Mood system (UI)**: stripped all mood/interaction UI from both PetDetailModal and PetCompanion — no more mood emoji (😊🤩😋😴😢), mood label (開心/興奮/肚餓/眼瞓/傷心), mood bar (green/amber/red), ❤️ XX%, mood decay display, or "👆 禁下我啦" tap hint
-- **Mood constants & functions**: removed `MOOD_MAP`, `MOOD_CN`, `getMoodValue()`, `showTapHint` state from PetCompanion
-- **Mood data maps**: removed `ME` mood emoji map and `MOOD_CN` label map from PetDetailModal
-
 ## v0.7.0 (2026-06-26)
 
 ### Added

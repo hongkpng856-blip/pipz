@@ -149,15 +149,13 @@ function calculateEvolution(userTotalSteps, currentStage, currentStats):
 - Pet visual changes (evolutionStage affects pixel generation)
 - Evolution animation plays (2.5 seconds)
 
-### Pet Interactions
+## Pet Interactions
 
 > ⚠️ **Removed in v0.5.0**: Feed/Pet/Play action buttons and their associated UI have been stripped from both PetCompanion (map card) and PetDetailModal. The game no longer has manual interaction buttons.
->
-> ⚠️ **Removed in v0.7.1**: All mood display UI (emoji, mood bar, percentage, tap hint) has been removed from PetDetailModal and PetCompanion. Mood data still exists in DB but is no longer rendered in the frontend.
 
-### Mood Decay (Data Only — No UI)
+### Mood Decay
 
-Mood values still exist in the pet data model but are **no longer displayed** in any frontend component. The formula remains for potential future use:
+Calculated every interaction:
 
 ```
 hoursSinceFed = (now - lastFedAt) / 3600000
@@ -169,6 +167,10 @@ if hoursSinceInteraction > 2 → decay += (hoursSinceInteraction - 2) * 3
 
 return min(decay, 100)
 ```
+
+- Mood decays when pet hasn't been fed in 4+ hours
+- Mood decays when pet hasn't been interacted with in 2+ hours
+- Max decay: 100
 
 ## XP System
 
@@ -343,7 +345,7 @@ Events with a **Choice** present 2 buttons — each leads to different outcomes.
 | Feet | 👟 腳部 | 草鞋, 兔毛靴, 風之脛甲 |
 | Accessory | 📿 飾品 | 幸運硬幣, 月亮吊墜, 四葉草 |
 
-**Equipment slots** are displayed as a 2×2 grid of square WoW-style slots flanking the pet image card (PetDetailModal): `[head+body] [PET CANVAS] [feet+accessory]`.
+**Equipment slots** are displayed as a 2×2 grid of square WoW-style slots inside the pet image card (PetDetailModal), below the mood bar.
 
 **Drag-and-drop equipping:** Available equipment from inventory appears as a draggable row below the slots. Drag an item onto a slot to equip it instantly. Empty slots show dashed borders with slot label; dragging over highlights in purple.
 
