@@ -1384,7 +1384,6 @@ export default function HomePage() {
               )}
 
               {/* ── Dev Tools ── */}
-              {user && (
               <div className="section" style={{marginTop:16}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
