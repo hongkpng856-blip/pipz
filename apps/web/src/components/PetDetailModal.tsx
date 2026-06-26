@@ -28,13 +28,6 @@ const PC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
   epic: '#8b5cf6', legendary: '#f59e0b',
 }
-const ME: Record<string, string> = {
-  happy: '😊', excited: '🤩', hungry: '🍽️', sleepy: '😴', sad: '😢',
-}
-const MOOD_CN: Record<string, string> = {
-  happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
-}
-
 const STAGE_NAMES = ['BB', 'I', 'II', 'III', 'IV']
 const STAGE_CANTO = ['BB', '幼年', '成年', '完全體', '傳說']
 
@@ -226,28 +219,6 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               <span style={{ fontSize: 13, color: '#94a5b8' }}>
                 {STAGE_CANTO[pet.evolutionStage - 1] || '初級'}
               </span>
-            </div>
-
-            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'center', gap: 4 }}>
-              <span>{ME[pet.mood] || '😐'}</span>
-              <span style={{ fontSize: 12, color: '#22c55e' }}>
-                {MOOD_CN[pet.mood] || pet.mood}
-              </span>
-            </div>
-
-            {/* Mood bar */}
-            <div style={{ marginTop: 6, padding: '0 20px' }}>
-              <div className="progress-wrap" style={{ height: 4 }}>
-                <div className="progress-bar"><div className="progress-fill" style={{
-                  width: `${Math.max(5, pet.moodValue)}%`,
-                  background: pet.moodValue > 60 ? 'linear-gradient(90deg,#22c55e,#4ade80)' :
-                             pet.moodValue > 30 ? 'linear-gradient(90deg,#f59e0b,#fbbf24)' :
-                             'linear-gradient(90deg,#ef4444,#f87171)',
-                }}/></div>
-              </div>
-              <div style={{ fontSize: 9, color: '#5a6d85', textAlign: 'right', marginTop: 2 }}>
-                ❤️ {pet.moodValue}%
-              </div>
             </div>
 
             {/* Available equipment — tap to equip */}

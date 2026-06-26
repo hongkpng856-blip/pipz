@@ -15,12 +15,6 @@ interface Props {
 type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief'
 type Reaction = 'none' | 'heart' | 'sparkle' | 'bounce'
 
-const MOOD_MAP: Record<string, string> = {
-  happy: '😊', excited: '🤩', hungry: '😋', sleepy: '😴', sad: '😢',
-}
-const MOOD_CN: Record<string, string> = {
-  happy: '開心', excited: '興奮', hungry: '肚餓', sleepy: '眼瞓', sad: '傷心',
-}
 const EVO_LABELS = ['BB', '幼年', '成年', '完全體', '傳說']
 
 const SPRITE_VERSION = 'v5'
@@ -43,7 +37,6 @@ export default function PetCompanion({
   const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
-  const [showTapHint, setShowTapHint] = useState(true)
   const [speciesName, setSpeciesName] = useState('')
 
   // Generate pet pixel data
@@ -120,13 +113,6 @@ export default function PetCompanion({
     if (!pet) return
     const iv = setInterval(() => { behaviorTimer.current = Math.max(0, behaviorTimer.current - 0.2) }, 200)
     return () => clearInterval(iv)
-  }, [pet])
-
-  const getMoodValue = useCallback(() => {
-    if (!pet) return 100
-    const hoursSinceFed = (Date.now() - pet.lastFedAt) / 3600000
-    const decay = Math.min(70, Math.floor(hoursSinceFed * 5))
-    return Math.max(10, pet.moodValue - decay)
   }, [pet])
 
   // ── Canvas animation ──
@@ -210,20 +196,6 @@ export default function PetCompanion({
         ctx.shadowBlur = 0
       }
 
-      // Mood emoji above sprite
-      if (pet.mood) {
-        ctx.font = '16px sans-serif'; ctx.textAlign = 'center'
-        ctx.fillText(MOOD_MAP[pet.mood] || '😊', cx, cy - 38)
-      }
-
-      // Tap hint
-      if (showTapHint) {
-        ctx.globalAlpha = 0.4 + Math.sin(timeRef.current*4)*0.2
-        ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#94a5b8'
-        ctx.fillText('👆 禁下我啦', W/2, H-16)
-        ctx.globalAlpha = 1
-      }
-
     } else if (!pet) {
       // No pet — egg
       const eb = Math.sin(timeRef.current*3)*3
@@ -246,7 +218,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, showTapHint, status])
+  }, [pet, anim, status])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)
@@ -254,8 +226,6 @@ export default function PetCompanion({
   }, [animate])
 
   const handleCanvasClick = () => {
-    if (!pet) return
-    if (showTapHint) setShowTapHint(false)
   }
 
   // Stats for display
@@ -330,22 +300,8 @@ export default function PetCompanion({
           {/* Divider */}
           <div style={{ height:1, background:'#1e2a45', marginBottom:10 }} />
 
-          {/* Top row: mood + evolution */}
+          {/* Evolution + level row */}
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-              <span style={{ fontSize:10 }}>{MOOD_MAP[pet.mood]}</span>
-              <span style={{ fontSize:10, color:'#94a5b8' }}>{MOOD_CN[pet.mood] || pet.mood}</span>
-              <span style={{ fontSize:8, color:'#5a6d85' }}>{getMoodValue()}%</span>
-              <div className="progress-wrap" style={{ width:50, height:3 }}>
-                <div className="progress-bar" style={{ height:3 }}>
-                  <div className="progress-fill" style={{
-                    width:`${getMoodValue()}%`, height:3,
-                    background: getMoodValue() > 60 ? '#22c55e' : getMoodValue() > 30 ? '#f59e0b' : '#ef4444',
-                    borderRadius: 2,
-                  }}/>
-                </div>
-              </div>
-            </div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ fontSize:9, color:'#5a6d85' }}>Lv.{pet.level}</span>
               <span style={{ fontSize:9, color:'#94a5b8' }}>·</span>
