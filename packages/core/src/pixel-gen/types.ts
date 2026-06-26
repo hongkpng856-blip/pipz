@@ -26,3 +26,12 @@ export interface PixelPetData {
   speciesId: number
   speciesName: string
 }
+
+// ── Animation types ──
+
+export type AnimationType = 'idle' | 'walk' | 'happy' | 'sleep' | 'jump'
+
+export interface AnimationFrame {
+  grid: PixelGrid
+  duration: number // ms to display this frame
+}
