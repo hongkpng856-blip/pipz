@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.7.0 (2026-06-26)
+
+### Added
+- **🎲 Event button in Dev Tools**: one-click trigger for random roguelike events (Risk Ladder, 陽光草原, etc.) — great for testers to verify event flow without waiting 800 steps
+- **Dev Tools always visible**: removed all user/email checks — Dev Tools panel now shows for everyone, not just test accounts
+
+### Changed
+- **Dev Tools access**: from "test account only (pipztest@gmail.com)" → "any logged-in user" → "always visible (no login required)" over 4 commits
+- **Risk Ladder weight restored**: adjusted event pool weight back to 6 for balanced encounter rates
+
+### Removed
+- **Triple-tap on PetCompanion**: rejected by user — tester trigger is Dev Tools button only
+
 ## v0.6.0 (2026-06-25)
 
 ### Added

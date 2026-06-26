@@ -275,10 +275,12 @@ Each rarity has 3 colour variants (randomly chosen):
 - Steps = `floor(distance_in_meters * 1300)`
 - Walk button toggles GPS on/off
 - High accuracy mode: `enableHighAccuracy: true, maximumAge: 5000, timeout: 10000`
-
 ### Manual Testing
+
 - Debug button: "+500 測試步數" adds 500 steps instantly (no longer skips encounters)
 - Clicking the debug button now properly triggers the **encounter system** every 500 steps (500 = `ENCOUNTER_INTERVAL`)
+- Dev Tools panel (bottom of Community tab) — visible to **all users** (no login required):
+  - **🎲 Event button** — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, 泥濘水氹, etc.); bypasses the 800-step interval so testers can verify event flow immediately
 - Encounters collected as eggs, displayed via egg popup → eggs tab → hatch → **new pet popup**
 - **Instant feedback**: log message "🔍 測試步數處理中..." appears immediately on click
 

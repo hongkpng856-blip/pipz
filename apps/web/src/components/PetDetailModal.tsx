@@ -43,10 +43,11 @@ const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4:
 
 export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId, equipment, onUnequip, onEquipToSlot, availableEquipment, hasInventory, onOpenInventory }: Props) {
   const [showDelete, setShowDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [listPrice, setListPrice] = useState('500')
 
   // Reset list price when pet changes
-  useEffect(() => { setListPrice('500'); setShowDelete(false) }, [pet.id])
+  useEffect(() => { setListPrice('500'); setShowDelete(false); setIsDeleting(false) }, [pet.id])
   const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
   const speciesName = useMemo(() => {
@@ -133,6 +134,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
         display: 'flex', flexDirection: 'column',
         background: '#0b1120',
         height: '100dvh',
+        transition: 'opacity 0.45s, transform 0.45s',
+        opacity: isDeleting ? 0 : 1,
+        transform: isDeleting ? 'scale(0.85)' : 'scale(1)',
+        pointerEvents: isDeleting ? 'none' : 'auto',
       }}>
         {/* ── Header ── */}
         <div style={{
@@ -588,7 +593,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                 }}>
                 取消
               </button>
-              <button onClick={() => onDelete(pet.id)}
+              <button onClick={() => { setIsDeleting(true); setShowDelete(false); setTimeout(() => onDelete(pet.id), 500) }}
                 style={{
                   padding: '10px 24px', borderRadius: 16, border: 'none',
                   background: '#dc2626', color: 'white', fontSize: 13, fontWeight: 700,
@@ -597,6 +602,25 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                 確認剷除
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════ Dissolve overlay (during delete animation) ════ */}
+      {isDeleting && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 150,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.2)',
+          pointerEvents: 'none',
+          animation: 'fade-in 0.3s ease forwards',
+        }}>
+          <div style={{
+            fontSize: 36, fontWeight: 800, color: '#ef4444',
+            textShadow: '0 0 30px rgba(239,68,68,0.5)',
+            animation: 'fadeInOut 0.5s ease forwards',
+          }}>
+            🗑️ 剷除中...
           </div>
         </div>
       )}

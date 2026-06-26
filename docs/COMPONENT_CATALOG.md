@@ -109,8 +109,9 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - Each: thumbnail + rarity name + CP + level
 - Click → opens Pet Detail Modal
 
-### Dev Tools (test account only: pipztest@gmail.com)
-- **🔧 Dev 工具** toggle button at bottom of Community tab — only renders when `user?.email === 'pipztest@gmail.com'`
+### Dev Tools (always visible)
+- **🔧 Dev 工具** toggle button at bottom of Community tab — visible to **all users** (no login required, no email check)
+- **🎲 Event** button — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, etc.); useful for testers to verify event flow without waiting 800 steps
 - **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous 1-4 steps every 800ms (≈ real walking speed)
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
