@@ -26,3 +26,30 @@ export interface PixelPetData {
   speciesId: number
   speciesName: string
 }
+
+// ── Per-pet animation personality (derived from seed) ──
+
+export interface PetAnimationTraits {
+  /** 1-10: walk cycle speed */
+  walkSpeed: number
+  /** 1-10: vertical bounce while walking */
+  walkBounce: number
+  /** 1-10: side-to-side waddle */
+  walkWaddle: number
+  /** idle fidget style */
+  idleStyle: 'still' | 'sway' | 'bob' | 'look'
+  /** ms between blinks (2000-8000) */
+  blinkInterval: number
+  /** blink duration (80-200ms) */
+  blinkDuration: number
+  /** sleep posture */
+  sleepStyle: 'curl' | 'sprawl' | 'stand'
+  /** 1-10: overall energy (affects behavior frequency) */
+  energy: number
+  /** reaction on click */
+  reactionStyle: 'bounce' | 'spin' | 'jump' | 'wiggle'
+  /** sparkle particle chance per frame */
+  sparkleChance: number
+  /** human-readable tags */
+  personalityTags: string[]
+}
