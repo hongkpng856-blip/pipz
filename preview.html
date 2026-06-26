@@ -1,0 +1,27 @@
+<html><body style="background:#0b1120;margin:0">
+<canvas id="c"></canvas>
+<script>
+(async()=>{
+const img=new Image();img.crossOrigin='anonymous';
+await new Promise(r=>{img.onload=r;img.onerror=r;img.src='/pixel-gen/sprites/0.png?v=v6'});
+const W=128,H=128,frames=8;
+const s=document.getElementById('c');
+s.width=W*frames;s.height=H;
+const x=s.getContext('2d');x.imageSmoothingEnabled=false;
+// 0:orig 1:blink 2:orig 3:blink 4:walkL 5:walkR 6:sleep 7:happy
+x.drawImage(img,0,0);
+x.drawImage(img,W,0);x.fillStyle='#1e293b';x.fillRect(W+48,52,8,2);x.fillRect(W+72,52,8,2);
+x.drawImage(img,W*2,0);
+x.drawImage(img,W*3,0);x.fillRect(W*3+48,52,8,2);x.fillRect(W*3+72,52,8,2);
+x.drawImage(img,0,0,W,H,W*4-4,0,W,H);x.fillStyle='#0b1120';x.fillRect(W*4,0,4,H);
+x.drawImage(img,0,0,W,H,W*5+4,0,W,H);x.fillStyle='#0b1120';x.fillRect(W*5,0,4,H);
+x.drawImage(img,W*6,0);x.strokeStyle='#1e293b';x.lineWidth=2;
+x.beginPath();x.moveTo(W*6+44,54);x.lineTo(W*6+56,54);x.moveTo(W*6+72,54);x.lineTo(W*6+84,54);x.stroke();
+x.drawImage(img,0,0,W,H,W*7,-4,W,H);
+// labels
+x.fillStyle='#ffffff44';x.font='10px sans-serif';x.textAlign='center';
+['idle','blink','idle','blink','walkL','walkR','sleep','happy'].forEach((t,i)=>{
+x.fillText(t,W*i+W/2,120);
+});
+})();
+</script></body></html>
