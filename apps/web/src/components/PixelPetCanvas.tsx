@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, generateAnimationFrames, PixelPetData, AnimationFrame, getSpeciesIndex } from '@pipz/core'
+import { generatePixelPet, PixelPetData, getSpeciesIndex } from '@pipz/core'
 
-const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v7' // Bump when sprite assets change (forces cache refresh)
 
 interface Props {
   seed: number
@@ -29,6 +29,9 @@ const RARITY_GLOWS: Record<string, string> = {
   rare: '#3b82f666',
   epic: '#8b5cf688',
   legendary: '#f59e0baa',
+}
+const RARITY_EYE_Y: Record<string, number> = {
+  common: 0.38, uncommon: 0.38, rare: 0.38, epic: 0.36, legendary: 0.34,
 }
 
 // ── Global sprite cache ──
@@ -67,15 +70,15 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
-  const animFramesRef = useRef<AnimationFrame[]>([])
-  const frameIdxRef = useRef(0)
-  const frameTimerRef = useRef(0)
   const frameRef = useRef<number>(0)
   const timeRef = useRef(0)
   const xOffsetRef = useRef(0)
   const yOffsetRef = useRef(0)
   const bounceRef = useRef(0)
   const walkDirRef = useRef(1)
+  const blinkTimerRef = useRef(0)
+  const isBlinkingRef = useRef(false)
+  const particlesRef = useRef<{ x: number; y: number; life: number; emoji: string }[]>([])
   const loadedRef = useRef(false)
   const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
     spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading'
@@ -100,33 +103,47 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     return () => { cancelled = true }
   }, [speciesIdx])
 
-  // Generate procedural pet data OR animation frames as fallback
+  // Generate procedural pet data as fallback
   useEffect(() => {
     if (status === 'fallback') {
-      const config = { seed, rarity, evolutionStage }
-      // Map animation prop to AnimationType
-      const animMap: Record<string, 'idle' | 'walk' | 'happy' | 'sleep'> = {
-        idle: 'idle',
-        walk: 'walk',
-        happy: 'happy',
-        jump: 'happy', // jump falls back to happy
-        sleep: 'sleep',
-      }
-      const frames = generateAnimationFrames(config, animMap[animation] || 'idle')
-      animFramesRef.current = frames
-      frameIdxRef.current = 0
-      frameTimerRef.current = 0
-    } else if (status === 'png') {
-      // For PNG mode, still generate base pet data for reference
       petDataRef.current = generatePixelPet({ seed, rarity, evolutionStage })
     }
-  }, [status, seed, rarity, evolutionStage, animation])
+  }, [status, seed, rarity, evolutionStage])
 
-  // Reset frame index when animation changes
-  useEffect(() => {
-    frameIdxRef.current = 0
-    frameTimerRef.current = 0
-  }, [animation])
+  // ── Draw sleepy eyes overlay ──
+  const drawSleepyEyes = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spriteW: number) => {
+    const eyeY = cy + spriteW * 0.08
+    const eyeSpacing = spriteW * 0.14
+    const eyeLen = spriteW * 0.07
+    ctx.strokeStyle = '#1e293b'
+    ctx.lineWidth = Math.max(1, spriteW * 0.02)
+    ctx.lineCap = 'round'
+    // Closed sleepy eyes: — —
+    ctx.beginPath(); ctx.moveTo(cx - eyeSpacing - eyeLen, eyeY); ctx.lineTo(cx - eyeSpacing + eyeLen, eyeY); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(cx + eyeSpacing - eyeLen, eyeY); ctx.lineTo(cx + eyeSpacing + eyeLen, eyeY); ctx.stroke()
+  }
+
+  // ── Draw blink overlay ──
+  const drawBlink = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spriteW: number) => {
+    const eyeY = cy + spriteW * RARITY_EYE_Y[rarity] * 0.5
+    const eyeSpacing = spriteW * 0.12
+    const barW = spriteW * 0.08
+    const barH = Math.max(1, spriteW * 0.015)
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(cx - eyeSpacing - barW / 2, eyeY, barW, barH)
+    ctx.fillRect(cx + eyeSpacing - barW / 2, eyeY, barW, barH)
+  }
+
+  // ── Draw particles (Zzz / sparkles) ──
+  const drawParticles = (ctx: CanvasRenderingContext2D, cw: number, ch: number) => {
+    for (const p of particlesRef.current) {
+      ctx.font = `${Math.max(6, p.life * 8)}px sans-serif`
+      ctx.textAlign = 'center'
+      ctx.globalAlpha = Math.max(0, p.life)
+      ctx.fillText(p.emoji, p.x, p.y)
+    }
+    ctx.globalAlpha = 1
+  }
 
   // Animation loop
   const animate = useCallback(() => {
@@ -139,24 +156,13 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     const ch = canvas.height
     timeRef.current += 0.05
 
-    // ── Frame timing (only for fallback/procedural mode) ──
-    const frames = animFramesRef.current
-    if (frames.length > 0 && status === 'fallback') {
-      frameTimerRef.current += 16 // ~60fps, roughly 16ms per frame call
-      const currentFrame = frames[frameIdxRef.current]
-      if (currentFrame && frameTimerRef.current >= currentFrame.duration) {
-        frameTimerRef.current = 0
-        frameIdxRef.current = (frameIdxRef.current + 1) % frames.length
-      }
-    }
-
-    // ── Calculate animation offsets (for all modes) ──
+    // ── Calculate animation offsets ──
     let xOff = 0, yOff = 0, scale = 1, rot = 0
 
-    // Smooth breathing for PNG mode
+    // Breathing scale
     const breathe = animation === 'sleep'
-      ? Math.sin(timeRef.current * 1.5) * 0.01
-      : Math.sin(timeRef.current * 3) * 0.012
+      ? Math.sin(timeRef.current * 0.8) * 0.01   // slow, subtle
+      : Math.sin(timeRef.current * 3) * 0.012     // normal breathing
 
     switch (animation) {
       case 'walk': {
@@ -165,26 +171,46 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         if (xOffsetRef.current < -20) walkDirRef.current = 1
         xOff = xOffsetRef.current
         yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
-        rot = Math.sin(timeRef.current * 4) * 0.03
+        rot = Math.sin(timeRef.current * 4) * 0.03 // slight body sway
+        // Reset walk-specific counters when not walking
         break
       }
       case 'happy': {
         yOff = Math.abs(Math.sin(timeRef.current * 6)) * 8
         scale = 1 + Math.sin(timeRef.current * 8) * 0.03
         rot = Math.sin(timeRef.current * 5) * 0.05
+        // Spawn sparkle particles
+        if (Math.random() < 0.08) {
+          particlesRef.current.push({
+            x: cw / 2 + (Math.random() - 0.5) * cw * 0.6,
+            y: ch / 2 + (Math.random() - 0.5) * ch * 0.4,
+            life: 1,
+            emoji: Math.random() < 0.5 ? '✦' : '✨',
+          })
+        }
         break
       }
       case 'jump': {
         bounceRef.current = Math.max(0, bounceRef.current - 0.08)
         yOff = -(bounceRef.current * 15)
+        // Squash on landing
         if (bounceRef.current < 0.05 && bounceRef.current > 0) {
           scale = 1 + (1 - bounceRef.current / 0.05) * 0.08
         }
         break
       }
       case 'sleep': {
-        yOff = Math.sin(timeRef.current * 0.5) * 1.5
-        scale = 1 + Math.sin(timeRef.current * 0.8) * 0.01
+        yOff = Math.sin(timeRef.current * 0.5) * 1.5 // very slow bob
+        scale = 1 + Math.sin(timeRef.current * 0.8) * 0.01 // slow breathe
+        // Spawn Zzz particles
+        if (Math.random() < 0.03) {
+          particlesRef.current.push({
+            x: cw / 2 - cw * 0.2 + Math.random() * 10,
+            y: ch / 2 - ch * 0.1,
+            life: 1,
+            emoji: '💤',
+          })
+        }
         break
       }
       case 'idle': {
@@ -194,6 +220,27 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
     }
 
+    // ── Blink timer ──
+    blinkTimerRef.current -= 0.05
+    if (blinkTimerRef.current <= 0) {
+      if (isBlinkingRef.current) {
+        isBlinkingRef.current = false
+        blinkTimerRef.current = 3 + Math.random() * 4 // next blink in 3-7s
+      } else {
+        isBlinkingRef.current = true
+        blinkTimerRef.current = 0.1 // blink duration 100ms
+      }
+    }
+
+    // ── Update particles ──
+    for (let i = particlesRef.current.length - 1; i >= 0; i--) {
+      const p = particlesRef.current[i]
+      p.y -= 0.3 // float up
+      p.x += Math.sin(timeRef.current + i) * 0.1 // slight sway
+      p.life -= 0.008
+      if (p.life <= 0) particlesRef.current.splice(i, 1)
+    }
+
     // ── Clear ──
     ctx.clearRect(0, 0, cw, ch)
     ctx.imageSmoothingEnabled = false
@@ -201,36 +248,38 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
     const sprite = spriteCanvasRef.current
     if (sprite && status === 'png') {
-      // PNG mode: draw sprite with transform animation
+      // Draw cached sprite
       const pad = 20
       const displaySize = Math.min(cw, ch) - pad
       const imgScale = (displaySize / Math.max(sprite.width, sprite.height)) * scale
       const dw = Math.round(sprite.width * imgScale)
       const dh = Math.round(sprite.height * imgScale)
-      const dx = Math.round((cw - dw) / 2 + xOff)
-      const dy = Math.round((ch - dh) / 2 + yOff)
-
-      if (RARITY_GLOWS[rarity]) {
-        ctx.shadowColor = RARITY_GLOWS[rarity]
-        ctx.shadowBlur = size * 3
-      }
+      const cx = cw / 2 + xOff
+      const cy = ch / 2 + yOff
 
       ctx.save()
-      ctx.translate(cw / 2 + xOff, ch / 2 + yOff)
+      ctx.translate(cx, cy)
       ctx.rotate(rot)
+
+      // Glow for high rarity
+      if (RARITY_GLOWS[rarity]) {
+        ctx.save()
+        ctx.shadowColor = RARITY_GLOWS[rarity]
+        ctx.shadowBlur = size * 3
+        ctx.drawImage(sprite, -dw / 2, -dh / 2, dw, dh)
+        ctx.restore()
+      }
+
       ctx.drawImage(sprite, -dw / 2, -dh / 2, dw, dh)
       ctx.restore()
 
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
-
-      // Rarity tint
-      const drawX = Math.round((cw - dw) / 2 + xOff)
-      const drawY = Math.round((ch - dh) / 2 + yOff)
+      // Rarity tint overlay (absolute position)
+      const drawX = Math.round(cx - dw / 2)
+      const drawY = Math.round(cy - dh / 2)
       ctx.fillStyle = RARITY_TINTS[rarity]
       ctx.fillRect(drawX, drawY, dw, dh)
 
-      // Legendary border
+      // Legendary sparkle border
       if (rarity === 'legendary') {
         ctx.fillStyle = '#ffd70060'
         ctx.fillRect(drawX - 1, drawY - 1, dw + 2, 2)
@@ -239,33 +288,45 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         ctx.fillRect(drawX + dw - 1, drawY, 2, dh)
       }
 
+      // ── Blink overlay ──
+      if (isBlinkingRef.current && animation !== 'sleep') {
+        drawBlink(ctx, cw / 2 + xOff, ch / 2 + yOff, displaySize)
+      }
+
+      // ── Sleepy eyes ──
+      if (animation === 'sleep') {
+        drawSleepyEyes(ctx, cw / 2 + xOff, ch / 2 + yOff, displaySize)
+      }
+
     } else if (status === 'fallback') {
-      // ── Procedural mode: draw current animation frame ──
-      const frameData = frames[frameIdxRef.current]
-      if (!frameData) {
+      // Fallback: procedural grid
+      const petData = petDataRef.current
+      if (!petData) {
         frameRef.current = requestAnimationFrame(animate)
         return
       }
 
-      const GRID_SZ = 16 // fixed grid size for all frames
       const pixelSize = (size as number)
-      const gridW = GRID_SZ * pixelSize
-      const gridH = GRID_SZ * pixelSize
+      const gridW = petData.width * pixelSize
+      const gridH = petData.height * pixelSize
+      const cx = cw / 2 + xOff
+      const cy = ch / 2 + yOff
+      const startX = cx - gridW / 2
+      const startY = cy - gridH / 2
 
-      // Apply transform offsets on top of frame
       ctx.save()
-      ctx.translate(cw / 2 + xOff, ch / 2 + yOff)
+      ctx.translate(cx, cy)
       ctx.rotate(rot)
       ctx.scale(scale, scale)
 
-      if (RARITY_GLOWS[rarity]) {
-        ctx.shadowColor = RARITY_GLOWS[rarity]
-        ctx.shadowBlur = pixelSize * 3
+      if (petData.palette.glow) {
+        ctx.shadowColor = petData.palette.glow
+        ctx.shadowBlur = pixelSize * 4
       }
 
-      for (let y = 0; y < GRID_SZ; y++) {
-        for (let x = 0; x < GRID_SZ; x++) {
-          const color = frameData.grid[y][x]
+      for (let y = 0; y < petData.height; y++) {
+        for (let x = 0; x < petData.width; x++) {
+          const color = petData.grid[y][x]
           if (color && color !== 'transparent') {
             ctx.fillStyle = color
             ctx.fillRect(x * pixelSize - gridW / 2, y * pixelSize - gridH / 2, pixelSize, pixelSize)
@@ -275,6 +336,16 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
       ctx.restore()
+
+      // ── Blink overlay ──
+      if (isBlinkingRef.current && animation !== 'sleep') {
+        drawBlink(ctx, cw / 2 + xOff, ch / 2 + yOff, gridW)
+      }
+
+      // ── Sleepy eyes ──
+      if (animation === 'sleep') {
+        drawSleepyEyes(ctx, cw / 2 + xOff, ch / 2 + yOff, gridW)
+      }
 
     } else {
       // loading: pulsing skeleton
@@ -295,6 +366,9 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       ctx.fill()
     }
 
+    // ── Particles (always on top) ──
+    drawParticles(ctx, cw, ch)
+
     frameRef.current = requestAnimationFrame(animate)
   }, [animation, size, rarity, speciesIdx])
 
@@ -305,6 +379,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       if (frameRef.current) cancelAnimationFrame(frameRef.current)
     }
   }, [animate])
+
+  // Reset blink + particles when animation changes
+  useEffect(() => {
+    blinkTimerRef.current = 3 + Math.random() * 4
+    particlesRef.current = []
+  }, [animation])
 
   // Size calculation
   const pixelVal = typeof size === 'number' ? size : 5
