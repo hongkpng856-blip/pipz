@@ -1,9 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, generateAnimationFrames, PixelPetData, AnimationFrame, getSpeciesIndex } from '@pipz/core'
+import {
+  generateAnimationFrames, generatePixelPet,
+  PixelPetData, AnimationFrame, AnimationType,
+  getSpeciesIndex,
+} from '@pipz/core'
 
-const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v6'
 
 interface Props {
   seed: number
@@ -15,7 +19,6 @@ interface Props {
   onClick?: () => void
 }
 
-// Rarity tint overlays (PICO-8 inspired accent colors)
 const RARITY_TINTS: Record<string, string> = {
   common: 'rgba(255,255,255,0)',
   uncommon: 'rgba(34,197,94,0.08)',
@@ -31,139 +34,188 @@ const RARITY_GLOWS: Record<string, string> = {
   legendary: '#f59e0baa',
 }
 
-// ── Global sprite cache ──
-const spriteCache = new Map<number, HTMLCanvasElement | null>()
-const pendingLoads = new Map<number, Promise<HTMLCanvasElement | null>>()
+// ── Global caches ──
+const sheetCache = new Map<string, HTMLCanvasElement | null>() // "speciesIdx_animType" → composited frame strip
+const pendingSheetLoads = new Map<string, Promise<HTMLCanvasElement | null>>()
 
-function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
-  if (spriteCache.has(speciesIdx)) return Promise.resolve(spriteCache.get(speciesIdx)!)
-  if (pendingLoads.has(speciesIdx)) return pendingLoads.get(speciesIdx)!
+/** Pre-composite animation frames into a horizontal strip canvas (one row per anim type) */
+function buildAnimSheet(
+  seed: number, rarity: Props['rarity'], evoStage: number,
+): HTMLCanvasElement {
+  const pixelSize = 5
+  const GRID = 16
+  const frameW = GRID * pixelSize
+  const frameH = GRID * pixelSize
+  const config = { seed, rarity, evolutionStage: evoStage }
 
-  const promise = new Promise<HTMLCanvasElement | null>((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const oc = document.createElement('canvas')
-      oc.width = img.width
-      oc.height = img.height
-      const ox = oc.getContext('2d')!
-      ox.drawImage(img, 0, 0)
-      spriteCache.set(speciesIdx, oc)
-      resolve(oc)
+  const animTypes: { type: AnimationType; frames: number }[] = [
+    { type: 'idle', frames: 4 },
+    { type: 'walk', frames: 4 },
+    { type: 'happy', frames: 2 },
+    { type: 'sleep', frames: 4 },
+  ]
+
+  const totalWidth = animTypes.reduce((w, a) => w + frameW * a.frames, 0)
+  const totalHeight = frameH
+
+  const sheet = document.createElement('canvas')
+  sheet.width = totalWidth
+  sheet.height = totalHeight
+  const ctx = sheet.getContext('2d')!
+  ctx.imageSmoothingEnabled = false
+
+  let xOff = 0
+  for (const { type, frames } of animTypes) {
+    const animFrames = generateAnimationFrames(config, type)
+    for (let i = 0; i < Math.min(frames, animFrames.length); i++) {
+      const frame = animFrames[i]
+      // Draw pixels
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          const c = frame.grid[y][x]
+          if (c && c !== 'transparent') {
+            ctx.fillStyle = c
+            ctx.fillRect(xOff + x * pixelSize, y * pixelSize, pixelSize, pixelSize)
+          }
+        }
+      }
+      xOff += frameW
     }
-    img.onerror = () => {
-      spriteCache.set(speciesIdx, null)
-      resolve(null)
+    // Pad remaining frames with last frame
+    for (let i = animFrames.length; i < frames; i++) {
+      const lastFrame = animFrames[animFrames.length - 1]
+      for (let y = 0; y < GRID; y++) {
+        for (let x = 0; x < GRID; x++) {
+          const c = lastFrame.grid[y][x]
+          if (c && c !== 'transparent') {
+            ctx.fillStyle = c
+            ctx.fillRect(xOff + x * pixelSize, y * pixelSize, pixelSize, pixelSize)
+          }
+        }
+      }
+      xOff += frameW
     }
-    img.src = `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
-  })
+  }
 
-  pendingLoads.set(speciesIdx, promise)
-  promise.finally(() => pendingLoads.delete(speciesIdx))
-  return promise
+  return sheet
 }
 
-export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick }: Props) {
+const ANIM_OFFSETS: Record<string, { start: number; frames: number }> = {
+  idle:  { start: 0, frames: 4 },
+  walk:  { start: 4, frames: 4 },
+  happy: { start: 8, frames: 2 },
+  sleep: { start: 10, frames: 4 },
+}
+
+export default function PixelPetCanvas({
+  seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const petDataRef = useRef<PixelPetData | null>(null)
-  const animFramesRef = useRef<AnimationFrame[]>([])
+  const sheetRef = useRef<HTMLCanvasElement | null>(null)
+  const pngBaseRef = useRef<HTMLCanvasElement | null>(null) // loaded PNG as base overlay
+  const frameRef = useRef(0)
+  const timeRef = useRef(0)
   const frameIdxRef = useRef(0)
   const frameTimerRef = useRef(0)
-  const frameRef = useRef<number>(0)
-  const timeRef = useRef(0)
-  const xOffsetRef = useRef(0)
-  const yOffsetRef = useRef(0)
   const bounceRef = useRef(0)
   const walkDirRef = useRef(1)
-  const loadedRef = useRef(false)
-  const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
-    spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading'
+  const xOffRef = useRef(0)
+  const [pngStatus, setPngStatus] = useState<'loading' | 'ready' | 'none'>(
+    spriteImmediateCache.has(getSpeciesIndex(seed)) ? 'ready' : 'loading'
   )
 
   const speciesIdx = getSpeciesIndex(seed)
+  const sheetKey = `${speciesIdx}_${rarity}_${evolutionStage}`
 
-  // Load PNG sprite (with cache)
+  // ── Quick sprite cache for transparent PNG→canvas conversion ──
+  // We use a separate module-level cache keyed by speciesIdx
+  // so the base PNG is loaded once globally
+  const spriteCacheRef = useRef(spriteImmediateCache)
+
+  // Ensure animation sheet exists
   useEffect(() => {
-    let cancelled = false
-    const cached = spriteCache.get(speciesIdx)
+    const cached = sheetCache.get(sheetKey)
     if (cached !== undefined) {
-      spriteCanvasRef.current = cached
-      if (!cancelled) setStatus(cached ? 'png' : 'fallback')
+      sheetRef.current = cached
       return
     }
-    loadSprite(speciesIdx).then((oc) => {
+    // Build synchronously (fast — pure array ops)
+    const sheet = buildAnimSheet(seed, rarity, evolutionStage)
+    sheetCache.set(sheetKey, sheet)
+    sheetRef.current = sheet
+  }, [sheetKey, seed, rarity, evolutionStage])
+
+  // Load PNG sprite as optional base overlay (background, for visual quality)
+  useEffect(() => {
+    let cancelled = false
+    const cached = spriteImmediateCache.get(speciesIdx)
+    if (cached !== undefined) {
+      pngBaseRef.current = cached
+      if (!cancelled) setPngStatus('ready')
+      return
+    }
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
       if (cancelled) return
-      spriteCanvasRef.current = oc
-      setStatus(oc ? 'png' : 'fallback')
-    })
+      const oc = document.createElement('canvas')
+      oc.width = img.width
+      oc.height = img.height
+      oc.getContext('2d')!.drawImage(img, 0, 0)
+      spriteImmediateCache.set(speciesIdx, oc)
+      pngBaseRef.current = oc
+      if (!cancelled) setPngStatus('ready')
+    }
+    img.onerror = () => {
+      if (!cancelled) setPngStatus('none')
+    }
+    img.src = `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
     return () => { cancelled = true }
   }, [speciesIdx])
 
-  // Generate procedural pet data OR animation frames as fallback
-  useEffect(() => {
-    if (status === 'fallback') {
-      const config = { seed, rarity, evolutionStage }
-      // Map animation prop to AnimationType
-      const animMap: Record<string, 'idle' | 'walk' | 'happy' | 'sleep'> = {
-        idle: 'idle',
-        walk: 'walk',
-        happy: 'happy',
-        jump: 'happy', // jump falls back to happy
-        sleep: 'sleep',
-      }
-      const frames = generateAnimationFrames(config, animMap[animation] || 'idle')
-      animFramesRef.current = frames
-      frameIdxRef.current = 0
-      frameTimerRef.current = 0
-    } else if (status === 'png') {
-      // For PNG mode, still generate base pet data for reference
-      petDataRef.current = generatePixelPet({ seed, rarity, evolutionStage })
-    }
-  }, [status, seed, rarity, evolutionStage, animation])
-
-  // Reset frame index when animation changes
+  // Reset frame timer on animation change
   useEffect(() => {
     frameIdxRef.current = 0
     frameTimerRef.current = 0
   }, [animation])
 
-  // Animation loop
+  // ── Animation loop ──
   const animate = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-
     const cw = canvas.width
     const ch = canvas.height
     timeRef.current += 0.05
 
-    // ── Frame timing (only for fallback/procedural mode) ──
-    const frames = animFramesRef.current
-    if (frames.length > 0 && status === 'fallback') {
-      frameTimerRef.current += 16 // ~60fps, roughly 16ms per frame call
-      const currentFrame = frames[frameIdxRef.current]
-      if (currentFrame && frameTimerRef.current >= currentFrame.duration) {
-        frameTimerRef.current = 0
-        frameIdxRef.current = (frameIdxRef.current + 1) % frames.length
-      }
+    const sheet = sheetRef.current
+    const pngBase = pngBaseRef.current
+
+    // ── Frame cycling ──
+    const animInfo = ANIM_OFFSETS[animation] || ANIM_OFFSETS.idle
+    frameTimerRef.current += 16
+    // Duration per frame varies by anim type
+    let frameDuration = 200
+    if (animation === 'idle') frameDuration = frameIdxRef.current % 2 === 0 ? 2500 : 120
+    else if (animation === 'walk') frameDuration = 150
+    else if (animation === 'happy') frameDuration = 200
+    else if (animation === 'jump') frameDuration = 200
+    else if (animation === 'sleep') frameDuration = 2000
+
+    if (frameTimerRef.current >= frameDuration) {
+      frameTimerRef.current = 0
+      frameIdxRef.current = (frameIdxRef.current + 1) % animInfo.frames
     }
 
-    // ── Calculate animation offsets (for all modes) ──
+    // ── Transform offsets ──
     let xOff = 0, yOff = 0, scale = 1, rot = 0
-
-    // Smooth breathing for PNG mode
-    const breathe = animation === 'sleep'
-      ? Math.sin(timeRef.current * 1.5) * 0.01
-      : Math.sin(timeRef.current * 3) * 0.012
-
     switch (animation) {
       case 'walk': {
-        xOffsetRef.current += 0.3 * walkDirRef.current
-        if (xOffsetRef.current > 20) walkDirRef.current = -1
-        if (xOffsetRef.current < -20) walkDirRef.current = 1
-        xOff = xOffsetRef.current
+        xOffRef.current += 0.3 * walkDirRef.current
+        if (xOffRef.current > 20) walkDirRef.current = -1
+        if (xOffRef.current < -20) walkDirRef.current = 1
+        xOff = xOffRef.current
         yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
         rot = Math.sin(timeRef.current * 4) * 0.03
         break
@@ -171,15 +223,13 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       case 'happy': {
         yOff = Math.abs(Math.sin(timeRef.current * 6)) * 8
         scale = 1 + Math.sin(timeRef.current * 8) * 0.03
-        rot = Math.sin(timeRef.current * 5) * 0.05
         break
       }
       case 'jump': {
         bounceRef.current = Math.max(0, bounceRef.current - 0.08)
         yOff = -(bounceRef.current * 15)
-        if (bounceRef.current < 0.05 && bounceRef.current > 0) {
+        if (bounceRef.current < 0.05 && bounceRef.current > 0)
           scale = 1 + (1 - bounceRef.current / 0.05) * 0.08
-        }
         break
       }
       case 'sleep': {
@@ -189,7 +239,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
       case 'idle': {
         yOff = Math.sin(timeRef.current * 2) * 1.5
-        scale = 1 + breathe
+        scale = 1 + Math.sin(timeRef.current * 3) * 0.012
         break
       }
     }
@@ -197,32 +247,38 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     // ── Clear ──
     ctx.clearRect(0, 0, cw, ch)
     ctx.imageSmoothingEnabled = false
-    loadedRef.current = true
 
-    const sprite = spriteCanvasRef.current
-    if (sprite && status === 'png') {
-      // PNG mode: draw sprite with transform animation
-      const pad = 20
-      const displaySize = Math.min(cw, ch) - pad
-      const imgScale = (displaySize / Math.max(sprite.width, sprite.height)) * scale
-      const dw = Math.round(sprite.width * imgScale)
-      const dh = Math.round(sprite.height * imgScale)
+    const pixelSize = (size as number)
+    const GRID = 16
+    const frameW = GRID * pixelSize
+    const frameH = GRID * pixelSize
+
+    if (sheet) {
+      // ── Draw from sprite sheet ──
+      const frameCol = animInfo.start + frameIdxRef.current
+      const sx = frameCol * frameW
+      const sy = 0
+
+      // Center in canvas
+      const displayScale = Math.min(cw / frameW, ch / frameH) * scale
+      const dw = Math.round(frameW * displayScale)
+      const dh = Math.round(frameH * displayScale)
       const dx = Math.round((cw - dw) / 2 + xOff)
       const dy = Math.round((ch - dh) / 2 + yOff)
-
-      if (RARITY_GLOWS[rarity]) {
-        ctx.shadowColor = RARITY_GLOWS[rarity]
-        ctx.shadowBlur = size * 3
-      }
 
       ctx.save()
       ctx.translate(cw / 2 + xOff, ch / 2 + yOff)
       ctx.rotate(rot)
-      ctx.drawImage(sprite, -dw / 2, -dh / 2, dw, dh)
-      ctx.restore()
 
-      ctx.shadowColor = 'transparent'
+      if (RARITY_GLOWS[rarity]) {
+        ctx.shadowColor = RARITY_GLOWS[rarity]
+        ctx.shadowBlur = pixelSize * 3
+      }
+
+      // Draw the frame from sheet
+      ctx.drawImage(sheet, sx, sy, frameW, frameH, -dw / 2, -dh / 2, dw, dh)
       ctx.shadowBlur = 0
+      ctx.restore()
 
       // Rarity tint
       const drawX = Math.round((cw - dw) / 2 + xOff)
@@ -239,51 +295,36 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         ctx.fillRect(drawX + dw - 1, drawY, 2, dh)
       }
 
-    } else if (status === 'fallback') {
-      // ── Procedural mode: draw current animation frame ──
-      const frameData = frames[frameIdxRef.current]
-      if (!frameData) {
-        frameRef.current = requestAnimationFrame(animate)
-        return
+      // ── PNG base overlay (optional visual enhancement) ──
+      // If PNG loaded, draw it underneath with alpha for richer colors
+      if (pngBase && pngStatus === 'ready') {
+        ctx.globalAlpha = 0.35
+        ctx.save()
+        ctx.translate(cw / 2 + xOff, ch / 2 + yOff)
+        ctx.rotate(rot)
+        const pngScale = (Math.min(cw, ch) - 20) / Math.max(pngBase.width, pngBase.height)
+        const pw = pngBase.width * pngScale * scale
+        const ph = pngBase.height * pngScale * scale
+        ctx.drawImage(pngBase, -pw / 2, -ph / 2, pw, ph)
+        ctx.restore()
+        ctx.globalAlpha = 1
       }
 
-      const GRID_SZ = 16 // fixed grid size for all frames
-      const pixelSize = (size as number)
-      const gridW = GRID_SZ * pixelSize
-      const gridH = GRID_SZ * pixelSize
-
-      // Apply transform offsets on top of frame
-      ctx.save()
-      ctx.translate(cw / 2 + xOff, ch / 2 + yOff)
-      ctx.rotate(rot)
-      ctx.scale(scale, scale)
-
-      if (RARITY_GLOWS[rarity]) {
-        ctx.shadowColor = RARITY_GLOWS[rarity]
-        ctx.shadowBlur = pixelSize * 3
-      }
-
-      for (let y = 0; y < GRID_SZ; y++) {
-        for (let x = 0; x < GRID_SZ; x++) {
-          const color = frameData.grid[y][x]
-          if (color && color !== 'transparent') {
-            ctx.fillStyle = color
-            ctx.fillRect(x * pixelSize - gridW / 2, y * pixelSize - gridH / 2, pixelSize, pixelSize)
-          }
-        }
-      }
-      ctx.shadowColor = 'transparent'
-      ctx.shadowBlur = 0
-      ctx.restore()
+      // ── Breathing highlight (subtle pulse overlay on sprite-sheet mode) ──
+      // This makes the procedural sprite feel alive even without PNG
+      const breathe = animation === 'sleep'
+        ? Math.sin(timeRef.current * 1.5) * 0.08
+        : Math.sin(timeRef.current * 3) * 0.06
+      ctx.fillStyle = `rgba(255,255,255,${Math.max(0, breathe * 0.5)})`
+      ctx.fillRect(drawX, drawY, dw, dh)
 
     } else {
-      // loading: pulsing skeleton
+      // Sheet not ready — fallback loading skeleton
       const breathe = 0.5 + Math.sin(timeRef.current * 2) * 0.2
       ctx.fillStyle = `rgba(255,255,255,${0.04 * breathe})`
       const r = 8
       ctx.beginPath()
-      ctx.moveTo(2 + r, 2)
-      ctx.lineTo(cw - 2 - r, 2)
+      ctx.moveTo(2 + r, 2); ctx.lineTo(cw - 2 - r, 2)
       ctx.arcTo(cw - 2, 2, cw - 2, 2 + r, r)
       ctx.lineTo(cw - 2, ch - 2 - r)
       ctx.arcTo(cw - 2, ch - 2, cw - 2 - r, ch - 2, r)
@@ -298,31 +339,21 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     frameRef.current = requestAnimationFrame(animate)
   }, [animation, size, rarity, speciesIdx])
 
-  // Start animation loop
   useEffect(() => {
     frameRef.current = requestAnimationFrame(animate)
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current)
-    }
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current) }
   }, [animate])
 
-  // Size calculation
   const pixelVal = typeof size === 'number' ? size : 5
-  const spriteGridSize = 16
-  const canvasW = spriteGridSize * pixelVal + 40
-  const canvasH = spriteGridSize * pixelVal + 30
-
-  const handleClick = () => {
-    bounceRef.current = 1
-    onClick?.()
-  }
+  const canvasW = 16 * pixelVal + 40
+  const canvasH = 16 * pixelVal + 30
 
   return (
     <canvas
       ref={canvasRef}
       width={canvasW}
       height={canvasH}
-      onClick={handleClick}
+      onClick={() => { bounceRef.current = 1; onClick?.() }}
       style={{
         width: canvasW, height: canvasH,
         imageRendering: 'pixelated',
@@ -332,3 +363,6 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     />
   )
 }
+
+// Module-level cache for immediate PNG→canvas conversion (shared across instances)
+const spriteImmediateCache = new Map<number, HTMLCanvasElement>()
