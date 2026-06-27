@@ -185,14 +185,25 @@ Only the 🐾 其他寵物 grid itself is scrollable — the energy card, team s
 
 ### PixelPetCanvas (`PixelPetCanvas.tsx`)
 
-Canvas-based pet renderer with PNG sprite (primary) + procedural fallback.
+Canvas-based pet renderer with PNG sprite (primary) + procedural pixel fallback.
+**v0.9.0+**: fallback path now uses frame-by-frame pixel animation (walk cycle + blink).
 
 **Sprite loading (optimized):**
 - **Global sprite cache**: all `PixelPetCanvas` instances share a `Map<speciesIdx, Canvas>` — the same species only loads once across the entire page
 - **128×128 source sprites** (resized from 768×768) — 36× fewer pixels to decode
 - Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png?v=SPRITE_VERSION` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
 - `onload` → draws PNG to offscreen canvas at 1:1 (no `removeBg()` — sprites already have proper RGBA transparency)
-- `onerror` → falls back to procedural `generatePixelPet()` (generated **lazily**, only when PNG fails)
+- `onerror` → falls back to procedural `generatePixelPet()` (generated eagerly for animation data)
+
+**Animation system (v0.9.0+):**
+- `generatePetAnimation(petData)` creates:
+  - `walkFrames`: 4-frame walk cycle via pixel manipulation (body shift + stride)
+  - `blinkFrame`: closed-eye frame for idle blink (eye pixels → outline)
+- **Walk state**: cycles through 4 frames at 180ms intervals — shows real pixel changes
+- **Idle state**: base frame with blink frame every ~2 seconds
+- **Happy state**: cycles all 4 frames at faster rate
+- **Fallback path**: `drawPixelGrid(ctx, frameGrid, pixelSize, offsetX, offsetY)` renders each frame
+- **PNG path**: still uses transform animation (upgrade path: replace static PNGs with AI-gen sprite sheets)
 
 **Rarity effects:**
 - Tint overlay: `fillRect` with rgba (common=`transparent`, uncommon=`#22c55e14`, rare=`#3b82f61a`, epic=`#8b5cf61f`, legendary=`#f59e0b26`)
@@ -202,9 +213,9 @@ Canvas-based pet renderer with PNG sprite (primary) + procedural fallback.
 **Animation states:**
 | State | Behaviour |
 |-------|-----------|
-| `idle` | Sinusoidal Y bob (±1.5px) |
-| `walk` | X translation (±20px) + Y step bounce |
-| `happy` | Y bounce (±6px) |
+| `idle` | Frame 0 + periodic blink + sinusoidal Y bob (±1.5px) |
+| `walk` | 4-frame cycle (180ms) + X translation (±20px) + Y step bounce |
+| `happy` | 4-frame cycle (faster) + Y bounce (±6px) |
 | `jump` | Y arc (15px, decay 0.08/frame) |
 
 **Canvas props:**

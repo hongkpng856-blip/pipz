@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.9.0 (2026-06-27)
+
+### Added
+- **`packages/core/src/pixel-gen/animation.ts`**: frame-by-frame animation generator for all pets
+  - `generateWalkFrames()` — 4-frame walk cycle from pet's pixel grid (body shift + stride)
+  - `generateBlinkFrame()` — closed-eye frame for idle blink animation
+  - `drawPixelGrid()` — canvas renderer for pixel grid frames
+  - `generatePetAnimation()` — complete animation data generator
+
+### Changed
+- **`PixelPetCanvas.tsx`**: frame-by-frame animation replaces transform-only for fallback path
+  - Walk state cycles through 4 pixel frames (180ms each)
+  - Idle state shows blink frame every ~2 seconds
+  - Happy state cycles through all frames at faster rate
+- **`PetCompanion.tsx`**: frame-by-frame walk cycle on map screen
+  - Roaming pets now show real pixel frame changes during walk
+  - Idle blink animation every ~2 seconds
+  - PNG sprite path still uses transform animation (upgrade path: replace PNG with AI-gen sprite sheet)
+
+### Fixed
+- Missing pixel art frame-by-frame walk cycle — pets now show "真正的行路" (real walking) pixel changes
+
 ## v0.8.0 (2026-06-27)
 
 ### Added

@@ -378,26 +378,47 @@ Some events grant items as rewards (e.g., 流浪商人 gives 🫐 魔法莓果, 
 
 ## Animation System
 
-### Current approach (v0.8.0+)
+### Current approach (v0.9.0+)
 
-Canvas-based pixel art rendering with hand-authored pixel data:
+Two-tier animation system:
 
+**Tier 1 — Frame-by-frame pixel animation (fallback path):**
+- `generatePetAnimation(petData)` in `packages/core/src/pixel-gen/animation.ts`
+- Takes a `PixelPetData` (16×16 grid) and generates:
+  - `walkFrames`: 4 frames via pixel manipulation (body shift + bottom-row stride)
+  - `blinkFrame`: eye pixels replaced with outline color for closed-eye blink
+- Canvas renderer cycles frames at 180ms intervals via `requestAnimationFrame`
+- Used in both `PixelPetCanvas.tsx` (detail view) and `PetCompanion.tsx` (map screen)
+
+**Tier 2 — Transform animation (PNG sprite path):**
+- Falls back to x/y offset + sinusoidal bob when PNG sprite is loaded (static image)
+
+**Frame timing:**
 | Property | Value |
 |----------|-------|
-| Sprite size | 24×24 pixels |
-| Palette | PICO-8 (16 colors) |
-| Animation loop | `requestAnimationFrame` (vsync) |
+| Walk frames | 4 (stand → right stride → stand → left stride) |
 | Frame duration | 180ms per frame |
-| Walk cycle | 4 frames (stand → left step → stand → right step) |
+| Blink interval | ~2 seconds (idle) |
+| Happy cycle | 4 frames at ~120ms |
 
-### Architecture
+### Data flow
 
-1. **Pixel data** is stored as 2D string arrays (24 rows, each with 24 palette-index digits)
-2. **`drawSprite(ctx, frame, scale)`** — renders a single frame to canvas
-3. **`requestAnimationFrame` loop** — cycles through frames, updates on time threshold
+```
+PixelPetData (16×16 RGB grid)
+  → generatePetAnimation()
+    → walkFrames[4] + blinkFrame
+      → drawPixelGrid(ctx, frame, pixelSize)
+        → Canvas display (requestAnimationFrame loop)
+```
 
 ### Integration paths
 
-- **AI base sprite**: once Pollinations.ai or another API reliably produces pixel art, the hand-drawn pixel data can be replaced by AI-generated data
-- **Pixel manipulation**: `scripts/gen_anim.py` handles: download AI image → downscale to 32×32 → quantize to PICO-8 → create 4 walk frames → output sprite sheet + animated GIF
-- **Additional animations**: blink (closed eyes), sleep (half-closed), jump (vertical arc) can be added as additional frame sets
+- **AI base sprite**: once Pollinations.ai or another API reliably produces pixel art, replace procedural grid with AI-generated base sprite, then apply same `generateWalkFrames()` pixel manipulation
+- **Pixel manipulation**: handles: body shift (horizontal sway) + bottom row stride + vertical bob = convincing walk cycle on any sprite shape
+- **Additional animations**: sleep (half-closed), jump (vertical arc) can be added as additional frame sets
+
+### Limitations
+
+- PNG sprite path (Tier 2) doesn't support frame-by-frame changes — static image moves as a whole
+- 16×16 grid limits detail; AI-gen 24×24 or 32×32 base sprites would improve animation quality
+- No per-species animation personality yet (all species use same frame generation logic)
