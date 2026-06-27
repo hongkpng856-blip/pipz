@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, Mood, getSpeciesIndex, PetSkill } from '@pipz/core'
+import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, formatSteps, getSpeciesIndex, PetSkill, generatePetAnimation, drawPixelGrid } from '@pipz/core'
 
 interface Props {
   pet: Pet | null
@@ -19,40 +19,46 @@ const EVO_LABELS = ['BB', '幼年', '成年', '完全體', '傳說']
 
 const SPRITE_VERSION = 'v5'
 const MARGIN = 50
+const FRAME_DURATION = 180 // ms per frame
 
 export default function PetCompanion({
   pet, anim, steps, totalSteps, evolutionStage, skills,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
+  const animRef = useRef<ReturnType<typeof generatePetAnimation> | null>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
   const petKeyRef = useRef<string | null>(null)
   const rafRef = useRef(0)
   const timeRef = useRef(0)
+  const animFrameRef = useRef(0) // current walk frame (0-3)
+  const lastFrameTime = useRef(0)
   const behaviorRef = useRef<Behavior>('idle')
   const behaviorTimer = useRef(0)
   const xRef = useRef(0)
   const yRef = useRef(0)
   const bounceRef = useRef(0)
-  const particlesRef = useRef<{x:number;y:number;life:number;emoji:string}[]>([])
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [speciesName, setSpeciesName] = useState('')
 
-  // Generate pet pixel data
+  // Generate pet pixel data + animation frames
   useEffect(() => {
     if (pet) {
+      const seed = parseInt(pet.speciesId) || 1
       const data = generatePixelPet({
-        seed: parseInt(pet.speciesId) || 1,
+        seed,
         rarity: pet.rarity,
         evolutionStage: pet.evolutionStage,
       })
       petDataRef.current = data
+      animRef.current = generatePetAnimation(data)
       setSpeciesName(data.speciesName)
       xRef.current = (Math.random() - 0.5) * 0.3
       yRef.current = (Math.random() - 0.5) * 0.2
     } else {
       petDataRef.current = null
+      animRef.current = null
       setSpeciesName('')
     }
   }, [pet])
@@ -124,15 +130,25 @@ export default function PetCompanion({
     const W = canvas.width, H = canvas.height
     timeRef.current += 0.02
 
+    // Advance animation frame
+    const now = performance.now()
+    if (now - lastFrameTime.current >= FRAME_DURATION) {
+      lastFrameTime.current = now
+      animFrameRef.current = (animFrameRef.current + 1) % 4
+    }
+
     // Clear
     ctx.clearRect(0, 0, W, H)
+    ctx.imageSmoothingEnabled = false
 
     // Draw pet
     const pd = petDataRef.current
+    const anim = animRef.current
     const oc = offscreenRef.current
     if (pet && (status !== 'loading')) {
       const bx = behaviorRef.current
-      const speed = 1.0
+      const speed = 0.8
+      const isMoving = bx === 'walkLeft' || bx === 'walkRight' || bx === 'walkUp' || bx === 'walkDown'
 
       // Roaming boundaries (symmetric)
       const maxR = (W / 2) - MARGIN
@@ -162,10 +178,8 @@ export default function PetCompanion({
       ctx.fillStyle = 'rgba(0,0,0,0.1)'
       ctx.beginPath(); ctx.ellipse(cx, shadowY, 24 + Math.abs(walkBob) * 3, 3, 0, 0, Math.PI * 2); ctx.fill()
 
-      // ── PIXEL CRISP ──
-      ctx.imageSmoothingEnabled = false
-
       if (oc && status === 'png') {
+        // ── PNG path: draw with enhanced walk bob ──
         const spriteSize = Math.min(120, Math.min(W, H) * 0.38)
         const sw = spriteSize
         const sh = spriteSize
@@ -179,25 +193,36 @@ export default function PetCompanion({
         ctx.restore()
         ctx.shadowBlur = 0
 
-      } else if (pd && status === 'fallback') {
+      } else if (pd && anim && status === 'fallback') {
+        // ── Fallback path: frame-by-frame pixel animation ──
         const ps = 7
         const pw = pd.width * ps, ph = pd.height * ps
+
+        // Choose frame based on behavior
+        let frameGrid = anim.walkFrames[0]
+        if (isMoving) {
+          frameGrid = anim.walkFrames[animFrameRef.current]
+        } else if (bx === 'idle') {
+          // Blink every ~2 sec
+          const blinkTick = Math.floor(timeRef.current * 3) % 60
+          frameGrid = blinkTick === 0 ? anim.blinkFrame : anim.walkFrames[0]
+        } else {
+          // mischief: cycle frames
+          frameGrid = anim.walkFrames[Math.floor(timeRef.current * 6) % 4]
+        }
+
         if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
+
         ctx.save()
         ctx.translate(cx, cy)
         ctx.rotate(mRot)
-        for (let y = 0; y < pd.height; y++) {
-          for (let x = 0; x < pd.width; x++) {
-            const c = pd.grid[y][x]
-            if (c && c !== 'transparent') { ctx.fillStyle = c; ctx.fillRect(x * ps - pw / 2, y * ps, ps, ps) }
-          }
-        }
+        drawPixelGrid(ctx, frameGrid, ps, -pw / 2, -ph / 2)
         ctx.restore()
         ctx.shadowBlur = 0
       }
 
     } else if (!pet) {
-      // No pet — egg
+      // No pet — egg with progress
       const eb = Math.sin(timeRef.current*3)*3
       ctx.fillStyle = '#d4a0c0'
       ctx.beginPath(); ctx.roundRect(W/2-20, H*0.4-30+eb, 40, 50, 12); ctx.fill()
@@ -297,10 +322,7 @@ export default function PetCompanion({
       {/* ── Info panel ── */}
       {pet && (
         <div style={{ padding: '0 16px 12px' }}>
-          {/* Divider */}
           <div style={{ height:1, background:'#1e2a45', marginBottom:10 }} />
-
-          {/* Evolution + level row */}
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ fontSize:9, color:'#5a6d85' }}>Lv.{pet.level}</span>
@@ -308,8 +330,6 @@ export default function PetCompanion({
               <span style={{ fontSize:9, color:'#94a5b8' }}>🌟 {EVO_LABELS[pet.evolutionStage-1]||'初級'}</span>
             </div>
           </div>
-
-          {/* ── Stats grid (2x2) ── */}
           <div style={{
             display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:10,
           }}>
@@ -324,8 +344,6 @@ export default function PetCompanion({
               </div>
             ))}
           </div>
-
-          {/* ── Skills (clean pill list) ── */}
           {skills.length > 0 && (
             <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>
               {skills.slice(0, 6).map((s, i) => (
