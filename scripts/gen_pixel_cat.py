@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple quadrupedal cat — side view, 4 legs on ground"""
+"""Redesigned cat — round head, short ears, BIG eyes, clear walking"""
 from PIL import Image
 
 PICO8 = [
@@ -7,11 +7,13 @@ PICO8 = [
     (171,82,54), (95,87,79), (194,195,199), (255,241,232),
     (41,173,255), (255,163,0),
 ]
+# 0=black, 1=navy, 2=purple, 3=pink, 4=brown, 5=dkgray, 6=gray, 7=beige, 8=blue, 9=orange
 
 W, H = 32, 20
+BG = 6
 
 def new():
-    return [[6]*W for _ in range(H)]
+    return [[BG]*W for _ in range(H)]
 
 def sp(g, x, y, c):
     if 0 <= x < W and 0 <= y < H: g[y][x] = c
@@ -30,166 +32,127 @@ def rect(g, x, y, w, h, c):
     for dy in range(h):
         for dx in range(w): sp(g, x+dx, y+dy, c)
 
-# Cat shape data: [x, y, w, h, color] for rect parts
-# Or use a direct pixel map approach
+def tri(g, x0, y0, x1, y1, x2, y2, c):
+    ys = sorted([y0, y1, y2])
+    for y in range(ys[0], ys[2]+1):
+        xs = []
+        for (ax,ay),(bx,by) in [((x0,y0),(x1,y1)),((x1,y1),(x2,y2)),((x2,y2),(x0,y0))]:
+            if ay==by: continue
+            if min(ay,by)<=y<=max(ay,by):
+                xs.append(int(ax + (y-ay)/(by-ay)*(bx-ax)))
+        if xs:
+            for x in range(min(xs),max(xs)+1): sp(g, x, y, c)
 
-g = new()
-
-# === BODY === horizontal oval
-ellipse(g, 16, 11, 9, 5, 9)     # orange body x:7-25, y:6-16
-
-# === BELLY === lighter underside
-ellipse(g, 16, 13, 7, 3, 7)      # beige belly
-
-# === HEAD === at the front
-circle(g, 7, 10, 5, 9)           # orange head
-
-# === FACE/MUZZLE === lighter
-ellipse(g, 5, 12, 3, 2, 7)       # beige muzzle
-
-# === EARS ===
-# Front ear (pointy triangle above head)
-for y in range(5, 9):
-    for x in range(3, 7):
-        if x - 3 <= (y - 5) * 0.6 and 6 - x <= (y - 5) * 0.6:
-            sp(g, x, y, 9)  # orange ear
-sp(g, 4, 6, 2)  # purple inner
-sp(g, 5, 6, 2)
-sp(g, 4, 7, 2)
-# Back ear (darker, behind)
-for y in range(6, 9):
-    for x in range(8, 11):
-        if x - 8 <= (y - 6) * 0.5 and 10 - x <= (y - 6) * 0.5:
-            sp(g, x, y, 4)  # brown (shadow) ear
-
-# === EYE ===
-circle(g, 5, 9, 2, 8)    # blue
-circle(g, 5, 9, 1, 7)    # white
-sp(g, 5, 9, 0)            # pupil
-
-# === NOSE ===
-sp(g, 3, 11, 3)
-sp(g, 4, 11, 3)
-
-# === MOUTH ===
-sp(g, 3, 12, 1)
-sp(g, 4, 12, 1)
-
-# === WHISKERS ===
-sp(g, 1, 11, 1); sp(g, 2, 11, 1)
-sp(g, 1, 12, 1); sp(g, 2, 12, 1)
-sp(g, 8, 10, 1); sp(g, 9, 10, 1)
-
-# === LEGS (4 legs, all on ground at y=19) ===
-# Front left leg
-rect(g, 9, 14, 3, 6, 9)
-# Front right leg
-rect(g, 13, 14, 3, 6, 9)
-# Back left leg
-rect(g, 20, 14, 3, 6, 9)
-# Back right leg
-rect(g, 24, 14, 3, 6, 9)
-
-# === PAW TIPS ===
-rect(g, 9, 19, 3, 1, 7)
-rect(g, 13, 19, 3, 1, 7)
-rect(g, 20, 19, 3, 1, 7)
-rect(g, 24, 19, 3, 1, 7)
-
-# === TAIL === (curling up from back)
-for dx in range(6):
-    sp(g, 27+dx, 8+dx//2, 9)
-sp(g, 29, 10, 9)
-sp(g, 30, 11, 9)
-sp(g, 30, 12, 9)
-sp(g, 29, 13, 9)
-# Tail tip
-sp(g, 31, 11, 7)
-sp(g, 31, 12, 7)
-
-# === OUTLINE === (add minimal navy outline for definition)
-# Around head
-sp(g, 2, 10, 1); sp(g, 2, 11, 1)
-sp(g, 12, 8, 1); sp(g, 12, 9, 1); sp(g, 12, 10, 1); sp(g, 12, 11, 1); sp(g, 12, 12, 1)
-sp(g, 7, 5, 1); sp(g, 8, 5, 1)
-sp(g, 6, 15, 1)
-
-# Draw frame with leg Y shift for walk
-def make_walk_frames(base_grid):
-    frames = []
-    # Frame definitions: (left_leg_dy, right_leg_dy, body_dy)
-    # Walk: contact→passing→contact→passing
-    walk_data = [
-        (0, 0, 0),     # contact
-        (1, -1, -1),   # passing (bob up, legs cross)
-        (0, 0, 0),     # contact mirror  
-        (-1, 1, -1),   # passing mirror
-    ]
+def draw_cat(frame=0):
+    """
+    Quadrupedal cat facing right, 32x20.
+    frame: 0=contact, 1=passing, 2=contact2, 3=passing2
+    Diagonal pairs: (LF,RB) and (RF,LB)
+    """
+    g = new()
     
-    for l_move, r_move, body_y in walk_data:
-        f = [row[:] for row in base_grid]
-        
-        # Clear leg areas
-        for y in range(14, 20):
-            for x in range(9, 16):
-                f[y][x] = 6
-            for x in range(20, 28):
-                f[y][x] = 6
-        
-        # Redraw legs with offset
-        # Front pair
-        fy = 14 + body_y
-        rect(f, 9, fy + l_move, 3, 6-l_move, 9)
-        rect(f, 13, fy + r_move, 3, 6-r_move, 9)
-        # Paw tips
-        rect(f, 9, 19, 3, 1, 7)
-        rect(f, 13, 19, 3, 1, 7)
-        
-        # Back pair
-        by = 14 + body_y
-        rect(f, 20, by + r_move, 3, 6-r_move, 9)
-        rect(f, 24, by + l_move, 3, 6-l_move, 9)
-        # Paw tips
-        rect(f, 20, 19, 3, 1, 7)
-        rect(f, 24, 19, 3, 1, 7)
-        
-        # Tail (simplified - just redraw)
-        for dx in range(7):
-            sp(f, 27+dx, 8+body_y+dx//2, 9)
-        sp(f, 29, 10+body_y, 9)
-        sp(f, 30, 11+body_y, 9)
-        sp(f, 30, 12+body_y, 9)
-        sp(f, 29, 13+body_y, 9)
-        sp(f, 31, 11+body_y, 7)
-        sp(f, 31, 12+body_y, 7)
-        
-        frames.append(f)
-    return frames
+    # Walk phase offsets
+    # LF=left front, RF=right front, LB=left back, RB=right back
+    phases = [
+        (1, -1, -1, 1),    # 0: contact — LF+RB forward, RF+LB back
+        (0, 0, 0, 0),      # 1: passing — neutral
+        (-1, 1, 1, -1),    # 2: contact2 — RF+LB forward, LF+RB back
+        (0, 0, 0, 0),      # 3: passing2 — neutral
+    ]
+    lf, rf, lb, rb = phases[frame]
+    bob = [0, -1, 0, -1][frame]
+    
+    # === BODY (rounder, softer) ===
+    ellipse(g, 16, 11+bob, 9, 5, 9)
+    ellipse(g, 16, 13+bob, 7, 3, 7)  # belly
+    
+    # === HEAD (ROUNDER — bigger circle, less pointy) ===
+    circle(g, 6, 10+bob, 6, 9)  # bigger head
+    
+    # === FACE (wider muzzle) ===
+    ellipse(g, 4, 12+bob, 4, 2, 7)  # wider muzzle
+    
+    # === EARS (SHORTER — no longer than 4px) ===
+    tri(g, 2, 5+bob, 5, 7+bob, 4, 8+bob, 1)  # left ear outline
+    tri(g, 3, 6+bob, 5, 7+bob, 4, 8+bob, 9)  # fill
+    sp(g, 4, 7+bob, 3)  # pink inner
+    # Right ear (behind, shadow)
+    tri(g, 8, 5+bob, 11, 7+bob, 10, 8+bob, 1)
+    tri(g, 9, 6+bob, 11, 7+bob, 10, 8+bob, 4)
+    
+    # === BIG EYES (cat-like) ===
+    sp(g, 3, 9+bob, 8); sp(g, 4, 9+bob, 8); sp(g, 5, 9+bob, 8)  # blue L
+    sp(g, 3, 9+bob, 7); sp(g, 4, 9+bob, 7)  # white L
+    sp(g, 4, 10+bob, 0)  # pupil L
+    
+    # === NOSE (pink triangle) ===
+    sp(g, 2, 11+bob, 3)
+    sp(g, 3, 11+bob, 3)
+    
+    # === MOUTH ===
+    sp(g, 2, 12+bob, 1)
+    sp(g, 3, 12+bob, 1)
+    
+    # === WHISKERS (long, prominent) ===
+    for y in [10, 11, 12]:
+        sp(g, 0, y+bob, 1)
+        sp(g, 1, y+bob, 1)
+    sp(g, 8, 10+bob, 1); sp(g, 9, 10+bob, 1)
+    sp(g, 8, 11+bob, 1); sp(g, 9, 11+bob, 1)
+    
+    # === LEGS (clear diagonal alternation) ===
+    # Front left leg
+    rect(g, 9+lf, 15+bob, 3, 5, 9)
+    rect(g, 9+lf, 19+bob, 3, 1, 7)  # paw
+    
+    # Front right leg
+    rect(g, 13+rf, 15+bob, 3, 5, 9)
+    rect(g, 13+rf, 19+bob, 3, 1, 7)
+    
+    # Back left leg
+    rect(g, 20+lb, 15+bob, 3, 5, 9)
+    rect(g, 20+lb, 19+bob, 3, 1, 7)
+    
+    # Back right leg
+    rect(g, 24+rb, 15+bob, 3, 5, 9)
+    rect(g, 24+rb, 19+bob, 3, 1, 7)
+    
+    # === TAIL (long, curling up) ===
+    for dx in range(7):
+        sp(g, 27+dx, 9+bob+dx//2, 9)
+    sp(g, 33, 12+bob, 9)
+    sp(g, 33, 13+bob, 9)
+    sp(g, 32, 14+bob, 9)
+    # Tail tip (white)
+    sp(g, 33, 11+bob, 7)
+    
+    return g
 
-frames = make_walk_frames(g)
+# Generate all 4 frames
+frames = [draw_cat(i) for i in range(4)]
 
-# Save images
+# Save
 for i, f in enumerate(frames):
-    img = Image.new('RGB', (W, H))
+    img = Image.new('RGB', (W, H), PICO8[BG])
     px = img.load()
     for y in range(H):
         for x in range(W):
             px[x, y] = PICO8[f[y][x]]
-    img.resize((W*6, H*6), Image.NEAREST).save(f'/tmp/frame_{i}.png')
+    img.resize((W*6, H*6), Image.NEAREST).save(f'/tmp/cat_v4_{i}.png')
 
 # Sprite sheet
-sheet = Image.new('RGB', (W*4*6, H*6), PICO8[6])
+sheet = Image.new('RGB', (W*4*6, H*6), PICO8[BG])
 for i, f in enumerate(frames):
-    img = Image.new('RGB', (W, H))
+    img = Image.new('RGB', (W, H), PICO8[BG])
     px = img.load()
     for y in range(H):
         for x in range(W):
             px[x, y] = PICO8[f[y][x]]
     sheet.paste(img.resize((W*6, H*6), Image.NEAREST), (i*W*6, 0))
-sheet.save('/tmp/sheet.png')
+sheet.save('/tmp/cat_v4_sheet.png')
 print("Saved!")
 
-# Output JS
+# JS output
 print("\nconst CAT: Grid[] = [")
 for g in frames:
     print("  [")
@@ -199,7 +162,6 @@ for g in frames:
     print("  ],")
 print("]")
 
-# Verify
 for g in frames:
     for row in g:
         for c in row:
