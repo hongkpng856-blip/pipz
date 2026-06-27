@@ -1,35 +1,17 @@
 #!/usr/bin/env python3
-"""Generate pixel art cat PNG + walk cycle frames"""
-import os
+"""Simple quadrupedal cat — side view, 4 legs on ground"""
 from PIL import Image
 
-# Custom palette: put frequently used colors at indices 0-9
-# 0=black, 1=navy, 2=purple, 3=pink(instead of 14), 4=brown, 
-# 5=darkgray, 6=gray(bg), 7=beige, 8=blue(instead of 12), 9=orange
 PICO8 = [
-    (0,0,0),        # 0 black
-    (29,43,83),     # 1 navy
-    (126,37,83),    # 2 purple
-    (255,119,168),  # 3 pink 🎯
-    (171,82,54),    # 4 brown
-    (95,87,79),     # 5 dark gray
-    (194,195,199),  # 6 gray bg
-    (255,241,232),  # 7 beige
-    (41,173,255),   # 8 blue 🎯
-    (255,163,0),    # 9 orange
-    (255,0,77),     # 10 red
-    (0,135,81),     # 11 green
-    (0,228,54),     # 12 bright green
-    (255,236,39),   # 13 yellow
-    (131,118,156),  # 14 purple gray
-    (255,204,170),  # 15 skin
+    (0,0,0), (29,43,83), (126,37,83), (255,119,168),
+    (171,82,54), (95,87,79), (194,195,199), (255,241,232),
+    (41,173,255), (255,163,0),
 ]
 
-W, H = 24, 24
-BG = 6
+W, H = 32, 20
 
 def new():
-    return [[BG]*W for _ in range(H)]
+    return [[6]*W for _ in range(H)]
 
 def sp(g, x, y, c):
     if 0 <= x < W and 0 <= y < H: g[y][x] = c
@@ -48,152 +30,178 @@ def rect(g, x, y, w, h, c):
     for dy in range(h):
         for dx in range(w): sp(g, x+dx, y+dy, c)
 
-def tri(g, x0, y0, x1, y1, x2, y2, c):
-    ys = sorted([y0, y1, y2])
-    for y in range(ys[0], ys[2]+1):
-        xs = []
-        for (ax,ay),(bx,by) in [((x0,y0),(x1,y1)),((x1,y1),(x2,y2)),((x2,y2),(x0,y0))]:
-            if ay==by: continue
-            if min(ay,by)<=y<=max(ay,by):
-                xs.append(int(ax + (y-ay)/(by-ay)*(bx-ax)))
-        if xs:
-            for x in range(min(xs),max(xs)+1): sp(g, x, y, c)
+# Cat shape data: [x, y, w, h, color] for rect parts
+# Or use a direct pixel map approach
 
-def draw_cat(leg_offset=0, body_y=0):
-    """Draw cat with optional leg offset for walk cycle"""
-    g = new()
-    
-    # === BODY ===
-    ellipse(g, 12, 17+body_y, 8, 6, 9)     # orange body
-    ellipse(g, 12, 18+body_y, 5, 3, 7)     # beige belly
-    
-    # === HEAD ===
-    circle(g, 12, 8+body_y, 6, 9)          # orange head
-    ellipse(g, 12, 10+body_y, 4, 3, 7)     # beige face
-    
-    # === EARS ===
-    # Left ear
-    tri(g, 7, 0, 10, 5+body_y, 6, 5+body_y, 1)    # navy outline
-    tri(g, 8, 1, 10, 4+body_y, 7, 4+body_y, 9)    # orange fill
-    tri(g, 8, 2, 9, 4+body_y, 7, 4+body_y, 2)     # purple inner
-    
-    # Right ear
-    tri(g, 14, 0, 18, 5+body_y, 17, 5+body_y, 1)
-    tri(g, 14, 1, 17, 4+body_y, 16, 4+body_y, 9)
-    tri(g, 15, 2, 16, 4+body_y, 14, 4+body_y, 2)
-    
-    # === EYES ===
-    circle(g, 9, 7+body_y, 3, 8)           # blue bg
-    circle(g, 9, 7+body_y, 2, 7)           # white
-    circle(g, 9, 8+body_y, 1, 0)           # pupil
-    
-    circle(g, 15, 7+body_y, 3, 8)          # blue bg
-    circle(g, 15, 7+body_y, 2, 7)          # white
-    circle(g, 15, 8+body_y, 1, 0)          # pupil
-    
-    # === NOSE ===
-    sp(g, 12, 9+body_y, 3)                 # pink
-    sp(g, 11, 9+body_y, 3)
-    sp(g, 13, 9+body_y, 3)
-    
-    # === MOUTH ===
-    sp(g, 12, 10+body_y, 1)
-    sp(g, 11, 11+body_y, 1)
-    sp(g, 13, 11+body_y, 1)
-    sp(g, 12, 11+body_y, 1)
-    
-    # === WHISKERS ===
-    for y in [9, 10, 11]:
-        sp(g, 4, y+body_y, 1)
-        sp(g, 5, y+body_y, 1)
-        sp(g, 6, y+body_y, 1)
-        sp(g, 18, y+body_y, 1)
-        sp(g, 19, y+body_y, 1)
-        sp(g, 20, y+body_y, 1)
-    
-    # === LEGS with offset ===
-    lo = leg_offset
-    # Front legs
-    rect(g, 7+lo, 20+body_y, 3, 4, 9)     # left front
-    rect(g, 14-lo, 20+body_y, 3, 4, 9)    # right front
-    # Back legs 
-    rect(g, 5-lo, 21+body_y, 3, 3, 9)     # left back
-    rect(g, 16+lo, 21+body_y, 3, 3, 9)    # right back
-    
-    # Paw tips
-    rect(g, 7+lo, 23+body_y, 3, 1, 7)
-    rect(g, 14-lo, 23+body_y, 3, 1, 7)
-    rect(g, 5-lo, 23+body_y, 3, 1, 7)
-    rect(g, 16+lo, 23+body_y, 3, 1, 7)
-    
-    # === TAIL ===
-    for dx in range(7):
-        sp(g, 19, 14+dx+body_y, 9)
-    sp(g, 18, 20+body_y, 9)
-    sp(g, 17, 20+body_y, 9)
-    sp(g, 18, 21+body_y, 9)
-    sp(g, 19, 14+body_y, 7)  # tail tip
-    sp(g, 19, 15+body_y, 7)
-    
-    return g
+g = new()
 
-def grid_to_img(grid):
+# === BODY === horizontal oval
+ellipse(g, 16, 11, 9, 5, 9)     # orange body x:7-25, y:6-16
+
+# === BELLY === lighter underside
+ellipse(g, 16, 13, 7, 3, 7)      # beige belly
+
+# === HEAD === at the front
+circle(g, 7, 10, 5, 9)           # orange head
+
+# === FACE/MUZZLE === lighter
+ellipse(g, 5, 12, 3, 2, 7)       # beige muzzle
+
+# === EARS ===
+# Front ear (pointy triangle above head)
+for y in range(5, 9):
+    for x in range(3, 7):
+        if x - 3 <= (y - 5) * 0.6 and 6 - x <= (y - 5) * 0.6:
+            sp(g, x, y, 9)  # orange ear
+sp(g, 4, 6, 2)  # purple inner
+sp(g, 5, 6, 2)
+sp(g, 4, 7, 2)
+# Back ear (darker, behind)
+for y in range(6, 9):
+    for x in range(8, 11):
+        if x - 8 <= (y - 6) * 0.5 and 10 - x <= (y - 6) * 0.5:
+            sp(g, x, y, 4)  # brown (shadow) ear
+
+# === EYE ===
+circle(g, 5, 9, 2, 8)    # blue
+circle(g, 5, 9, 1, 7)    # white
+sp(g, 5, 9, 0)            # pupil
+
+# === NOSE ===
+sp(g, 3, 11, 3)
+sp(g, 4, 11, 3)
+
+# === MOUTH ===
+sp(g, 3, 12, 1)
+sp(g, 4, 12, 1)
+
+# === WHISKERS ===
+sp(g, 1, 11, 1); sp(g, 2, 11, 1)
+sp(g, 1, 12, 1); sp(g, 2, 12, 1)
+sp(g, 8, 10, 1); sp(g, 9, 10, 1)
+
+# === LEGS (4 legs, all on ground at y=19) ===
+# Front left leg
+rect(g, 9, 14, 3, 6, 9)
+# Front right leg
+rect(g, 13, 14, 3, 6, 9)
+# Back left leg
+rect(g, 20, 14, 3, 6, 9)
+# Back right leg
+rect(g, 24, 14, 3, 6, 9)
+
+# === PAW TIPS ===
+rect(g, 9, 19, 3, 1, 7)
+rect(g, 13, 19, 3, 1, 7)
+rect(g, 20, 19, 3, 1, 7)
+rect(g, 24, 19, 3, 1, 7)
+
+# === TAIL === (curling up from back)
+for dx in range(6):
+    sp(g, 27+dx, 8+dx//2, 9)
+sp(g, 29, 10, 9)
+sp(g, 30, 11, 9)
+sp(g, 30, 12, 9)
+sp(g, 29, 13, 9)
+# Tail tip
+sp(g, 31, 11, 7)
+sp(g, 31, 12, 7)
+
+# === OUTLINE === (add minimal navy outline for definition)
+# Around head
+sp(g, 2, 10, 1); sp(g, 2, 11, 1)
+sp(g, 12, 8, 1); sp(g, 12, 9, 1); sp(g, 12, 10, 1); sp(g, 12, 11, 1); sp(g, 12, 12, 1)
+sp(g, 7, 5, 1); sp(g, 8, 5, 1)
+sp(g, 6, 15, 1)
+
+# Draw frame with leg Y shift for walk
+def make_walk_frames(base_grid):
+    frames = []
+    # Frame definitions: (left_leg_dy, right_leg_dy, body_dy)
+    # Walk: contact→passing→contact→passing
+    walk_data = [
+        (0, 0, 0),     # contact
+        (1, -1, -1),   # passing (bob up, legs cross)
+        (0, 0, 0),     # contact mirror  
+        (-1, 1, -1),   # passing mirror
+    ]
+    
+    for l_move, r_move, body_y in walk_data:
+        f = [row[:] for row in base_grid]
+        
+        # Clear leg areas
+        for y in range(14, 20):
+            for x in range(9, 16):
+                f[y][x] = 6
+            for x in range(20, 28):
+                f[y][x] = 6
+        
+        # Redraw legs with offset
+        # Front pair
+        fy = 14 + body_y
+        rect(f, 9, fy + l_move, 3, 6-l_move, 9)
+        rect(f, 13, fy + r_move, 3, 6-r_move, 9)
+        # Paw tips
+        rect(f, 9, 19, 3, 1, 7)
+        rect(f, 13, 19, 3, 1, 7)
+        
+        # Back pair
+        by = 14 + body_y
+        rect(f, 20, by + r_move, 3, 6-r_move, 9)
+        rect(f, 24, by + l_move, 3, 6-l_move, 9)
+        # Paw tips
+        rect(f, 20, 19, 3, 1, 7)
+        rect(f, 24, 19, 3, 1, 7)
+        
+        # Tail (simplified - just redraw)
+        for dx in range(7):
+            sp(f, 27+dx, 8+body_y+dx//2, 9)
+        sp(f, 29, 10+body_y, 9)
+        sp(f, 30, 11+body_y, 9)
+        sp(f, 30, 12+body_y, 9)
+        sp(f, 29, 13+body_y, 9)
+        sp(f, 31, 11+body_y, 7)
+        sp(f, 31, 12+body_y, 7)
+        
+        frames.append(f)
+    return frames
+
+frames = make_walk_frames(g)
+
+# Save images
+for i, f in enumerate(frames):
     img = Image.new('RGB', (W, H))
     px = img.load()
     for y in range(H):
         for x in range(W):
-            px[x, y] = PICO8[grid[y][x]]
-    return img
+            px[x, y] = PICO8[f[y][x]]
+    img.resize((W*6, H*6), Image.NEAREST).save(f'/tmp/frame_{i}.png')
 
-# Generate base frame
-print("Generating cat...")
-g0 = draw_cat(leg_offset=0, body_y=0)      # Contact
-g1 = draw_cat(leg_offset=1, body_y=-1)     # Passing (bob up + legs cross)
-g2 = draw_cat(leg_offset=0, body_y=0)      # Contact mirrored
-g3 = draw_cat(leg_offset=-1, body_y=-1)    # Passing mirrored (bob up)
-
-# Generate run frames (more extreme)
-r0 = draw_cat(leg_offset=2, body_y=0)      # Big stride
-r1 = draw_cat(leg_offset=0, body_y=-2)     # Float (tucked, high)
-r2 = draw_cat(leg_offset=-2, body_y=0)     # Big stride other
-r3 = draw_cat(leg_offset=0, body_y=-2)     # Float
-
-frames = [g0, g1, g2, g3]
-runs = [r0, r1, r2, r3]
-
-# Save animated sprite sheet
-sheet = Image.new('RGB', (W*8, H*4))
+# Sprite sheet
+sheet = Image.new('RGB', (W*4*6, H*6), PICO8[6])
 for i, f in enumerate(frames):
-    img = grid_to_img(f)
-    scaled = img.resize((W*8, H*8), Image.NEAREST)
-    sheet.paste(scaled, (0, i*H*8))
-sheet.save('/tmp/cat_sprite_sheet.png')
-print("Saved: /tmp/cat_sprite_sheet.png")
+    img = Image.new('RGB', (W, H))
+    px = img.load()
+    for y in range(H):
+        for x in range(W):
+            px[x, y] = PICO8[f[y][x]]
+    sheet.paste(img.resize((W*6, H*6), Image.NEAREST), (i*W*6, 0))
+sheet.save('/tmp/sheet.png')
+print("Saved!")
 
-# Save individual frames for verification
-for i, f in enumerate(frames):
-    img = grid_to_img(f)
-    img.resize((W*8, H*8), Image.NEAREST).save(f'/tmp/cat_frame_{i}.png')
+# Output JS
+print("\nconst CAT: Grid[] = [")
+for g in frames:
+    print("  [")
+    for row in g:
+        s = ''.join(str(c) for c in row)
+        print(f'    "{s}",')
+    print("  ],")
+print("]")
 
-# Output JS data
-def to_js(grids, name):
-    print(f"\nconst {name}: Grid[] = [")
-    for g in grids:
-        print("  [")
-        for row in g:
-            s = ''.join(str(c) for c in row)
-            print(f'    "{s}",')
-        print("  ],")
-    print("]")
-
-to_js(frames, "WALK")
-to_js(runs, "RUN")
-
-# Verify single-digit
-for grids in [frames, runs]:
-    for g in grids:
-        for row in g:
-            for c in row:
-                assert 0 <= c <= 9, f"Invalid {c}"
-
-print("\n✅ All good! Single-digit indices only.")
+# Verify
+for g in frames:
+    for row in g:
+        for c in row:
+            assert 0 <= c <= 9
+print("✅ OK")
