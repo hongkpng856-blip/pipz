@@ -40,7 +40,7 @@ export default function HomePage() {
   const [walking, setWalking] = useState(false)
   const [showEgg, setShowEgg] = useState(false)
   const [hatching, setHatching] = useState(false)
-  const [petAnim, setPetAnim] = useState<'idle'|'walk'|'happy'>('idle')
+  const [petAnim, setPetAnim] = useState<'idle'|'walk'|'play'>('idle')
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
   const [ready, setReady] = useState(false)
@@ -1671,7 +1671,7 @@ export default function HomePage() {
                   seed={parseInt(pet.speciesId) || 1}
                   rarity={pet.rarity}
                   evolutionStage={pet.evolutionStage}
-                  animation="happy"
+                  animation="play"
                   size={6}
                 />
                 <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
@@ -1819,7 +1819,7 @@ export default function HomePage() {
                   seed={parseInt(newPet.speciesId) || 1}
                   rarity={newPet.rarity}
                   evolutionStage={newPet.evolutionStage}
-                  animation="happy"
+                  animation="play"
                   size={5}
                 />
               </div>

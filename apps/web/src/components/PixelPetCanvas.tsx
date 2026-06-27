@@ -3,13 +3,15 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { generatePixelPet, PixelPetData, getSpeciesIndex, generatePetAnimation, drawPixelGrid } from '@pipz/core'
 
-const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v7' // Bump when sprite assets change (forces cache refresh)
+
+type PetAnimType = 'idle' | 'walk' | 'play'
 
 interface Props {
   seed: number
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
   evolutionStage: number
-  animation?: 'idle' | 'walk' | 'happy' | 'jump'
+  animation?: PetAnimType
   size?: number
   style?: React.CSSProperties
   onClick?: () => void
@@ -69,7 +71,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const petDataRef = useRef<PixelPetData | null>(null)
   const animRef = useRef<ReturnType<typeof generatePetAnimation> | null>(null)
   const frameRef = useRef<number>(0)
-  const animFrameRef = useRef(0) // current animation frame index
+  const animFrameRef = useRef(0)
   const lastFrameTime = useRef(0)
   const xOffsetRef = useRef(0)
   const yOffsetRef = useRef(0)
@@ -105,6 +107,18 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     return () => { cancelled = true }
   }, [speciesIdx])
 
+  // Get the correct frame set for current animation type
+  const getCurrentFrame = useCallback((anim: ReturnType<typeof generatePetAnimation>, animType: PetAnimType, frameIdx: number) => {
+    switch (animType) {
+      case 'walk':
+        return anim.walkFrames[frameIdx % 4]
+      case 'idle':
+        return anim.idleFrames[frameIdx % 4]
+      case 'play':
+        return anim.playFrames[frameIdx % 4]
+    }
+  }, [])
+
   // Animation loop
   const animate = useCallback(() => {
     const canvas = canvasRef.current
@@ -117,12 +131,14 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
     timeRef.current += 0.05
 
-    // Calculate position offsets
+    // Calculate position offsets per animation type
     let xOff = 0
     let yOff = 0
+    let useYBob = false
 
     switch (animation) {
       case 'walk': {
+        // Walk: horizontal oscillation + vertical bob
         xOffsetRef.current += 0.3 * walkDirRef.current
         if (xOffsetRef.current > 20) walkDirRef.current = -1
         if (xOffsetRef.current < -20) walkDirRef.current = 1
@@ -130,23 +146,26 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
         break
       }
-      case 'happy': {
-        yOff = Math.abs(Math.sin(timeRef.current * 6)) * 6
-        break
-      }
-      case 'jump': {
-        yOff = -(1 * 15)
-        break
-      }
       case 'idle': {
+        // Idle: subtle breathing bob
         yOff = Math.sin(timeRef.current * 2) * 1.5
+        break
+      }
+      case 'play': {
+        // Play: bounce up and down + slight sway
+        yOff = Math.abs(Math.sin(timeRef.current * 5)) * 5 - 2.5
+        xOff = Math.sin(timeRef.current * 3) * 2
         break
       }
     }
 
-    // Frame timing
+    // Frame timing (different speeds per animation)
+    let frameDelay = 180 // ms
+    if (animation === 'play') frameDelay = 120
+    if (animation === 'walk') frameDelay = 150
+
     const now = performance.now()
-    if (now - lastFrameTime.current >= 180) {
+    if (now - lastFrameTime.current >= frameDelay) {
       lastFrameTime.current = now
       animFrameRef.current = (animFrameRef.current + 1) % 4
     }
@@ -160,7 +179,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     const anim = animRef.current
 
     if (sprite && status === 'png') {
-      // ── PNG path: draw cached sprite with enhanced walk animation ──
+      // ── PNG path: draw cached sprite with positional effects ──
       const pad = 20
       const displaySize = Math.min(cw, ch) - pad
       const imgScale = displaySize / Math.max(sprite.width, sprite.height)
@@ -197,18 +216,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       const startX = (cw - gridW) / 2 + xOff
       const startY = (ch - gridH) / 2 + yOff
 
-      // Pick the right frame set based on animation state
-      let frameGrid = anim.walkFrames[0]
-      if (animation === 'walk') {
-        frameGrid = anim.walkFrames[animFrameRef.current]
-      } else if (animation === 'idle') {
-        // Blink every ~2 seconds (alternate between base and blink)
-        const blinkCycle = Math.floor(timeRef.current * 2) % 60
-        frameGrid = blinkCycle === 0 ? anim.blinkFrame : anim.walkFrames[0]
-      } else if (animation === 'happy') {
-        // Happy: cycle through all frames faster
-        frameGrid = anim.walkFrames[Math.floor(timeRef.current * 4) % 4]
-      }
+      // Pick the right frame set based on animation type
+      const frameGrid = getCurrentFrame(anim, animation, animFrameRef.current)
 
       if (pd.palette.glow) {
         ctx.shadowColor = pd.palette.glow
@@ -239,7 +248,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     }
 
     frameRef.current = requestAnimationFrame(animate)
-  }, [animation, size, rarity, status, speciesIdx])
+  }, [animation, size, rarity, status, speciesIdx, getCurrentFrame])
 
   // Start/stop animation loop
   useEffect(() => {
@@ -254,16 +263,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const canvasW = spriteGridSize * pixelVal + 40
   const canvasH = spriteGridSize * pixelVal + 30
 
-  const handleClick = () => {
-    onClick?.()
-  }
-
   return (
     <canvas
       ref={canvasRef}
       width={canvasW}
       height={canvasH}
-      onClick={handleClick}
+      onClick={onClick}
       style={{
         width: canvasW, height: canvasH,
         imageRendering: 'pixelated',

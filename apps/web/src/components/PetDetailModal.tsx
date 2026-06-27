@@ -187,7 +187,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                   seed={parseInt(pet.speciesId) || 1}
                   rarity={pet.rarity}
                   evolutionStage={pet.evolutionStage}
-                  animation="happy"
+                  animation="play"
                   size={6}
                 />
               </div>

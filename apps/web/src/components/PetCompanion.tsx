@@ -5,19 +5,19 @@ import { generatePixelPet, PixelPetData, Pet, RARITY_COLORS, RARITY_LABELS, form
 
 interface Props {
   pet: Pet | null
-  anim: 'idle' | 'walk' | 'happy'
+  anim: 'idle' | 'walk' | 'play'
   steps: number
   totalSteps: number
   evolutionStage: number
   skills: PetSkill[]
 }
 
-type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief'
+type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'play'
 type Reaction = 'none' | 'heart' | 'sparkle' | 'bounce'
 
 const EVO_LABELS = ['BB', '幼年', '成年', '完全體', '傳說']
 
-const SPRITE_VERSION = 'v5'
+const SPRITE_VERSION = 'v7'
 const MARGIN = 50
 const FRAME_DURATION = 180 // ms per frame
 
@@ -31,7 +31,7 @@ export default function PetCompanion({
   const petKeyRef = useRef<string | null>(null)
   const rafRef = useRef(0)
   const timeRef = useRef(0)
-  const animFrameRef = useRef(0) // current walk frame (0-3)
+  const animFrameRef = useRef(0) // current animation frame (0-3)
   const lastFrameTime = useRef(0)
   const behaviorRef = useRef<Behavior>('idle')
   const behaviorTimer = useRef(0)
@@ -93,17 +93,17 @@ export default function PetCompanion({
     return () => { cancelled = true }
   }, [pet])
 
-  // Auto behavior cycle
+  // Auto behavior cycle — walks, idles, plays
   useEffect(() => {
     if (!pet) return
     const pick = () => {
       const r = Math.random()
-      if (r < 0.40) {
+      if (r < 0.35) {
         const dirs: Behavior[] = ['walkLeft', 'walkRight', 'walkUp', 'walkDown']
         const dir = dirs[Math.floor(Math.random() * dirs.length)]
         behaviorRef.current = dir
-      } else if (r < 0.55) {
-        behaviorRef.current = 'mischief'
+      } else if (r < 0.50) {
+        behaviorRef.current = 'play'
       } else {
         behaviorRef.current = 'idle'
       }
@@ -121,6 +121,15 @@ export default function PetCompanion({
     return () => clearInterval(iv)
   }, [pet])
 
+  // Get correct frame set for current behavior
+  const getFrameForBehavior = useCallback((anim: ReturnType<typeof generatePetAnimation>, bx: Behavior, frameIdx: number) => {
+    const idx = frameIdx % 4
+    if (bx === 'idle') return anim.idleFrames[idx]
+    if (bx === 'play') return anim.playFrames[idx]
+    // All walking directions use walkFrames
+    return anim.walkFrames[idx]
+  }, [])
+
   // ── Canvas animation ──
   const animate = useCallback(() => {
     const canvas = canvasRef.current
@@ -130,9 +139,15 @@ export default function PetCompanion({
     const W = canvas.width, H = canvas.height
     timeRef.current += 0.02
 
-    // Advance animation frame
+    // Advance animation frame (faster for play, variable for walk)
+    const bx = behaviorRef.current
+    const isMoving = bx === 'walkLeft' || bx === 'walkRight' || bx === 'walkUp' || bx === 'walkDown'
+    let frameDelay = 180
+    if (bx === 'play') frameDelay = 120
+    if (isMoving) frameDelay = 150
+
     const now = performance.now()
-    if (now - lastFrameTime.current >= FRAME_DURATION) {
+    if (now - lastFrameTime.current >= frameDelay) {
       lastFrameTime.current = now
       animFrameRef.current = (animFrameRef.current + 1) % 4
     }
@@ -146,9 +161,7 @@ export default function PetCompanion({
     const anim = animRef.current
     const oc = offscreenRef.current
     if (pet && (status !== 'loading')) {
-      const bx = behaviorRef.current
       const speed = 0.8
-      const isMoving = bx === 'walkLeft' || bx === 'walkRight' || bx === 'walkUp' || bx === 'walkDown'
 
       // Roaming boundaries (symmetric)
       const maxR = (W / 2) - MARGIN
@@ -168,7 +181,10 @@ export default function PetCompanion({
       const walkBob = (bx === 'walkLeft' || bx === 'walkRight') ? Math.abs(Math.sin(timeRef.current * 8)) * 2 : 0
       const walkBobY = (bx === 'walkUp' || bx === 'walkDown') ? Math.abs(Math.sin(timeRef.current * 8)) * 2 : 0
       let mY = 0, mRot = 0
-      if (bx === 'mischief') { mY = Math.abs(Math.sin(timeRef.current * 10)) * 10; mRot = Math.sin(timeRef.current * 6) * 0.2 }
+      if (bx === 'play') {
+        mY = Math.abs(Math.sin(timeRef.current * 5)) * 8
+        mRot = Math.sin(timeRef.current * 4) * 0.15
+      }
 
       const cx = W / 2 + xRef.current
       const cy = H / 2 + yRef.current + idleBob + walkBob + walkBobY - mY + (bounceRef.current * -20)
@@ -179,7 +195,7 @@ export default function PetCompanion({
       ctx.beginPath(); ctx.ellipse(cx, shadowY, 24 + Math.abs(walkBob) * 3, 3, 0, 0, Math.PI * 2); ctx.fill()
 
       if (oc && status === 'png') {
-        // ── PNG path: draw with enhanced walk bob ──
+        // ── PNG path: draw cached sprite with enhanced animation ──
         const spriteSize = Math.min(120, Math.min(W, H) * 0.38)
         const sw = spriteSize
         const sh = spriteSize
@@ -198,18 +214,8 @@ export default function PetCompanion({
         const ps = 7
         const pw = pd.width * ps, ph = pd.height * ps
 
-        // Choose frame based on behavior
-        let frameGrid = anim.walkFrames[0]
-        if (isMoving) {
-          frameGrid = anim.walkFrames[animFrameRef.current]
-        } else if (bx === 'idle') {
-          // Blink every ~2 sec
-          const blinkTick = Math.floor(timeRef.current * 3) % 60
-          frameGrid = blinkTick === 0 ? anim.blinkFrame : anim.walkFrames[0]
-        } else {
-          // mischief: cycle frames
-          frameGrid = anim.walkFrames[Math.floor(timeRef.current * 6) % 4]
-        }
+        // Choose frame based on behavior using the correct frame set
+        const frameGrid = getFrameForBehavior(anim, bx, animFrameRef.current)
 
         if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
 
@@ -243,7 +249,7 @@ export default function PetCompanion({
     }
 
     rafRef.current = requestAnimationFrame(animate)
-  }, [pet, anim, status])
+  }, [pet, anim, status, getFrameForBehavior])
 
   useEffect(() => {
     rafRef.current = requestAnimationFrame(animate)
