@@ -1,6 +1,24 @@
 # Changelog
 
-## v0.9.0 (2026-06-27)
+## v0.10.0 (2026-06-27)
+
+### Added
+- **3 animations per pet**: every species now has walk + idle + play (each 4 frames)
+  - `generateIdleFrames()` — normal → blink → ear/head twitch → normal
+  - `generatePlayFrames()` — bounce → squish → stretch right → stretch left
+  - `PetAnimation` type extended with `idleFrames: PixelGrid[]` and `playFrames: PixelGrid[]`
+- **`'play'` animation type** replaces `'happy'`/`'jump'` in PixelPetCanvas and PetCompanion
+
+### Changed
+- **PixelPetCanvas.tsx**: uses correct frame set per animation type (walk→walkFrames, idle→idleFrames, play→playFrames)
+  - Frame timing varies: walk=150ms, play=120ms, idle=180ms
+- **PetCompanion.tsx**: auto-behavior cycles between idle, walk directions, and play
+  - Play behavior: upper bounce + tilt rotation using playFrames
+- **`animation="happy"` → `"play"`**: updated in PetDetailModal.tsx and page.tsx (3 call sites)
+
+### Fixed
+- Idle animation now has actual pixel frame changes (blink + twitch), not just bob offset
+- Play animation is a distinct frame set, not just accelerated walk frames
 
 ### Added
 - **`packages/core/src/pixel-gen/animation.ts`**: frame-by-frame animation generator for all pets

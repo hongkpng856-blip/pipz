@@ -378,47 +378,47 @@ Some events grant items as rewards (e.g., 流浪商人 gives 🫐 魔法莓果, 
 
 ## Animation System
 
-### Current approach (v0.9.0+)
+### Current approach (v0.10.0+)
 
-Two-tier animation system:
+Every pet has **3 distinct animations** — walk, idle, play — each with 4 pixel frames.
 
-**Tier 1 — Frame-by-frame pixel animation (fallback path):**
-- `generatePetAnimation(petData)` in `packages/core/src/pixel-gen/animation.ts`
-- Takes a `PixelPetData` (16×16 grid) and generates:
-  - `walkFrames`: 4 frames via pixel manipulation (body shift + bottom-row stride)
-  - `blinkFrame`: eye pixels replaced with outline color for closed-eye blink
-- Canvas renderer cycles frames at 180ms intervals via `requestAnimationFrame`
-- Used in both `PixelPetCanvas.tsx` (detail view) and `PetCompanion.tsx` (map screen)
+**Animation generator** (`packages/core/src/pixel-gen/animation.ts`):
 
-**Tier 2 — Transform animation (PNG sprite path):**
-- Falls back to x/y offset + sinusoidal bob when PNG sprite is loaded (static image)
+| Animation | Frames | Timing | Description |
+|-----------|--------|--------|-------------|
+| `walkFrames` | 4 | 150ms | contact → stride right → contact → stride left |
+| `idleFrames` | 4 | 180ms | normal → blink → ear/head twitch → normal |
+| `playFrames` | 4 | 120ms | bounce up → squish down → stretch right → stretch left |
 
-**Frame timing:**
-| Property | Value |
-|----------|-------|
-| Walk frames | 4 (stand → right stride → stand → left stride) |
-| Frame duration | 180ms per frame |
-| Blink interval | ~2 seconds (idle) |
-| Happy cycle | 4 frames at ~120ms |
+All 3 sets are generated procedurally from any `PixelPetData` (16×16 RGB grid) using pixel manipulation — no per-species asset pipeline needed. See `generatePetAnimation()` in the source.
+
+**Integration:**
+
+- **`PixelPetCanvas.tsx`** (detail cards, modal): accepts `animation="idle" | "walk" | "play"` and cycles the correct frame set
+- **`PetCompanion.tsx`** (map screen, auto-behavior): cycles between idle → roam (walk) → play behaviors autonomously, mapping each behavior to its frame set
+- **Frame rendering**: `drawPixelGrid(ctx, frameGrid, pixelSize)` draws the current frame onto Canvas via `requestAnimationFrame`
+
+**PNG sprite path (Tier 2):**
+When a static PNG sprite is loaded (e.g. AI-generated), falls back to x/y offset + sinusoidal bob. The PNG path doesn't support frame-by-frame changes — upgrade path is to replace the static PNG with a sprite sheet.
 
 ### Data flow
 
 ```
 PixelPetData (16×16 RGB grid)
   → generatePetAnimation()
-    → walkFrames[4] + blinkFrame
+    → walkFrames[4] + idleFrames[4] + playFrames[4]
       → drawPixelGrid(ctx, frame, pixelSize)
         → Canvas display (requestAnimationFrame loop)
 ```
 
 ### Integration paths
 
-- **AI base sprite**: once Pollinations.ai or another API reliably produces pixel art, replace procedural grid with AI-generated base sprite, then apply same `generateWalkFrames()` pixel manipulation
+- **AI base sprite**: once an API reliably produces pixel art, replace procedural grid with AI-generated base sprite, then apply same `generateWalkFrames()` / `generateIdleFrames()` / `generatePlayFrames()` pixel manipulation
 - **Pixel manipulation**: handles: body shift (horizontal sway) + bottom row stride + vertical bob = convincing walk cycle on any sprite shape
-- **Additional animations**: sleep (half-closed), jump (vertical arc) can be added as additional frame sets
+- **Additional animations**: sleep (half-closed), jump (vertical arc), or species-specific can be added as additional frame sets — add a new function in `animation.ts` and extend `PetAnimation`
 
 ### Limitations
 
 - PNG sprite path (Tier 2) doesn't support frame-by-frame changes — static image moves as a whole
 - 16×16 grid limits detail; AI-gen 24×24 or 32×32 base sprites would improve animation quality
-- No per-species animation personality yet (all species use same frame generation logic)
+- `generatePlayFrames()` uses generic stretch/shift that works on all body shapes but lacks species-specific personality (e.g. cat plays differently from slime)
