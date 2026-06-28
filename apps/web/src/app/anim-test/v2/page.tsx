@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { generatePixelPet, generatePetAnimation, drawPixelGrid } from '@pipz/core'
 
 // ── 20 diverse seeds ──
-const ALL_SEEDS = [1, 42, 99, 302, 777, 1111, 2024, 3301, 4040, 5555, 6666, 7777, 8888, 9999, 12345, 25000, 50000, 75000, 88888, 99999]
+const ALL_SEEDS = [175, 1, 42, 99, 302, 777, 1111, 2024, 3301, 4040, 5555, 6666, 7777, 8888, 9999, 12345, 25000, 50000, 75000, 88888, 99999]
 
 // ── Pixel cat walk ──
 type Grid = string[]
