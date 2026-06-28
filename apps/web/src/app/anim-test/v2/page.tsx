@@ -110,7 +110,9 @@ function PetPlayer({ seed }: { seed: number }) {
 
 export default function AnimTestV2Page() {
   return (
-    <div style={{ background: '#0b1120', minHeight: '100dvh', color: '#f0f4f8', fontFamily: 'system-ui, sans-serif', padding: 20 }}>
+    <>
+      <style>{`html,body{margin:0;padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#0b1120}`}</style>
+      <div style={{ background: '#0b1120', color: '#f0f4f8', fontFamily: 'system-ui, sans-serif', padding: '20px 20px 120px' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <h1 style={{ fontSize: 24, marginBottom: 4 }}>🎮 3 動作 Animation Preview</h1>
         <p style={{ color: '#94a5b8', fontSize: 14, marginBottom: 4 }}>
@@ -183,5 +185,6 @@ export default function AnimTestV2Page() {
         </div>
       </div>
     </div>
+    </>
   )
 }
