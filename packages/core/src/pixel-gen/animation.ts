@@ -1,83 +1,149 @@
 import { PixelGrid, PixelPetData } from './types'
 
+// ── Helpers ──
+const clone = (g: PixelGrid): PixelGrid => g.map(row => [...row])
+const isFilled = (c: string) => c && c !== 'transparent'
+
+// ═══════════════════════════════════════════════
+//  WALK ANIMATION (4 frames)
+// ═══════════════════════════════════════════════
+
 /**
- * Generate walk cycle frames from a pet's pixel grid.
- * Returns 4 frames (stand → strideR → stand → strideL) for smooth walk animation.
- * Uses pixel manipulation on the existing grid — no AI gen needed for frame data.
+ * Improved walk cycle: 4-frame alternating stride.
+ * Frame 0 = contact, Frame 1 = stride R (passing), Frame 2 = contact, Frame 3 = stride L (passing).
  */
 export function generateWalkFrames(
   petData: PixelPetData,
 ): PixelGrid[] {
-  const { grid, width, height, palette } = petData
-  const h = height
-  const w = width
-  const outline = palette.outline
-  const primary = palette.primary
+  const { grid, width: w, height: h, palette } = petData
+  const secondary = palette.secondary
 
-  // Clone helpers
-  const clone = (g: PixelGrid): PixelGrid => g.map(row => [...row])
-  const isFilled = (c: string) => c && c !== 'transparent'
+  const f0 = clone(grid)   // contact
+  const f2 = clone(grid)   // contact (same as f0)
 
-  // Frame 0: base (no shift)
-  const f0 = clone(grid)
-
-  // Frame 1: stride right — shift bottom rows right, add bob down
+  // Frame 1: stride right
   const f1 = clone(grid)
-  const strideR = (bottomRows: number) => {
-    for (let y = h - bottomRows; y < h; y++) {
-      // Shift right by 1
-      for (let x = w - 1; x > 0; x--) {
-        f1[y][x] = f1[y][x - 1]
-      }
-      f1[y][0] = 'transparent'
+  const bottomStart = Math.floor(h * 0.55)
+  for (let y = bottomStart; y < h; y++) {
+    for (let x = w - 1; x > 0; x--) {
+      f1[y][x] = f1[y][x - 1]
     }
-    // Add small rightward body lean
-    for (let y = Math.floor(h * 0.3); y < h - bottomRows; y++) {
-      if (y < h) {
-        for (let x = w - 1; x > 0; x--) {
-          if (isFilled(f1[y][x - 1]) && !isFilled(f1[y][x])) {
-            f1[y][x] = palette.secondary // trail pixel
-            break
-          }
-        }
+    f1[y][0] = 'transparent'
+  }
+  for (let y = Math.floor(h * 0.25); y < bottomStart; y++) {
+    for (let x = w - 1; x > 0; x--) {
+      if (isFilled(f1[y][x - 1]) && !isFilled(f1[y][x])) {
+        f1[y][x] = secondary
+        break
       }
     }
   }
-  strideR(3)
 
-  // Frame 2: same as base (mid-stride)
-  const f2 = clone(grid)
-
-  // Frame 3: stride left — shift bottom rows left, add bob down
+  // Frame 3: stride left
   const f3 = clone(grid)
-  const strideL = (bottomRows: number) => {
-    for (let y = h - bottomRows; y < h; y++) {
-      for (let x = 0; x < w - 1; x++) {
-        f3[y][x] = f3[y][x + 1]
-      }
-      f3[y][w - 1] = 'transparent'
+  for (let y = bottomStart; y < h; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      f3[y][x] = f3[y][x + 1]
     }
-    // Leftward body lean
-    for (let y = Math.floor(h * 0.3); y < h - bottomRows; y++) {
-      if (y < h) {
-        for (let x = 0; x < w - 1; x++) {
-          if (isFilled(f3[y][x + 1]) && !isFilled(f3[y][x])) {
-            f3[y][x] = palette.secondary
-            break
-          }
-        }
+    f3[y][w - 1] = 'transparent'
+  }
+  for (let y = Math.floor(h * 0.25); y < bottomStart; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      if (isFilled(f3[y][x + 1]) && !isFilled(f3[y][x])) {
+        f3[y][x] = secondary
+        break
       }
     }
   }
-  strideL(3)
 
   return [f0, f1, f2, f3]
 }
 
-/**
- * Generate a blink frame (eyes closed) from a base frame.
- * Detects eye-colored pixels and replaces them with outline/secondary.
- */
+// ═══════════════════════════════════════════════
+//  IDLE ANIMATION (4 frames with blink)
+// ═══════════════════════════════════════════════
+
+export function generateIdleFrames(petData: PixelPetData): PixelGrid[] {
+  const { grid, width: w, height: h, palette } = petData
+
+  const f0 = clone(grid)
+  const f1 = generateBlinkFrame(f0, petData)
+
+  // Frame 2: ear/head twitch
+  const f2 = clone(grid)
+  const topEnd = Math.ceil(h * 0.3)
+  for (let y = 0; y < topEnd; y++) {
+    for (let x = Math.ceil(w * 0.6); x < w; x++) {
+      if (isFilled(f2[y][x]) && x + 1 < w && !isFilled(f2[y][x + 1])) {
+        f2[y][x + 1] = f2[y][x]; f2[y][x] = 'transparent'; break
+      }
+    }
+    for (let x = Math.floor(w * 0.4); x >= 0; x--) {
+      if (isFilled(f2[y][x]) && x - 1 >= 0 && !isFilled(f2[y][x - 1])) {
+        f2[y][x - 1] = f2[y][x]; f2[y][x] = 'transparent'; break
+      }
+    }
+  }
+
+  const f3 = clone(grid)
+  return [f0, f1, f2, f3]
+}
+
+// ═══════════════════════════════════════════════
+//  PLAY ANIMATION (4 frames)
+// ═══════════════════════════════════════════════
+
+export function generatePlayFrames(petData: PixelPetData): PixelGrid[] {
+  const { grid, width: w, height: h, palette } = petData
+
+  const f0 = clone(grid)
+  const f1 = clone(grid)
+  const f2 = clone(grid)
+  const f3 = clone(grid)
+
+  // Frame 0: bounce up
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w; x++) {
+      if (isFilled(f0[y + 1][x]) && !isFilled(f0[y][x])) {
+        f0[y][x] = f0[y + 1][x]; f0[y + 1][x] = 'transparent'
+      }
+    }
+  }
+
+  // Frame 1: squish down
+  for (let y = h - 1; y > 0; y--) {
+    for (let x = 0; x < w; x++) {
+      if (isFilled(f1[y - 1][x]) && !isFilled(f1[y][x])) {
+        f1[y][x] = f1[y - 1][x]; f1[y - 1][x] = 'transparent'
+      }
+    }
+  }
+
+  // Frame 2: stretch right
+  for (let y = 0; y < h; y++) {
+    let shifted = false
+    for (let x = w - 1; x > 0; x--) {
+      if (isFilled(f2[y][x - 1])) { f2[y][x] = f2[y][x - 1]; shifted = true }
+    }
+    if (shifted) f2[y][0] = 'transparent'
+  }
+
+  // Frame 3: stretch left
+  for (let y = 0; y < h; y++) {
+    let shifted = false
+    for (let x = 0; x < w - 1; x++) {
+      if (isFilled(f3[y][x + 1])) { f3[y][x] = f3[y][x + 1]; shifted = true }
+    }
+    if (shifted) f3[y][w - 1] = 'transparent'
+  }
+
+  return [f0, f1, f2, f3]
+}
+
+// ═══════════════════════════════════════════════
+//  BLINK FRAME
+// ═══════════════════════════════════════════════
+
 export function generateBlinkFrame(
   baseFrame: PixelGrid,
   petData: PixelPetData,
@@ -85,56 +151,44 @@ export function generateBlinkFrame(
   const { palette } = petData
   const blinkColor = palette.outline || palette.secondary
   const eyeColor = palette.eye
-
   const frame = baseFrame.map(row => [...row])
-
-  // Find eye pixels and close them
   for (let y = 0; y < frame.length; y++) {
     for (let x = 0; x < frame[y].length; x++) {
       if (frame[y][x] === eyeColor) {
-        // Close eye: replace with horizontal line of secondary/outline
         frame[y][x] = blinkColor
-        // Also cover the neighbor (make a 2px-wide closed eye line)
         if (x + 1 < frame[y].length && frame[y][x + 1] === eyeColor) {
           frame[y][x + 1] = blinkColor
         }
       }
     }
   }
-
   return frame
 }
 
-/**
- * Full animation data for a pixel pet.
- */
+// ═══════════════════════════════════════════════
+//  FULL PET ANIMATION
+// ═══════════════════════════════════════════════
+
 export interface PetAnimation {
-  /** 4 walk frames */
   walkFrames: PixelGrid[]
-  /** Blink frame */
+  idleFrames: PixelGrid[]
+  playFrames: PixelGrid[]
   blinkFrame: PixelGrid
-  /** Number of walk frames (always 4) */
   frameCount: number
 }
 
-/**
- * Generate complete animation data for a pet.
- */
 export function generatePetAnimation(petData: PixelPetData): PetAnimation {
   const walkFrames = generateWalkFrames(petData)
-  const blinkFrame = generateBlinkFrame(walkFrames[0], petData)
-
-  return {
-    walkFrames,
-    blinkFrame,
-    frameCount: 4,
-  }
+  const idleFrames = generateIdleFrames(petData)
+  const playFrames = generatePlayFrames(petData)
+  const blinkFrame = idleFrames[1]
+  return { walkFrames, idleFrames, playFrames, blinkFrame, frameCount: 4 }
 }
 
-/**
- * Palette index renderer — convert a pixel grid (RGB strings) to draw commands.
- * Used by canvas renderers for frame-by-frame animation.
- */
+// ═══════════════════════════════════════════════
+//  RENDERER
+// ═══════════════════════════════════════════════
+
 export function drawPixelGrid(
   ctx: CanvasRenderingContext2D,
   grid: PixelGrid,
@@ -148,12 +202,7 @@ export function drawPixelGrid(
       const color = row[x]
       if (color && color !== 'transparent') {
         ctx.fillStyle = color
-        ctx.fillRect(
-          offsetX + x * pixelSize,
-          offsetY + y * pixelSize,
-          pixelSize,
-          pixelSize,
-        )
+        ctx.fillRect(offsetX + x * pixelSize, offsetY + y * pixelSize, pixelSize, pixelSize)
       }
     }
   }
