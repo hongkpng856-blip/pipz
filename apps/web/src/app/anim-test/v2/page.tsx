@@ -78,9 +78,9 @@ export default function AnimTestV2Page() {
 
   return (
     <>
-      <style>{`html,body{margin:0;padding:0;background:#0b1120;height:auto;overflow-y:scroll;-webkit-overflow-scrolling:touch}body>*{overflow:visible}`}</style>
-      <div style={{background:'#0b1120',color:'#f0f4f8',fontFamily:'system-ui,sans-serif',padding:'16px 16px 100px',overflow:'visible'}}>
-        <div style={{maxWidth:420,margin:'0 auto'}}>
+      <style>{`html,body{margin:0;padding:0;background:#0b1120;height:100%;overflow:hidden}body{overflow:hidden}`}</style>
+      <div style={{background:'#0b1120',color:'#f0f4f8',fontFamily:'system-ui,sans-serif',height:'100vh',overflowY:'scroll',WebkitOverflowScrolling:'touch'}}>
+        <div style={{maxWidth:420,margin:'0 auto',padding:'16px 16px 100px'}}>
 
           <h1 style={{fontSize:20,marginBottom:2}}>🎮 3 動作 Preview</h1>
           <p style={{color:'#94a5b8',fontSize:12,marginBottom:4}}>
