@@ -37,6 +37,8 @@ const spriteCache = new Map<number, HTMLCanvasElement | null>()
 const pendingLoads = new Map<number, Promise<HTMLCanvasElement | null>>()
 
 function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
+  // Species 0 uses PixelLab grid animation, skip PNG sprite
+  if (speciesIdx === 0) return Promise.resolve(null)
   if (spriteCache.has(speciesIdx)) return Promise.resolve(spriteCache.get(speciesIdx)!)
   if (pendingLoads.has(speciesIdx)) return pendingLoads.get(speciesIdx)!
 

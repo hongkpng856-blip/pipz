@@ -15,6 +15,30 @@ import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, upd
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
+// Demo PixelLab cat for unauthenticated users
+const DEMO_CAT: Pet = {
+  id: 'demo-cat',
+  userId: 'demo',
+  name: '圓貓',
+  speciesId: '175',
+  imageUrl: '',
+  rarity: 'rare',
+  level: 1,
+  xp: 0,
+  totalSteps: 0,
+  evolutionStage: 2,
+  status: 'active',
+  stats: { speed: 5, luck: 5, charm: 5, energy: 100 },
+  skills: [],
+  mood: 'happy',
+  moodValue: 100,
+  lastFedAt: Date.now(),
+  lastInteractionAt: Date.now(),
+  createdAt: Date.now(),
+  isForSale: false,
+  price: 0,
+}
+
 const PC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
   epic: '#8b5cf6', legendary: '#f59e0b',
@@ -105,7 +129,7 @@ export default function HomePage() {
   const encCnt = useRef(0)
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
 
-  const pet = pets[activeIdx] ?? null
+  const pet = pets[activeIdx] ?? (!user ? DEMO_CAT : null)
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
