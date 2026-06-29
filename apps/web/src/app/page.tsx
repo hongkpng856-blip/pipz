@@ -594,7 +594,12 @@ export default function HomePage() {
     // Wait for hatching animation, then spawn, then delete from DB
     setTimeout(async () => {
       setEggs(v => v.filter(e => e.id !== egg.id))
-      await spawnPet(egg.rarity)
+      // PixelLab cat egg hatches into species 175
+      if (egg.id.startsWith('pixellab_')) {
+        await spawnPixelLabCat()
+      } else {
+        await spawnPet(egg.rarity)
+      }
       // Delete from Supabase only AFTER successful spawn
       if (user) await deleteEgg(egg.id).catch(() => {})
       setEggHatchingId(null)
@@ -782,6 +787,58 @@ export default function HomePage() {
     setDemoHatched(true)
     setDemoHatchReady(false)
     logMsg('🐱 圓貓孵化成功！試下行路啦！')
+  }
+
+  // ── Spawn PixelLab cat (species 0, seed 175) ──
+  const spawnPixelLabCat = async () => {
+    const np: Pet = {
+      id: `cat-${Date.now()}`,
+      userId: user?.id ?? 'local',
+      name: '圓貓',
+      speciesId: '175',
+      imageUrl: '',
+      rarity: Rarity.Rare,
+      level: 5,
+      xp: 0,
+      totalSteps: 0,
+      evolutionStage: 2,
+      status: PetStatus.Adult,
+      stats: { speed: 8, luck: 6, charm: 10, energy: 100 },
+      skills: generateSkills(Rarity.Rare, 5),
+      mood: Mood.Happy,
+      moodValue: 100,
+      lastFedAt: Date.now(),
+      lastInteractionAt: Date.now(),
+      createdAt: Date.now(),
+      isForSale: false,
+      price: 0,
+    }
+    if (user) {
+      const dbId = await savePet(user.id, np)
+      if (dbId) np.id = dbId
+    }
+    setPets(v => [...v, np])
+    setActiveIdx(pets.length)
+    setNewPetId(np.id)
+    try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
+    logMsg('🐱 圓貓（PixelLab）誕生！')
+  }
+
+  // ── PixelLab cat egg ──
+  const addPixelLabEgg = async () => {
+    if (!user) return
+    const eggId = `pixellab_${Date.now()}`
+    const newEgg: EggItem = {
+      id: eggId,
+      rarity: Rarity.Rare,
+      collectedAt: Date.now(),
+    }
+    await saveEgg(user.id, Rarity.Rare).then(dbId => {
+      // Use our special ID in the actual DB
+    }).catch(() => {})
+    setEggs(v => [...v, newEgg])
+    logMsg('🥚 圓貓蛋已加入！去蛋頁面孵化')
+    setTab('eggs')
   }
 
   const doEvolve = () => {
@@ -1493,6 +1550,19 @@ export default function HomePage() {
                           style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
                           🐣 立即孵化圓貓
                         </button>
+                      )}
+                      {/* ── PixelLab cat for logged-in users ── */}
+                      {user && (
+                        <>
+                          <button className="btn" onClick={addPixelLabEgg}
+                            style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
+                            🥚 圓貓蛋
+                          </button>
+                          <button className="btn btn-primary" onClick={spawnPixelLabCat}
+                            style={{fontSize:10, padding:'4px 10px'}}>
+                            🐱 直接產生圓貓
+                          </button>
+                        </>
                       )}
                     </div>
 
