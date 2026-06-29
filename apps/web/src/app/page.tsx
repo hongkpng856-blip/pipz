@@ -78,15 +78,21 @@ export default function HomePage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
   const [showEncounterEgg, setShowEncounterEgg] = useState(false)
-  const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
-  const [showDevTools, setShowDevTools] = useState(false)
-  const [simulating, setSimulating] = useState(false)
-  const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
-  const [newPetId, setNewPetId] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
-    return null
-  }) // most recently hatched pet, persisted in localStorage
+    const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
+    const [showDevTools, setShowDevTools] = useState(false)
+    const [simulating, setSimulating] = useState(false)
+    const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
+    const [newPetId, setNewPetId] = useState<string | null>(() => {
+      if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
+      return null
+    }) // most recently hatched pet, persisted in localStorage
+    // ── Demo egg for guest users ──
+    const [demoHatched, setDemoHatched] = useState(false)
+    const [demoHatchReady, setDemoHatchReady] = useState(false)
+    const DEMO_HATCH_STEPS = 200 // quick hatch for testing
+    const demoStepsRef = useRef(0)
+    const [demoProgress, setDemoProgress] = useState(0)
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
   const [marketListings, setMarketListings] = useState<Pet[]>([])
@@ -129,7 +135,7 @@ export default function HomePage() {
   const encCnt = useRef(0)
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
 
-  const pet = pets[activeIdx] ?? (!user ? DEMO_CAT : null)
+  const pet = pets[activeIdx] ?? (!user ? (demoHatched ? DEMO_CAT : null) : null)
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
@@ -414,6 +420,15 @@ export default function HomePage() {
 
       // ── First pet check ──
       if (curPets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
+
+      // ── Demo egg progress (guest users without pets) ──
+      const curUser = userRef.current
+      if (!curUser && curPets.length === 0 && !demoHatched) {
+        demoStepsRef.current += finalSteps + bonus
+        const pct = Math.min(1, demoStepsRef.current / DEMO_HATCH_STEPS)
+        setDemoProgress(pct)
+        if (pct >= 1) setDemoHatchReady(true)
+      }
 
       // Milestone check (side-effect free)
       const oldM = MILESTONES.filter(m => s >= m).length
@@ -762,6 +777,13 @@ export default function HomePage() {
     }, 2000)
   }
 
+  // ── Demo egg hatch (guest users) ──
+  const hatchDemoEgg = () => {
+    setDemoHatched(true)
+    setDemoHatchReady(false)
+    logMsg('🐱 圓貓孵化成功！試下行路啦！')
+  }
+
   const doEvolve = () => {
     if (!pet || !canEvolve) return
     const e = canEvolve
@@ -943,7 +965,28 @@ export default function HomePage() {
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
                     skills={pet?.skills ?? []}
+                    themedEgg={!user && !demoHatched ? 'cat' : undefined}
+                    hatchProgress={demoProgress}
                   />
+                  {/* Demo egg hatch button */}
+                  {!user && !demoHatched && !demoHatchReady && (
+                    <div style={{padding:'8px 16px 14px', textAlign:'center', borderTop:'1px solid #1e2a45'}}>
+                      <div style={{fontSize:9, color:'#5a6d85'}}>行路或開 Dev 工具加速孵化</div>
+                    </div>
+                  )}
+                  {!user && !demoHatched && demoHatchReady && (
+                    <div style={{padding:'8px 16px 14px', textAlign:'center', borderTop:'1px solid #1e2a45'}}>
+                      <button onClick={hatchDemoEgg}
+                        style={{
+                          padding:'8px 24px', borderRadius:20, border:'none',
+                          background:'linear-gradient(135deg,#d4845a,#8a5a3a)',
+                          color:'white', fontSize:13, fontWeight:700, cursor:'pointer',
+                          fontFamily:'inherit',
+                        }}>
+                        🐣 孵化圓貓！
+                      </button>
+                    </div>
+                  )}
                 </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
                 <div style={{padding:'14px 16px'}}>
@@ -1445,6 +1488,12 @@ export default function HomePage() {
                         style={{fontSize:10, padding:'4px 10px'}}>
                         🧪 全能測試寵物
                       </button>
+                      {!user && !demoHatched && (
+                        <button className="btn" onClick={hatchDemoEgg}
+                          style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
+                          🐣 立即孵化圓貓
+                        </button>
+                      )}
                     </div>
 
                     {/* ── Quick Modify (only when pet exists) ── */}

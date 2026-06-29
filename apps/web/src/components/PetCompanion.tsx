@@ -10,6 +10,8 @@ interface Props {
   totalSteps: number
   evolutionStage: number
   skills: PetSkill[]
+  themedEgg?: 'cat' | 'none'  // PixelLab-cat-themed egg
+  hatchProgress?: number       // 0-1 for demo egg hatch progress
 }
 
 type Behavior = 'idle' | 'walkLeft' | 'walkRight' | 'walkUp' | 'walkDown' | 'mischief'
@@ -224,22 +226,74 @@ export default function PetCompanion({
     } else if (!pet) {
       // No pet — egg with progress
       const eb = Math.sin(timeRef.current*3)*3
-      ctx.fillStyle = '#d4a0c0'
-      ctx.beginPath(); ctx.roundRect(W/2-20, H*0.4-30+eb, 40, 50, 12); ctx.fill()
-      ctx.fillStyle = '#b880a0'
-      ctx.beginPath(); ctx.roundRect(W/2-8, H*0.4-12+eb, 6, 6, 3); ctx.fill()
-      ctx.beginPath(); ctx.roundRect(W/2+4, H*0.4-14+eb, 6, 6, 3); ctx.fill()
-      ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#94a5b8'
-      ctx.fillText('未有寵物', W/2, H*0.4+50+eb)
-      ctx.fillStyle = '#5a6d85'; ctx.font = '9px sans-serif'
-      ctx.fillText('行路孵化第一隻啦！', W/2, H*0.4+66+eb)
-      const prog = Math.min(1, totalSteps/1000)
-      ctx.fillStyle = '#1e2a45'
-      ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+82+eb, 120, 6, 3); ctx.fill()
-      ctx.fillStyle = '#8b5cf6'
-      ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+82+eb, 120*prog, 6, 3); ctx.fill()
-      ctx.font = '8px sans-serif'; ctx.fillStyle = '#5a6d85'; ctx.textAlign = 'center'
-      ctx.fillText(`${formatSteps(totalSteps)} / 1,000 步`, W/2, H*0.4+98+eb)
+      if (themedEgg === 'cat') {
+        // PixelLab cat themed egg — orange/brown spots
+        const hp = hatchProgress ?? 0
+        // Egg body: cream/beige
+        ctx.fillStyle = '#FFF1E8'
+        ctx.beginPath(); ctx.roundRect(W/2-22, H*0.4-32+eb, 44, 54, 14); ctx.fill()
+        // Orange spot 1 (big)
+        ctx.fillStyle = '#d4845a'
+        ctx.beginPath(); ctx.roundRect(W/2-14, H*0.4-18+eb, 12, 10, 5); ctx.fill()
+        // Brown spot 2
+        ctx.fillStyle = '#8a5a3a'
+        ctx.beginPath(); ctx.roundRect(W/2+6, H*0.4-8+eb, 10, 8, 4); ctx.fill()
+        // Orange spot 3
+        ctx.fillStyle = '#d4845a'
+        ctx.beginPath(); ctx.roundRect(W/2-16, H*0.4+6+eb, 8, 8, 4); ctx.fill()
+        // Brown spot 4
+        ctx.fillStyle = '#8a5a3a'
+        ctx.beginPath(); ctx.roundRect(W/2+2, H*0.4+12+eb, 14, 7, 4); ctx.fill()
+        // Small orange spot
+        ctx.fillStyle = '#d4845a'
+        ctx.beginPath(); ctx.roundRect(W/2-6, H*0.4-22+eb, 6, 6, 3); ctx.fill()
+        // Crack lines when close to hatch
+        if (hp > 0.6) {
+          const crackAlpha = Math.min(1, (hp - 0.6) / 0.3)
+          ctx.strokeStyle = `rgba(60,40,20,${crackAlpha})`
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.moveTo(W/2-4, H*0.4-20+eb)
+          ctx.lineTo(W/2-2, H*0.4-10+eb)
+          ctx.lineTo(W/2-6, H*0.4-2+eb)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(W/2+3, H*0.4-22+eb)
+          ctx.lineTo(W/2+5, H*0.4-12+eb)
+          ctx.lineTo(W/2+1, H*0.4-4+eb)
+          ctx.stroke()
+          // Glow pulse when ready
+          if (hp >= 1) {
+            ctx.fillStyle = `rgba(212,132,90,${0.2 + Math.sin(timeRef.current*8)*0.1})`
+            ctx.beginPath(); ctx.roundRect(W/2-26, H*0.4-36+eb, 52, 62, 16); ctx.fill()
+          }
+        }
+        // Progress bar
+        ctx.fillStyle = '#1e2a45'
+        ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+36+eb, 120, 6, 3); ctx.fill()
+        ctx.fillStyle = hp >= 1 ? '#22c55e' : '#d4845a'
+        ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+36+eb, 120*hp, 6, 3); ctx.fill()
+        ctx.font = '9px sans-serif'; ctx.fillStyle = '#94a5b8'; ctx.textAlign = 'center'
+        ctx.fillText(hp >= 1 ? '🐱 㩒個蛋孵化！' : `孵化進度 ${Math.round(hp*100)}%`, W/2, H*0.4+56+eb)
+      } else {
+        // Default generic egg (original)
+        ctx.fillStyle = '#d4a0c0'
+        ctx.beginPath(); ctx.roundRect(W/2-20, H*0.4-30+eb, 40, 50, 12); ctx.fill()
+        ctx.fillStyle = '#b880a0'
+        ctx.beginPath(); ctx.roundRect(W/2-8, H*0.4-12+eb, 6, 6, 3); ctx.fill()
+        ctx.beginPath(); ctx.roundRect(W/2+4, H*0.4-14+eb, 6, 6, 3); ctx.fill()
+        ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#94a5b8'
+        ctx.fillText('未有寵物', W/2, H*0.4+50+eb)
+        ctx.fillStyle = '#5a6d85'; ctx.font = '9px sans-serif'
+        ctx.fillText('行路孵化第一隻啦！', W/2, H*0.4+66+eb)
+        const prog = Math.min(1, totalSteps/1000)
+        ctx.fillStyle = '#1e2a45'
+        ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+82+eb, 120, 6, 3); ctx.fill()
+        ctx.fillStyle = '#8b5cf6'
+        ctx.beginPath(); ctx.roundRect(W/2-60, H*0.4+82+eb, 120*prog, 6, 3); ctx.fill()
+        ctx.font = '8px sans-serif'; ctx.fillStyle = '#5a6d85'; ctx.textAlign = 'center'
+        ctx.fillText(`${formatSteps(totalSteps)} / 1,000 步`, W/2, H*0.4+98+eb)
+      }
     }
 
     rafRef.current = requestAnimationFrame(animate)
