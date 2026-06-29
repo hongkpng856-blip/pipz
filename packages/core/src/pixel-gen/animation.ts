@@ -1,141 +1,34 @@
 import { PixelGrid, PixelPetData } from './types'
+import {
+  PIXELAB_PALETTE, PIXELAB_CAT_WALK, PIXELAB_CAT_IDLE, PIXELAB_CAT_PLAY,
+  type PixellabGrid,
+} from './pixellab-cat-data'
 
 // ── Helpers ──
 const clone = (g: PixelGrid): PixelGrid => g.map(row => [...row])
 const isFilled = (c: string) => c && c !== 'transparent'
 
-// ═══════════════════════════════════════════════
-//  CAT (species 0) — dedicated animations
-//  Based on PixelLab cat walk cycle reference
-// ═══════════════════════════════════════════════
-
-/**
- * Cat walk: 4-frame quadrupedal stride.
- * Frame 0: contact (all 4 paws down)
- * Frame 1: right fore/left hind forward
- * Frame 2: contact
- * Frame 3: left fore/right hind forward
- */
-function catWalk(petData: PixelPetData): PixelGrid[] {
-  const { grid, width: w, height: h, palette } = petData
-  const s = palette.secondary
-  const f0 = clone(grid), f2 = clone(grid)
-  const f1 = clone(grid), f3 = clone(grid)
-
-  // Diagonal pair 1 (frame 1): shift right-bottom + left-mid pixels
-  const bottom = Math.floor(h * 0.6)
-  const mid = Math.floor(h * 0.35)
-
-  // Frame 1: Right hind + left fore forward
-  for (let y = bottom; y < h; y++) {
-    for (let x = w - 1; x > 0; x--) { f1[y][x] = f1[y][x - 1] }
-    f1[y][0] = 'transparent'
-  }
-  // Body shift right at mid section
-  for (let y = mid; y < bottom; y++) {
-    for (let x = w - 1; x > 0; x--) {
-      if (isFilled(f1[y][x - 1]) && !isFilled(f1[y][x])) {
-        f1[y][x] = s; break
-      }
-    }
-  }
-
-  // Frame 3: Left hind + right fore forward
-  for (let y = bottom; y < h; y++) {
-    for (let x = 0; x < w - 1; x++) { f3[y][x] = f3[y][x + 1] }
-    f3[y][w - 1] = 'transparent'
-  }
-  for (let y = mid; y < bottom; y++) {
-    for (let x = 0; x < w - 1; x++) {
-      if (isFilled(f3[y][x + 1]) && !isFilled(f3[y][x])) {
-        f3[y][x] = s; break
-      }
-    }
-  }
-
-  return [f0, f1, f2, f3]
+/** Convert a PixellabGrid (digit-indexed strings) to PixelGrid (color strings) */
+function pixellabToGrid(pg: PixellabGrid): PixelGrid {
+  return pg.map(row =>
+    row.split('').map(ch => PIXELAB_PALETTE[parseInt(ch, 10)] || '#c2c3c7')
+  )
 }
 
-/**
- * Cat idle: 4 frames.
- * Frame 0: standing
- * Frame 1: blink (eyes close)
- * Frame 2: ear twitch (left ear)
- * Frame 3: ear twitch (right ear)
- */
-function catIdle(petData: PixelPetData): PixelGrid[] {
-  const { grid, width: w, height: h, palette } = petData
-  const f0 = clone(grid)
-  const f1 = generateBlinkFrame(f0, petData)
-  const f2 = clone(grid)
-  const f3 = clone(grid)
-  const top = Math.ceil(h * 0.3)
+// ═══════════════════════════════════════════════
+//  CAT (species 0) — PixelLab-generated frames
+// ═══════════════════════════════════════════════
 
-  // Frame 2: twitch left ear area
-  for (let y = 0; y < top; y++) {
-    for (let x = Math.floor(w * 0.15); x < Math.floor(w * 0.4); x++) {
-      if (isFilled(f2[y][x]) && x + 1 < w && !isFilled(f2[y][x + 1])) {
-        f2[y][x + 1] = f2[y][x]; f2[y][x] = 'transparent'; break
-      }
-    }
-  }
-
-  // Frame 3: twitch right ear area
-  for (let y = 0; y < top; y++) {
-    for (let x = Math.ceil(w * 0.6); x < Math.ceil(w * 0.85); x++) {
-      if (isFilled(f3[y][x]) && x + 1 < w && !isFilled(f3[y][x + 1])) {
-        f3[y][x + 1] = f3[y][x]; f3[y][x] = 'transparent'; break
-      }
-    }
-  }
-
-  return [f0, f1, f2, f3]
+function catWalk(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_CAT_WALK.map(pixellabToGrid)
 }
 
-/**
- * Cat play: 4-frame pounce/bat pattern.
- * Frame 0: bounce up (shift body up)
- * Frame 1: paw bat right (shift right side pixels)
- * Frame 2: bounce up
- * Frame 3: paw bat left
- */
-function catPlay(petData: PixelPetData): PixelGrid[] {
-  const { grid, width: w, height: h, palette } = petData
-  const s = palette.secondary
-  const f0 = clone(grid), f1 = clone(grid), f2 = clone(grid), f3 = clone(grid)
+function catIdle(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_CAT_IDLE.map(pixellabToGrid)
+}
 
-  // Frame 0: bounce up
-  for (let y = 0; y < h - 1; y++) {
-    for (let x = 0; x < w; x++) {
-      if (isFilled(f0[y + 1][x]) && !isFilled(f0[y][x])) {
-        f0[y][x] = f0[y + 1][x]; f0[y + 1][x] = 'transparent'
-      }
-    }
-  }
-
-  // Frame 1: swat right (shift right mid-body)
-  const midTop = Math.floor(h * 0.3), midBot = Math.floor(h * 0.6)
-  for (let y = midTop; y < midBot; y++) {
-    for (let x = w - 1; x > 0; x--) { f1[y][x] = f1[y][x - 1] }
-    f1[y][0] = 'transparent'
-  }
-
-  // Frame 2: bounce (same as f0)
-  for (let y = 0; y < h - 1; y++) {
-    for (let x = 0; x < w; x++) {
-      if (isFilled(f2[y + 1][x]) && !isFilled(f2[y][x])) {
-        f2[y][x] = f2[y + 1][x]; f2[y + 1][x] = 'transparent'
-      }
-    }
-  }
-
-  // Frame 3: swat left
-  for (let y = midTop; y < midBot; y++) {
-    for (let x = 0; x < w - 1; x++) { f3[y][x] = f3[y][x + 1] }
-    f3[y][w - 1] = 'transparent'
-  }
-
-  return [f0, f1, f2, f3]
+function catPlay(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_CAT_PLAY.map(pixellabToGrid)
 }
 
 // ═══════════════════════════════════════════════
