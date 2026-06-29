@@ -13,6 +13,7 @@ interface Props {
   size?: number
   style?: React.CSSProperties
   onClick?: () => void
+  forceGrid?: boolean  // Skip PNG sprite, use pixel grid animation
 }
 
 // Rarity tint overlays (PICO-8 inspired accent colors)
@@ -76,7 +77,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
   const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
-    spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading'
+    forceGrid ? 'fallback' : (spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading')
   )
 
   const speciesIdx = getSpeciesIndex(seed)
@@ -88,8 +89,9 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     animRef.current = generatePetAnimation(pd)
   }, [seed, rarity, evolutionStage])
 
-  // Load PNG sprite (with cache)
+  // Load PNG sprite (with cache) — skip if forceGrid
   useEffect(() => {
+    if (forceGrid) return
     let cancelled = false
     const cached = spriteCache.get(speciesIdx)
     if (cached !== undefined) {

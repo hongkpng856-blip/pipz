@@ -36,6 +36,7 @@ export default function CatDemoPage() {
             evolutionStage={2}
             animation={anim}
             size={size}
+            forceGrid={true}
           />
         </div>
 
