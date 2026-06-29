@@ -24,7 +24,7 @@ const MARGIN = 50
 const FRAME_DURATION = 180 // ms per frame
 
 export default function PetCompanion({
-  pet, anim, steps, totalSteps, evolutionStage, skills,
+  pet, anim, steps, totalSteps, evolutionStage, skills, themedEgg, hatchProgress,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const petDataRef = useRef<PixelPetData | null>(null)

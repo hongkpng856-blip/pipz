@@ -66,7 +66,7 @@ function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
   return promise
 }
 
-export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick }: Props) {
+export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick, forceGrid }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
