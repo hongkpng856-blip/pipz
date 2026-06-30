@@ -204,6 +204,8 @@ export default function PetCompanion({
 
         ctx.save()
         ctx.translate(cx, cy + mRot * 10)
+        // Flip PNG sprite when walking RIGHT (assumes sprites face LEFT by default)
+        if (!facingLeft.current) ctx.scale(-1, 1)
         ctx.rotate(mRot)
         ctx.drawImage(oc, -sw / 2, -sh / 2, sw, sh)
         ctx.restore()

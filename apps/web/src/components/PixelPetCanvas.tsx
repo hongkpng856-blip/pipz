@@ -242,25 +242,38 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       const dx = Math.round((cw - dw) / 2 + xOff)
       const dy = Math.round((ch - dh) / 2 + yOff)
 
-      ctx.drawImage(sprite, dx, dy, dw, dh)
+      // Wrap drawing in flip context when moving right (frames face LEFT by default)
+      const drawSprite = (drawDx: number) => {
+        ctx.drawImage(sprite, drawDx, dy, dw, dh)
 
-      if (RARITY_GLOWS[rarity]) {
-        ctx.shadowColor = RARITY_GLOWS[rarity]
-        ctx.shadowBlur = size * 3
-        ctx.drawImage(sprite, dx, dy, dw, dh)
-        ctx.shadowColor = 'transparent'
-        ctx.shadowBlur = 0
+        if (RARITY_GLOWS[rarity]) {
+          ctx.shadowColor = RARITY_GLOWS[rarity]
+          ctx.shadowBlur = size * 3
+          ctx.drawImage(sprite, drawDx, dy, dw, dh)
+          ctx.shadowColor = 'transparent'
+          ctx.shadowBlur = 0
+        }
+
+        ctx.fillStyle = RARITY_TINTS[rarity]
+        ctx.fillRect(drawDx, dy, dw, dh)
+
+        if (rarity === 'legendary') {
+          ctx.fillStyle = '#ffd70060'
+          ctx.fillRect(drawDx - 1, dy - 1, dw + 2, 2)
+          ctx.fillRect(drawDx - 1, dy + dh - 1, dw + 2, 2)
+          ctx.fillRect(drawDx - 1, dy, 2, dh)
+          ctx.fillRect(drawDx + dw - 1, dy, 2, dh)
+        }
       }
 
-      ctx.fillStyle = RARITY_TINTS[rarity]
-      ctx.fillRect(dx, dy, dw, dh)
-
-      if (rarity === 'legendary') {
-        ctx.fillStyle = '#ffd70060'
-        ctx.fillRect(dx - 1, dy - 1, dw + 2, 2)
-        ctx.fillRect(dx - 1, dy + dh - 1, dw + 2, 2)
-        ctx.fillRect(dx - 1, dy, 2, dh)
-        ctx.fillRect(dx + dw - 1, dy, 2, dh)
+      if (flipRef.current && noAnim === false && animation === 'walk') {
+        ctx.save()
+        ctx.translate(cw, 0)
+        ctx.scale(-1, 1)
+        drawSprite(cw - dx - dw)
+        ctx.restore()
+      } else {
+        drawSprite(dx)
       }
     } else if (status === 'fallback' && pd && anim) {
       // ── Fallback path: frame-by-frame pixel animation ──
