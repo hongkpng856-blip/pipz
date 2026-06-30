@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { generatePixelPet, PixelPetData, getSpeciesIndex, generatePetAnimation, drawPixelGrid } from '@pipz/core'
+import { generatePixelPet, PixelPetData, PixelGrid, getSpeciesIndex, generatePetAnimation, drawPixelGrid } from '@pipz/core'
 
 const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
 
@@ -34,6 +34,22 @@ const RARITY_GLOWS: Record<string, string> = {
   rare: '#3b82f666',
   epic: '#8b5cf688',
   legendary: '#f59e0baa',
+}
+
+/** Compute bounding box of a pixel grid (non-transparent pixels) */
+function computeBoundingBox(grid: PixelGrid): { minRow: number; maxRow: number; minCol: number; maxCol: number } | null {
+  let minRow = grid.length, maxRow = 0, minCol = grid[0]?.length ?? 0, maxCol = 0
+  let found = false
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      if (grid[y][x] !== 'transparent') {
+        minRow = Math.min(minRow, y); maxRow = Math.max(maxRow, y)
+        minCol = Math.min(minCol, x); maxCol = Math.max(maxCol, x)
+        found = true
+      }
+    }
+  }
+  return found ? { minRow, maxRow, minCol, maxCol } : null
 }
 
 // ── Global sprite cache ──
@@ -98,6 +114,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
+  const spriteBBRef = useRef<{ minRow: number; maxRow: number; minCol: number; maxCol: number } | null>(null)
   const animRef = useRef<ReturnType<typeof generatePetAnimation> | null>(null)
   const frameRef = useRef<number>(0)
   const animFrameRef = useRef(0) // current animation frame index
@@ -117,6 +134,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
     effectiveForceGrid ? 'fallback' : (spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading')
   )
+  const [spriteBB, setSpriteBB] = useState<{ minRow: number; maxRow: number; minCol: number; maxCol: number } | null>(null)
 
   const speciesIdx = getSpeciesIndex(seed)
 
@@ -124,7 +142,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   useEffect(() => {
     const pd = generatePixelPet({ seed: effectiveSeed, rarity, evolutionStage })
     petDataRef.current = pd
-    animRef.current = generatePetAnimation(pd)
+    const anim = generatePetAnimation(pd)
+    animRef.current = anim
+    // Compute sprite bounding box from first frame — normalizes visual size across species
+    const bb = computeBoundingBox(anim.walkFrames[0])
+    spriteBBRef.current = bb
+    setSpriteBB(bb)
   }, [effectiveSeed, rarity, evolutionStage])
 
   // Load PNG sprite (with cache) — skip if forceGrid
@@ -242,9 +265,13 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
     } else if (status === 'fallback' && pd && anim) {
       // ── Fallback path: frame-by-frame pixel animation ──
-      const pixelSize = (size as number) * (16 / pd.width)
-      const gridW = pd.width * pixelSize
-      const gridH = pd.height * pixelSize
+      const bb = spriteBBRef.current
+      const spriteW = bb ? (bb.maxCol - bb.minCol + 1) : pd.width
+      const spriteH = bb ? (bb.maxRow - bb.minRow + 1) : pd.height
+      const refSize = Math.max(spriteW, spriteH, 1)
+      const pixelSize = (size as number) * (16 / refSize)
+      const gridW = spriteW * pixelSize
+      const gridH = spriteH * pixelSize
       const startX = (cw - gridW) / 2 + xOff
       const startY = (ch - gridH) / 2 + yOff
 
@@ -269,7 +296,11 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
         ctx.shadowBlur = pixelSize * 4
       }
 
-      drawPixelGrid(ctx, frameGrid, pixelSize, startX, startY)
+      // Clip to bounding box so centering is based on actual sprite content, not empty grid padding
+      const drawGrid = bb
+        ? frameGrid.slice(bb.minRow, bb.maxRow + 1).map(row => row.slice(bb.minCol, bb.maxCol + 1))
+        : frameGrid
+      drawPixelGrid(ctx, drawGrid, pixelSize, startX, startY)
 
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
@@ -304,12 +335,15 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   }, [animate])
 
   const pixelVal = typeof size === 'number' ? size : 5
-  const gridSize = petDataRef.current?.width || (isPixellab ? 32 : 16)
-  // Normalize: 32×32 grids use smaller pixel size so total canvas is comparable to 16×16
-  const sizeMult = 16 / gridSize
+  // Use sprite bounding box for canvas size — ensures consistent visual size across species
+  const calcBB = spriteBB || spriteBBRef.current
+  const spriteW = calcBB ? (calcBB.maxCol - calcBB.minCol + 1) : (petDataRef.current?.width || (isPixellab ? 32 : 16))
+  const spriteH = calcBB ? (calcBB.maxRow - calcBB.minRow + 1) : (petDataRef.current?.height || (isPixellab ? 32 : 16))
+  const refSize = Math.max(spriteW, spriteH, 1)
+  const sizeMult = 16 / refSize
   const effectivePixelVal = pixelVal * sizeMult
-  const canvasW = Math.round(gridSize * effectivePixelVal + 40)
-  const canvasH = Math.round(gridSize * effectivePixelVal + 30)
+  const canvasW = Math.round(spriteW * effectivePixelVal + 40)
+  const canvasH = Math.round(spriteH * effectivePixelVal + 30)
 
   const handleClick = () => {
     onClick?.()
