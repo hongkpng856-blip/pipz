@@ -80,6 +80,10 @@ export default function PetCompanion({
     // PixelLab cat — skip PNG, go straight to grid fallback
     if (IS_PIXELLAB_PET(pet)) { setStatus('fallback'); return }
     const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
+    // Shiba custom sprite
+    const spritePath = (pet.speciesId === '176' || pet.speciesId === '23')
+      ? `/pixel-gen/sprites/shiba.png?v=${SPRITE_VERSION}`
+      : `/pixel-gen/sprites/${idx}.png?v=${SPRITE_VERSION}`
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => {
@@ -95,7 +99,7 @@ export default function PetCompanion({
     img.onerror = () => {
       if (!cancelled) setStatus('fallback')
     }
-    img.src = `/pixel-gen/sprites/${idx}.png?v=${SPRITE_VERSION}`
+    img.src = spritePath
     return () => { cancelled = true }
   }, [pet])
 
