@@ -1,7 +1,6 @@
 import { PixelPetConfig, PixelGrid, PixelPetData, PixelPalette } from './types'
 import { seededRandom, RARITY_PALETTES, BODY_TEMPLATES, EYE_TEMPLATES, ACCESSORY_TEMPLATES, STAGE_EMBELLISHMENTS, SPECIES_NAMES } from './palette'
 import { PIXELAB_PALETTE, PIXELAB_CAT_IDLE } from './pixellab-cat-data'
-import { PIXELAB_SHIBA_IDLE } from './pixellab-shiba-data'
 
 const GRID_SIZE = 16
 

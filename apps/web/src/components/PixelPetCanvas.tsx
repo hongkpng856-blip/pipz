@@ -40,9 +40,33 @@ const RARITY_GLOWS: Record<string, string> = {
 const spriteCache = new Map<number, HTMLCanvasElement | null>()
 const pendingLoads = new Map<number, Promise<HTMLCanvasElement | null>>()
 
-function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
+function loadSprite(speciesIdx: number, customSeed?: number): Promise<HTMLCanvasElement | null> {
   // Species 0 uses PixelLab grid animation, skip PNG sprite
   if (speciesIdx === 0) return Promise.resolve(null)
+  // Shiba (seed 23) uses custom sprite
+  if (customSeed === 23) {
+    const key = 999 // Unique cache key for shiba
+    if (spriteCache.has(key)) return Promise.resolve(spriteCache.get(key)!)
+    if (pendingLoads.has(key)) return pendingLoads.get(key)!
+
+    const promise = new Promise<HTMLCanvasElement | null>((resolve) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.src = `/pixel-gen/sprites/shiba.png?v=${SPRITE_VERSION}`
+      img.onload = () => {
+        const oc = document.createElement('canvas')
+        oc.width = img.width
+        oc.height = img.height
+        const ox = oc.getContext('2d')!
+        ox.drawImage(img, 0, 0)
+        spriteCache.set(key, oc)
+        resolve(oc)
+      }
+      img.onerror = () => { spriteCache.set(key, null); resolve(null) }
+    })
+    pendingLoads.set(key, promise)
+    return promise
+  }
   if (spriteCache.has(speciesIdx)) return Promise.resolve(spriteCache.get(speciesIdx)!)
   if (pendingLoads.has(speciesIdx)) return pendingLoads.get(speciesIdx)!
 
@@ -104,13 +128,22 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   useEffect(() => {
     if (effectiveForceGrid) return
     let cancelled = false
+    // Shiba custom sprite bypass
+    if (seed === 23) {
+      loadSprite(999, 23).then((oc) => {
+        if (cancelled) return
+        spriteCanvasRef.current = oc
+        setStatus(oc ? 'png' : 'fallback')
+      })
+      return () => { cancelled = true }
+    }
     const cached = spriteCache.get(speciesIdx)
     if (cached !== undefined) {
       spriteCanvasRef.current = cached
       if (!cancelled) setStatus(cached ? 'png' : 'fallback')
       return
     }
-    loadSprite(speciesIdx).then((oc) => {
+    loadSprite(speciesIdx, seed).then((oc) => {
       if (cancelled) return
       spriteCanvasRef.current = oc
       setStatus(oc ? 'png' : 'fallback')
