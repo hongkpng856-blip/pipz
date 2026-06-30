@@ -233,8 +233,8 @@ export default function PetCompanion({
 
         ctx.save()
         ctx.translate(cx, cy)
-        // Mirror horizontally when walking left
-        if (facingLeft.current) ctx.scale(-1, 1)
+        // Mirror horizontally — frames face LEFT, flip when walking RIGHT
+        if (!facingLeft.current) ctx.scale(-1, 1)
         ctx.rotate(mRot)
         drawPixelGrid(ctx, frameGrid, ps, -pw / 2, -ph / 2)
         ctx.restore()
