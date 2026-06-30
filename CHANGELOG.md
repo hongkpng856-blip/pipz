@@ -1,6 +1,18 @@
 # Changelog
 
-## v0.13.1 (2026-07-14)
+## v0.13.2 (2026-07-14)
+
+### Changed
+- **PixelLab Shiba像素數據全面升級**：取代手畫 grid data，改用真正 PixelLab API 生成嘅 32×32 sprite + palette conversion
+  - Walk: 4 frames（唔同 stride 位置）— 由 `v2/create-image-pixflux` 生成
+  - Idle: 3 frames（坐、舐舌、耳仔郁）+ 1 copy
+  - Play: 1 frame（跳躍）× 4（API credits 用盡）
+  - 背景 index 6 正確 mapping 做 transparent
+  - `shiba_32icon.png` — front view 柴犬 icon
+
+### Fixed
+- 解決「粉紅耳仔」— palette conversion artifact，原生 PixelLab 10色 palette 限制
+- Shiba walk animation 完整 4-frame stride cycle（之前只有 static pose）
 
 ### Fixed
 - **Shiba rendering fix**: 移除 external PNG sprite（白底 + static image），改用 grid animation system（transparent bg + walk/idle/play 3種動畫）
