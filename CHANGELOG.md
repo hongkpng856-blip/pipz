@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.13.0 (2026-07-14)
+
+### Added
+- **New PixelLab Shiba species** (species 1, seed 176): 🐶 柴犬 with dedicated PixelLab-generated walk/idle/play animations
+  - `packages/core/src/pixel-gen/pixellab-shiba-data.ts` — 4-frame walk, idle, and play pixel grids
+  - `animation.ts` — dedicated shibaWalk/shibaIdle/shibaPlay functions for species 1
+  - `generator.ts` — special case for seed 176 returning speciesId=1, speciesName='柴犬'
+- **Shiba egg** in Dev Tools: 🥚 柴犬蛋 button (purple styling)
+- **Spawn Shiba** function: `spawnShiba()` creates Uncommon Shiba (seed 176) with 4 animations
+- **Random encounter**: Walking now has 40% chance per 2000 steps to drop either cat OR shiba egg (50/50)
+
+### Changed
+- **Egg hatching**: `hatchEgg()` now handles 3 egg types: `shiba_` → Shiba, `pixellab_` → Cat, old eggs → Cat (fallback)
+- **Random egg encounter**: Updated from always dropping cat eggs to 50/50 cat/shiba
+
 ## v0.12.0 (2026-07-14)
 
 ### Added
