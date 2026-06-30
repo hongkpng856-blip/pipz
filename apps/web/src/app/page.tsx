@@ -424,10 +424,16 @@ export default function HomePage() {
       eggStepCounter.current += finalSteps
       if (eggStepCounter.current >= 2000) {
         eggStepCounter.current = 0
-        // 40% chance to find a PixelLab cat egg
+        // 40% chance to find an egg while walking
         if (Math.random() < 0.4) {
-          logMsg('🥚 行路發現咗圓貓蛋！')
-          addPixelLabEgg()
+          // 50/50 between cat and shiba
+          if (Math.random() < 0.5) {
+            logMsg('🥚 行路發現咗圓貓蛋！')
+            addPixelLabEgg()
+          } else {
+            logMsg('🥚 行路發現咗柴犬蛋！')
+            addShibaEgg()
+          }
         }
       }
     }
@@ -540,10 +546,12 @@ export default function HomePage() {
     // Wait for hatching animation, then spawn, then delete from DB
     setTimeout(async () => {
       setEggs(v => v.filter(e => e.id !== egg.id))
-      // PixelLab cat egg hatches into species 175
-      if (egg.id.startsWith('pixellab_')) {
+      // PixelLab shiba egg
+      if (egg.id.startsWith('shiba_')) {
+        await spawnShiba()
+        if (user) await deleteEgg(egg.id).catch(() => {})
+      } else if (egg.id.startsWith('pixellab_')) {
         await spawnPixelLabCat()
-        // Delete pixellab egg from DB after successful hatch
         if (user) await deleteEgg(egg.id).catch(() => {})
       } else {
         // Old non-pixellab eggs also hatch into PixelLab cat
@@ -752,9 +760,43 @@ export default function HomePage() {
     setPets(v => [...v, np])
     setActiveIdx(pets.length)
     setNewPetId(np.id)
-    // NOT auto-adding to favorites — user drags into team manually
     try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
     logMsg('🐱 圓貓（PixelLab）誕生！')
+  }
+
+  // ── Spawn PixelLab Shiba (species 1, seed 176) ──
+  const spawnShiba = async () => {
+    const np: Pet = {
+      id: `shiba-${Date.now()}`,
+      userId: user?.id ?? 'local',
+      name: '柴犬',
+      speciesId: '176',
+      imageUrl: '',
+      rarity: Rarity.Uncommon,
+      level: 3,
+      xp: 0,
+      totalSteps: 0,
+      evolutionStage: 2,
+      status: PetStatus.Adult,
+      stats: { speed: 12, luck: 5, charm: 8, energy: 80 },
+      skills: generateSkills(Rarity.Uncommon, 3),
+      mood: Mood.Happy,
+      moodValue: 100,
+      lastFedAt: Date.now(),
+      lastInteractionAt: Date.now(),
+      createdAt: Date.now(),
+      isForSale: false,
+      price: 0,
+    }
+    if (user) {
+      const dbId = await savePet(user.id, np)
+      if (dbId) np.id = dbId
+    }
+    setPets(v => [...v, np])
+    setActiveIdx(pets.length)
+    setNewPetId(np.id)
+    try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
+    logMsg('🐶 柴犬（PixelLab）誕生！')
   }
 
   // ── PixelLab cat egg ──
@@ -766,11 +808,26 @@ export default function HomePage() {
       rarity: Rarity.Rare,
       collectedAt: Date.now(),
     }
-    // Save to DB so it persists across page reloads
     const dbId = await saveEgg(user.id, Rarity.Rare, eggId)
     if (dbId) newEgg.id = dbId
     setEggs(v => [...v, newEgg])
     logMsg('🥚 圓貓蛋已加入！去蛋頁面孵化')
+    setTab('eggs')
+  }
+
+  // ── PixelLab Shiba egg ──
+  const addShibaEgg = async () => {
+    if (!user) return
+    const eggId = `shiba_${Date.now()}`
+    const newEgg: EggItem = {
+      id: eggId,
+      rarity: Rarity.Uncommon,
+      collectedAt: Date.now(),
+    }
+    const dbId = await saveEgg(user.id, Rarity.Uncommon, eggId)
+    if (dbId) newEgg.id = dbId
+    setEggs(v => [...v, newEgg])
+    logMsg('🥚 柴犬蛋已加入！去蛋頁面孵化')
     setTab('eggs')
   }
 
@@ -1449,6 +1506,10 @@ export default function HomePage() {
                           <button className="btn" onClick={addPixelLabEgg}
                             style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
                             🥚 圓貓蛋
+                          </button>
+                          <button className="btn" onClick={addShibaEgg}
+                            style={{fontSize:10, padding:'4px 10px', background:'rgba(168,120,200,0.15)', border:'1px solid rgba(168,120,200,0.3)', color:'#a878c8', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
+                            🥚 柴犬蛋
                           </button>
                         </>   
                       )}

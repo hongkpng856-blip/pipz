@@ -101,8 +101,9 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - 📊 **今日進度**: today's steps / 5,000 goal
   - 📈 **總步數進度**: total steps / 10,000 milestone
   - 🥚 **孵化進度** / 🌟 **進化進度**: depending on pet state
-- Walk button moved to **header** (top-right area)
+- **Walk button** moved to **header** (top-right area)
 - Green bg when idle, red bg when walking
+- **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 圓貓蛋 — egg saved to DB, shown in eggs tab
 
 ### Nearby Pets
 - Horizontal scroll row of recent pets
@@ -112,7 +113,8 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 ### Dev Tools (always visible)
 - **🔧 Dev 工具** toggle button at bottom of Community tab — visible to **all users** (no login required, no email check)
 - **🎲 Event** button — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, etc.); useful for testers to verify event flow without waiting 800 steps
-- **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous 1-4 steps every 800ms (≈ real walking speed)
+- **Walk Speed**: 1x / 5x / 10x / 50x buttons — set simulation step multiplier; 🟢 indicator shows current speed
+- **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous steps at selected multiplier (1x=~1-4 steps/800ms, 50x=~50-200 steps/tick)
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
   - ⬆️ 升 Lv — level +1

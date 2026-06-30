@@ -281,6 +281,13 @@ Each rarity has 3 colour variants (randomly chosen):
 - Clicking the debug button now properly triggers the **encounter system** every 500 steps (500 = `ENCOUNTER_INTERVAL`)
 - Dev Tools panel (bottom of Community tab) — visible to **all users** (no login required):
   - **🎲 Event button** — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, 泥濘水氹, etc.); bypasses the 800-step interval so testers can verify event flow immediately
+  - **Walk speed multiplier**: 1x / 5x / 10x / 50x buttons — multiply simulation step rate without restarting walk:
+    - 1x = 1-4 steps per 800ms tick (default walking speed)
+    - 5x = ~5-20 steps per tick
+    - 10x = ~10-40 steps per tick
+    - 50x = ~50-200 steps per tick (rapid testing)
+    - Active multiplier shown as 🟢 label (e.g. 🟢 5x)
+  - **🚶 模擬 / ⏹ 停止** — start/stop walk simulation at current multiplier speed
 - Encounters collected as eggs, displayed via egg popup → eggs tab → hatch → **new pet popup**
 - **Instant feedback**: log message "🔍 測試步數處理中..." appears immediately on click
 
@@ -289,7 +296,24 @@ Each rarity has 3 colour variants (randomly chosen):
 - **Egg popup**: Shows 🥚 with rarity badge (common/uncommon/rare/epic/legendary) + "已收錄到蛋列表" message
 - Popup dismissed by clicking ✅收埋 button or tapping outside
 - Egg is saved to Supabase DB **immediately** on discovery (logged-in users) or localStorage (guests)
-- Notification sent: "🥚 發現新蛋！行路途中發現咗 {rarity}蛋！快啲去收咗佢"
+| Notification sent: "🥚 發現新蛋！行路途中發現咗 {rarity}蛋！快啲去收咗佢"
+
+### Random Egg While Walking (v0.12.0+)
+
+Every **2000 steps** accumulated while walking, a separate random egg encounter check triggers:
+
+| Interval | Chance | Egg Type |
+|----------|--------|----------|
+| Every 2000 steps | 40% | PixelLab 圓貓蛋 (species=cat) |
+
+```
+stepEggCounter % 2000 === 0 && Math.random() < 0.4 → spawn PixelLab egg
+```
+
+- Independent from the 500-step pet encounter system — both can trigger during walking
+- Egg is saved to DB immediately, appears in Eggs tab
+- Console log: "🥚 行路發現咗圓貓蛋！"
+- Hatches into PixelLab 圓貓 cat (species 0) regardless of egg type
 
 ### Egg & Hatching Flow
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.12.0 (2026-07-14)
+
+### Added
+- **Walk speed multiplier** (Dev Tools): 1x / 5x / 10x / 50x buttons in Dev Tools — increases simulation step rate from ~1-4 steps/800ms (1x) up to ~200 steps/tick (50x). Current multiplier shown as 🟢 5x indicator.
+- **Random egg encounter while walking**: Every 2000 steps accumulated triggers a 40% chance to discover a PixelLab 圓貓蛋. Egg is saved to DB and shown in eggs tab. Console log: "🥚 行路發現咗圓貓蛋！".
+
+### Changed
+- **Walk simulation**: Now uses `multiplier` state instead of fixed step increment. Multiplier persisted in component state (default 1x).
+- **Event system still triggers** independently alongside egg encounters — both can fire during walking.
+
 ## v0.11.0 (2026-06-30)
 
 ### Changed

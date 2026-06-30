@@ -6,12 +6,12 @@
  * Play: 4-frame jump/pounce
  */
 
+export type PixellabGrid = string[]  // 32 strings of 32 chars each
+
 export const PIXELAB_PALETTE = [
   '#000000', '#1d2b53', '#7e2553', '#ff77a8', '#ab5236',
   '#5f574f', '#c2c3c7', '#fff1e8', '#29adff', '#ffa300',
 ]
-
-export type PixellabGrid = string[]  // 32 strings of 32 chars each
 
 export const PIXELAB_CAT_WALK: PixellabGrid[] = [
   [
