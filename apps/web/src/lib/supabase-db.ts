@@ -177,11 +177,13 @@ export async function loadEggs(userId: string): Promise<{id:string; rarity:strin
   }))
 }
 
-export async function saveEgg(userId: string, rarity: string): Promise<string | null> {
+export async function saveEgg(userId: string, rarity: string, eggId?: string): Promise<string | null> {
   const supabase = db()
+  const insertData: Record<string, any> = { user_id: userId, rarity }
+  if (eggId) insertData.id = eggId
   const { data, error } = await supabase
     .from('eggs')
-    .insert({ user_id: userId, rarity } as never)
+    .insert(insertData as never)
     .select('id')
     .single()
   if (error) {

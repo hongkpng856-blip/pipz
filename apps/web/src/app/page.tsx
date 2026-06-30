@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FIRST_PET_STEPS, ENCOUNTER_INTERVAL, rollEncounter, generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
+import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
 import PetDetailModal from '../components/PetDetailModal'
@@ -53,8 +53,6 @@ export default function HomePage() {
   const [showProfile, setShowProfile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
-  const [showEncounterEgg, setShowEncounterEgg] = useState(false)
-    const [encounterEggRarity, setEncounterEggRarity] = useState<Rarity | null>(null)
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -184,7 +182,6 @@ export default function HomePage() {
         setPets([])
         setSteps(0)
         setTotalSteps(0)
-        setShowEgg(false)
         setActiveIdx(0)
         loadedUser.current = null
       }
@@ -219,7 +216,15 @@ export default function HomePage() {
         setInventory(dbInv as any)
 
         setPets(dbPets)
-        setEggs(dbEggs as EggItem[])
+        // Only keep PixelLab cat eggs; auto-delete old generic eggs
+        const filteredEggs = (dbEggs as EggItem[]).filter(e => e.id.startsWith('pixellab_'))
+        setEggs(filteredEggs)
+        // Delete old generic eggs quietly
+        if (dbEggs.length > filteredEggs.length) {
+          (dbEggs as EggItem[]).filter(e => !e.id.startsWith('pixellab_')).forEach(e => {
+            deleteEgg(e.id).catch(() => {})
+          })
+        }
         setFavorites(dbFavs)
         setWeeklySteps(dbWeekly)
         setSteps(todaySt)
@@ -523,11 +528,13 @@ export default function HomePage() {
       // PixelLab cat egg hatches into species 175
       if (egg.id.startsWith('pixellab_')) {
         await spawnPixelLabCat()
+        // Delete pixellab egg from DB after successful hatch
+        if (user) await deleteEgg(egg.id).catch(() => {})
       } else {
-        await spawnPet(egg.rarity)
+        // Old non-pixellab eggs also hatch into PixelLab cat
+        await spawnPixelLabCat()
+        if (user) await deleteEgg(egg.id).catch(() => {})
       }
-      // Delete from Supabase only AFTER successful spawn (skip for local-only pixellab eggs)
-      if (user && !egg.id.startsWith('pixellab_')) await deleteEgg(egg.id).catch(() => {})
       setEggHatchingId(null)
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
@@ -744,7 +751,9 @@ export default function HomePage() {
       rarity: Rarity.Rare,
       collectedAt: Date.now(),
     }
-    // Store locally only (DB save happens on hatch via spawnPixelLabCat)
+    // Save to DB so it persists across page reloads
+    const dbId = await saveEgg(user.id, Rarity.Rare, eggId)
+    if (dbId) newEgg.id = dbId
     setEggs(v => [...v, newEgg])
     logMsg('🥚 圓貓蛋已加入！去蛋頁面孵化')
     setTab('eggs')
@@ -920,7 +929,8 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-                              {/* ── PetCompanion card ── */}
+              {/* ── PetCompanion card (only when team has a pet) ── */}
+              {favorites.length > 0 && pet && (
                 <div className="section card" style={{
                   padding:0, overflow:'hidden', position:'relative', width:'100%',
                 }}>
@@ -932,7 +942,9 @@ export default function HomePage() {
                     evolutionStage={pet?.evolutionStage ?? 1}
                     skills={pet?.skills ?? []}
                   />
-                </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
+                </div>
+              )}
+              {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
@@ -1268,35 +1280,12 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* First pet incubator */}
-              <div className="section card">
-                <div className="incubator">
-                  <div className={`incubator-slot ${pets.length > 0 ? 'incubator-slot-done' : ''}`}>
-                    <span style={{fontSize:24}}>{pets.length === 0 ? '🥚' : '✅'}</span>
-                  </div>
-                  <div className="incubator-info">
-                    <div className="incubator-name">{pets.length === 0 ? '基本孵化器' : '已孵化'}</div>
-                    <div className="incubator-desc">{pets.length === 0 ? '行 1,000 步孵化' : '完成！'}</div>
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{
-                        width: pets.length === 0 ? `${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%` : '100%',
-                        background: pets.length > 0 ? 'linear-gradient(90deg,#22c55e,#16a34a)' : undefined
-                      }}/>
-                    </div>
-                    <div className="incubator-labels">
-                      <span>進度</span>
-                      <span>{pets.length === 0 ? `${formatSteps(totalSteps)}/${formatSteps(FIRST_PET_STEPS)}` : '✅ 完成'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Empty state */}
               {eggs.length === 0 && (
                 <div className="card empty-state" style={{marginBottom:12}}>
                   <div style={{fontSize:36, marginBottom:8}}>🥚</div>
                   <div style={{fontSize:11, color:'#5a6d85'}}>
-                    行路遇到嘅蛋會係度顯示
+                    用 Dev 工具產生圓貓蛋孵化
                   </div>
                 </div>
               )}
@@ -1432,11 +1421,7 @@ export default function HomePage() {
                             style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
                             🥚 圓貓蛋
                           </button>
-                          <button className="btn btn-primary" onClick={spawnPixelLabCat}
-                            style={{fontSize:10, padding:'4px 10px'}}>
-                            🐱 直接產生圓貓
-                          </button>
-                        </>
+                        </>   
                       )}
                     </div>
 
