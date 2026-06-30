@@ -55,6 +55,7 @@ export default function HomePage() {
   const [notifUnread, setNotifUnread] = useState(0)
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
+    const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
     const [newPetId, setNewPetId] = useState<string | null>(() => {
@@ -101,6 +102,7 @@ export default function HomePage() {
   const badgeDismissed = useRef<Set<string>>(new Set())
   const lastEggRarityRef = useRef<Rarity | null>(null)
   const encCnt = useRef(0)
+  const eggStepCounter = useRef(0) // for encounter eggs while walking
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
 
   const pet = pets[activeIdx] ?? null
@@ -417,6 +419,18 @@ export default function HomePage() {
       const ev = rollEvent(totalStepsRef.current)
       if (ev) setCurrentEvent(ev)
     }
+    // ── Egg encounter check ──
+    if (user) {
+      eggStepCounter.current += finalSteps
+      if (eggStepCounter.current >= 2000) {
+        eggStepCounter.current = 0
+        // 40% chance to find a PixelLab cat egg
+        if (Math.random() < 0.4) {
+          logMsg('🥚 行路發現咗圓貓蛋！')
+          addPixelLabEgg()
+        }
+      }
+    }
     // ── Step visual effects ──
     setStepAnimTick(t => t + 1)
     const hasSkillEffects = finalSteps > n || bonus > 0
@@ -508,16 +522,17 @@ export default function HomePage() {
   // ── Walk simulation: continuous steps for testing ──
   useEffect(() => {
     if (simulating) {
+      const intervalMs = Math.max(100, 800 / simSpeed)
+      const baseSteps = simSpeed
       simRef.current = setInterval(() => {
-        // Simulate real walking: 1-4 steps every 800ms (≈ 4,500-18,000 steps/hr)
-        const steps = Math.floor(Math.random() * 4) + 1
+        const steps = Math.floor(Math.random() * baseSteps * 4) + baseSteps
         addSt(steps)
-      }, 800)
+      }, intervalMs)
     } else {
       if (simRef.current) { clearInterval(simRef.current); simRef.current = null }
     }
     return () => { if (simRef.current) { clearInterval(simRef.current); simRef.current = null } }
-  }, [simulating])
+  }, [simulating, simSpeed])
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
@@ -1403,8 +1418,22 @@ export default function HomePage() {
                         style={{fontSize:10, padding:'4px 10px'}}>
                         {simulating ? '⏹ 停止' : '🚶 模擬'}
                       </button>
+                      {/* Speed toggle */}
+                      {[1,5,10,50].map(s => (
+                        <button key={s}
+                          onClick={() => { setSimSpeed(s); if (!simulating) setSimulating(true) }}
+                          style={{
+                            fontSize:9, padding:'2px 8px', cursor:'pointer', fontFamily:'inherit',
+                            background: simSpeed === s ? '#8b5cf644' : 'transparent',
+                            border: simSpeed === s ? '1px solid #8b5cf6' : '1px solid #2a3a5a',
+                            color: simSpeed === s ? '#c4b5fd' : '#5a6d85',
+                            borderRadius:6,
+                          }}>
+                          {s}x
+                        </button>
+                      ))}
                       <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
-                        {simulating ? '🟢 模擬中' : '🛰️ GPS'}
+                        {simulating ? `🟢 ${simSpeed}x` : '🛰️ GPS'}
                       </span>
                     </div>
 

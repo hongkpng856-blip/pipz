@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.11.0 (2026-06-30)
+
+### Changed
+- **Map pet visibility**: PetCompanion only renders when team (favorites) has pets. Empty team = no pet on map.
+- **Full egg-to-cat flow**: Removed "直接產生圓貓" instant spawn button. Only "圓貓蛋" in Dev Tools. Egg persists in DB across page reloads.
+- **All eggs → PixelLab cat**: Old generic eggs now also hatch into PixelLab cat instead of random pets.
+- **Egg DB cleanup**: On page load, old non-pixellab eggs are auto-deleted from DB. Only PixelLab cat eggs survive.
+- **Removed old incubator**: "行 1,000 步孵化" incubator section purged.
+- **Cleaned dead code**: Removed `showEncounterEgg` state, `setShowEgg` call, unused imports.
+
+### Fixed
+- Guest/no-pet state: page shows only header + bottom nav, no pet or popup content.
+
 ## v0.10.0 (2026-06-27)
 
 ### Added
