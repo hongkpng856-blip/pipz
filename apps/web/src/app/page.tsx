@@ -1025,16 +1025,8 @@ export default function HomePage() {
                     <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/10000)*100)}%`, background:'linear-gradient(90deg, #8b5cf6, #22d3ee)'}}/></div>
                   </div>
 
-                  {/* Bar: 孵化/進化進度 */}
-                  {!pet ? (
-                    <div>
-                      <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
-                        <span>🥚 孵化進度</span>
-                        <span>{formatSteps(totalSteps)} / {formatSteps(FIRST_PET_STEPS)}</span>
-                      </div>
-                      <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/FIRST_PET_STEPS)*100)}%`, background:'#f59e0b'}}/></div>
-                    </div>
-                  ) : pet.evolutionStage < 5 && (() => {
+                  {/* 進化進度（只喺有寵物時顯示） */}
+                  {pet && pet.evolutionStage < 5 && (() => {
                     const nextStep = (() => {
                       if (pet.evolutionStage === 1) return 10000
                       if (pet.evolutionStage === 2) return 30000
