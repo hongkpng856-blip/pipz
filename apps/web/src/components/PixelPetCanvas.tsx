@@ -128,8 +128,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   useEffect(() => {
     if (effectiveForceGrid) return
     let cancelled = false
-    // Shiba custom sprite bypass
-    if (seed === 23) {
+    // Shiba custom sprite bypass (seeds 23 and 176)
+    if (seed === 23 || seed === 176) {
       loadSprite(999, 23).then((oc) => {
         if (cancelled) return
         spriteCanvasRef.current = oc
