@@ -14,6 +14,7 @@ interface Props {
   style?: React.CSSProperties
   onClick?: () => void
   forceGrid?: boolean  // Skip PNG sprite, use pixel grid animation
+  noAnim?: boolean     // No animation, static frame only
 }
 
 // Rarity tint overlays (PICO-8 inspired accent colors)
@@ -66,7 +67,7 @@ function loadSprite(speciesIdx: number): Promise<HTMLCanvasElement | null> {
   return promise
 }
 
-export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick, forceGrid }: Props) {
+export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation = 'idle', size = 5, style, onClick, forceGrid, noAnim }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const spriteCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const petDataRef = useRef<PixelPetData | null>(null)
@@ -125,32 +126,34 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     let xOff = 0
     let yOff = 0
 
-    switch (animation) {
-      case 'walk': {
-        xOffsetRef.current += 0.3 * walkDirRef.current
-        if (xOffsetRef.current > 20) walkDirRef.current = -1
-        if (xOffsetRef.current < -20) walkDirRef.current = 1
-        xOff = xOffsetRef.current
-        yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
-        break
-      }
-      case 'happy': {
-        yOff = Math.abs(Math.sin(timeRef.current * 6)) * 6
-        break
-      }
-      case 'jump': {
-        yOff = -(1 * 15)
-        break
-      }
-      case 'idle': {
-        yOff = Math.sin(timeRef.current * 2) * 1.5
-        break
+    if (!noAnim) {
+      switch (animation) {
+        case 'walk': {
+          xOffsetRef.current += 0.3 * walkDirRef.current
+          if (xOffsetRef.current > 20) walkDirRef.current = -1
+          if (xOffsetRef.current < -20) walkDirRef.current = 1
+          xOff = xOffsetRef.current
+          yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
+          break
+        }
+        case 'happy': {
+          yOff = Math.abs(Math.sin(timeRef.current * 6)) * 6
+          break
+        }
+        case 'jump': {
+          yOff = -(1 * 15)
+          break
+        }
+        case 'idle': {
+          yOff = Math.sin(timeRef.current * 2) * 1.5
+          break
+        }
       }
     }
 
     // Frame timing
     const now = performance.now()
-    if (now - lastFrameTime.current >= 180) {
+    if (!noAnim && now - lastFrameTime.current >= 180) {
       lastFrameTime.current = now
       animFrameRef.current = (animFrameRef.current + 1) % 4
     }
@@ -203,7 +206,10 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
       // Pick the right frame set based on animation state
       let frameGrid = anim.walkFrames[0]
-      if (animation === 'walk') {
+      if (noAnim) {
+        // Static: always show first frame, no cycling
+        frameGrid = anim.walkFrames[0]
+      } else if (animation === 'walk') {
         frameGrid = anim.walkFrames[animFrameRef.current]
       } else if (animation === 'idle') {
         // Blink every ~2 seconds (alternate between base and blink)

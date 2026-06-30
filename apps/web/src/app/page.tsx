@@ -600,8 +600,8 @@ export default function HomePage() {
       } else {
         await spawnPet(egg.rarity)
       }
-      // Delete from Supabase only AFTER successful spawn
-      if (user) await deleteEgg(egg.id).catch(() => {})
+      // Delete from Supabase only AFTER successful spawn (skip for local-only pixellab eggs)
+      if (user && !egg.id.startsWith('pixellab_')) await deleteEgg(egg.id).catch(() => {})
       setEggHatchingId(null)
       setTab('pets')
       logMsg(`🐣 孵化出 ${RARITY_LABELS[egg.rarity]}！`)
@@ -820,6 +820,11 @@ export default function HomePage() {
     setPets(v => [...v, np])
     setActiveIdx(pets.length)
     setNewPetId(np.id)
+    // Auto-add to favorites (team slot 0) so it shows on map
+    if (favorites.length < 5) {
+      setFavorites(prev => [...prev, np.id])
+      if (user) setFavoriteOrder(np.id, (favorites.length) + 1)
+    }
     try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
     logMsg('🐱 圓貓（PixelLab）誕生！')
   }
@@ -833,9 +838,7 @@ export default function HomePage() {
       rarity: Rarity.Rare,
       collectedAt: Date.now(),
     }
-    await saveEgg(user.id, Rarity.Rare).then(dbId => {
-      // Use our special ID in the actual DB
-    }).catch(() => {})
+    // Store locally only (DB save happens on hatch via spawnPixelLabCat)
     setEggs(v => [...v, newEgg])
     logMsg('🥚 圓貓蛋已加入！去蛋頁面孵化')
     setTab('eggs')
@@ -1250,7 +1253,7 @@ export default function HomePage() {
                                 onDrop={e => { e.preventDefault(); logMsg('🐉 slot 已有寵物') }}
                                 style={{borderColor: `${RARITY_COLORS[pet.rarity]}44`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[pet.rarity], borderRadius:'12px 12px 0 0'}} />
-                                <PixelPetCanvas key={pet.id} seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" />
+                                <PixelPetCanvas key={pet.id} seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.8} animation="idle" noAnim />
                                 {isNewBadge(pet.id, pet.createdAt) && <div className="new-badge">NEW</div>}
                                 <div className="team-slot-lv">Lv.{pet.level}</div>
                                 {/* Minus button — remove from team */}
@@ -1310,7 +1313,7 @@ export default function HomePage() {
                                 onClick={() => { badgeDismissed.current.add(p.id); setDetailPetId(p.id) }}
                                 style={{borderColor: origIdx === activeIdx ? `${sc}88` : `${sc}33`}}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: sc, borderRadius:'10px 10px 0 0'}} />
-                                <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" />
+                                <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.6} animation="idle" noAnim />
                                 {isNewBadge(p.id, p.createdAt) && <div className="new-badge">NEW</div>}
                                 {canThisEvolve && (
                                   <div style={{position:'absolute', bottom:1, right:2, fontSize:6, color:'#f59e0b'}}>▶</div>
@@ -1464,7 +1467,7 @@ export default function HomePage() {
                             style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
                             <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
                             <div className="pet-card-icon" style={{width:32, height:32}}>
-                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" noAnim />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
                             <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
@@ -1494,7 +1497,7 @@ export default function HomePage() {
                             style={{borderColor: `${RARITY_COLORS[p.rarity]}44`, padding:'6px 4px 4px'}}>
                             <div style={{position:'absolute', top:0, left:0, right:0, height:2, background: RARITY_COLORS[p.rarity], borderRadius:'14px 14px 0 0'}} />
                             <div className="pet-card-icon" style={{width:32, height:32}}>
-                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" />
+                              <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" noAnim />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
                             <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
