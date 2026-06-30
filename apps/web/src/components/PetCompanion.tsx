@@ -22,7 +22,7 @@ const MARGIN = 50
 const FRAME_DURATION = 180 // ms per frame
 
 // PixelLab cat speciesId
-const IS_PIXELLAB_PET = (pet: Pet | null) => pet?.speciesId === '175' || pet?.speciesId === '176'
+const IS_PIXELLAB_PET = (pet: Pet | null) => pet?.speciesId === '175'
 
 export default function PetCompanion({
   pet, anim, steps, totalSteps, evolutionStage, skills,

@@ -36,35 +36,6 @@ export function generatePixelPet(config: PixelPetConfig): PixelPetData {
     }
   }
 
-  // ── PixelLab shiba (seed 176) special case ──
-  if (config.seed === 176) {
-    const grid: PixelGrid = []
-    for (let y = 0; y < 32; y++) {
-      grid[y] = []
-      for (let x = 0; x < 32; x++) {
-        const ch = PIXELAB_SHIBA_IDLE[0][y][x]
-        const idx = parseInt(ch, 10)
-        const c = PIXELAB_PALETTE[idx] || '#c2c3c7'
-        grid[y][x] = idx === 6 ? 'transparent' : c
-      }
-    }
-    return {
-      grid,
-      width: 32,
-      height: 32,
-      palette: {
-        primary: '#ffa300',        // orange body
-        secondary: '#fff1e8',       // beige belly/face
-        accent: '#ff77a8',          // pink details
-        eye: '#29adff',             // blue eyes
-        outline: '#ab5236',         // brown outline
-        glow: null,
-      },
-      speciesId: 1,
-      speciesName: '柴犬',
-    }
-  }
-
   const rand = seededRandom(config.seed)
   
   // Select palette based on rarity
