@@ -418,9 +418,6 @@ export default function HomePage() {
     setTotalSteps(s => {
       const newTotal = s + finalSteps
 
-      // ── First pet check ──
-      if (curPets.length === 0 && newTotal >= FIRST_PET_STEPS) { setShowEgg(true) }
-
       // ── Demo egg progress (guest users without pets) ──
       const curUser = userRef.current
       if (!curUser && curPets.length === 0 && !demoHatched) {
@@ -444,41 +441,7 @@ export default function HomePage() {
     // ── Side-effects outside setState callback ──
     const encMult = getEncounterMultiplier(activeSkills)
     scheduleSync(pendingSteps.current + finalSteps, totalSteps + finalSteps)
-    encCnt.current += Math.round(n * encMult)
-    pity.current.legendary += Math.round(n * encMult)
-    pity.current.epic += Math.round(n * encMult)
-    if (encCnt.current >= ENCOUNTER_INTERVAL) {
-      const r = rollEncounter(encCnt.current, pity.current)
-      if (r) {
-        encCnt.current = 0
-        if (r === Rarity.Legendary) pity.current.legendary = 0
-        if (r === Rarity.Epic) pity.current.epic = 0
-        setEncounterEggRarity(r)
-        setShowEncounterEgg(true)
-        // Save egg immediately
-        if (curUser) {
-          saveEgg(curUser.id, r).then(dbId => {
-            const eggId = dbId || genSeed().toString()
-            const newEgg: EggItem = {
-              id: eggId,
-              rarity: r,
-              collectedAt: Date.now(),
-            }
-            setEggs(v => [...v, newEgg])
-          })
-        } else {
-          const newEgg: EggItem = {
-            id: genSeed().toString(),
-            rarity: r,
-            collectedAt: Date.now(),
-          }
-          setEggs(v => [...v, newEgg])
-        }
-        logMsg(`🥚 發現 ${RARITY_LABELS[r]} 蛋！`)
-        if (curUser) createNotification(curUser.id, 'egg_encounter', '🥚 發現新蛋！', `行路途中發現咗 ${RARITY_LABELS[r]}蛋！快啲去收咗佢`)
-        if (curUser) setNotifUnread(n => n + 1)
-      }
-    }
+    // Encounter egg system disabled — no auto egg popups
     // ── Roguelike: event check ──
     eventStepCounter.current += Math.round(n * encMult)
     if (eventStepCounter.current >= INV && !currentEvent && pet) {
@@ -772,15 +735,6 @@ export default function HomePage() {
   }
 
   // ── Pet action helpers (deprecated: removed feed/pet/play) ──
-
-  const hatch = () => {
-    setHatching(true)
-    setTimeout(() => {
-      setHatching(false); setShowEgg(false)
-      spawnPet(Rarity.Common)
-      logMsg('🎉 孵化成功！')
-    }, 2000)
-  }
 
   // ── Demo egg hatch (guest users) ──
   const hatchDemoEgg = () => {
@@ -1841,48 +1795,6 @@ export default function HomePage() {
                 </div>
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ════ Encounter Egg Popup ════ */}
-      {showEncounterEgg && encounterEggRarity && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:100,
-          display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.75)',
-          padding:16,
-        }} onClick={() => setShowEncounterEgg(false)}>
-          <div style={{
-            background:'#141b2d', border:`2px solid ${PC[encounterEggRarity || 'common']}44`,
-            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{fontSize:48, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
-            <div style={{fontSize:13, fontWeight:700, marginBottom:4}}>
-              發現蛋！🥚
-            </div>
-            <div style={{
-              fontSize:11, fontWeight:700,
-              color: PC[encounterEggRarity || 'common'],
-              background: `${PC[encounterEggRarity || 'common']}18`,
-              display:'inline-block', padding:'2px 12px', borderRadius:10,
-              marginBottom:8,
-            }}>
-              {RARITY_LABELS[encounterEggRarity || 'common']}
-            </div>
-            <div style={{fontSize:11, color:'#94a5b8', marginBottom:16}}>
-              已收錄到蛋列表！去蛋頁面孵化啦
-            </div>
-            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
-              <button onClick={() => setShowEncounterEgg(false)}
-                style={{
-                  padding:'8px 16px', border:'1px solid #2a3a5a',
-                  background:'#1a2338', color:'#94a5b8', fontSize:11, fontWeight:600,
-                  borderRadius:14, cursor:'pointer', fontFamily:'inherit',
-                }}>
-                ✅ 收埋
-              </button>
-            </div>
           </div>
         </div>
       )}
