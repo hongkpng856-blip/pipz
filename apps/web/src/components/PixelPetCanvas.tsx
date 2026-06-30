@@ -120,6 +120,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const animFrameRef = useRef(0) // current animation frame index
   const lastFrameTime = useRef(0)
   const timeRef = useRef(0)
+  const flipRef = useRef(false) // true = sprite is horizontally flipped (faces right)
 
   // Auto-detect PixelLab cat and shiba — force grid rendering
   const isPixellab = IS_PIXELLAB(seed)
@@ -193,10 +194,11 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     if (!noAnim) {
       switch (animation) {
         case 'walk': {
-            // Walk in place: cycle frames + vertical step bounce, no lateral sway
-            // (frames face left, so any rightward movement would look like walking backward)
-            xOff = 0
+            // Gentle sway to determine direction, flip head to face movement
+            const dir = Math.sin(timeRef.current * 2.5)
+            xOff = dir * 6
             yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
+            flipRef.current = dir > 0  // face right when moving right
             break
           }
         case 'happy': {
@@ -296,7 +298,17 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       const drawGrid = bb
         ? frameGrid.slice(bb.minRow, bb.maxRow + 1).map(row => row.slice(bb.minCol, bb.maxCol + 1))
         : frameGrid
-      drawPixelGrid(ctx, drawGrid, pixelSize, startX, startY)
+
+      // Flip sprite horizontally when moving right so head faces walking direction
+      if (flipRef.current) {
+        ctx.save()
+        ctx.translate(cw, 0)
+        ctx.scale(-1, 1)
+        drawPixelGrid(ctx, drawGrid, pixelSize, cw - startX - gridW, startY)
+        ctx.restore()
+      } else {
+        drawPixelGrid(ctx, drawGrid, pixelSize, startX, startY)
+      }
 
       ctx.shadowColor = 'transparent'
       ctx.shadowBlur = 0
