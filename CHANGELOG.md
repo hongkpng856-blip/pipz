@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.14.0 (2026-07-18)
+
+### Fixed
+- **Pet icon 視覺大小不一致**：貓（Compact ~19×19）同柴犬（~29×26）用 bounding box normalization，所有 species 嘅 sprite content 視覺大細一致
+- **Walk animation 倒後行**：取消 bounce logic（`walkDirRef`），改用 `Math.sin` 平滑 sway，寵物永遠向前行
+
+### Changed
+- `PixelPetCanvas.tsx`: 新增 `computeBoundingBox()` — 用 sprite 實際 content 範圍代替 full grid size 做 normalization
+- 移除未用嘅 `xOffsetRef`、`walkDirRef`、`yOffsetRef`
+
 ## v0.13.2 (2026-07-14)
 
 ### Changed

@@ -193,11 +193,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     if (!noAnim) {
       switch (animation) {
         case 'walk': {
-          // Gentle forward sway + step bounce — no back-and-forth reversal
-          xOff = Math.sin(timeRef.current * 2.5) * 6
-          yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
-          break
-        }
+            // Walk in place: cycle frames + vertical step bounce, no lateral sway
+            // (frames face left, so any rightward movement would look like walking backward)
+            xOff = 0
+            yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
+            break
+          }
         case 'happy': {
           yOff = Math.abs(Math.sin(timeRef.current * 6)) * 6
           break
