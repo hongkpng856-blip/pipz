@@ -820,11 +820,7 @@ export default function HomePage() {
     setPets(v => [...v, np])
     setActiveIdx(pets.length)
     setNewPetId(np.id)
-    // Auto-add to favorites (team slot 0) so it shows on map
-    if (favorites.length < 5) {
-      setFavorites(prev => [...prev, np.id])
-      if (user) setFavoriteOrder(np.id, (favorites.length) + 1)
-    }
+    // NOT auto-adding to favorites — user drags into team manually
     try { localStorage.setItem('pipz_new_pet', np.id) } catch(_){}
     logMsg('🐱 圓貓（PixelLab）誕生！')
   }
