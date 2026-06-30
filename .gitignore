@@ -8,3 +8,4 @@ apps/web/out/
 .github_token
 .vercel
 .sbp_token.sh
+token.txt
