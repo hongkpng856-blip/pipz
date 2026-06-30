@@ -119,9 +119,6 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const frameRef = useRef<number>(0)
   const animFrameRef = useRef(0) // current animation frame index
   const lastFrameTime = useRef(0)
-  const xOffsetRef = useRef(0)
-  const yOffsetRef = useRef(0)
-  const walkDirRef = useRef(1)
   const timeRef = useRef(0)
 
   // Auto-detect PixelLab cat and shiba — force grid rendering
@@ -196,10 +193,8 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     if (!noAnim) {
       switch (animation) {
         case 'walk': {
-          xOffsetRef.current += 0.3 * walkDirRef.current
-          if (xOffsetRef.current > 20) walkDirRef.current = -1
-          if (xOffsetRef.current < -20) walkDirRef.current = 1
-          xOff = xOffsetRef.current
+          // Gentle forward sway + step bounce — no back-and-forth reversal
+          xOff = Math.sin(timeRef.current * 2.5) * 6
           yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
           break
         }
