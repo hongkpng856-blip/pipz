@@ -3,6 +3,7 @@
 ## v0.14.0 (2026-07-18)
 
 ### Fixed
+- **Walk animation flip 跟方向**：向左行面向左，向右行用 `ctx.scale(-1,1)` flip sprite 面向右 — 頭永遠跟住行路方向
 - **Pet icon 視覺大小不一致**：貓（Compact ~19×19）同柴犬（~29×26）用 bounding box normalization，所有 species 嘅 sprite content 視覺大細一致
 - **Walk animation 倒後行**：取消 bounce logic（`walkDirRef`），改用 `Math.sin` 平滑 sway，寵物永遠向前行
 
