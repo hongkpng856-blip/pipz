@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { generatePixelPet, PixelPetData, PixelGrid, getSpeciesIndex, generatePetAnimation, drawPixelGrid } from '@pipz/core'
 
-const SPRITE_VERSION = 'v6' // Bump when sprite assets change (forces cache refresh)
+const SPRITE_VERSION = 'v7' // Bump when sprite assets change (forces cache refresh)
 
 interface Props {
   seed: number
