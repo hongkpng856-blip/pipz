@@ -11,7 +11,12 @@ const isFilled = (c: string) => c && c !== 'transparent'
 /** Convert a PixellabGrid (digit-indexed strings) to PixelGrid (color strings) */
 function pixellabToGrid(pg: PixellabGrid): PixelGrid {
   return pg.map(row =>
-    row.split('').map(ch => PIXELAB_PALETTE[parseInt(ch, 10)] || '#c2c3c7')
+    row.split('').map(ch => {
+      const idx = parseInt(ch, 10)
+      // Index 6 (#c2c3c7) = PixelLab background, treat as transparent
+      if (idx === 6) return 'transparent'
+      return PIXELAB_PALETTE[idx] || '#c2c3c7'
+    })
   )
 }
 
