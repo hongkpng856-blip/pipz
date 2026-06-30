@@ -1,6 +1,17 @@
 # Changelog
 
-## v0.13.0 (2026-07-14)
+## v0.13.1 (2026-07-14)
+
+### Fixed
+- **Shiba rendering fix**: 移除 external PNG sprite（白底 + static image），改用 grid animation system（transparent bg + walk/idle/play 3種動畫）
+  - `PetCompanion.tsx`: IS_SHIBA_PET → setStatus('fallback')，跳過 PNG path
+  - `generator.ts`: seed 176 special case 正確連接到 pixellab-shiba-data.ts 嘅 32×32 grid
+  - `animation.ts`: speciesId === 1 check 正確調用 shibaWalk/shibaIdle/shibaPlay
+  - `page.tsx`: spawnShiba speciesId 由 '23' 改為 '176'
+  - backward compatible: 舊 pet（speciesId '23'）自動 map 去 seed 176
+
+### Removed
+- `/pixel-gen/sprites/shiba.png` — 不再使用 external PNG sprite
 
 ### Added
 - **New PixelLab Shiba species** (species 1, seed 176): 🐶 柴犬 with dedicated PixelLab-generated walk/idle/play animations
