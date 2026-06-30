@@ -1,6 +1,7 @@
 import { PixelPetConfig, PixelGrid, PixelPetData, PixelPalette } from './types'
 import { seededRandom, RARITY_PALETTES, BODY_TEMPLATES, EYE_TEMPLATES, ACCESSORY_TEMPLATES, STAGE_EMBELLISHMENTS, SPECIES_NAMES } from './palette'
-import { PIXELAB_PALETTE, PIXELAB_CAT_IDLE } from './pixellab-cat-data'
+import { PIXELAB_PALETTE, PIXELAB_CAT_IDLE, type PixellabGrid } from './pixellab-cat-data'
+import { PIXELAB_SHIBA_IDLE } from './pixellab-shiba-data'
 
 const GRID_SIZE = 16
 
@@ -32,6 +33,36 @@ export function generatePixelPet(config: PixelPetConfig): PixelPetData {
       },
       speciesId: 0,
       speciesName: '圓貓',
+    }
+  }
+
+  // ── PixelLab Shiba (seed 176) special case ──
+  if (config.seed === 176) {
+    const grid: PixelGrid = []
+    for (let y = 0; y < 32; y++) {
+      grid[y] = []
+      for (let x = 0; x < 32; x++) {
+        const ch = PIXELAB_SHIBA_IDLE[0][y][x]
+        const idx = parseInt(ch, 10)
+        const c = PIXELAB_PALETTE[idx] || '#c2c3c7'
+        // Treat background index 6 as transparent
+        grid[y][x] = idx === 6 ? 'transparent' : c
+      }
+    }
+    return {
+      grid,
+      width: 32,
+      height: 32,
+      palette: {
+        primary: '#ffa300',        // orange body
+        secondary: '#fff1e8',       // beige belly/face
+        accent: '#ff77a8',          // pink tongue
+        eye: '#000000',             // black eyes
+        outline: '#ab5236',         // brown outline
+        glow: null,
+      },
+      speciesId: 1,
+      speciesName: '柴犬',
     }
   }
 

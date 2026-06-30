@@ -3,6 +3,9 @@ import {
   PIXELAB_PALETTE, PIXELAB_CAT_WALK, PIXELAB_CAT_IDLE, PIXELAB_CAT_PLAY,
   type PixellabGrid,
 } from './pixellab-cat-data'
+import {
+  PIXELAB_SHIBA_WALK, PIXELAB_SHIBA_IDLE, PIXELAB_SHIBA_PLAY,
+} from './pixellab-shiba-data'
 
 // ── Helpers ──
 const clone = (g: PixelGrid): PixelGrid => g.map(row => [...row])
@@ -34,6 +37,22 @@ function catIdle(_petData: PixelPetData): PixelGrid[] {
 
 function catPlay(_petData: PixelPetData): PixelGrid[] {
   return PIXELAB_CAT_PLAY.map(pixellabToGrid)
+}
+
+// ═══════════════════════════════════════════════
+//  SHIBA (species 1) — PixelLab-generated frames
+// ═══════════════════════════════════════════════
+
+function shibaWalk(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_SHIBA_WALK.map(pixellabToGrid)
+}
+
+function shibaIdle(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_SHIBA_IDLE.map(pixellabToGrid)
+}
+
+function shibaPlay(_petData: PixelPetData): PixelGrid[] {
+  return PIXELAB_SHIBA_PLAY.map(pixellabToGrid)
 }
 
 // ═══════════════════════════════════════════════
@@ -216,6 +235,8 @@ export function generateBlinkFrame(baseFrame: PixelGrid, petData: PixelPetData):
 export function generateWalkFrames(petData: PixelPetData): PixelGrid[] {
   // Cat (species 0) gets dedicated walk
   if (petData.speciesId === 0) return catWalk(petData)
+  // Shiba (species 1) gets dedicated walk
+  if (petData.speciesId === 1) return shibaWalk(petData)
 
   const style = getStyle(petData.speciesId)
   switch (style) {
@@ -233,6 +254,8 @@ export function generateWalkFrames(petData: PixelPetData): PixelGrid[] {
 export function generateIdleFrames(petData: PixelPetData): PixelGrid[] {
   // Cat (species 0) gets dedicated idle
   if (petData.speciesId === 0) return catIdle(petData)
+  // Shiba (species 1) gets dedicated idle
+  if (petData.speciesId === 1) return shibaIdle(petData)
 
   const style = getStyle(petData.speciesId)
   switch (style) {
@@ -247,6 +270,8 @@ export function generateIdleFrames(petData: PixelPetData): PixelGrid[] {
 export function generatePlayFrames(petData: PixelPetData): PixelGrid[] {
   // Cat (species 0) gets dedicated play
   if (petData.speciesId === 0) return catPlay(petData)
+  // Shiba (species 1) gets dedicated play
+  if (petData.speciesId === 1) return shibaPlay(petData)
 
   const style = getStyle(petData.speciesId)
   switch (style) {

@@ -23,6 +23,8 @@ const FRAME_DURATION = 180 // ms per frame
 
 // PixelLab cat speciesId
 const IS_PIXELLAB_PET = (pet: Pet | null) => pet?.speciesId === '175'
+// PixelLab Shiba speciesId (both old '23' and new '176')
+const IS_SHIBA_PET = (pet: Pet | null) => pet?.speciesId === '176' || pet?.speciesId === '23'
 
 export default function PetCompanion({
   pet, anim, steps, totalSteps, evolutionStage, skills,
@@ -49,7 +51,8 @@ export default function PetCompanion({
   // Generate pet pixel data + animation frames
   useEffect(() => {
     if (pet) {
-      const seed = parseInt(pet.speciesId) || 1
+      // Shiba (old or new) always uses seed 176 for the generator special case
+      const seed = IS_SHIBA_PET(pet) ? 176 : (parseInt(pet.speciesId) || 1)
       const data = generatePixelPet({
         seed,
         rarity: pet.rarity,
@@ -77,8 +80,8 @@ export default function PetCompanion({
     }
     petKeyRef.current = currentPetId
     if (!pet) { setStatus('fallback'); return }
-    // PixelLab cat — skip PNG, go straight to grid fallback
-    if (IS_PIXELLAB_PET(pet)) { setStatus('fallback'); return }
+    // PixelLab cat or Shiba — skip PNG, go straight to grid fallback
+    if (IS_PIXELLAB_PET(pet) || IS_SHIBA_PET(pet)) { setStatus('fallback'); return }
     const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
     // Shiba custom sprite
     const spritePath = (pet.speciesId === '176' || pet.speciesId === '23')
