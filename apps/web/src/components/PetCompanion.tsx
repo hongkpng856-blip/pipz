@@ -43,6 +43,7 @@ export default function PetCompanion({
   const xRef = useRef(0)
   const yRef = useRef(0)
   const bounceRef = useRef(0)
+  const facingLeft = useRef(false) // track horizontal facing
   const [status, setStatus] = useState<'loading' | 'png' | 'fallback'>('loading')
   const [behavior, setBehavior] = useState<Behavior>('idle')
   const [speciesName, setSpeciesName] = useState('')
@@ -161,8 +162,8 @@ export default function PetCompanion({
       const maxR = (W / 2) - MARGIN
       const maxY = (H / 2) - MARGIN
 
-      if (bx === 'walkLeft') { xRef.current -= speed; if (xRef.current < -maxR) behaviorTimer.current = 0 }
-      if (bx === 'walkRight') { xRef.current += speed; if (xRef.current > maxR) behaviorTimer.current = 0 }
+      if (bx === 'walkLeft') { xRef.current -= speed; facingLeft.current = true; if (xRef.current < -maxR) behaviorTimer.current = 0 }
+      if (bx === 'walkRight') { xRef.current += speed; facingLeft.current = false; if (xRef.current > maxR) behaviorTimer.current = 0 }
       if (bx === 'walkUp') { yRef.current -= speed; if (yRef.current < -maxY) behaviorTimer.current = 0 }
       if (bx === 'walkDown') { yRef.current += speed; if (yRef.current > maxY) behaviorTimer.current = 0 }
 
@@ -171,19 +172,22 @@ export default function PetCompanion({
 
       bounceRef.current = Math.max(0, bounceRef.current - 0.05)
 
-      const idleBob = bx === 'idle' ? Math.sin(timeRef.current * 3) * 1.5 : 0
-      const walkBob = (bx === 'walkLeft' || bx === 'walkRight') ? Math.abs(Math.sin(timeRef.current * 8)) * 2 : 0
-      const walkBobY = (bx === 'walkUp' || bx === 'walkDown') ? Math.abs(Math.sin(timeRef.current * 8)) * 2 : 0
+      // walk bob (minimal, only when walking)
+      const walkBob = (bx === 'walkLeft' || bx === 'walkRight') ? Math.abs(Math.sin(timeRef.current * 8)) * 1.5 : 0
+      const walkBobY = (bx === 'walkUp' || bx === 'walkDown') ? Math.abs(Math.sin(timeRef.current * 8)) * 1.5 : 0
       let mY = 0, mRot = 0
       if (bx === 'mischief') { mY = Math.abs(Math.sin(timeRef.current * 10)) * 10; mRot = Math.sin(timeRef.current * 6) * 0.2 }
 
+      // No idle bob — cat sits still and uses idle animation frames
       const cx = W / 2 + xRef.current
-      const cy = H / 2 + yRef.current + idleBob + walkBob + walkBobY - mY + (bounceRef.current * -20)
+      const cy = H / 2 + yRef.current + walkBob + walkBobY - mY + (bounceRef.current * -20)
 
-      // Shadow
+      // Shadow — size based on grid dimensions
+      const gridW = pd?.width || 16
+      const shadowScale = gridW / 16
       const shadowY = H / 2 + yRef.current + 2
       ctx.fillStyle = 'rgba(0,0,0,0.1)'
-      ctx.beginPath(); ctx.ellipse(cx, shadowY, 24 + Math.abs(walkBob) * 3, 3, 0, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.ellipse(cx, shadowY, (24 + Math.abs(walkBob) * 3) * shadowScale, 3 * shadowScale, 0, 0, Math.PI * 2); ctx.fill()
 
       if (oc && status === 'png') {
         // ── PNG path: draw with enhanced walk bob ──
@@ -208,20 +212,24 @@ export default function PetCompanion({
         // Choose frame based on behavior
         let frameGrid = anim.walkFrames[0]
         if (isMoving) {
+          // Use walk frames while moving
           frameGrid = anim.walkFrames[animFrameRef.current]
         } else if (bx === 'idle') {
-          // Blink every ~2 sec
-          const blinkTick = Math.floor(timeRef.current * 3) % 60
-          frameGrid = blinkTick === 0 ? anim.blinkFrame : anim.walkFrames[0]
+          // Idle: use idle frames (sit + blink)
+          const idleIdx = Math.floor(timeRef.current * 3) % anim.idleFrames.length
+          frameGrid = anim.idleFrames[idleIdx]
         } else {
-          // mischief: cycle frames
-          frameGrid = anim.walkFrames[Math.floor(timeRef.current * 6) % 4]
+          // Mischief/play: use play frames
+          const playIdx = Math.floor(timeRef.current * 6) % anim.playFrames.length
+          frameGrid = anim.playFrames[playIdx]
         }
 
         if (pd.palette.glow) { ctx.shadowColor = RARITY_COLORS[pet.rarity]; ctx.shadowBlur = 12 }
 
         ctx.save()
         ctx.translate(cx, cy)
+        // Mirror horizontally when walking left
+        if (facingLeft.current) ctx.scale(-1, 1)
         ctx.rotate(mRot)
         drawPixelGrid(ctx, frameGrid, ps, -pw / 2, -ph / 2)
         ctx.restore()
