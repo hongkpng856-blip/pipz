@@ -103,7 +103,7 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - 🥚 **孵化進度** / 🌟 **進化進度**: depending on pet state
 - **Walk button** moved to **header** (top-right area)
 - Green bg when idle, red bg when walking
-- **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 圓貓蛋 — egg saved to DB, shown in eggs tab
+- **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 蛋（50/50 cat or shiba）— egg saved to DB, shown in eggs tab
 
 ### Nearby Pets
 - Horizontal scroll row of recent pets
@@ -185,17 +185,41 @@ Only the 🐾 其他寵物 grid itself is scrollable — the energy card, team s
   - Active pet highlighted with brighter border
 - All pets not in `favorites` array (filtered out automatically)
 
-### PixelPetCanvas (`PixelPetCanvas.tsx`)
+### PixelPetCanvas (`PixelPetCanvas.tsx`) — v0.13+
 
-Canvas-based pet renderer with PNG sprite (primary) + procedural pixel fallback.
-**v0.9.0+**: fallback path now uses frame-by-frame pixel animation (walk cycle + blink).
+Canvas-based pet renderer with 3 rendering paths:
 
-**Sprite loading (optimized):**
+| Path | Used for | Method |
+|------|----------|--------|
+| **Grid animation** (primary) | PixelLab species (cat seed 175, shiba 23/176) | `generatePetAnimation()` + `drawPixelGrid()` |
+| **PNG sprite** (fallback) | Generic species (seed 0-49, excl PixelLab) | `ctx.drawImage()` from cached PNG |
+| **Procedural** (last resort) | When PNG fails to load | `generatePixelPet()` + frame animation |
+
+**PixelLab species auto-detection (v0.13+):**
+```typescript
+const IS_PIXELLAB = (seed: number) => seed === 175 || seed === 23 || seed === 176
+const effectiveForceGrid = forceGrid || isPixellab  // skip PNG loading
+
+// Old Shiba (seed 23) → new seed 176 for generator special case
+const effectiveSeed = (seed === 23 && isPixellab) ? 176 : seed
+
+// generatePixelPet uses effectiveSeed → returns proper 32×32 Shiba grid
+const pd = generatePixelPet({ seed: effectiveSeed, rarity, evolutionStage })
+```
+
+**32×32 Grid Size Normalization:**
+```typescript
+const gridSize = petDataRef.current?.width || (isPixellab ? 32 : 16)
+const sizeMult = 16 / gridSize  // 32×32 → 0.5, 16×16 → 1.0
+const effectivePixelVal = pixelVal * sizeMult
+```
+
+**Sprite loading (generic species only):**
 - **Global sprite cache**: all `PixelPetCanvas` instances share a `Map<speciesIdx, Canvas>` — the same species only loads once across the entire page
-- **128×128 source sprites** (resized from 768×768) — 36× fewer pixels to decode
-- Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png?v=SPRITE_VERSION` (PICO-8 dithered PNG, index determined by `getSpeciesIndex(seed) % 50`)
-- `onload` → draws PNG to offscreen canvas at 1:1 (no `removeBg()` — sprites already have proper RGBA transparency)
-- `onerror` → falls back to procedural `generatePixelPet()` (generated eagerly for animation data)
+- **128×128 source sprites** (resized from 768×768)
+- Loads `Image` from `/pixel-gen/sprites/${speciesIdx}.png?v=SPRITE_VERSION`
+- `onload` → draws PNG to offscreen canvas at 1:1
+- `onerror` → falls back to procedural `generatePixelPet()`
 
 **Animation system (v0.9.0+):**
 - `generatePetAnimation(petData)` creates:
@@ -205,7 +229,6 @@ Canvas-based pet renderer with PNG sprite (primary) + procedural pixel fallback.
 - **Idle state**: base frame with blink frame every ~2 seconds
 - **Happy state**: cycles all 4 frames at faster rate
 - **Fallback path**: `drawPixelGrid(ctx, frameGrid, pixelSize, offsetX, offsetY)` renders each frame
-- **PNG path**: still uses transform animation (upgrade path: replace static PNGs with AI-gen sprite sheets)
 
 **Rarity effects:**
 - Tint overlay: `fillRect` with rgba (common=`transparent`, uncommon=`#22c55e14`, rare=`#3b82f61a`, epic=`#8b5cf61f`, legendary=`#f59e0b26`)
@@ -227,6 +250,8 @@ Canvas-based pet renderer with PNG sprite (primary) + procedural pixel fallback.
 - `animation`: idle/walk/happy/jump
 - `size`: pixel multiplier (default 5)
 - `onClick`: sets bounceRef + callback
+- `forceGrid`: optional, skip PNG loading entirely
+- `noAnim`: static frame only, no animation loop
 
 ### Interaction Rules (critical)
 | Zone | Click/tap | Drag | Minus button | + button |
@@ -315,7 +340,8 @@ Full-screen overlay, max-width: 24rem centered.
 ### Pet Display Section
 - Large Canvas pet animation (happy state)
 - Rarity badge
-- **Species name**: `#圓貓` / `#小狗` / `#小龍` etc. (rendered via `D({seed, rarity, stage}).speciesName`)
+- **Species name**: `#圓貓` / `#柴犬` / `#小狗` etc. (rendered via `generatePixelPet({ seed: seed, ... }).speciesName`)
+  - Shiba seed mapping: old '23' → 176 so species name shows '柴犬' not random name
 - Level, CP, Stage name
 - **Mood emoji + text + mood bar**:
   - Mood emoji (😊/🤩/😋/😴/😢) + mood label (開心/興奮/肚餓/眼瞓/傷心)

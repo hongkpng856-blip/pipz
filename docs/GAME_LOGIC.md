@@ -183,11 +183,14 @@ return min(decay, 100)
 
 Pets use a **hybrid rendering system**: PNG sprites (PICO-8 style) as primary, procedural fallback when sprite fails to load.
 
-### Render Priority
+### Render Priority (v0.13+)
 ```
-1. PNG sprite → /pixel-gen/sprites/{speciesIdx}.png  (loaded into canvas)
-2. Fallback → procedural generatePixelPet() (16×16 grid)
+1. PixelLab species (cat seed 175, shiba seed 23/176) → grid animation (32×32 PixelLab frames)
+2. PNG sprite → /pixel-gen/sprites/{speciesIdx}.png (loaded into canvas, fallback)
+3. Procedural generatePixelPet() → (16×16 grid, last resort)
 ```
+
+> **Note:** PixelLab species (cat + shiba) ALWAYS skip PNG sprite loading and go straight to grid animation. This ensures transparent background + 4-frame animation per action.
 
 ### PNG Sprite System (Primary)
 
@@ -209,17 +212,24 @@ Pollinations.ai API → raw PNG (~30-50KB) → pico8 dither → resized 128×128
 
 **Species index lookup:** `getSpeciesIndex(seed) % 50` determines which sprite file to load.
 
-### Canvas Rendering (`PixelPetCanvas.tsx`)
+### Canvas Rendering (`PixelPetCanvas.tsx`) — v0.13+
+
+PixelLab species (cat + shiba) use **grid animation path**:
+- `IS_PIXELLAB(seed)` returns true for seeds 175 (cat), 23 and 176 (shiba)
+- `effectiveForceGrid = forceGrid || isPixellab` — forces grid rendering, skips PNG loading
+- `effectiveSeed = (seed === 23) ? 176 : seed` — maps old Shiba to new seed 176
+- `generatePixelPet({ seed: effectiveSeed, ... })` → returns proper species with 32×32 grid
+- 32×32 grids get canvas size normalization: `sizeMult = 16 / gridSize`
+
+For generic species (fallback):
 - **Global sprite cache**: all `PixelPetCanvas` instances share a `Map<speciesIdx, Canvas>` — same species loads only once
 - **128×128 source sprites** — no `removeBg()` needed (already have RGBA transparency)
 - Loads PNG via `new Image()` from `/pixel-gen/sprites/${speciesIdx}.png?v=${SPRITE_VERSION}`
 - On `onload`: draws PNG 1:1 to offscreen canvas, cached globally
-- On `onerror`: falls back to procedural `generatePixelPet()` **(lazy: only generated when PNG fails)**
+- On `onerror`: falls back to procedural `generatePixelPet()`
 - **Rarity tint overlay**: `fillRect` with rgba colour per rarity
 - **Rarity glow**: `ctx.shadowBlur` with rarity glow colour
-- **Legendary**: gold border + sparkle effect (corner highlights)
-- Canvas size: `(16 * pixelSize + 40)` wide × `(16 * pixelSize + 30)` tall
-- Animation loop: idle bob, walk offset, happy bounce, jump arc
+- Canvas size: `(16 * pixelSize + 40)` wide × `(16 * pixelSize + 30)` tall (adjusted for 32×32)
 - `imageRendering: 'pixelated'` CSS for sharp pixel scaling
 
 ### Procedural Fallback System
@@ -304,16 +314,17 @@ Every **2000 steps** accumulated while walking, a separate random egg encounter 
 
 | Interval | Chance | Egg Type |
 |----------|--------|----------|
-| Every 2000 steps | 40% | PixelLab 圓貓蛋 (species=cat) |
+| Every 2000 steps | 40% | PixelLab 蛋 (50/50 cat or shiba) |
 
 ```
 stepEggCounter % 2000 === 0 && Math.random() < 0.4 → spawn PixelLab egg
+  → Math.random() < 0.5 ? spawn PixelLab 圓貓蛋 : spawn 柴犬蛋
 ```
 
 - Independent from the 500-step pet encounter system — both can trigger during walking
 - Egg is saved to DB immediately, appears in Eggs tab
-- Console log: "🥚 行路發現咗圓貓蛋！"
-- Hatches into PixelLab 圓貓 cat (species 0) regardless of egg type
+- Console log: "🥚 行路發現咗圓貓蛋！" or "🥚 行路發現咗柴犬蛋！"
+- Hatches into PixelLab pet (cat or shiba) matching egg type
 
 ### Egg & Hatching Flow
 
@@ -414,7 +425,12 @@ Every pet has **3 distinct animations** — walk, idle, play — each with 4 pix
 | `idleFrames` | 4 | 180ms | normal → blink → ear/head twitch → normal |
 | `playFrames` | 4 | 120ms | bounce up → squish down → stretch right → stretch left |
 
-All 3 sets are generated procedurally from any `PixelPetData` (16×16 RGB grid) using pixel manipulation — no per-species asset pipeline needed. See `generatePetAnimation()` in the source.
+**PixelLab species** (cat + shiba) use **dedicated 32×32 pre-made frames** instead of procedural generation:
+- Cat (speciesId 0): `PIXELAB_CAT_WALK`, `PIXELAB_CAT_IDLE`, `PIXELAB_CAT_PLAY` from `pixellab-cat-data.ts`
+- Shiba (speciesId 1): `PIXELAB_SHIBA_WALK`, `PIXELAB_SHIBA_IDLE`, `PIXELAB_SHIBA_PLAY` from `pixellab-shiba-data.ts`
+- Fallback species (speciesId 2+): procedural `genWalkQuadruped()`, `genIdleTwitch()`, `genPlayJump()`
+
+All 3 sets are generated procedurally from any `PixelPetData` (16×16 RGB grid) using pixel manipulation — no per-species asset pipeline needed for fallback species. See `generatePetAnimation()` in the source.
 
 **Integration:**
 
