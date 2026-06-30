@@ -1,9 +1,40 @@
 import { PixelPetConfig, PixelGrid, PixelPetData, PixelPalette } from './types'
 import { seededRandom, RARITY_PALETTES, BODY_TEMPLATES, EYE_TEMPLATES, ACCESSORY_TEMPLATES, STAGE_EMBELLISHMENTS, SPECIES_NAMES } from './palette'
+import { PIXELAB_PALETTE, PIXELAB_CAT_IDLE } from './pixellab-cat-data'
 
 const GRID_SIZE = 16
 
 export function generatePixelPet(config: PixelPetConfig): PixelPetData {
+  // ── PixelLab cat (seed 175) special case ──
+  if (config.seed === 175) {
+    const grid: PixelGrid = []
+    for (let y = 0; y < 32; y++) {
+      grid[y] = []
+      for (let x = 0; x < 32; x++) {
+        const ch = PIXELAB_CAT_IDLE[0][y][x]
+        const idx = parseInt(ch, 10)
+        const c = PIXELAB_PALETTE[idx] || '#c2c3c7'
+        // Treat background index 6 as transparent
+        grid[y][x] = idx === 6 ? 'transparent' : c
+      }
+    }
+    return {
+      grid,
+      width: 32,
+      height: 32,
+      palette: {
+        primary: '#ffa300',        // orange body
+        secondary: '#fff1e8',       // beige belly/face
+        accent: '#ff77a8',          // pink details
+        eye: '#29adff',             // blue eyes
+        outline: '#ab5236',         // brown outline
+        glow: null,
+      },
+      speciesId: 0,
+      speciesName: '圓貓',
+    }
+  }
+
   const rand = seededRandom(config.seed)
   
   // Select palette based on rarity
@@ -156,6 +187,8 @@ export function pixelPetToDataURL(data: PixelPetData, pixelSize: number = 3): st
 
 // Get the species index (0-49) from a seed, matching generatePixelPet's logic
 export function getSpeciesIndex(seed: number): number {
+  // PixelLab cat (seed 175) is hardcoded as species 0
+  if (seed === 175) return 0
   const rand = seededRandom(seed)
   rand() // skip first rand() call (palette selection in generatePixelPet)
   return Math.floor(rand() * 50) // second rand() is body/species index

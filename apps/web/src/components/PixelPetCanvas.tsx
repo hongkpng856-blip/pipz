@@ -17,6 +17,9 @@ interface Props {
   noAnim?: boolean     // No animation, static frame only
 }
 
+// PixelLab cat (seed 175) uses 32×32 pixel data
+const IS_PIXELLAB = (seed: number) => seed === 175
+
 // Rarity tint overlays (PICO-8 inspired accent colors)
 const RARITY_TINTS: Record<string, string> = {
   common: 'rgba(255,255,255,0)',
@@ -79,8 +82,13 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const yOffsetRef = useRef(0)
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
+
+  // Auto-detect PixelLab cat — force grid rendering
+  const isPixellab = IS_PIXELLAB(seed)
+  const effectiveForceGrid = forceGrid || isPixellab
+
   const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
-    forceGrid ? 'fallback' : (spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading')
+    effectiveForceGrid ? 'fallback' : (spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading')
   )
 
   const speciesIdx = getSpeciesIndex(seed)
@@ -94,7 +102,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   // Load PNG sprite (with cache) — skip if forceGrid
   useEffect(() => {
-    if (forceGrid) return
+    if (effectiveForceGrid) return
     let cancelled = false
     const cached = spriteCache.get(speciesIdx)
     if (cached !== undefined) {
@@ -260,9 +268,9 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   }, [animate])
 
   const pixelVal = typeof size === 'number' ? size : 5
-  const spriteGridSize = 16
-  const canvasW = spriteGridSize * pixelVal + 40
-  const canvasH = spriteGridSize * pixelVal + 30
+  const gridSize = petDataRef.current?.width || (isPixellab ? 32 : 16)
+  const canvasW = gridSize * pixelVal + 40
+  const canvasH = gridSize * pixelVal + 30
 
   const handleClick = () => {
     onClick?.()

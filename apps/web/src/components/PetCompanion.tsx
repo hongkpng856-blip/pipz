@@ -23,6 +23,9 @@ const SPRITE_VERSION = 'v5'
 const MARGIN = 50
 const FRAME_DURATION = 180 // ms per frame
 
+// PixelLab cat speciesId
+const IS_PIXELLAB_PET = (pet: Pet | null) => pet?.speciesId === '175'
+
 export default function PetCompanion({
   pet, anim, steps, totalSteps, evolutionStage, skills, themedEgg, hatchProgress,
 }: Props) {
@@ -65,7 +68,7 @@ export default function PetCompanion({
     }
   }, [pet])
 
-  // Load PNG sprite
+  // Load PNG sprite — skip for PixelLab cat
   useEffect(() => {
     let cancelled = false
     const currentPetId = pet?.id ?? null
@@ -75,6 +78,8 @@ export default function PetCompanion({
     }
     petKeyRef.current = currentPetId
     if (!pet) { setStatus('fallback'); return }
+    // PixelLab cat — skip PNG, go straight to grid fallback
+    if (IS_PIXELLAB_PET(pet)) { setStatus('fallback'); return }
     const idx = getSpeciesIndex(parseInt(pet.speciesId) || 1)
     const img = new Image()
     img.crossOrigin = 'anonymous'
