@@ -764,13 +764,13 @@ export default function HomePage() {
     logMsg('🐱 圓貓（PixelLab）誕生！')
   }
 
-  // ── Spawn PixelLab Shiba (species 1, seed 176) ──
+  // ── Spawn PixelLab Shiba (species 1, seed 23 → 小狗) ──
   const spawnShiba = async () => {
     const np: Pet = {
       id: `shiba-${Date.now()}`,
       userId: user?.id ?? 'local',
       name: '柴犬',
-      speciesId: '176',
+      speciesId: '23',
       imageUrl: '',
       rarity: Rarity.Uncommon,
       level: 3,
