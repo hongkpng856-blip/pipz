@@ -15,29 +15,7 @@ import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, upd
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
-// Demo PixelLab cat for unauthenticated users
-const DEMO_CAT: Pet = {
-  id: 'demo-cat',
-  userId: 'demo',
-  name: '圓貓',
-  speciesId: '175',
-  imageUrl: '',
-  rarity: Rarity.Rare,
-  level: 1,
-  xp: 0,
-  totalSteps: 0,
-  evolutionStage: 2,
-  status: PetStatus.Adult,
-  stats: { speed: 5, luck: 5, charm: 5, energy: 100 },
-  skills: [],
-  mood: Mood.Happy,
-  moodValue: 100,
-  lastFedAt: Date.now(),
-  lastInteractionAt: Date.now(),
-  createdAt: Date.now(),
-  isForSale: false,
-  price: 0,
-}
+// Demo PixelLab cat for unauthenticated users — NO LONGER USED, removed
 
 const PC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
@@ -62,8 +40,6 @@ export default function HomePage() {
   const [eggs, setEggs] = useState<EggItem[]>([])
   const [activeIdx, setActiveIdx] = useState(0)
   const [walking, setWalking] = useState(false)
-  const [showEgg, setShowEgg] = useState(false)
-  const [hatching, setHatching] = useState(false)
   const [petAnim, setPetAnim] = useState<'idle'|'walk'|'happy'>('idle')
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
@@ -87,12 +63,6 @@ export default function HomePage() {
       if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
       return null
     }) // most recently hatched pet, persisted in localStorage
-    // ── Demo egg for guest users ──
-    const [demoHatched, setDemoHatched] = useState(false)
-    const [demoHatchReady, setDemoHatchReady] = useState(false)
-    const DEMO_HATCH_STEPS = 200 // quick hatch for testing
-    const demoStepsRef = useRef(0)
-    const [demoProgress, setDemoProgress] = useState(0)
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
   const [marketListings, setMarketListings] = useState<Pet[]>([])
@@ -135,7 +105,7 @@ export default function HomePage() {
   const encCnt = useRef(0)
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
 
-  const pet = pets[activeIdx] ?? (!user ? (demoHatched ? DEMO_CAT : null) : null)
+  const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
   const xpMax = (p: Pet) => p.level * 50
   const xpPct = (p: Pet) => Math.min(100, (p.xp / xpMax(p)) * 100)
@@ -418,14 +388,7 @@ export default function HomePage() {
     setTotalSteps(s => {
       const newTotal = s + finalSteps
 
-      // ── Demo egg progress (guest users without pets) ──
-      const curUser = userRef.current
-      if (!curUser && curPets.length === 0 && !demoHatched) {
-        demoStepsRef.current += finalSteps + bonus
-        const pct = Math.min(1, demoStepsRef.current / DEMO_HATCH_STEPS)
-        setDemoProgress(pct)
-        if (pct >= 1) setDemoHatchReady(true)
-      }
+      // ── Demo egg for guests removed — no auto-eggs
 
       // Milestone check (side-effect free)
       const oldM = MILESTONES.filter(m => s >= m).length
@@ -736,13 +699,6 @@ export default function HomePage() {
 
   // ── Pet action helpers (deprecated: removed feed/pet/play) ──
 
-  // ── Demo egg hatch (guest users) ──
-  const hatchDemoEgg = () => {
-    setDemoHatched(true)
-    setDemoHatchReady(false)
-    logMsg('🐱 圓貓孵化成功！試下行路啦！')
-  }
-
   // ── Spawn PixelLab cat (species 0, seed 175) ──
   const spawnPixelLabCat = async () => {
     const np: Pet = {
@@ -975,28 +931,7 @@ export default function HomePage() {
                     totalSteps={totalSteps}
                     evolutionStage={pet?.evolutionStage ?? 1}
                     skills={pet?.skills ?? []}
-                    themedEgg={!user && !demoHatched ? 'cat' : undefined}
-                    hatchProgress={demoProgress}
                   />
-                  {/* Demo egg hatch button */}
-                  {!user && !demoHatched && !demoHatchReady && (
-                    <div style={{padding:'8px 16px 14px', textAlign:'center', borderTop:'1px solid #1e2a45'}}>
-                      <div style={{fontSize:9, color:'#5a6d85'}}>行路或開 Dev 工具加速孵化</div>
-                    </div>
-                  )}
-                  {!user && !demoHatched && demoHatchReady && (
-                    <div style={{padding:'8px 16px 14px', textAlign:'center', borderTop:'1px solid #1e2a45'}}>
-                      <button onClick={hatchDemoEgg}
-                        style={{
-                          padding:'8px 24px', borderRadius:20, border:'none',
-                          background:'linear-gradient(135deg,#d4845a,#8a5a3a)',
-                          color:'white', fontSize:13, fontWeight:700, cursor:'pointer',
-                          fontFamily:'inherit',
-                        }}>
-                        🐣 孵化圓貓！
-                      </button>
-                    </div>
-                  )}
                 </div>{/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
                 <div style={{padding:'14px 16px'}}>
@@ -1498,12 +1433,6 @@ export default function HomePage() {
                         style={{fontSize:10, padding:'4px 10px'}}>
                         🧪 全能測試寵物
                       </button>
-                      {!user && !demoHatched && (
-                        <button className="btn" onClick={hatchDemoEgg}
-                          style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
-                          🐣 立即孵化圓貓
-                        </button>
-                      )}
                       {/* ── PixelLab cat for logged-in users ── */}
                       {user && (
                         <>
@@ -1806,48 +1735,6 @@ export default function HomePage() {
           onChoose={handleEventChoice}
           onDismiss={() => setCurrentEvent(null)}
         />
-      )}
-
-      {/* ════ First Pet Egg (showEgg) ════ */}
-      {showEgg && !hatching && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:100,
-          display:'flex', alignItems:'center', justifyContent:'center',
-          background:'rgba(0,0,0,0.75)',
-          padding:16,
-        }} onClick={() => setShowEgg(false)}>
-          <div style={{
-            background:'#141b2d', border:'2px solid #8b5cf644',
-            borderRadius:20, padding:28, maxWidth:280, width:'100%', textAlign:'center',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{fontSize:52, marginBottom:8, animation:'wiggle 0.6s ease-in-out infinite'}}>🥚</div>
-            <div style={{fontSize:15, fontWeight:800, color:'#f0f4f8', marginBottom:4}}>
-              行夠 1,000 步啦！🎉
-            </div>
-            <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
-              第一隻寵物等緊你！孵化佢啦～
-            </div>
-            <div style={{display:'flex', gap:8, justifyContent:'center'}}>
-              <button onClick={() => setShowEgg(false)}
-                style={{
-                  padding:'10px 20px', border:'1px solid #2a3a5a',
-                  background:'#1a2338', color:'#94a5b8', fontSize:12, fontWeight:600,
-                  cursor:'pointer', fontFamily:'inherit', borderRadius:14,
-                }}>
-                睇多陣
-              </button>
-              <button onClick={hatch}
-                style={{
-                  padding:'10px 24px', border:'none',
-                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)', color:'white',
-                  fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  borderRadius:14, display:'flex', alignItems:'center', gap:6,
-                }}>
-                🐣 孵化！
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* ════ New Pet Popup (after hatching) ════ */}
