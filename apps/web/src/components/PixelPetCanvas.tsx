@@ -194,12 +194,11 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
     if (!noAnim) {
       switch (animation) {
         case 'walk': {
-            // Walk in place: vertical bounce + direction flip, NO lateral sway
-            // (frames face left by default; flip when moving right so head faces movement)
-            const dir = Math.sin(timeRef.current * 2.5)
+            // Walk in place: vertical bounce only, NO lateral sway or direction flip
+            // (xOff=0 means no horizontal movement, so no flip needed)
             xOff = 0
             yOff = Math.abs(Math.sin(timeRef.current * 4)) * 3
-            flipRef.current = dir > 0  // face right when moving right
+            flipRef.current = false  // always face default direction (no lateral movement)
             break
           }
         case 'happy': {
