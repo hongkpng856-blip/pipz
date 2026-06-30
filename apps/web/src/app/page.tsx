@@ -1818,7 +1818,7 @@ export default function HomePage() {
                   rarity={pet.rarity}
                   evolutionStage={pet.evolutionStage}
                   animation="happy"
-                  size={6}
+                  size={4}
                 />
                 <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
                   🌟 進化可能！

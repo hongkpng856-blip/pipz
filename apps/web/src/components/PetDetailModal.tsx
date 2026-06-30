@@ -179,7 +179,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
               {/* Center: Pet Canvas */}
               <div style={{
                 background: `radial-gradient(circle,${PC[pet.rarity]}22,transparent 70%)`,
-                width: 100, height: 100, borderRadius: '50%',
+                width: 140, height: 140, borderRadius: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 4px', flexShrink: 0,
               }}>
@@ -188,7 +188,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                   rarity={pet.rarity}
                   evolutionStage={pet.evolutionStage}
                   animation="happy"
-                  size={6}
+                  size={4}
                 />
               </div>
 

@@ -206,7 +206,7 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
       }
     } else if (status === 'fallback' && pd && anim) {
       // ── Fallback path: frame-by-frame pixel animation ──
-      const pixelSize = size as number
+      const pixelSize = (size as number) * (16 / pd.width)
       const gridW = pd.width * pixelSize
       const gridH = pd.height * pixelSize
       const startX = (cw - gridW) / 2 + xOff
@@ -269,8 +269,11 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   const pixelVal = typeof size === 'number' ? size : 5
   const gridSize = petDataRef.current?.width || (isPixellab ? 32 : 16)
-  const canvasW = gridSize * pixelVal + 40
-  const canvasH = gridSize * pixelVal + 30
+  // Normalize: 32×32 grids use smaller pixel size so total canvas is comparable to 16×16
+  const sizeMult = 16 / gridSize
+  const effectivePixelVal = pixelVal * sizeMult
+  const canvasW = Math.round(gridSize * effectivePixelVal + 40)
+  const canvasH = Math.round(gridSize * effectivePixelVal + 30)
 
   const handleClick = () => {
     onClick?.()
