@@ -9,3 +9,4 @@ apps/web/out/
 .vercel
 .sbp_token.sh
 token.txt
+*.bak

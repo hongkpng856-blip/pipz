@@ -13,6 +13,11 @@
 ### Fixed
 - 解決「粉紅耳仔」— palette conversion artifact，原生 PixelLab 10色 palette 限制
 - Shiba walk animation 完整 4-frame stride cycle（之前只有 static pose）
+- **寵物頁面白底問題**：PixelPetCanvas 同 PetDetailModal 改用 grid animation fallback，移除 `/pixel-gen/sprites/shiba.png`
+  - `PixelPetCanvas.tsx`: IS_PIXELLAB 包含 seed 23/176 → forceGrid
+  - `PetDetailModal.tsx`: seed mapping for species name
+  - 刪除舊 shiba.png（白底源頭）
+- `.gitignore`: 加 `*.bak` pattern
 
 ### Fixed
 - **Shiba rendering fix**: 移除 external PNG sprite（白底 + static image），改用 grid animation system（transparent bg + walk/idle/play 3種動畫）
