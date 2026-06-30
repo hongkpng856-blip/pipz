@@ -17,8 +17,8 @@ interface Props {
   noAnim?: boolean     // No animation, static frame only
 }
 
-// PixelLab pets (seed 175 only for now)
-const IS_PIXELLAB = (seed: number) => seed === 175
+// PixelLab pets (cat seed 175, shiba seeds 23 and 176)
+const IS_PIXELLAB = (seed: number) => seed === 175 || seed === 23 || seed === 176
 
 // Rarity tint overlays (PICO-8 inspired accent colors)
 const RARITY_TINTS: Record<string, string> = {
@@ -107,9 +107,12 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
   const walkDirRef = useRef(1)
   const timeRef = useRef(0)
 
-  // Auto-detect PixelLab cat — force grid rendering
+  // Auto-detect PixelLab cat and shiba — force grid rendering
   const isPixellab = IS_PIXELLAB(seed)
   const effectiveForceGrid = forceGrid || isPixellab
+
+  // Map old Shiba seed (23) to new seed (176) for generator special case
+  const effectiveSeed = (seed === 23 && isPixellab) ? 176 : seed
 
   const [status, setStatus] = useState<'loading' | 'fallback' | 'png'>(
     effectiveForceGrid ? 'fallback' : (spriteCache.has(getSpeciesIndex(seed)) ? 'png' : 'loading')
@@ -119,10 +122,10 @@ export default function PixelPetCanvas({ seed, rarity, evolutionStage, animation
 
   // Generate pixel data + animation frames
   useEffect(() => {
-    const pd = generatePixelPet({ seed, rarity, evolutionStage })
+    const pd = generatePixelPet({ seed: effectiveSeed, rarity, evolutionStage })
     petDataRef.current = pd
     animRef.current = generatePetAnimation(pd)
-  }, [seed, rarity, evolutionStage])
+  }, [effectiveSeed, rarity, evolutionStage])
 
   // Load PNG sprite (with cache) — skip if forceGrid
   useEffect(() => {

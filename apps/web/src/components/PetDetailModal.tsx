@@ -44,7 +44,10 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
   const canEvolve = calculateEvolution(pet.totalSteps, pet.evolutionStage, pet.stats)
   const cp = pet.stats.speed + pet.stats.luck + pet.stats.charm + pet.stats.energy
   const speciesName = useMemo(() => {
-    const data = generatePixelPet({ seed: parseInt(pet.speciesId) || 1, rarity: pet.rarity, evolutionStage: pet.evolutionStage })
+    // Map old Shiba (23) and new Shiba (176) to seed 176 for proper species name
+    const sId = parseInt(pet.speciesId) || 1
+    const seed = (sId === 23 || sId === 176) ? 176 : sId
+    const data = generatePixelPet({ seed, rarity: pet.rarity, evolutionStage: pet.evolutionStage })
     return data.speciesName
   }, [pet.speciesId, pet.rarity, pet.evolutionStage])
 
