@@ -17,8 +17,8 @@ interface Props {
   noAnim?: boolean     // No animation, static frame only
 }
 
-// PixelLab cat (seed 175) uses 32×32 pixel data
-const IS_PIXELLAB = (seed: number) => seed === 175
+// PixelLab pets (seeds 175+) use 32×32 pixel data
+const IS_PIXELLAB = (seed: number) => seed === 175 || seed === 176
 
 // Rarity tint overlays (PICO-8 inspired accent colors)
 const RARITY_TINTS: Record<string, string> = {
