@@ -174,8 +174,8 @@ export default function PetCompanion({
 
       if (bx === 'walkLeft') { xRef.current -= speed; facingLeft.current = true; if (xRef.current < -maxR) behaviorTimer.current = 0 }
       if (bx === 'walkRight') { xRef.current += speed; facingLeft.current = false; if (xRef.current > maxR) behaviorTimer.current = 0 }
-      if (bx === 'walkUp') { yRef.current -= speed; if (yRef.current < -maxY) behaviorTimer.current = 0 }
-      if (bx === 'walkDown') { yRef.current += speed; if (yRef.current > maxY) behaviorTimer.current = 0 }
+      if (bx === 'walkUp') { yRef.current -= speed; facingLeft.current = !framesFaceRight; if (yRef.current < -maxY) behaviorTimer.current = 0 }
+      if (bx === 'walkDown') { yRef.current += speed; facingLeft.current = !framesFaceRight; if (yRef.current > maxY) behaviorTimer.current = 0 }
 
       xRef.current = Math.max(-maxR, Math.min(maxR, xRef.current))
       yRef.current = Math.max(-maxY, Math.min(maxY, yRef.current))
