@@ -163,6 +163,11 @@ export default function PetCompanion({
       const speed = 0.8
       const isMoving = bx === 'walkLeft' || bx === 'walkRight' || bx === 'walkUp' || bx === 'walkDown'
 
+      // Per-species frame facing direction: PixelLab cat faces RIGHT, everything else faces LEFT
+      const framesFaceRight = !!pet && IS_PIXELLAB_PET(pet)
+      // Flip logic: if frames face RIGHT, flip when walking LEFT; otherwise flip when walking RIGHT
+      const shouldFlip = framesFaceRight ? facingLeft.current : !facingLeft.current
+
       // Roaming boundaries (symmetric)
       const maxR = (W / 2) - MARGIN
       const maxY = (H / 2) - MARGIN
@@ -204,8 +209,8 @@ export default function PetCompanion({
 
         ctx.save()
         ctx.translate(cx, cy + mRot * 10)
-        // Flip PNG sprite when walking RIGHT (assumes sprites face LEFT by default)
-        if (!facingLeft.current) ctx.scale(-1, 1)
+        // Flip sprite based on species facing direction + walking direction
+        if (shouldFlip) ctx.scale(-1, 1)
         ctx.rotate(mRot)
         ctx.drawImage(oc, -sw / 2, -sh / 2, sw, sh)
         ctx.restore()
@@ -235,8 +240,8 @@ export default function PetCompanion({
 
         ctx.save()
         ctx.translate(cx, cy)
-        // Mirror horizontally — frames face LEFT, flip when walking RIGHT
-        if (!facingLeft.current) ctx.scale(-1, 1)
+        // Mirror based on species facing direction
+        if (shouldFlip) ctx.scale(-1, 1)
         ctx.rotate(mRot)
         drawPixelGrid(ctx, frameGrid, ps, -pw / 2, -ph / 2)
         ctx.restore()
