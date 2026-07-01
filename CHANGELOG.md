@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.14.4 (2026-07-01)
+
+### Fixed
+- **Per-species flip 方向**：Cat frames 面向 **RIGHT**（鼻在眼左邊），Shiba 同 generic species frames 面向 **LEFT**
+  - Cat: `facingLeft → scale(-1,1)`（向左行先 flip）
+  - Shiba/其他: `!facingLeft → scale(-1,1)`（向右行先 flip）
+  - PetCompanion 兩個 path（PNG + fallback）都用 `shouldFlip` condition
+- **PixelPetCanvas oscillating flip**：Walk animation `flipRef` 之前跟 `Math.sin` oscillate（即使 `xOff=0`），set 做 constant `false` — 冇 lateral movement 就唔需要 flip
+- **Merge regression `4d38115`**：Clean-flip merge 唔小心 re-add 咗 `xOff = dir * 6`（lateral sway），還原做 `xOff = 0`
+
+### Changed
+- PetCompanion: 新增 `framesFaceRight` + `shouldFlip` per-species flip detection
+- PixelPetCanvas walk case: 移除 `flipRef = dir > 0`，改為 `flipRef = false`
+
+## v0.14.3 (2026-07-01)
+
+### Fixed
+- **PixelPetCanvas PNG path 方向 flip**：全部 generic species 用 PNG path 但 **冇 flip** → 所有非 PixelLab 寵物向右行時倒後行
+- **PetCompanion PNG path 方向 flip**：同上，generic species 嘅 companion view 都冇 flip
+- 兩個 component × 兩個 rendering path = 4 個 code path 全部加齊 flip
+
+## v0.14.2 (2026-07-01)
+
+### Fixed
+- **PetCompanion flip logic 反轉**：`if (facingLeft.current) scale(-1,1)` → frames 面向 LEFT，flip 咗變面向 RIGHT，行緊左但望右 → 倒後行
+- 改為 `if (!facingLeft.current) scale(-1,1)`（向右行先 flip）
+
+## v0.14.1 (2026-07-01)
+
+### Fixed
+- **PixelPetCanvas 橫向移動 regression**：Merge `4d38115`（clean-flip → main）re-add 咗 lateral sway（`xOff = dir * 6`），令 PixelPetCanvas walk 再次「倒後行」
+- 還原 `xOff = 0`（zero lateral sway）
+
 ## v0.14.0 (2026-07-18)
 
 ### Fixed
