@@ -777,18 +777,27 @@ body { position: fixed; }
   50% { opacity: 0.6; box-shadow: 0 0 6px 3px rgba(68,204,255,0.15); }
 }
 
-/* Dark pixel-style Leaflet popup (for future quest points) */
+/* Dark Leaflet popup for pet marker */
 .leaflet-popup-content-wrapper {
   background: #141b2d !important;
-  color: #f0f4f8 !important;
-  border: 2px solid #1e2a45 !important;
-  border-radius: 8px !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #2a3a5a !important;
+  border-radius: 12px !important;
   font-family: inherit !important;
-  font-size: 12px !important;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.4) !important;
+  font-size: 13px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  overflow: visible !important;
+}
+.leaflet-popup-content {
+  margin: 8px 10px !important;
+  overflow: visible !important;
 }
 .leaflet-popup-tip {
   background: #141b2d !important;
-  border: 2px solid #1e2a45 !important;
+  border: 1px solid #2a3a5a !important;
+}
+/* Prevent popup clipping */
+.real-map-container .leaflet-popup-pane {
+  z-index: 9999 !important;
 }
 
