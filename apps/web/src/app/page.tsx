@@ -96,6 +96,8 @@ export default function HomePage() {
 
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
+  const gpsWarmup = useRef(0) // skip first N readings for GPS stabilization
+  const gpsLastTime = useRef(0) // timestamp of last valid GPS reading
   const loadedUser = useRef<string|null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
   const pendingSteps = useRef(0)
@@ -328,15 +330,37 @@ export default function HomePage() {
   const walkStart = () => {
     if (!navigator.geolocation) return logMsg('❌ 唔支援 GPS')
     setWalking(true); setPetAnim('walk'); logMsg('🚶 開始行路！')
+    gpsWarmup.current = 0
+    gpsLastTime.current = 0
     wid.current = navigator.geolocation.watchPosition(
       pos => {
-        if (pos.coords.accuracy > 100) return
+        // ── GPS warmup: skip first 5 readings (sensor stabilisation) ──
+        gpsWarmup.current++
+        if (gpsWarmup.current <= 5) {
+          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          return
+        }
+        // ── Skip inaccurate readings ──
+        if (pos.coords.accuracy > 50) return
+        // ── Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
+        if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed < 0.5) return
+        // ── Time gate: ignore updates faster than 3s apart (GPS noise) ──
+        const now = Date.now()
+        if (gpsLastTime.current > 0 && now - gpsLastTime.current < 3000) return
+        gpsLastTime.current = now
+
         if (last.current) {
           const d = haversine(last.current.lat, last.current.lng, pos.coords.latitude, pos.coords.longitude)
-          const ns = Math.floor(d * 1300)
-          if (ns > 0) addSt(ns)
+          // ── Min 5m displacement to count as real walking ──
+          if (d > 5) {
+            const ns = Math.floor(d * 1300)
+            addSt(ns)
+            last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          }
+        } else {
+          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         }
-        last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
       },
       () => { setWalking(false); setPetAnim('idle') },
@@ -1116,28 +1140,90 @@ export default function HomePage() {
                       </div>
                     )
                   })()}
+                </div>              {/* ── close stats card padding ── */}
+              </div>                {/* ── close stats card ── */}
 
-                  {/* ── Event progress bar ── */}
-                  <div style={{marginTop:10}}>
-                    <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
-                      <span>🎲 下次事件</span>
-                      <span>{eventStepCounter.current} / {INV} 步</span>
+              {/* ── 探險進度 ── 打怪拎獎品風格 ── */}
+              <div className="section card" style={{marginTop:12, padding:0, overflow:'hidden'}}>
+                <div style={{padding:'12px 14px', background:'linear-gradient(135deg, #1a2338 0%, #1e2a45 100%)', borderBottom:'1px solid #2a3a5a'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+                        <span style={{fontSize:18}}>🎮</span>
+                        <span style={{fontSize:11, fontWeight:700, color:'#e2e8f0', letterSpacing:'0.03em'}}>探險進度</span>
+                        <span style={{fontSize:8, color:'#5a6d85', marginLeft:'auto'}}>行路・冒險・拎獎</span>
+                      </div>
+
+                      {/* ── 事件進度 ── */}
+                      <div style={{marginBottom:user ? 10 : 0}}>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+                          <div style={{display:'flex', alignItems:'center', gap:5}}>
+                            <span style={{fontSize:13}}>⚔️</span>
+                            <span style={{fontSize:9, color:'#c4b5fd', fontWeight:600}}>下一次事件</span>
+                          </div>
+                          <span style={{fontSize:8, color:'#94a5b8'}}>
+                            <span style={{color:'#c4b5fd', fontWeight:700}}>{eventStepCounter.current}</span> / {INV} 步
+                          </span>
+                        </div>
+                        <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
+                          <div className="progress-fill" style={{
+                            width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`,
+                            background:'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
+                            height:10, borderRadius:6, position:'relative',
+                            boxShadow:'0 0 8px rgba(168,85,247,0.4)',
+                          }}>
+                            {/* Chest icon at milestone */}
+                            {eventStepCounter.current >= INV * 0.75 && (
+                              <span style={{position:'absolute', right:-2, top:-8, fontSize:14, filter:'drop-shadow(0 0 3px #f59e0b)'}}>🎁</span>
+                            )}
+                          </div>
+                          {/* Milestone markers */}
+                          <div style={{position:'absolute', top:0, left:'25%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                          <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                          <div style={{position:'absolute', top:0, left:'75%', width:2, height:10, background:'#f59e0b44', borderLeft:'1px dashed #f59e0b88'}} />
+                        </div>
+                        <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
+                          <span>🎲 事件</span>
+                          <span>🎲 事件</span>
+                          <span>🎲 事件</span>
+                          <span style={{color:'#f59e0b88'}}>🎁 獎勵!</span>
+                        </div>
+                      </div>
+
+                      {/* ── 蛋進度 (登入後) ── */}
+                      {user && (
+                        <div style={{marginTop:8}}>
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+                            <div style={{display:'flex', alignItems:'center', gap:5}}>
+                              <span style={{fontSize:13}}>🥚</span>
+                              <span style={{fontSize:9, color:'#86efac', fontWeight:600}}>遇蛋機會</span>
+                            </div>
+                            <span style={{fontSize:8, color:'#94a5b8'}}>
+                              <span style={{color:'#86efac', fontWeight:700}}>{eggStepCounter.current}</span> / 2000 步
+                            </span>
+                          </div>
+                          <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
+                            <div className="progress-fill" style={{
+                              width:`${Math.min(100,(eggStepCounter.current/2000)*100)}%`,
+                              background:'linear-gradient(90deg, #16a34a, #22c55e, #4ade80)',
+                              height:10, borderRadius:6,
+                              boxShadow:'0 0 8px rgba(34,197,94,0.4)',
+                            }}>
+                              {eggStepCounter.current >= 2000 * 0.8 && (
+                                <span style={{position:'absolute', right:-2, top:-9, fontSize:14, filter:'drop-shadow(0 0 3px #22c55e)'}}>🥚</span>
+                              )}
+                            </div>
+                            <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                            <div style={{position:'absolute', top:0, left:'100%', width:2, height:10, background:'#22c55e44', borderLeft:'1px dashed #22c55e88'}} />
+                          </div>
+                          <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
+                            <span>🥚 蛋</span>
+                            <span>🥚 蛋</span>
+                            <span style={{color:'#22c55e88'}}>🥚 40%!</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`, background:'#8b5cf6'}}/></div>
                   </div>
 
-                  {/* ── Egg progress bar (logged-in only) ── */}
-                  {user && (
-                    <div style={{marginTop:6}}>
-                      <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
-                        <span>🥚 下次遇蛋</span>
-                        <span>{eggStepCounter.current} / 2000 步</span>
-                      </div>
-                      <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(eggStepCounter.current/2000)*100)}%`, background:'#22c55e'}}/></div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           )}
 
