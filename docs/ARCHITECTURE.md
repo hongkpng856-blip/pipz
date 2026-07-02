@@ -38,6 +38,11 @@ Pipz/
 │       │   ├── components/
 │       │   │   ├── PixelPet.tsx         # (deprecated) Old SVG pet
 │       │   │   ├── PixelPetCanvas.tsx   # Canvas pet renderer + animation
+│       │   │   ├── RealMap.tsx          # Leaflet GPS map with pixel art pet marker
+│       │   │   ├── EventModal.tsx       # Roguelike event popup
+│       │   │   ├── InventoryModal.tsx   # Equipment/consumables modal
+│       │   │   ├── ProfileModal.tsx     # User profile modal
+│       │   │   ├── NotificationModal.tsx# Notification popup
 │       │   │   └── PetDetailModal.tsx   # Pet detail screen
 │       │   └── lib/
 │       │       ├── auth-context.tsx     # Auth provider + hooks
@@ -78,6 +83,20 @@ User interacts ← Pet displayed ← Pet stored in Supabase
 Feed / Pet / Play → Mood + XP updates → Evolution check
 ```
 
+### Map Marker Data Flow (v0.15.0+)
+
+```
+activePet (from page.tsx state) 
+  → RealMap props
+    → buildPetIcon() 
+      → petSpriteDataUrl(pet)
+        → generatePixelPet({ seed, rarity, evolutionStage })
+        → drawPixelGrid(canvas, grid, pixelSize)
+        → canvas.toDataURL() (base64 PNG)
+      → L.divIcon({ html: `<img src="${dataUrl}">` })
+    → marker.setIcon(divIcon)
+```
+
 ## Auth Flow
 
 ```
@@ -97,9 +116,9 @@ Feed / Pet / Play → Mood + XP updates → Evolution check
 | Pure CSS | Tailwind v4 broke mid-project |
 | Brevo SMTP | Free tier, no domain required |
 | Vercel | Free hosting, auto-deploy from GitHub |
-| Canvas pixel art | Free, no API key needed for procedural fallback; PICO-8 PNG sprites via Pollinations.ai for primary display |
+| Canvas pixel art | Free, no API key needed for procedural fallback; PICO-8 PNG sprites via Pollinations.ai for primary display; `generatePixelPet()` + `drawPixelGrid()` on Leaflet map marker via canvas `toDataURL()` |
 | Monorepo | Core logic reusable across platforms |
-| client-side auth callback | Server-side always returned null user |
+| Client-side auth callback | Server-side always returned null user |
 | Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |
 | Env vars via vercel.json | `SUPABASE_SERVICE_ROLE_KEY` set in `vercel.json` at project root + `apps/web/.env.production` for Next.js |
 

@@ -436,7 +436,7 @@ All 3 sets are generated procedurally from any `PixelPetData` (16×16 RGB grid) 
 
 - **`PixelPetCanvas.tsx`** (detail cards, modal): accepts `animation="idle" | "walk" | "play"` and cycles the correct frame set
 - **`PetCompanion.tsx`** (interactive pet room canvas, not currently used in map tab): cycles between idle → roam (walk) → play behaviors autonomously, mapping each behavior to its frame set
-- **`RealMap.tsx`** (map tab): Leaflet GPS map — shows pet marker icon, no canvas animation needed
+- **`RealMap.tsx`** (map tab): Leaflet GPS map — shows pet marker as **pixel art sprite** rendered via `generatePixelPet()` + `drawPixelGrid()` → canvas `toDataURL()` → `<img>` inside `L.divIcon`. The marker always shows the active battle pet with rarity-coloured border + glow. No pet → 🥚 emoji with rarity tint. Sprite regenerates when `pet` prop changes.
 - **Frame rendering**: `drawPixelGrid(ctx, frameGrid, pixelSize)` draws the current frame onto Canvas via `requestAnimationFrame`
 
 **PNG sprite path (Tier 2):**

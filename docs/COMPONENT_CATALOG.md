@@ -46,31 +46,48 @@ The entire app is a single page with 5 tabs and modals.
 
 The map tab always displays the `RealMap` component — a Leaflet GPS map with dark pixel-styled tiles. GPS tracking is optional:
 
-| GPS Tracking | Component | Behavior |
-|------------|-----------|------|
-| ON (`walking && mapPos`) | RealMap | Live GPS — shows blue dot + trail + accuracy circle + pet marker |
-| OFF | RealMap | Static map centered on default Hong Kong location — no tracking |
+| | GPS Tracking | Component | Behavior |
+|---|---|---|---|
+|| ON (`walking && mapPos`) | RealMap | Live GPS — shows blue dot + trail + accuracy circle + pet marker |
+|| OFF | RealMap | Static map centered on default Hong Kong location — no tracking |
 
-The map is always the same `RealMap` component; the `walking` and `position` props control whether GPS tracking features (live position marker, path trail, accuracy circle) are active.
+The map is always the same `RealMap` component; the `walking` and `position` props control whether GPS tracking features are enabled.
+
+**Layout order (v0.15.0+):**
+```
+┌─────────────────────────────────┐
+│      🎮 探險進度 (adventure)     │  ← NEW: first element
+├─────────────────────────────────┤
+│      🗺️ Leaflet RealMap        │
+├─────────────────────────────────┤
+│      📊 Stats Card              │
+└─────────────────────────────────┘
+```
 
 #### RealMap (🗺️ Leaflet GPS Map)
-Rendered by `RealMap.tsx`. Always shown in the map tab.
+Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dynamic` to avoid SSR errors (`{ ssr: false }`).
 
-**Component:** `apps/web/src/components/RealMap.tsx`
+**Component:** `apps/web/src/src/components/RealMap.tsx`
 
 **Tech:**
 - Leaflet (`npm install leaflet`) — dynamically imported with `next/dynamic` to avoid SSR errors
 - CartoDB dark tiles (`{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`) — free, matches dark theme
 - OSM tiles with CSS `image-rendering: pixelated` for retro pixel effect
+- `@pipz/core` imports `generatePixelPet()` + `drawPixelGrid()` for pet sprite rendering
 
 **Layout:**
 - Full-width card with `section card` wrapper
 - Leaflet map container at 4:3 aspect ratio, min 240px height
-- **User marker**: cyan circle marker (`#44ccff`) at GPS position
+- **User marker**: custom `L.divIcon` containing **pixel art sprite** of the active battle pet (via `petSpriteDataUrl()` — canvas → base64 PNG data URL → `<img>` element):
+  - 44×44px round container with rarity-coloured 3px border
+  - Inner 36×36px pixel art image (`image-rendering: pixelated`)
+  - Rarity glow shadow (`box-shadow: 0 0 14px ${rarityColor}66`)
+  - Rarity colour map: Common `#9ca3af`, Uncommon `#22c55e`, Rare `#3b82f6`, Epic `#8b5cf6`, Legendary `#f59e0b`
+  - **No pet logged in**: shows 🥚 emoji with rarity tint
+  - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
-- **Pet marker**: custom `divIcon` with pixel-style pill badge (🐱 or 🐾 emoji in rarity-colored dot) — follows user position
 - **Path trail**: dashed cyan polyline tracing the user's walking path (last ~200 points)
-- **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label
+- **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label (only visible when `walking=true`)
 
 **Position tracking:**
 - GPS position received via `position` prop (from `mapPos` state in `page.tsx`)
@@ -81,7 +98,7 @@ Rendered by `RealMap.tsx`. Always shown in the map tab.
 **CSS styles** (in `globals.css`):
 - `.real-map-container`: container sizing
 - `.real-map-container .leaflet-tile`: `image-rendering: pixelated` + saturate/contrast filter
-- `.pipz-pet-marker` / `.pipz-pet-dot`: custom pixel-style pet marker
+- `.pipz-player-marker`: custom pixel-style pet marker (className overridden from Leaflet default)
 - `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
 - `.leaflet-popup-content-wrapper`: dark pixel popup theme (ready for future quest points)
 
@@ -90,10 +107,12 @@ Rendered by `RealMap.tsx`. Always shown in the map tab.
 │     [🗺️ Leaflet GPS Map]        │
 │  ┌───────────────────────────┐  │
 │  │   🗺️ CartoDB dark tiles   │  │
-│  │   ┌─────┐                 │  │
-│  │   │🐱 • │ ← user + pet    │  │
-│  │   │•••••│ ← path trail    │  │
-│  │   └─────┘                 │  │
+│  │       ┌────────┐          │  │
+│  │       │ 🐱 px │ ← pet    │  │
+│  │       │ art    │   pixel  │  │
+│  │       │ sprite │   art!   │  │
+│  │       └────────┘          │  │
+│  │    ••••• ← path trail     │  │
 │  │                    [GPS ●]│  │
 │  └───────────────────────────┘  │
 ├─────────────────────────────────┤

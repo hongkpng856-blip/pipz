@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.15.0 (2026-07-03)
+
+### Added
+- **Map marker → pixel art sprite**: RealMap now renders the active pet's actual pixel art (via `generatePixelPet()` + `drawPixelGrid()` → canvas `toDataURL()` → `<img>` inside Leaflet `L.divIcon`). Rarity-coloured border (3px) + glow. No pet → 🥚 with rarity tint. 🖼️
+- **探險進度 card at top of map tab**: Adventure progress card (🎮 探險進度) moved to be the **first element** in map tab — above the map and stats card. Contains:
+  - ⚔️ 下一次事件 progress bar (gradient purple fill, milestone markers, 🎁 reward indicator)
+  - 🥚 遇蛋機會 progress bar (gradient green fill, 2000-step interval, 40% indicator)
+- **`petSpriteDataUrl()` in RealMap**: new helper function converts pet's pixel grid to a base64 PNG data URL for use in Leaflet markers
+
+### Changed
+- **Map tab layout order**: 🎮 探險進度 → 🗺️ Map → 📊 Stats Card (previously stats was above adventure)
+
 ## v0.14.6 (2026-07-02)
 
 ### Added

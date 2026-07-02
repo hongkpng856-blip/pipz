@@ -92,7 +92,7 @@ export default function RealMap({ position, walking, pet }: Props) {
     const map = L.map(containerRef.current, {
       center: [22.3193, 114.1694],
       zoom: 18,
-      zoomControl: false,
+      zoomControl: true,
       attributionControl: false,
     })
 
