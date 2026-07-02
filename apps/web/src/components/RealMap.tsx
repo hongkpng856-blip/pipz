@@ -114,6 +114,32 @@ export default function RealMap({ position, walking, pet }: Props) {
     }).addTo(map)
     userMarkerRef.current = userM
 
+    // ── Marker popup ──
+    const rarityLabel: Record<string, string> = {
+      common: '普通', uncommon: '稀有', rare: '珍貴', epic: '史詩', legendary: '傳說',
+    }
+    function updatePopup(p: Props['pet']) {
+      if (!p) {
+        userM.bindPopup(`
+          <div style="text-align:center;padding:4px 8px;font-family:system-ui,sans-serif;min-width:120px;">
+            <div style="font-size:28px;margin-bottom:4px;">🥚</div>
+            <div style="color:#9ca3af;font-size:13px;font-weight:600;">未有出戰寵物</div>
+          </div>
+        `)
+        return
+      }
+      const rc = RC[p.rarity] || '#9ca3af'
+      const label = rarityLabel[p.rarity] || p.rarity
+      userM.bindPopup(`
+        <div style="text-align:center;padding:4px 8px;font-family:system-ui,sans-serif;min-width:140px;">
+          <img src="${petSpriteDataUrl(p)}" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 6px;" />
+          <div style="color:${rc};font-size:13px;font-weight:700;">${label}</div>
+          <div style="color:#c4b5fd;font-size:11px;margin-top:2px;">Lv.${p.evolutionStage ?? 1}</div>
+        </div>
+      `)
+    }
+    updatePopup(pet)
+
     // ── Accuracy circle ──
     const accC = L.circle([0, 0], {
       radius: 50,
@@ -145,6 +171,28 @@ export default function RealMap({ position, walking, pet }: Props) {
   useEffect(() => {
     if (userMarkerRef.current) {
       userMarkerRef.current.setIcon(buildPetIcon())
+      // Also update popup content
+      const p = pet
+      const rc = p ? (RC[p.rarity] || '#9ca3af') : '#9ca3af'
+      const rarityLabel: Record<string, string> = {
+        common: '普通', uncommon: '稀有', rare: '珍貴', epic: '史詩', legendary: '傳說',
+      }
+      if (!p) {
+        userMarkerRef.current.bindPopup(`
+          <div style="text-align:center;padding:4px 8px;font-family:system-ui,sans-serif;min-width:120px;">
+            <div style="font-size:28px;margin-bottom:4px;">🥚</div>
+            <div style="color:#9ca3af;font-size:13px;font-weight:600;">未有出戰寵物</div>
+          </div>
+        `)
+      } else {
+        userMarkerRef.current.bindPopup(`
+          <div style="text-align:center;padding:4px 8px;font-family:system-ui,sans-serif;min-width:140px;">
+            <img src="${petSpriteDataUrl(p)}" style="width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto 6px;" />
+            <div style="color:${rc};font-size:13px;font-weight:700;">${rarityLabel[p.rarity] || p.rarity}</div>
+            <div style="color:#c4b5fd;font-size:11px;margin-top:2px;">Lv.${p.evolutionStage ?? 1}</div>
+          </div>
+        `)
+      }
     }
   }, [pet, buildPetIcon])
 
