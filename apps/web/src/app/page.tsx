@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
+import ModalPortal from '../components/ModalPortal'
 const RealMap = dynamic(() => import('../components/RealMap'), { ssr: false })
 import PetDetailModal from '../components/PetDetailModal'
 import EventModal from '../components/EventModal'
@@ -1773,12 +1774,15 @@ export default function HomePage() {
         </div>
       </div>
 
+      <ModalPortal>
       <NotificationModal
         open={showNotifications}
         onClose={() => { setShowNotifications(false); if (user) fetch(`/api/notifications?userId=${user.id}`).then(r => r.json()).then(d => setNotifUnread((d.notifications ?? []).filter((n: any) => !n.read).length)).catch(() => {}) }}
         userId={user?.id ?? null}
       />
+      </ModalPortal>
 
+      <ModalPortal>
       <ProfileModal
         open={showProfile}
         onClose={() => setShowProfile(false)}
@@ -1789,10 +1793,13 @@ export default function HomePage() {
         eggCount={eggs.length}
         onSignOut={() => signOut()}
       />
+      </ModalPortal>
 
+      <ModalPortal>
       <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+      </ModalPortal>
 
-      {/* ════ Inventory ── */}
+      <ModalPortal>
       {showInventory && (
         <InventoryModal
           inventory={inventory}
@@ -1801,7 +1808,9 @@ export default function HomePage() {
           onClose={() => setShowInventory(false)}
         />
       )}
+      </ModalPortal>
 
+      <ModalPortal>
       {/* ════ Pet detail modal ── */}
       {detailPetId && (() => {
         const detailPet = pets.find(p => p.id === detailPetId) ?? marketListings.find(p => p.id === detailPetId)
@@ -1847,6 +1856,9 @@ export default function HomePage() {
           />
         )
       })()}
+      </ModalPortal>
+
+      <ModalPortal>
       {showEvolve && pet && canEvolve && (
         <div className="fixed-modal-layer" style={{
           display:'flex', alignItems:'center', justifyContent:'center',
@@ -1906,7 +1918,9 @@ export default function HomePage() {
           </div>
         </div>
       )}
+      </ModalPortal>
 
+      <ModalPortal>
       {/* ════ Roguelike event ── */}
       {currentEvent && (
         <EventModal
@@ -1915,7 +1929,9 @@ export default function HomePage() {
           onDismiss={() => setCurrentEvent(null)}
         />
       )}
+      </ModalPortal>
 
+      <ModalPortal>
       {/* ════ New Pet Popup (after hatching) ════ */}
       {newPetId && (() => {
         const newPet = pets.find(p => p.id === newPetId)
@@ -1988,6 +2004,7 @@ export default function HomePage() {
           </div>
         )
       })()}
+      </ModalPortal>
 
     </div>
   )
