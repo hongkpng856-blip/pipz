@@ -96,6 +96,10 @@ export default function RealMap({ position, walking, pet }: Props) {
       attributionControl: false,
     })
 
+    // Leaflet bug workaround: explicitly add zoom control
+    ;(map as any).zoomControl = L.control.zoom({ position: 'topleft' })
+    ;(map as any).zoomControl.addTo(map)
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       minZoom: 10,
