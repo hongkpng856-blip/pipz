@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
-import PetCompanion from '../components/PetCompanion'
 const RealMap = dynamic(() => import('../components/RealMap'), { ssr: false })
 import PetDetailModal from '../components/PetDetailModal'
 import EventModal from '../components/EventModal'
@@ -1005,24 +1004,11 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* ── Map / PetCompanion (switch based on GPS walking) ── */}
+              {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
                 <RealMap position={mapPos} walking={walking} pet={pet} />
               ) : (
-                favorites.length > 0 && pet && (
-                <div className="section card" style={{
-                  padding:0, overflow:'hidden', position:'relative', width:'100%',
-                }}>
-                  <PetCompanion
-                    pet={pet}
-                    anim={petAnim}
-                    steps={steps}
-                    totalSteps={totalSteps}
-                    evolutionStage={pet?.evolutionStage ?? 1}
-                    skills={pet?.skills ?? []}
-                  />
-                </div>
-                )
+                <RealMap position={null} walking={false} pet={pet} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
