@@ -92,11 +92,11 @@ export default function RealMap({ position, walking, pet }: Props) {
     const map = L.map(containerRef.current, {
       center: [22.3193, 114.1694],
       zoom: 18,
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: false,
     })
 
-    // Leaflet bug workaround: explicitly add zoom control
+    // Add zoom control (explicitly to avoid double instances)
     ;(map as any).zoomControl = L.control.zoom({ position: 'topleft' })
     ;(map as any).zoomControl.addTo(map)
 
@@ -127,10 +127,10 @@ export default function RealMap({ position, walking, pet }: Props) {
 
     // ── Path trail ──
     const trail = L.polyline([], {
-      color: '#44ccff',
-      weight: 2,
-      opacity: 0.3,
-      dashArray: '4 4',
+      color: '#00ddff',
+      weight: 3,
+      opacity: 0.6,
+      dashArray: '6 4',
     }).addTo(map)
     trailRef.current = trail
 
