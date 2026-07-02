@@ -666,11 +666,11 @@ body { position: fixed; }
   position: relative;
 }
 
-/* Pixelate map tiles for retro effect */
+/* Pixelate map tiles for retro game look */
 .real-map-container .leaflet-tile {
   image-rendering: pixelated;
-  image-rendering: -webkit-optimize-contrast;
-  filter: saturate(0.85) contrast(1.1);
+  image-rendering: -webkit-crisp-edges;
+  filter: saturate(0.5) contrast(1.4) brightness(1.15);
 }
 
 /* Dark-themed zoom controls */

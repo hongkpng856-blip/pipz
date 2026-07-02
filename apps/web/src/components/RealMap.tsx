@@ -91,7 +91,7 @@ export default function RealMap({ position, walking, pet }: Props) {
 
     const map = L.map(containerRef.current, {
       center: [22.3193, 114.1694],
-      zoom: 18,
+      zoom: 17,
       zoomControl: false,
       attributionControl: false,
     })
@@ -103,6 +103,7 @@ export default function RealMap({ position, walking, pet }: Props) {
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       minZoom: 10,
+      maxNativeZoom: 16, // pixel upscale: tiles > z16 are scaled up → blocky pixel look
     }).addTo(map)
 
     mapRef.current = map
