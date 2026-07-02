@@ -670,8 +670,8 @@ body { position: fixed; }
 .real-map-container .leaflet-tile {
   image-rendering: pixelated;
   image-rendering: -webkit-crisp-edges;
-  /* CartoDB light tiles → high contrast retro pixel look */
-  filter: saturate(0.1) contrast(3.5) brightness(1.1);
+  /* CartoDB dark tiles → brightened + high contrast retro pixel look */
+  filter: brightness(1.6) saturate(0.3) contrast(1.3);
 }
 
 /* Dark-themed zoom controls */
