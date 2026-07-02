@@ -1194,34 +1194,6 @@ export default function HomePage() {
                     </div>
                   )}
 
-                  {/* Bar: 總步數進度 */}
-                  <div style={{marginBottom:10}}>
-                    <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
-                      <span>📈 總步數進度</span>
-                      <span>{formatSteps(totalSteps)}步</span>
-                    </div>
-                    <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/10000)*100)}%`, background:'linear-gradient(90deg, #8b5cf6, #22d3ee)'}}/></div>
-                  </div>
-
-                  {/* 進化進度（只喺有寵物時顯示） */}
-                  {pet && pet.evolutionStage < 5 && (() => {
-                    const nextStep = (() => {
-                      if (pet.evolutionStage === 1) return 10000
-                      if (pet.evolutionStage === 2) return 30000
-                      if (pet.evolutionStage === 3) return 60000
-                      if (pet.evolutionStage === 4) return 100000
-                      return 999999
-                    })()
-                    return (
-                      <div>
-                        <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
-                          <span>🌟 進化進度</span>
-                          <span>{formatSteps(totalSteps)} / {formatSteps(nextStep)}</span>
-                        </div>
-                        <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(totalSteps/nextStep)*100)}%`, background:'#f59e0b'}}/></div>
-                      </div>
-                    )
-                  })()}
                 </div>              {/* ── close stats card padding ── */}
               </div>                {/* ── close stats card ── */}
 

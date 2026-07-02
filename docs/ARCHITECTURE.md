@@ -17,7 +17,7 @@ Pipz is a mobile-first web app where users walk in real life to hatch and evolve
 | Hosting | Vercel (auto-deploy from GitHub main) |
 | PWA | Service worker + Manifest (standalone, iOS home screen) |
 | Icon generation | Sharp (lightning SVG → 192/512 PNG) |
-| Animation | HTML Canvas + Leaflet (GPS map) |
+| Map tiles | CartoDB Voyager (Google Maps-style, clean light tiles, no API key needed) |
 | Monorepo | npm workspaces |
 
 ## Project Structure

@@ -44,7 +44,7 @@ The entire app is a single page with 5 tabs and modals.
 
 ### Main View: RealMap (always visible)
 
-The map tab always displays the `RealMap` component — a Leaflet GPS map with dark pixel-styled tiles. GPS tracking is optional:
+The map tab always displays the `RealMap` component — a Leaflet GPS map with CartoDB Voyager tiles (Google Maps-style, clean light background). GPS tracking is optional:
 
 | | GPS Tracking | Component | Behavior |
 |---|---|---|---|
@@ -71,9 +71,8 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 
 **Tech:**
 - Leaflet (`npm install leaflet`) — dynamically imported with `next/dynamic` to avoid SSR errors
-- CartoDB dark tiles (`{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`) — free, matches dark theme
-- OSM tiles with CSS `image-rendering: pixelated` for retro pixel effect
-- `@pipz/core` imports `generatePixelPet()` + `drawPixelGrid()` for pet sprite rendering
+- **CartoDB Voyager tiles** (`{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png`) — Google Maps-style, clean light background, clear roads/labels, green parks, blue water
+- `@pipz/core` imports `generatePixelPet()` + `drawPixelGrid()` for pet marker sprite rendering
 
 **Layout:**
 - Full-width card with `section card` wrapper
@@ -86,7 +85,7 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
   - **No pet logged in**: shows 🥚 emoji with rarity tint
   - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
-- **Path trail**: dashed cyan polyline tracing the user's walking path (last ~200 points)
+- **Path trail**: dashed deep-cyan polyline (`#00ddff`, weight 3, opacity 0.6) tracing the user's walking path (last ~200 points)
 - **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label (only visible when `walking=true`)
 
 **Position tracking:**
@@ -96,21 +95,22 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 - Trail resets when walking stops
 
 **CSS styles** (in `globals.css`):
-- `.real-map-container`: container sizing
-- `.real-map-container .leaflet-tile`: `image-rendering: pixelated` + saturate/contrast filter
-- `.pipz-player-marker`: custom pixel-style pet marker (className overridden from Leaflet default)
+- `.real-map-container`: container sizing (4:3 aspect ratio, min-height 240px)
+- `.real-map-container .leaflet-tile`: default rendering (no pixel/CSS filters applied)
+- `.pipz-player-marker`: custom pet marker style (removes Leaflet default bg/border)
 - `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
-- `.leaflet-popup-content-wrapper`: dark pixel popup theme (ready for future quest points)
+- `.leaflet-control-zoom`: dark-theme styled zoom control (blend with app theme)
+- `.leaflet-popup-content-wrapper`: dark popup theme (ready for future quest points)
 
 ```
 ┌─────────────────────────────────┐
-│     [🗺️ Leaflet GPS Map]        │
+│     [🗺️ Leaflet Voyager Map]    │
 │  ┌───────────────────────────┐  │
-│  │   🗺️ CartoDB dark tiles   │  │
+│  │  🗺️ CartoDB Voyager       │  │
+│  │  (clean, Google Maps-like)  │  │
 │  │       ┌────────┐          │  │
 │  │       │ 🐱 px │ ← pet    │  │
-│  │       │ art    │   pixel  │  │
-│  │       │ sprite │   art!   │  │
+│  │       │ sprite │   marker  │  │
 │  │       └────────┘          │  │
 │  │    ••••• ← path trail     │  │
 │  │                    [GPS ●]│  │
@@ -119,6 +119,8 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 │       Stats Card (unchanged)    │
 └─────────────────────────────────┘
 ```
+
+**v0.16.0 change:** Map tiles switched from CartoDB dark_all (with pixel CSS filters + maxNativeZoom) to CartoDB Voyager — clean Google Maps-style rendering with no pixel effects.
 
 #### ~~PetCompanion~~ *(no longer used in map tab)*
 The PetCompanion component (interactive pet room canvas) was previously shown when GPS walking was off. As of v0.14.5, the map tab always shows RealMap instead — PetCompanion is no longer imported or rendered in `page.tsx`. The component still exists in the codebase for potential future use.
@@ -141,8 +143,6 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - **Skill hints below total steps**: amber `⚡ 能量過載` badge (shown automatically when active pet has the effect)
 - Three bars:
   - 📊 **今日進度**: today's steps / 5,000 goal
-  - 📈 **總步數進度**: total steps / 10,000 milestone
-  - 🥚 **孵化進度** / 🌟 **進化進度**: depending on pet state
 - **Walk button** moved to **header** (top-right area)
 - Green bg when idle, red bg when walking
 - **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 蛋（50/50 cat or shiba）— egg saved to DB, shown in eggs tab

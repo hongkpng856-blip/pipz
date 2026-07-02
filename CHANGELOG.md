@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.16.0 (2026-07-03)
+
+### Changed
+- **Map tiles switched to Google Maps style**: Replaced pixel-art styled tiles (CartoDB dark_all + CSS filters + maxNativeZoom) with **CartoDB Voyager** tiles — clean, light background, clear roads/labels, green parks, blue water. Similar to Google Maps. 🗺️
+- **Removed all pixel CSS filters**: No more `image-rendering: pixelated`, `maxNativeZoom`, `saturate/contrast/invert` filters. Clean standard map rendering.
+- **Removed `maxNativeZoom`**: Tiles now load at native resolution at every zoom level — no upscaling artifacts.
+
+### Removed
+- **總步數進度 bar** (📈) from stats card — removed total steps progress bar
+- **進化進度 section** (🌟) from stats card — removed evolution progress bar with per-stage step requirements
+
 ## v0.15.0 (2026-07-03)
 
 ### Added
