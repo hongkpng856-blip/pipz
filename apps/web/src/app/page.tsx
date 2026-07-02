@@ -1452,7 +1452,8 @@ export default function HomePage() {
                 </>
               )}
 
-              {/* ── Dev Tools ── */}
+              {/* ── Dev Tools (dev mode only) ── */}
+              {process.env.NODE_ENV === 'development' && (
               <div className="section" style={{marginTop:16}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
@@ -1549,6 +1550,7 @@ export default function HomePage() {
                   </div>
                 )}
               </div>
+              )}
             </div>
           )}
 
