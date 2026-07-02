@@ -100,10 +100,10 @@ export default function RealMap({ position, walking, pet }: Props) {
     ;(map as any).zoomControl = L.control.zoom({ position: 'topleft' })
     ;(map as any).zoomControl.addTo(map)
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       minZoom: 10,
-      maxNativeZoom: 14, // tiles above z14 → 4x pixel upscale
+      maxNativeZoom: 15, // tiles above z15 → pixel upscale
     }).addTo(map)
 
     mapRef.current = map
