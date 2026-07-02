@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.18.0 (2026-07-03)
+
+### Fixed
+- **Modal popups invisible on mobile**: Added `inset: 0` to `.fixed-modal-layer` and `.fixed-modal-layer-top` CSS classes. Without it, `position: fixed` elements had no positioning — modals rendered at their DOM position (below nav, off-screen on mobile). Now covers full viewport correctly. 🖼️
+- **Event popup overlapped with new pet popup**: Auto-dismiss new pet popup when an event triggers (`addSt` → `rollEvent` → `dismissNewPet()` before `setCurrentEvent`). Prevents two overlays stacking.
+- **Simulation interval stale closure**: Added `addStRef` to ensure `setInterval` callback inside simulation always calls the latest `addSt` function, preventing stale render-context bugs with event checks.
+- **Event `pet` check used closure instead of ref**: Changed `if (... && pet)` to `if (... && petRef.current)` in `addSt` event trigger, consistent with other ref-based state reads in the function.
+
+### Added
+- **🗑️ 刪除 pet button in Dev Tools**: New `deleteActivePet()` function removes current active pet from state, favorites, and database (if logged in). Red "🗑️ 刪除" button in the quick modify section.
+
 ## v0.17.0 (2026-07-03)
 
 ### Fixed
