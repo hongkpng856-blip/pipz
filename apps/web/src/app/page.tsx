@@ -1008,6 +1008,119 @@ export default function HomePage() {
 
         {/* ── Main ── */}
         <div className="main">
+              {/* ── Dev Tools (global) ── */}
+              <div>
+                <button onClick={() => setShowDevTools(!showDevTools)}
+                  style={{
+                    background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.15)',
+                    color:'#60a5fa', fontSize:10, cursor:'pointer', fontFamily:'inherit',
+                    padding:'3px 12px', width:'100%', textAlign:'center', borderRadius:8,
+                    marginBottom: showDevTools ? 0 : 12,
+                  }}>
+                  🔧 {showDevTools ? '收起 Dev 工具 ▲' : 'Dev 工具 ▼'}
+                </button>
+                {showDevTools && (
+                  <div className="card" style={{padding:12}}>
+                    {/* ── GPS Control ── */}
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                      <button
+                        onClick={walking ? walkStop : walkStart}
+                        style={{
+                          background: walking ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.15)',
+                          border: walking ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(34,197,94,0.3)',
+                          cursor:'pointer', color: walking ? '#ef4444' : '#22c55e',
+                          fontSize:14, padding:'4px 12px', borderRadius:10,
+                          fontFamily:'inherit', lineHeight:1,
+                        }}>
+                        {walking ? '⏹ 熄GPS' : '📡 開GPS'}
+                      </button>
+                      {walking && <span style={{fontSize:10, color:'#22c55e'}}>🟢 GPS 運作中</span>}
+                    </div>
+                    {/* ── Walk Simulation + Steps ── */}
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                      <button className="btn btn-ghost" onClick={forceEvent}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        🎲 Event
+                      </button>
+                      <button className="btn btn-ghost" onClick={addDebug}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        +500 步
+                      </button>
+                      <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
+                        onClick={() => setSimulating(v => !v)}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        {simulating ? '⏹ 停止' : '🚶 模擬'}
+                      </button>
+                      {/* Speed toggle */}
+                      {[1,5,10,50].map(s => (
+                        <button key={s}
+                          onClick={() => { setSimSpeed(s); if (!simulating) setSimulating(true) }}
+                          style={{
+                            fontSize:9, padding:'2px 8px', cursor:'pointer', fontFamily:'inherit',
+                            background: simSpeed === s ? '#8b5cf644' : 'transparent',
+                            border: simSpeed === s ? '1px solid #8b5cf6' : '1px solid #2a3a5a',
+                            color: simSpeed === s ? '#c4b5fd' : '#5a6d85',
+                            borderRadius:6,
+                          }}>
+                          {s}x
+                        </button>
+                      ))}
+                      <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
+                        {simulating ? `🟢 ${simSpeed}x` : '🛰️ GPS'}
+                      </span>
+                    </div>
+
+                    {/* ── Test Pet ── */}
+                    <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
+                      <button className="btn btn-primary" onClick={createTestPet}
+                        style={{fontSize:10, padding:'4px 10px'}}>
+                        🧪 全能測試寵物
+                      </button>
+                      {/* ── PixelLab cat for logged-in users ── */}
+                      {user && (
+                        <>
+                          <button className="btn" onClick={addPixelLabEgg}
+                            style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
+                            🥚 圓貓蛋
+                          </button>
+                          <button className="btn" onClick={addShibaEgg}
+                            style={{fontSize:10, padding:'4px 10px', background:'rgba(168,120,200,0.15)', border:'1px solid rgba(168,120,200,0.3)', color:'#a878c8', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
+                            🥚 柴犬蛋
+                          </button>
+                        </>   
+                      )}
+                    </div>
+
+                    {/* ── Quick Modify (only when pet exists) ── */}
+                    {pets[activeIdx] && (
+                      <div style={{background:'#1a2338', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
+                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                          ⚡ 快速修改 — Lv.{pets[activeIdx].level} Stage.{pets[activeIdx].evolutionStage}
+                        </div>
+                        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                          <button className="btn btn-ghost" onClick={levelUpPet}
+                            style={{fontSize:9, padding:'3px 8px'}}>⬆️ 升 Lv</button>
+                          <button className="btn btn-ghost" onClick={() => addPetSteps(10000)}
+                            style={{fontSize:9, padding:'3px 8px'}}>👣 +10K 步</button>
+                          <button className="btn btn-ghost" onClick={evolvePet}
+                            style={{fontSize:9, padding:'3px 8px'}}>🌟 進化</button>
+                          <button className="btn btn-ghost" onClick={maxOutPet}
+                            style={{fontSize:9, padding:'3px 8px'}}>💪 MAX</button>
+                        </div>
+                      </div>
+                    )}
+
+                    {log.length > 0 && (
+                      <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
+                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em'}}>記錄</div>
+                        {log.slice(0, 3).map((m,i) => (
+                          <div key={i} style={{fontSize:10, color:'#94a5b8', padding:'1px 0'}}>{m}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
           {/* ════ Loading ════ */}
           {loading ? (
@@ -1516,118 +1629,6 @@ export default function HomePage() {
                 </>
               )}
 
-              {/* ── Dev Tools ── */}
-              <div className="section" style={{marginTop:16}}>
-                <button onClick={() => setShowDevTools(!showDevTools)}
-                  style={{
-                    background:'none', border:'none', color:'#3a4d65',
-                    fontSize:10, cursor:'pointer', fontFamily:'inherit',
-                    padding:'4px 0', width:'100%', textAlign:'center',
-                  }}>
-                  🔧 {showDevTools ? '收起 Dev 工具' : 'Dev 工具'}
-                </button>
-                {showDevTools && (
-                  <div className="card" style={{padding:12}}>
-                    {/* ── GPS Control ── */}
-                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
-                      <button
-                        onClick={walking ? walkStop : walkStart}
-                        style={{
-                          background: walking ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.15)',
-                          border: walking ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(34,197,94,0.3)',
-                          cursor:'pointer', color: walking ? '#ef4444' : '#22c55e',
-                          fontSize:14, padding:'4px 12px', borderRadius:10,
-                          fontFamily:'inherit', lineHeight:1,
-                        }}>
-                        {walking ? '⏹ 熄GPS' : '📡 開GPS'}
-                      </button>
-                      {walking && <span style={{fontSize:10, color:'#22c55e'}}>🟢 GPS 運作中</span>}
-                    </div>
-                    {/* ── Walk Simulation + Steps ── */}
-                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
-                      <button className="btn btn-ghost" onClick={forceEvent}
-                        style={{fontSize:10, padding:'4px 10px'}}>
-                        🎲 Event
-                      </button>
-                      <button className="btn btn-ghost" onClick={addDebug}
-                        style={{fontSize:10, padding:'4px 10px'}}>
-                        +500 步
-                      </button>
-                      <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
-                        onClick={() => setSimulating(v => !v)}
-                        style={{fontSize:10, padding:'4px 10px'}}>
-                        {simulating ? '⏹ 停止' : '🚶 模擬'}
-                      </button>
-                      {/* Speed toggle */}
-                      {[1,5,10,50].map(s => (
-                        <button key={s}
-                          onClick={() => { setSimSpeed(s); if (!simulating) setSimulating(true) }}
-                          style={{
-                            fontSize:9, padding:'2px 8px', cursor:'pointer', fontFamily:'inherit',
-                            background: simSpeed === s ? '#8b5cf644' : 'transparent',
-                            border: simSpeed === s ? '1px solid #8b5cf6' : '1px solid #2a3a5a',
-                            color: simSpeed === s ? '#c4b5fd' : '#5a6d85',
-                            borderRadius:6,
-                          }}>
-                          {s}x
-                        </button>
-                      ))}
-                      <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
-                        {simulating ? `🟢 ${simSpeed}x` : '🛰️ GPS'}
-                      </span>
-                    </div>
-
-                    {/* ── Test Pet ── */}
-                    <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
-                      <button className="btn btn-primary" onClick={createTestPet}
-                        style={{fontSize:10, padding:'4px 10px'}}>
-                        🧪 全能測試寵物
-                      </button>
-                      {/* ── PixelLab cat for logged-in users ── */}
-                      {user && (
-                        <>
-                          <button className="btn" onClick={addPixelLabEgg}
-                            style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
-                            🥚 圓貓蛋
-                          </button>
-                          <button className="btn" onClick={addShibaEgg}
-                            style={{fontSize:10, padding:'4px 10px', background:'rgba(168,120,200,0.15)', border:'1px solid rgba(168,120,200,0.3)', color:'#a878c8', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
-                            🥚 柴犬蛋
-                          </button>
-                        </>   
-                      )}
-                    </div>
-
-                    {/* ── Quick Modify (only when pet exists) ── */}
-                    {pets[activeIdx] && (
-                      <div style={{background:'#1a2338', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
-                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em'}}>
-                          ⚡ 快速修改 — Lv.{pets[activeIdx].level} Stage.{pets[activeIdx].evolutionStage}
-                        </div>
-                        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-                          <button className="btn btn-ghost" onClick={levelUpPet}
-                            style={{fontSize:9, padding:'3px 8px'}}>⬆️ 升 Lv</button>
-                          <button className="btn btn-ghost" onClick={() => addPetSteps(10000)}
-                            style={{fontSize:9, padding:'3px 8px'}}>👣 +10K 步</button>
-                          <button className="btn btn-ghost" onClick={evolvePet}
-                            style={{fontSize:9, padding:'3px 8px'}}>🌟 進化</button>
-                          <button className="btn btn-ghost" onClick={maxOutPet}
-                            style={{fontSize:9, padding:'3px 8px'}}>💪 MAX</button>
-                        </div>
-                      </div>
-                    )}
-
-                    {log.length > 0 && (
-                      <div style={{background:'#1a2338', borderRadius:8, padding:'6px 8px'}}>
-                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.05em'}}>記錄</div>
-                        {log.slice(0, 3).map((m,i) => (
-                          <div key={i} style={{fontSize:10, color:'#94a5b8', padding:'1px 0'}}>{m}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
