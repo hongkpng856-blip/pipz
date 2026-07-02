@@ -42,10 +42,65 @@ The entire app is a single page with 5 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Main View: Single State (PetCompanion)
+### Main View: Dual State (PetCompanion ↔ RealMap)
 
-#### State A — PetCompanion (🐱 full-screen interactive play card)
-Always rendered on the map tab. Rendered by `PetCompanion.tsx`.
+The map tab switches between two views based on whether GPS walking is active:
+
+| GPS Walking | Component | Note |
+|------------|-----------|------|
+| OFF | PetCompanion | Room view — pet roams canvas idly |
+| ON | RealMap | Leaflet GPS map — dark pixel-styled tiles |
+
+#### State A — RealMap (🗺️ Leaflet GPS map when walking)
+Rendered by `RealMap.tsx`. Appears when `walking && mapPos` are both truthy.
+
+**Component:** `apps/web/src/components/RealMap.tsx`
+
+**Tech:**
+- Leaflet (`npm install leaflet`) — dynamically imported with `next/dynamic` to avoid SSR errors
+- CartoDB dark tiles (`{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`) — free, matches dark theme
+- OSM tiles with CSS `image-rendering: pixelated` for retro pixel effect
+
+**Layout:**
+- Full-width card with same `section card` wrapper as PetCompanion
+- Leaflet map container at 4:3 aspect ratio, min 240px height
+- **User marker**: cyan circle marker (`#44ccff`) at GPS position
+- **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
+- **Pet marker**: custom `divIcon` with pixel-style pill badge (🐱 or 🐾 emoji in rarity-colored dot) — follows user position
+- **Path trail**: dashed cyan polyline tracing the user's walking path (last ~200 points)
+- **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label
+
+**Position tracking:**
+- GPS position received via `position` prop (from `mapPos` state in `page.tsx`)
+- `page.tsx` `watchPosition` callback updates `mapPos` state
+- RealMap syncs markers + centers map on each position update
+- Trail resets when walking stops
+
+**CSS styles** (in `globals.css`):
+- `.real-map-container`: container sizing
+- `.real-map-container .leaflet-tile`: `image-rendering: pixelated` + saturate/contrast filter
+- `.pipz-pet-marker` / `.pipz-pet-dot`: custom pixel-style pet marker
+- `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
+- `.leaflet-popup-content-wrapper`: dark pixel popup theme (ready for future quest points)
+
+```
+┌─────────────────────────────────┐
+│     [🗺️ Leaflet GPS Map]        │
+│  ┌───────────────────────────┐  │
+│  │   🗺️ CartoDB dark tiles   │  │
+│  │   ┌─────┐                 │  │
+│  │   │🐱 • │ ← user + pet    │  │
+│  │   │•••••│ ← path trail    │  │
+│  │   └─────┘                 │  │
+│  │                    [GPS ●]│  │
+│  └───────────────────────────┘  │
+├─────────────────────────────────┤
+│       Stats Card (unchanged)    │
+└─────────────────────────────────┘
+```
+
+#### State B — PetCompanion (🐱 full-screen interactive play card)
+Rendered when walking is off and the team has a pet. Always shown otherwise.
 
 **Layout:**
 |- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`

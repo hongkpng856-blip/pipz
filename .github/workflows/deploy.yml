@@ -1,0 +1,25 @@
+name: Deploy to Vercel
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable && npm install
+      - run: cd ../../packages/core && npm run build && cd -
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: prj_TY2VMkJyPAZNavJJdzupkosQWpaI
+          VERCEL_ORG_ID: team_ogKYvRBZUI1Qe2vvzzLMxJsx
+        run: npx vercel deploy --prod --yes --token="$VERCEL_TOKEN"
