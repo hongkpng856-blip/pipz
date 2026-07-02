@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.17.0 (2026-07-03)
+
+### Fixed
+- **New pet popup not dismissing**: Added `popupDismissed` state to prevent auto-detect useEffect from re-opening the popup after user dismisses it. Uses `dismissedNewPets` ref set to block re-detection.
+- **+10K step button only added pet steps**: `addPetSteps` now calls `addSt(n)` instead of directly mutating pet state, ensuring skill multipliers, global step counters, and event progress all update correctly.
+- **Event progress bar not updating**: Added `eventCounterState` (useState) alongside existing `eventStepCounter` (useRef) so progress bar text/width trigger React re-renders when step count changes.
+- **Event step counter used raw `n` instead of `finalSteps`**: Changed `eventStepCounter.current += Math.round(finalSteps * encMult)` to use the skill-multiplied step count, consistent with other step tracking in the app.
+- **Dev Tools moved to global dropdown**: Dev Tools moved from bottom of map tab to top of `.main` div, accessible from all tabs (map, pets, eggs, community, inventory) with ▲/▼ dropdown indicator and improved button styling.
+
 ## v0.16.0 (2026-07-03)
 
 ### Changed
