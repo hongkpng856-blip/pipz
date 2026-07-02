@@ -18,16 +18,41 @@ const RC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
   epic: '#8b5cf6', legendary: '#f59e0b',
 }
+// Species emoji map
+const SPECIES_EMOJI: Record<string, string> = {
+  '175': '🐱',    // PixelLab cat
+  'shiba': '🐕',  // Shiba
+}
+const FALLBACK_EMOJI = '🐾'
 
 export default function RealMap({ position, walking, pet }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
-  const userMarkerRef = useRef<L.CircleMarker | null>(null)
+  const userMarkerRef = useRef<L.Marker | null>(null)
   const accCircleRef = useRef<L.Circle | null>(null)
-  const petMarkerRef = useRef<L.Marker | null>(null)
   const trailRef = useRef<L.Polyline | null>(null)
   const trailCoords = useRef<[number, number][]>([])
   const initialised = useRef(false)
+
+  // Build pet marker HTML
+  const buildPetIcon = () => {
+    const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
+    const emoji = pet ? (SPECIES_EMOJI[pet.speciesId ?? ''] || FALLBACK_EMOJI) : '🥚'
+    return L.divIcon({
+      className: 'pipz-player-marker',
+      html: `<div style="
+        width:36px;height:36px;border-radius:50%;
+        background:${rarityColor}22;
+        border:3px solid ${rarityColor};
+        display:flex;align-items:center;justify-content:center;
+        font-size:20px;line-height:1;
+        box-shadow:0 0 12px ${rarityColor}66, 0 0 0 4px ${rarityColor}22;
+        transform:translate(-50%,-50%);
+      ">${emoji}</div>`,
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    })
+  }
 
   // ── Init map (once) ──
   useEffect(() => {
@@ -35,13 +60,13 @@ export default function RealMap({ position, walking, pet }: Props) {
     initialised.current = true
 
     const map = L.map(containerRef.current, {
-      center: [22.3193, 114.1694], // default HK
+      center: [22.3193, 114.1694],
       zoom: 18,
       zoomControl: false,
       attributionControl: false,
     })
 
-    // CartoDB dark tiles — matches the app's dark theme
+    // CartoDB dark tiles
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       minZoom: 10,
@@ -49,14 +74,10 @@ export default function RealMap({ position, walking, pet }: Props) {
 
     mapRef.current = map
 
-    // ── User marker (pixel-style blue dot) ──
-    const userM = L.circleMarker([0, 0], {
-      radius: 8,
-      color: '#44ccff',
-      fillColor: '#44ccff',
-      fillOpacity: 0.3,
-      weight: 2,
-      opacity: 0.8,
+    // ── Player marker (shows active pet) ──
+    const userM = L.marker([0, 0], {
+      icon: buildPetIcon(),
+      zIndexOffset: 1000,
     }).addTo(map)
     userMarkerRef.current = userM
 
@@ -80,25 +101,19 @@ export default function RealMap({ position, walking, pet }: Props) {
     }).addTo(map)
     trailRef.current = trail
 
-    // ── Pet marker ──
-    const petM = L.marker([0, 0], {
-      icon: L.divIcon({
-        className: 'pipz-pet-marker',
-        html: '<div class="pipz-pet-dot">🐾</div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      }),
-      interactive: false,
-    }).addTo(map)
-    petMarkerRef.current = petM
-
     return () => {
       map.remove()
       initialised.current = false
     }
-    // Only initialise once — intentional empty deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ── Update marker icons when pet changes ──
+  useEffect(() => {
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setIcon(buildPetIcon())
+    }
+  }, [pet])
 
   // ── Sync markers + map position from page.tsx GPS ──
   useEffect(() => {
@@ -107,7 +122,6 @@ export default function RealMap({ position, walking, pet }: Props) {
 
     userMarkerRef.current.setLatLng([lat, lng])
     accCircleRef.current?.setLatLng([lat, lng])
-    petMarkerRef.current?.setLatLng([lat, lng])
     mapRef.current.setView([lat, lng], mapRef.current.getZoom(), { animate: true })
 
     // Build path trail (only while walking)
@@ -117,19 +131,6 @@ export default function RealMap({ position, walking, pet }: Props) {
       trailRef.current?.setLatLngs(trailCoords.current)
     }
   }, [position?.lat, position?.lng])
-
-  // ── Update pet marker icon when pet data changes ──
-  useEffect(() => {
-    if (!petMarkerRef.current) return
-    const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
-    const emoji = pet ? (pet.speciesId === '175' ? '🐱' : '🐾') : '🥚'
-    petMarkerRef.current.setIcon(L.divIcon({
-      className: 'pipz-pet-marker',
-      html: `<div class="pipz-pet-dot" style="background:${rarityColor}33;border-color:${rarityColor}">${emoji}</div>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-    }))
-  }, [pet])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {

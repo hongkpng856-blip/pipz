@@ -1022,6 +1022,88 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
+
+              {/* ── 探險進度 ── 打怪拎獎品風格 ── */}
+              <div className="section card" style={{marginTop:12, padding:0, overflow:'hidden'}}>
+                <div style={{padding:'12px 14px', background:'linear-gradient(135deg, #1a2338 0%, #1e2a45 100%)', borderBottom:'1px solid #2a3a5a'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+                        <span style={{fontSize:18}}>🎮</span>
+                        <span style={{fontSize:11, fontWeight:700, color:'#e2e8f0', letterSpacing:'0.03em'}}>探險進度</span>
+                        <span style={{fontSize:8, color:'#5a6d85', marginLeft:'auto'}}>行路・冒險・拎獎</span>
+                      </div>
+
+                      {/* ── 事件進度 ── */}
+                      <div style={{marginBottom:user ? 10 : 0}}>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+                          <div style={{display:'flex', alignItems:'center', gap:5}}>
+                            <span style={{fontSize:13}}>⚔️</span>
+                            <span style={{fontSize:9, color:'#c4b5fd', fontWeight:600}}>下一次事件</span>
+                          </div>
+                          <span style={{fontSize:8, color:'#94a5b8'}}>
+                            <span style={{color:'#c4b5fd', fontWeight:700}}>{eventStepCounter.current}</span> / {INV} 步
+                          </span>
+                        </div>
+                        <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
+                          <div className="progress-fill" style={{
+                            width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`,
+                            background:'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
+                            height:10, borderRadius:6, position:'relative',
+                            boxShadow:'0 0 8px rgba(168,85,247,0.4)',
+                          }}>
+                            {/* Chest icon at milestone */}
+                            {eventStepCounter.current >= INV * 0.75 && (
+                              <span style={{position:'absolute', right:-2, top:-8, fontSize:14, filter:'drop-shadow(0 0 3px #f59e0b)'}}>🎁</span>
+                            )}
+                          </div>
+                          {/* Milestone markers */}
+                          <div style={{position:'absolute', top:0, left:'25%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                          <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                          <div style={{position:'absolute', top:0, left:'75%', width:2, height:10, background:'#f59e0b44', borderLeft:'1px dashed #f59e0b88'}} />
+                        </div>
+                        <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
+                          <span>🎲 事件</span>
+                          <span>🎲 事件</span>
+                          <span>🎲 事件</span>
+                          <span style={{color:'#f59e0b88'}}>🎁 獎勵!</span>
+                        </div>
+                      </div>
+
+                      {/* ── 蛋進度 (登入後) ── */}
+                      {user && (
+                        <div style={{marginTop:8}}>
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
+                            <div style={{display:'flex', alignItems:'center', gap:5}}>
+                              <span style={{fontSize:13}}>🥚</span>
+                              <span style={{fontSize:9, color:'#86efac', fontWeight:600}}>遇蛋機會</span>
+                            </div>
+                            <span style={{fontSize:8, color:'#94a5b8'}}>
+                              <span style={{color:'#86efac', fontWeight:700}}>{eggStepCounter.current}</span> / 2000 步
+                            </span>
+                          </div>
+                          <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
+                            <div className="progress-fill" style={{
+                              width:`${Math.min(100,(eggStepCounter.current/2000)*100)}%`,
+                              background:'linear-gradient(90deg, #16a34a, #22c55e, #4ade80)',
+                              height:10, borderRadius:6,
+                              boxShadow:'0 0 8px rgba(34,197,94,0.4)',
+                            }}>
+                              {eggStepCounter.current >= 2000 * 0.8 && (
+                                <span style={{position:'absolute', right:-2, top:-9, fontSize:14, filter:'drop-shadow(0 0 3px #22c55e)'}}>🥚</span>
+                              )}
+                            </div>
+                            <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
+                            <div style={{position:'absolute', top:0, left:'100%', width:2, height:10, background:'#22c55e44', borderLeft:'1px dashed #22c55e88'}} />
+                          </div>
+                          <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
+                            <span>🥚 蛋</span>
+                            <span>🥚 蛋</span>
+                            <span style={{color:'#22c55e88'}}>🥚 40%!</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
                 <RealMap position={mapPos} walking={walking} pet={pet} />
@@ -1143,86 +1225,6 @@ export default function HomePage() {
                 </div>              {/* ── close stats card padding ── */}
               </div>                {/* ── close stats card ── */}
 
-              {/* ── 探險進度 ── 打怪拎獎品風格 ── */}
-              <div className="section card" style={{marginTop:12, padding:0, overflow:'hidden'}}>
-                <div style={{padding:'12px 14px', background:'linear-gradient(135deg, #1a2338 0%, #1e2a45 100%)', borderBottom:'1px solid #2a3a5a'}}>
-                      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
-                        <span style={{fontSize:18}}>🎮</span>
-                        <span style={{fontSize:11, fontWeight:700, color:'#e2e8f0', letterSpacing:'0.03em'}}>探險進度</span>
-                        <span style={{fontSize:8, color:'#5a6d85', marginLeft:'auto'}}>行路・冒險・拎獎</span>
-                      </div>
-
-                      {/* ── 事件進度 ── */}
-                      <div style={{marginBottom:user ? 10 : 0}}>
-                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
-                          <div style={{display:'flex', alignItems:'center', gap:5}}>
-                            <span style={{fontSize:13}}>⚔️</span>
-                            <span style={{fontSize:9, color:'#c4b5fd', fontWeight:600}}>下一次事件</span>
-                          </div>
-                          <span style={{fontSize:8, color:'#94a5b8'}}>
-                            <span style={{color:'#c4b5fd', fontWeight:700}}>{eventStepCounter.current}</span> / {INV} 步
-                          </span>
-                        </div>
-                        <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
-                          <div className="progress-fill" style={{
-                            width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`,
-                            background:'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
-                            height:10, borderRadius:6, position:'relative',
-                            boxShadow:'0 0 8px rgba(168,85,247,0.4)',
-                          }}>
-                            {/* Chest icon at milestone */}
-                            {eventStepCounter.current >= INV * 0.75 && (
-                              <span style={{position:'absolute', right:-2, top:-8, fontSize:14, filter:'drop-shadow(0 0 3px #f59e0b)'}}>🎁</span>
-                            )}
-                          </div>
-                          {/* Milestone markers */}
-                          <div style={{position:'absolute', top:0, left:'25%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
-                          <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
-                          <div style={{position:'absolute', top:0, left:'75%', width:2, height:10, background:'#f59e0b44', borderLeft:'1px dashed #f59e0b88'}} />
-                        </div>
-                        <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
-                          <span>🎲 事件</span>
-                          <span>🎲 事件</span>
-                          <span>🎲 事件</span>
-                          <span style={{color:'#f59e0b88'}}>🎁 獎勵!</span>
-                        </div>
-                      </div>
-
-                      {/* ── 蛋進度 (登入後) ── */}
-                      {user && (
-                        <div style={{marginTop:8}}>
-                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4}}>
-                            <div style={{display:'flex', alignItems:'center', gap:5}}>
-                              <span style={{fontSize:13}}>🥚</span>
-                              <span style={{fontSize:9, color:'#86efac', fontWeight:600}}>遇蛋機會</span>
-                            </div>
-                            <span style={{fontSize:8, color:'#94a5b8'}}>
-                              <span style={{color:'#86efac', fontWeight:700}}>{eggStepCounter.current}</span> / 2000 步
-                            </span>
-                          </div>
-                          <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
-                            <div className="progress-fill" style={{
-                              width:`${Math.min(100,(eggStepCounter.current/2000)*100)}%`,
-                              background:'linear-gradient(90deg, #16a34a, #22c55e, #4ade80)',
-                              height:10, borderRadius:6,
-                              boxShadow:'0 0 8px rgba(34,197,94,0.4)',
-                            }}>
-                              {eggStepCounter.current >= 2000 * 0.8 && (
-                                <span style={{position:'absolute', right:-2, top:-9, fontSize:14, filter:'drop-shadow(0 0 3px #22c55e)'}}>🥚</span>
-                              )}
-                            </div>
-                            <div style={{position:'absolute', top:0, left:'50%', width:2, height:10, background:'#2a3a5a', opacity:0.3}} />
-                            <div style={{position:'absolute', top:0, left:'100%', width:2, height:10, background:'#22c55e44', borderLeft:'1px dashed #22c55e88'}} />
-                          </div>
-                          <div style={{display:'flex', justifyContent:'space-between', marginTop:3, fontSize:7, color:'#3a4d65'}}>
-                            <span>🥚 蛋</span>
-                            <span>🥚 蛋</span>
-                            <span style={{color:'#22c55e88'}}>🥚 40%!</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
             </div>
           )}
