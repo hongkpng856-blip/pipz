@@ -64,6 +64,7 @@ export default function HomePage() {
       if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
       return null
     }) // most recently hatched pet, persisted in localStorage
+  const [popupDismissed, setPopupDismissed] = useState(false)
   const [favorites, setFavorites] = useState<string[]>([])
   const [weeklySteps, setWeeklySteps] = useState<{date:string;dayLabel:string;steps:number;isToday:boolean}[]>([])
   const [marketListings, setMarketListings] = useState<Pet[]>([])
@@ -77,7 +78,15 @@ export default function HomePage() {
   // ── Roguelike: events ──
   const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null)
   const eventStepCounter = useRef(0)
+  const [eventCounterState, setEventCounterState] = useState(0) // triggers re-render on progress change
   const INV = 800 // event check interval (steps)
+
+  // ── Auto-dismiss new pet popup when event fires (avoid zIndex conflict) ──
+  useEffect(() => {
+    if (currentEvent && newPetId) {
+      dismissNewPet()
+    }
+  }, [currentEvent])
   // ── Step visual effects ──
   const [stepAnimTick, setStepAnimTick] = useState(0)
   const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
@@ -162,7 +171,7 @@ export default function HomePage() {
 
   // Auto-detect recently created pets as "new" (safety net for localStorage miss)
   useEffect(() => {
-    if (pets.length === 0 || newPetId) return
+    if (pets.length === 0 || newPetId || popupDismissed) return
     const recent = [...pets].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).find(p =>
       p.createdAt > 0 && Date.now() - p.createdAt < 5 * 60 * 1000 && !dismissedNewPets.current.has(p.id)
     )
@@ -170,13 +179,14 @@ export default function HomePage() {
       setNewPetId(recent.id)
       try { localStorage.setItem('pipz_new_pet', recent.id) } catch(_){}
     }
-  }, [pets, newPetId])
+  }, [pets, newPetId, popupDismissed])
 
   const logMsg = (m: string) => setLog(v => [m, ...v].slice(0, 8))
 
   const dismissNewPet = () => {
     if (newPetId) dismissedNewPets.current.add(newPetId)
     setNewPetId(null)
+    setPopupDismissed(true)
     try { localStorage.removeItem('pipz_new_pet') } catch(_){}
   }
 
@@ -450,9 +460,11 @@ export default function HomePage() {
     scheduleSync(pendingSteps.current + finalSteps, totalSteps + finalSteps)
     // Encounter egg system disabled — no auto egg popups
     // ── Roguelike: event check ──
-    eventStepCounter.current += Math.round(n * encMult)
+    eventStepCounter.current += Math.round(finalSteps * encMult)
+    setEventCounterState(eventStepCounter.current)
     if (eventStepCounter.current >= INV && !currentEvent && pet) {
       eventStepCounter.current = 0
+      setEventCounterState(0)
       const ev = rollEvent(totalStepsRef.current)
       if (ev) setCurrentEvent(ev)
     }
@@ -538,10 +550,8 @@ export default function HomePage() {
     logMsg(`⬆️ 寵物升至 Lv.${pets[activeIdx]?.level + 1}`)
   }
   const addPetSteps = (n: number) => {
-    const cur = pets[activeIdx]
-    if (!cur) return
-    setPets(v => v.map((p, i) => i === activeIdx ? { ...p, totalSteps: p.totalSteps + n } : p))
-    logMsg(`👣 寵物步數 +${n}`)
+    addSt(n)
+    logMsg(`👣 步數 +${n}（含技能加成）`)
   }
   const evolvePet = () => {
     const cur = pets[activeIdx]
@@ -1153,18 +1163,18 @@ export default function HomePage() {
                             <span style={{fontSize:9, color:'#c4b5fd', fontWeight:600}}>下一次事件</span>
                           </div>
                           <span style={{fontSize:8, color:'#94a5b8'}}>
-                            <span style={{color:'#c4b5fd', fontWeight:700}}>{eventStepCounter.current}</span> / {INV} 步
+                            <span style={{color:'#c4b5fd', fontWeight:700}}>{eventCounterState}</span> / {INV} 步
                           </span>
                         </div>
                         <div className="progress-bar" style={{height:10, borderRadius:6, background:'#0b1120', overflow:'visible', position:'relative'}}>
                           <div className="progress-fill" style={{
-                            width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`,
+                            width:`${Math.min(100,(eventCounterState/INV)*100)}%`,
                             background:'linear-gradient(90deg, #7c3aed, #a855f7, #c084fc)',
                             height:10, borderRadius:6, position:'relative',
                             boxShadow:'0 0 8px rgba(168,85,247,0.4)',
                           }}>
                             {/* Chest icon at milestone */}
-                            {eventStepCounter.current >= INV * 0.75 && (
+                            {eventCounterState >= INV * 0.75 && (
                               <span style={{position:'absolute', right:-2, top:-8, fontSize:14, filter:'drop-shadow(0 0 3px #f59e0b)'}}>🎁</span>
                             )}
                           </div>
