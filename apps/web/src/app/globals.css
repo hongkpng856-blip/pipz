@@ -655,6 +655,23 @@ body { position: fixed; }
 
 @keyframes fadeInOut { 0% { opacity: 0; } 30% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
 
+/* ── Fixed-position modal layer (above Leaflet GPU compositing) ── */
+.fixed-modal-layer {
+  position: fixed !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+  will-change: transform !important;
+  z-index: 100 !important;
+}
+.fixed-modal-layer-top {
+  position: fixed !important;
+  transform: translateZ(0) !important;
+  -webkit-transform: translateZ(0) !important;
+  will-change: transform !important;
+  z-index: 200 !important;
+}
+
+
 /* ════ RealMap — Leaflet GPS Map ════ */
 
 .real-map-container {

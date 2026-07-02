@@ -34,8 +34,7 @@ export default function InventoryModal({ inventory, onUseHelpItem, onEquipItem, 
     .sort((a, b) => (b.entry.quantity || 1) - (a.entry.quantity || 1))
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
+    <div className="fixed-modal-layer" style={{
       display: 'flex', justifyContent: 'center',
       background: '#0b1120',
       overflow: 'hidden',

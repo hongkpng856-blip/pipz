@@ -22,8 +22,7 @@ export default function EventModal({ event, onChoose, onDismiss }: Props) {
   const accentColor = isPositive ? '#22c55e' : '#ef4444'
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
+    <div className="fixed-modal-layer-top" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
       padding: 16,
@@ -162,8 +161,7 @@ function RiskLadderGame({ onFinish }: { onFinish: (reward: number) => void }) {
   const curReward = CHEST_REWARDS[idx]
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
+    <div className="fixed-modal-layer-top" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
       padding: 16,

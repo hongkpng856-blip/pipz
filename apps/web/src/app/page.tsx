@@ -1818,8 +1818,7 @@ export default function HomePage() {
         )
       })()}
       {showEvolve && pet && canEvolve && (
-        <div style={{
-          position:'fixed', inset:0, zIndex:100,
+        <div className="fixed-modal-layer" style={{
           display:'flex', alignItems:'center', justifyContent:'center',
           background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
           padding:16
@@ -1892,8 +1891,7 @@ export default function HomePage() {
         const newPet = pets.find(p => p.id === newPetId)
         if (!newPet) return null
         return (
-          <div style={{
-            position:'fixed', inset:0, zIndex:200,
+          <div className="fixed-modal-layer-top" style={{
             display:'flex', alignItems:'center', justifyContent:'center',
             background:'rgba(0,0,0,0.8)', backdropFilter:'blur(8px)',
             padding:16,

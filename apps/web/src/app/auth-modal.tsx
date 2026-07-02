@@ -73,8 +73,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
+    <div className="fixed-modal-layer" style={{
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
       padding: 16

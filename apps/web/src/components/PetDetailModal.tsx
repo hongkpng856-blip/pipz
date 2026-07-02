@@ -118,8 +118,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 100,
+    <div className="fixed-modal-layer" style={{
       display: 'flex', justifyContent: 'center',
       background: '#0b1120',
       overflow: 'hidden',
@@ -541,8 +540,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
 
       {/* ════ Delete confirmation popup ════ */}
       {showDelete && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
+        <div className="fixed-modal-layer-top" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
           padding: 16,
@@ -582,8 +580,7 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
 
       {/* ════ Dissolve overlay (during delete animation) ════ */}
       {isDeleting && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 150,
+        <div className="fixed-modal-layer" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'rgba(0,0,0,0.2)',
           pointerEvents: 'none',
