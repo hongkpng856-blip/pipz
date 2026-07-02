@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import PetCompanion from '../components/PetCompanion'
+const RealMap = dynamic(() => import('../components/RealMap'), { ssr: false })
 import PetDetailModal from '../components/PetDetailModal'
 import EventModal from '../components/EventModal'
 import InventoryModal from '../components/InventoryModal'
@@ -56,6 +58,7 @@ export default function HomePage() {
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
+    const [mapPos, setMapPos] = useState<{lat: number; lng: number} | null>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
     const [newPetId, setNewPetId] = useState<string | null>(() => {
@@ -335,6 +338,7 @@ export default function HomePage() {
           if (ns > 0) addSt(ns)
         }
         last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
       },
       () => { setWalking(false); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
@@ -342,7 +346,7 @@ export default function HomePage() {
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); logMsg('⏹ 停低咗')
   }
 
   const spawnPet = async (r: Rarity) => {
@@ -1001,8 +1005,11 @@ export default function HomePage() {
           {tab === 'map' && (
             <div className="fade-up">
 
-              {/* ── PetCompanion card (only when team has a pet) ── */}
-              {favorites.length > 0 && pet && (
+              {/* ── Map / PetCompanion (switch based on GPS walking) ── */}
+              {walking && mapPos ? (
+                <RealMap position={mapPos} walking={walking} pet={pet} />
+              ) : (
+                favorites.length > 0 && pet && (
                 <div className="section card" style={{
                   padding:0, overflow:'hidden', position:'relative', width:'100%',
                 }}>
@@ -1015,6 +1022,7 @@ export default function HomePage() {
                     skills={pet?.skills ?? []}
                   />
                 </div>
+                )
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
