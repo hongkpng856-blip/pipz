@@ -103,7 +103,7 @@ export default function RealMap({ position, walking, pet }: Props) {
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
       minZoom: 10,
-      maxNativeZoom: 15, // tiles above z15 → 2x pixel upscale at z16
+      maxNativeZoom: 14, // tiles above z14 → 4x pixel upscale = clear blocks
     }).addTo(map)
 
     mapRef.current = map

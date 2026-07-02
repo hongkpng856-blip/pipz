@@ -671,7 +671,7 @@ body { position: fixed; }
   image-rendering: pixelated;
   image-rendering: -webkit-crisp-edges;
   /* CartoDB dark tiles → brightened + high contrast retro pixel look */
-  filter: brightness(1.6) saturate(0.3) contrast(1.3);
+  filter: brightness(1.5) saturate(0.25) contrast(1.6);
 }
 
 /* Dark-themed zoom controls */
