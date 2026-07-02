@@ -670,8 +670,8 @@ body { position: fixed; }
 .real-map-container .leaflet-tile {
   image-rendering: pixelated;
   image-rendering: -webkit-crisp-edges;
-  /* Invert OSM (white→black bg), high contrast, desaturated */
-  filter: invert(1) hue-rotate(180deg) saturate(0.35) contrast(2.2) brightness(0.85);
+  /* OSM → grayscale → invert → ultra high contrast pixel map */
+  filter: grayscale(1) invert(1) contrast(4) brightness(0.85);
 }
 
 /* Dark-themed zoom controls */
