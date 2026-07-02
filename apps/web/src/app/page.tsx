@@ -953,22 +953,6 @@ export default function HomePage() {
           ) : null}
           <div className="header-right">
             {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
-            <button
-              onClick={walking ? walkStop : walkStart}
-              style={{
-                background: walking ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.15)',
-                border: walking ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(34,197,94,0.3)',
-                cursor:'pointer', color: walking ? '#ef4444' : '#22c55e',
-                fontSize: 16, padding: '2px 6px', borderRadius: 10,
-                fontFamily:'inherit', lineHeight:1,
-              }}>
-              {walking ? '⏹' : '🚶'}
-            </button>
-            {walking && (
-              <span className="header-gps">
-                <span className="gps-dot" />GPS
-              </span>
-            )}
             {user ? (
               <>
                 <button onClick={() => setShowProfile(true)}
@@ -1132,6 +1116,26 @@ export default function HomePage() {
                       </div>
                     )
                   })()}
+
+                  {/* ── Event progress bar ── */}
+                  <div style={{marginTop:10}}>
+                    <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                      <span>🎲 下次事件</span>
+                      <span>{eventStepCounter.current} / {INV} 步</span>
+                    </div>
+                    <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(eventStepCounter.current/INV)*100)}%`, background:'#8b5cf6'}}/></div>
+                  </div>
+
+                  {/* ── Egg progress bar (logged-in only) ── */}
+                  {user && (
+                    <div style={{marginTop:6}}>
+                      <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:3}}>
+                        <span>🥚 下次遇蛋</span>
+                        <span>{eggStepCounter.current} / 2000 步</span>
+                      </div>
+                      <div className="progress-bar"><div className="progress-fill" style={{width:`${Math.min(100,(eggStepCounter.current/2000)*100)}%`, background:'#22c55e'}}/></div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1464,6 +1468,21 @@ export default function HomePage() {
                 </button>
                 {showDevTools && (
                   <div className="card" style={{padding:12}}>
+                    {/* ── GPS Control ── */}
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                      <button
+                        onClick={walking ? walkStop : walkStart}
+                        style={{
+                          background: walking ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.15)',
+                          border: walking ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(34,197,94,0.3)',
+                          cursor:'pointer', color: walking ? '#ef4444' : '#22c55e',
+                          fontSize:14, padding:'4px 12px', borderRadius:10,
+                          fontFamily:'inherit', lineHeight:1,
+                        }}>
+                        {walking ? '⏹ 熄GPS' : '📡 開GPS'}
+                      </button>
+                      {walking && <span style={{fontSize:10, color:'#22c55e'}}>🟢 GPS 運作中</span>}
+                    </div>
                     {/* ── Walk Simulation + Steps ── */}
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
                       <button className="btn btn-ghost" onClick={forceEvent}
