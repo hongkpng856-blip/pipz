@@ -348,6 +348,16 @@ export default function HomePage() {
     wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); logMsg('⏹ 停低咗')
   }
 
+  // ── Auto GPS when map tab is active ──
+  useEffect(() => {
+    if (tab === 'map' && !walking) {
+      walkStart()
+    } else if (tab !== 'map' && walking) {
+      walkStop()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab])
+
   const spawnPet = async (r: Rarity) => {
     const seed = genSeed()
     const np: Pet = {
