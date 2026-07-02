@@ -110,6 +110,7 @@ export default function HomePage() {
   const encCnt = useRef(0)
   const eggStepCounter = useRef(0) // for encounter eggs while walking
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
+  const addStRef = useRef<(n:number)=>void>(() => {})
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -131,7 +132,7 @@ export default function HomePage() {
   petsRef.current = pets
   petRef.current = pet
   activeIdxRef.current = activeIdx
-
+  
   // ── Load persisted data from localStorage (guest) or Supabase ──
   useEffect(() => {
     if (loadedStorage.current) return
@@ -455,11 +456,15 @@ export default function HomePage() {
     // ── Roguelike: event check ──
     eventStepCounter.current += Math.round(finalSteps * encMult)
     setEventCounterState(eventStepCounter.current)
-    if (eventStepCounter.current >= INV && !currentEvent && pet) {
+    if (eventStepCounter.current >= INV && !currentEvent && petRef.current) {
       eventStepCounter.current = 0
       setEventCounterState(0)
       const ev = rollEvent(totalStepsRef.current)
-      if (ev) setCurrentEvent(ev)
+      if (ev) {
+        // Auto-dismiss new pet popup so event shows through
+        if (newPetId) dismissNewPet()
+        setCurrentEvent(ev)
+      }
     }
     // ── Egg encounter check ──
     if (user) {
@@ -489,6 +494,7 @@ export default function HomePage() {
     setTimeout(() => setStepFlashType('none'), hasSkillEffects ? 900 : 700)
     setTimeout(() => setStepArrows(v => v.filter(a => a.id !== arrowId)), 1200)
   }
+  addStRef.current = addSt
 
   // ── Roguelike: force event for testing ──
   const forceEvent = () => {
@@ -563,6 +569,24 @@ export default function HomePage() {
     logMsg('💪 寵物已 MAX！')
   }
 
+  const deleteActivePet = () => {
+    const cur = pets[activeIdx]
+    if (!cur) { logMsg('❌ 未有寵物可刪除'); return }
+    const id = cur.id
+    // Remove from state
+    setPets(v => v.filter(p => p.id !== id))
+    // Remove from favorites if present
+    setFavorites(v => v.filter(fid => fid !== id))
+    // Adjust activeIdx
+    setActiveIdx(prev => {
+      const newLen = pets.length - 1
+      return prev >= newLen ? Math.max(0, newLen - 1) : prev
+    })
+    // Delete from DB if logged in
+    if (user) deletePet(id).catch(() => {})
+    logMsg(`🗑️ 已刪除寵物 #${id.slice(0,6)}`)
+  }
+
   useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
 
   // ── Walk simulation: continuous steps for testing ──
@@ -572,7 +596,7 @@ export default function HomePage() {
       const baseSteps = simSpeed
       simRef.current = setInterval(() => {
         const steps = Math.floor(Math.random() * baseSteps * 4) + baseSteps
-        addSt(steps)
+        addStRef.current(steps)
       }, intervalMs)
     } else {
       if (simRef.current) { clearInterval(simRef.current); simRef.current = null }
@@ -1109,6 +1133,8 @@ export default function HomePage() {
                             style={{fontSize:9, padding:'3px 8px'}}>🌟 進化</button>
                           <button className="btn btn-ghost" onClick={maxOutPet}
                             style={{fontSize:9, padding:'3px 8px'}}>💪 MAX</button>
+                          <button className="btn btn-ghost" onClick={deleteActivePet}
+                            style={{fontSize:9, padding:'3px 8px', color:'#ef4444'}}>🗑️ 刪除</button>
                         </div>
                       </div>
                     )}

@@ -658,6 +658,7 @@ body { position: fixed; }
 /* ── Fixed-position modal layer (above Leaflet GPU compositing) ── */
 .fixed-modal-layer {
   position: fixed !important;
+  inset: 0 !important;
   transform: translateZ(0) !important;
   -webkit-transform: translateZ(0) !important;
   will-change: transform !important;
@@ -665,6 +666,7 @@ body { position: fixed; }
 }
 .fixed-modal-layer-top {
   position: fixed !important;
+  inset: 0 !important;
   transform: translateZ(0) !important;
   -webkit-transform: translateZ(0) !important;
   will-change: transform !important;
