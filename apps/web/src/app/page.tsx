@@ -80,13 +80,6 @@ export default function HomePage() {
   const eventStepCounter = useRef(0)
   const [eventCounterState, setEventCounterState] = useState(0) // triggers re-render on progress change
   const INV = 800 // event check interval (steps)
-
-  // ── Auto-dismiss new pet popup when event fires (avoid zIndex conflict) ──
-  useEffect(() => {
-    if (currentEvent && newPetId) {
-      dismissNewPet()
-    }
-  }, [currentEvent])
   // ── Step visual effects ──
   const [stepAnimTick, setStepAnimTick] = useState(0)
   const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
