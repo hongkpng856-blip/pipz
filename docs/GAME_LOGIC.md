@@ -435,7 +435,8 @@ All 3 sets are generated procedurally from any `PixelPetData` (16×16 RGB grid) 
 **Integration:**
 
 - **`PixelPetCanvas.tsx`** (detail cards, modal): accepts `animation="idle" | "walk" | "play"` and cycles the correct frame set
-- **`PetCompanion.tsx`** (map screen, auto-behavior): cycles between idle → roam (walk) → play behaviors autonomously, mapping each behavior to its frame set
+- **`PetCompanion.tsx`** (interactive pet room canvas, not currently used in map tab): cycles between idle → roam (walk) → play behaviors autonomously, mapping each behavior to its frame set
+- **`RealMap.tsx`** (map tab): Leaflet GPS map — shows pet marker icon, no canvas animation needed
 - **Frame rendering**: `drawPixelGrid(ctx, frameGrid, pixelSize)` draws the current frame onto Canvas via `requestAnimationFrame`
 
 **PNG sprite path (Tier 2):**

@@ -42,17 +42,19 @@ The entire app is a single page with 5 tabs and modals.
 
 ## 2. Map Tab (`tab === 'map'`)
 
-### Main View: Dual State (PetCompanion ↔ RealMap)
+### Main View: RealMap (always visible)
 
-The map tab switches between two views based on whether GPS walking is active:
+The map tab always displays the `RealMap` component — a Leaflet GPS map with dark pixel-styled tiles. GPS tracking is optional:
 
-| GPS Walking | Component | Note |
+| GPS Tracking | Component | Behavior |
 |------------|-----------|------|
-| OFF | PetCompanion | Room view — pet roams canvas idly |
-| ON | RealMap | Leaflet GPS map — dark pixel-styled tiles |
+| ON (`walking && mapPos`) | RealMap | Live GPS — shows blue dot + trail + accuracy circle + pet marker |
+| OFF | RealMap | Static map centered on default Hong Kong location — no tracking |
 
-#### State A — RealMap (🗺️ Leaflet GPS map when walking)
-Rendered by `RealMap.tsx`. Appears when `walking && mapPos` are both truthy.
+The map is always the same `RealMap` component; the `walking` and `position` props control whether GPS tracking features (live position marker, path trail, accuracy circle) are active.
+
+#### RealMap (🗺️ Leaflet GPS Map)
+Rendered by `RealMap.tsx`. Always shown in the map tab.
 
 **Component:** `apps/web/src/components/RealMap.tsx`
 
@@ -62,7 +64,7 @@ Rendered by `RealMap.tsx`. Appears when `walking && mapPos` are both truthy.
 - OSM tiles with CSS `image-rendering: pixelated` for retro pixel effect
 
 **Layout:**
-- Full-width card with same `section card` wrapper as PetCompanion
+- Full-width card with `section card` wrapper
 - Leaflet map container at 4:3 aspect ratio, min 240px height
 - **User marker**: cyan circle marker (`#44ccff`) at GPS position
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
@@ -99,45 +101,11 @@ Rendered by `RealMap.tsx`. Appears when `walking && mapPos` are both truthy.
 └─────────────────────────────────┘
 ```
 
-#### State B — PetCompanion (🐱 full-screen interactive play card)
-Rendered when walking is off and the team has a pet. Always shown otherwise.
+#### ~~PetCompanion~~ *(no longer used in map tab)*
+The PetCompanion component (interactive pet room canvas) was previously shown when GPS walking was off. As of v0.14.5, the map tab always shows RealMap instead — PetCompanion is no longer imported or rendered in `page.tsx`. The component still exists in the codebase for potential future use.
 
-**Layout:**
-|- Full-width card with **rounded corners** (`border-radius: 16px`), uniform dark bg `#141b2d`, `position:relative`
-|- **Canvas** (400×280): pixel pet roams freely in full 2D with shadow, mood emoji above sprite
-|  - **Skills**: displayed as pill badges in a clean wrap layout **below the stat grid** (moved out of canvas overlay)
-|  - **Species name badge** (`#水晶`): overlaid on canvas top-left (translucent bg)
-|  - **Rarity badge**: overlaid on canvas top-right (coloured bg)
-|- **Steps walked together header**: 👣 hero section at **very top of card** (above canvas) showing pet's accumulated steps (`pet.totalSteps`) in 32px bold with 「一起走過的日子」subtitle — represents days spent together with this pet
-|- **Sprite**: rendered at ~96px with crisp pixel edges (`imageSmoothingEnabled=false`)
-|- **⤵ Below canvas — clean info panel** (no action buttons):
-|  1. **Row 1**: mood emoji + % + mood bar + Lv. + evolution stage
-|  2. **2×2 stat grid**: ⚡速度 / 🍀運氣 / 💜魅力 / 🔋能量 (each in a rounded bg cell)
-|  3. **Skills**: horizontal wrap of pill badges (icon + name, amber dot for active effects)
-
-```
-┌─────────────────────────────────┐
-│          👣                      │
-│        999,999                  │ ← 32px hero header
-│     一起走過的日子               │
-├─────────────────────────────────┤
-│ Canvas 400×280                  │
-│  (#水晶 badge top-left)  [傳說]  │
-│         🐱 walking sprite        │
-│         (mood emoji above)       │
-│      [👣 999,999  一起行咗]     │ ← steps badge overlay
-├─────────────────────────────────┤
-│ 😊 開心  92% ████  Lv.99 · 🌟  │
-├─────────────────────────────────┤
-│ ⚡速度  999  🍀運氣  999        │
-│ 💜魅力  999  🔋能量  999        │ ← 2×2 grid
-├─────────────────────────────────┤
-│ [⚡疾速衝刺] [🍀幸運搜尋] ...   │ ← skills pills wrap
-└─────────────────────────────────┘
-
-
-#### State B — ~~WalkingCanvas~~ *(removed — no longer used)*
-Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by PetCompanion which is now always visible.
+#### ~~WalkingCanvas~~ *(removed — no longer used)*
+Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by RealMap which is now always visible.
 
 **Encounter eggs** are now handled entirely through a popup modal — no animation canvas needed.
 

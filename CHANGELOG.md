@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.14.5 (2026-07-02)
+
+### Changed
+- **Map tab always shows RealMap**: GPS tracking (`walking && mapPos`) enables live features (blue dot, trail) but the map is always visible. When GPS is off, the map centers on default HK location instead of showing PetCompanion room view.
+- Removed unused `PetCompanion` import from `page.tsx` — the component was only used in the map tab area and is no longer needed.
+
 ## v0.14.4 (2026-07-01)
 
 ### Fixed
