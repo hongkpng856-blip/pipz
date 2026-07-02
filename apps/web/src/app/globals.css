@@ -666,12 +666,9 @@ body { position: fixed; }
   position: relative;
 }
 
-/* Pixelate map tiles for retro game look */
+/* Clean map tiles — Google Maps style (Voyager) */
 .real-map-container .leaflet-tile {
-  image-rendering: pixelated;
-  image-rendering: -webkit-crisp-edges;
-  /* OSM tiles → invert dark + high contrast pixel retro look */
-  filter: invert(1) saturate(0.15) contrast(2.2) brightness(0.7);
+  /* Default rendering — no pixel filters */
 }
 
 /* Dark-themed zoom controls */
