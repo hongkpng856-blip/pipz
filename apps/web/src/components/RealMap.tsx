@@ -221,7 +221,7 @@ export default function RealMap({ position, walking, pet }: Props) {
   }, [walking])
 
   return (
-    <div className="section card" style={{ padding: 0, overflow: 'hidden', position: 'relative', width: '100%' }}>
+    <div className="section card" style={{ padding: 0, position: 'relative', width: '100%' }}>
       <div ref={containerRef} className="real-map-container" />
       {walking && (
         <div className="real-map-gps-badge">
