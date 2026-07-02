@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.14.6 (2026-07-02)
+
+### Added
+- **Auto GPS on map tab**: entering map tab auto-starts GPS tracking. Leaving map tab stops GPS to save battery. 🆕
+
 ## v0.14.5 (2026-07-02)
 
 ### Changed
