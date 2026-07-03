@@ -371,14 +371,15 @@ export default function HomePage() {
     gpsLastTime.current = 0
     wid.current = navigator.geolocation.watchPosition(
       pos => {
-        // ── GPS warmup: skip first 5 readings (sensor stabilisation) ──
-        gpsWarmup.current++
-        if (gpsWarmup.current <= 5) {
-          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          return
-        }
         // ── Skip inaccurate readings ──
         if (pos.coords.accuracy > 50) return
+
+        // ── GPS warmup: skip first 5 readings for step counting stability ──
+        gpsWarmup.current++
+        const warmedUp = gpsWarmup.current > 5
+        if (!warmedUp) {
+          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        }
 
         // ── Compute smoothed compass heading on EVERY reading ──
         const rawHeading = pos.coords.heading
@@ -402,9 +403,14 @@ export default function HomePage() {
         }
         setMovementMode(mode)
 
-        // ── Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
+        // ── Position: always update map after warmup + accuracy OK ──
+        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
+
+        // ── Step counting: only when actually moving ──
+        if (!warmedUp) return
+        // Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
         if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed < 0.5) return
-        // ── Time gate: ignore updates faster than 3s apart (GPS noise) ──
+        // Time gate: ignore updates faster than 3s apart (GPS noise) ──
         const now = Date.now()
         if (gpsLastTime.current > 0 && now - gpsLastTime.current < 3000) return
         gpsLastTime.current = now
@@ -425,7 +431,6 @@ export default function HomePage() {
         } else {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         }
-        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
       },
       () => { setWalking(false); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
