@@ -52,6 +52,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const headingRef = useRef(0)
   const lastPosForHeading = useRef<{lat:number;lng:number} | null>(null)
   const initialised = useRef(false)
+  const autoZoomingRef = useRef(false)
+  const lastManualZoomRef = useRef(0)
 
   useImperativeHandle(ref, () => ({
     generateTestTrails: () => {
@@ -160,6 +162,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }).addTo(map)
 
     mapRef.current = map
+
+    // ── Track manual zoom (for auto-zoom override) ──
+    map.on('zoomend', () => {
+      if (!autoZoomingRef.current) {
+        lastManualZoomRef.current = Date.now()
+      }
+    })
 
     // ── Player marker (shows real pet pixel art) ──
     const userM = L.marker([0, 0], {
@@ -300,6 +309,21 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       // Keep trail visible — don't clear
     }
   }, [walking])
+
+  // ── Auto-zoom based on movement mode (walk → zoom in, vehicle → zoom out) ──
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mode) return
+    // Respect manual zoom: don't auto-zoom if user zoomed manually in the last 15s
+    if (Date.now() - lastManualZoomRef.current < 15000) return
+
+    const targetZoom = mode === 'walk' ? 18 : 14
+    if (map.getZoom() === targetZoom) return // already there
+
+    autoZoomingRef.current = true
+    map.setZoom(targetZoom, { animate: true })
+    map.once('zoomend', () => { autoZoomingRef.current = false })
+  }, [mode])
 
   return (
     <div className="section card" style={{ padding: 0, position: 'relative', width: '100%' }}>
