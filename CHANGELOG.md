@@ -12,6 +12,7 @@
 - **Dev Tools -500 步**：紅色 `-500 步` button，直接從今日步數同總步數扣除（`removeSt(500)`），唔觸發 event check。方便測試步數倒退情境。 👣🔴
 - **🥚 蛋獲得 popup**：行路發現蛋時會彈出「🚶 行路發現新蛋！」視窗，顯示蛋名、稀有度，可「收埋」或「去蛋頁面孵化」。取代之前嘅靜默 logMsg。 🥚✨
 - **Event/蛋排隊機制**：如果蛋同 event 同時觸發，先顯示 event，dismiss 後自動彈出蛋 popup（反之亦然）。用 `pendingEggRef` / `pendingEventRef` 做 queue。 🔄
+- **🧭 地圖方向指示**：RealMap marker 加 compass ring + heading arrow，GPS 嘅 `pos.coords.heading` 驅動箭頭旋轉（0=北，順時針）。支援 pet marker 同 🥚 預設 marker。 🗺️🧭
 
 ## v0.18.0 (2026-07-03)
 
