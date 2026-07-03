@@ -81,6 +81,10 @@ export default function HomePage() {
   const eventStepCounter = useRef(0)
   const [eventCounterState, setEventCounterState] = useState(0) // triggers re-render on progress change
   const INV = 800 // event check interval (steps)
+  // ── Egg encounter popup + modal queue ──
+  const [eggFoundData, setEggFoundData] = useState<{type:'cat'|'shiba'; rarity:Rarity; eggId:string} | null>(null)
+  const pendingEggRef = useRef<{type:'cat'|'shiba'; rarity:Rarity; eggId:string} | null>(null)
+  const pendingEventRef = useRef<GameEvent | null>(null)
   // ── Step visual effects ──
   const [stepAnimTick, setStepAnimTick] = useState(0)
   const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
@@ -183,6 +187,28 @@ export default function HomePage() {
     setNewPetId(null)
     setPopupDismissed(true)
     try { localStorage.removeItem('pipz_new_pet') } catch(_){}
+  }
+
+  // ── Dismiss egg found popup ──
+  const dismissEggFound = () => {
+    setEggFoundData(null)
+    // Check for pending event after egg dismiss
+    if (pendingEventRef.current) {
+      const pe = pendingEventRef.current
+      pendingEventRef.current = null
+      setCurrentEvent(pe)
+    }
+  }
+
+  const goToEggsFromPopup = () => {
+    setEggFoundData(null)
+    setTab('eggs')
+    // Check for pending event after egg dismiss
+    if (pendingEventRef.current) {
+      const pe = pendingEventRef.current
+      pendingEventRef.current = null
+      setCurrentEvent(pe)
+    }
   }
 
   // ── Load data when user changes ──
@@ -457,6 +483,7 @@ export default function HomePage() {
     // ── Roguelike: event check ──
     eventStepCounter.current += Math.round(finalSteps * encMult)
     setEventCounterState(eventStepCounter.current)
+    let eventTriggeredThisCycle = false
     if (eventStepCounter.current >= INV && !currentEvent && petRef.current) {
       eventStepCounter.current = 0
       setEventCounterState(0)
@@ -464,7 +491,13 @@ export default function HomePage() {
       if (ev) {
         // Auto-dismiss new pet popup so event shows through
         if (newPetId) dismissNewPet()
-        setCurrentEvent(ev)
+        // If egg popup is showing, queue event instead
+        if (eggFoundData) {
+          pendingEventRef.current = ev
+        } else {
+          setCurrentEvent(ev)
+          eventTriggeredThisCycle = true
+        }
       }
     }
     // ── Egg encounter check ──
@@ -474,13 +507,20 @@ export default function HomePage() {
         eggStepCounter.current = 0
         // 40% chance to find an egg while walking
         if (Math.random() < 0.4) {
-          // 50/50 between cat and shiba
-          if (Math.random() < 0.5) {
-            logMsg('🥚 行路發現咗圓貓蛋！')
-            addPixelLabEgg()
+          const eggType = Math.random() < 0.5 ? 'cat' : 'shiba'
+          const rarity = eggType === 'cat' ? Rarity.Rare : Rarity.Uncommon
+          const eggId = `${eggType === 'cat' ? 'pixellab' : 'shiba'}_${Date.now()}`
+          // Save egg to DB first
+          if (eggType === 'cat') {
+            addPixelLabEgg().catch(() => {})
           } else {
-            logMsg('🥚 行路發現咗柴犬蛋！')
-            addShibaEgg()
+            addShibaEgg().catch(() => {})
+          }
+          // If event is showing or triggered this cycle, queue egg
+          if (currentEvent || eventTriggeredThisCycle) {
+            pendingEggRef.current = { type: eggType, rarity, eggId }
+          } else {
+            setEggFoundData({ type: eggType, rarity, eggId })
           }
         }
       }
@@ -724,6 +764,12 @@ export default function HomePage() {
     setCurrentEvent(null)
     logMsg(`🎲 ${ev.name} — ${choiceIndex !== undefined ? `選擇: ${ev.choices?.[choiceIndex]?.label}` : '已處理'}`)
     if (user) logEvent(user.id, ev.id, pet?.id, choiceIndex).catch(() => {})
+    // Check for pending egg after event dismiss
+    if (pendingEggRef.current) {
+      const pe = pendingEggRef.current
+      pendingEggRef.current = null
+      setEggFoundData(pe)
+    }
   }
 
   // ── Roguelike: open inventory ──
@@ -2022,6 +2068,67 @@ export default function HomePage() {
                 }}>
                 🎉 睇下寵物！
               </button>
+            </div>
+          </div>
+        )
+      })()}
+      </ModalPortal>
+
+      {/* ════ Egg Found Popup ════ */}
+      <ModalPortal>
+      {eggFoundData && (() => {
+        const { type, rarity } = eggFoundData
+        const eggName = type === 'cat' ? '圓貓蛋' : '柴犬蛋'
+        const eggEmoji = type === 'cat' ? '🐱' : '🐶'
+        return (
+          <div className="fixed-modal-layer" style={{
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)',
+            padding:16,
+          }} onClick={dismissEggFound}>
+            <div style={{
+              background:'#141b2d', border:`1px solid ${RARITY_COLORS[rarity]}44`,
+              borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{fontSize:48, marginBottom:8}}>🥚</div>
+              <div style={{fontSize:10, color:'#5a6d85', marginBottom:4, letterSpacing:2, textTransform:'uppercase'}}>
+                🚶 行路發現新蛋！
+              </div>
+              <div style={{fontSize:14, fontWeight:700, color:'#f0f4f8', marginBottom:4}}>
+                {eggName}
+              </div>
+              <div className="pet-badge" style={{
+                display:'inline-block',
+                color:RARITY_COLORS[rarity],
+                background:RARITY_COLORS[rarity]+'18',
+                fontSize:10, fontWeight:700,
+                padding:'3px 14px', borderRadius:10,
+                marginBottom:16,
+              }}>
+                {RARITY_LABELS[rarity]}
+              </div>
+              <div style={{fontSize:11, color:'#94a5b8', marginBottom:20}}>
+                {eggEmoji} 行路途中發現咗 {eggName}！快啲去孵化啦！
+              </div>
+              <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+                <button onClick={dismissEggFound}
+                  style={{
+                    padding:'8px 20px', borderRadius:16, border:'1px solid #2a3a5a',
+                    background:'transparent', color:'#94a5b8',
+                    fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                  }}>
+                  收埋
+                </button>
+                <button onClick={goToEggsFromPopup}
+                  style={{
+                    padding:'8px 24px', borderRadius:16, border:'none',
+                    background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+                    color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
+                    fontFamily:'inherit',
+                  }}>
+                  🥚 去蛋頁面孵化
+                </button>
+              </div>
             </div>
           </div>
         )
