@@ -191,6 +191,18 @@ export default function HomePage() {
 
   useEffect(() => { setReady(true) }, [])
 
+  // ── iOS: request motion/orientation permission via native click (React synthetic may not trigger prompt) ──
+  useEffect(() => {
+    const grant = () => {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        (DeviceOrientationEvent as any).requestPermission().catch(() => {})
+      }
+    }
+    // Native DOM click bypasses React's synthetic event delegation that iOS may not accept
+    document.addEventListener('click', grant, { once: true })
+    return () => document.removeEventListener('click', grant)
+  }, [])
+
   // Auto-detect recently created pets as "new" (safety net for localStorage miss)
   useEffect(() => {
     if (pets.length === 0 || newPetId || popupDismissed) return
@@ -2064,13 +2076,7 @@ export default function HomePage() {
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
-              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => {
-                // iOS: request motion+orientation permission on first user gesture
-                if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-                  (DeviceOrientationEvent as any).requestPermission().catch(() => {})
-                }
-                setTab(t.k)
-              }}>
+              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
                 <span className={`nav-label ${tab === t.k ? 'active' : 'inactive'}`}>{t.label}</span>
               </button>
