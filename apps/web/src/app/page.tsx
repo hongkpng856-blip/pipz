@@ -191,16 +191,6 @@ export default function HomePage() {
 
   useEffect(() => { setReady(true) }, [])
 
-  // ── Pre-request iOS Motion & Orientation permission on mount ──
-  // iOS needs this before devicemotion/deviceorientation events will fire.
-  // Requesting early avoids delay when user starts walking.
-  // Note: DeviceOrientationEvent.requestPermission() grants BOTH orientation + motion on iOS.
-  useEffect(() => {
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission().catch(() => {})
-    }
-  }, [])
-
   // Auto-detect recently created pets as "new" (safety net for localStorage miss)
   useEffect(() => {
     if (pets.length === 0 || newPetId || popupDismissed) return
@@ -2074,7 +2064,13 @@ export default function HomePage() {
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
-              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
+              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => {
+                // iOS: request motion+orientation permission on first user gesture
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+                  (DeviceOrientationEvent as any).requestPermission().catch(() => {})
+                }
+                setTab(t.k)
+              }}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
                 <span className={`nav-label ${tab === t.k ? 'active' : 'inactive'}`}>{t.label}</span>
               </button>
