@@ -522,6 +522,13 @@ export default function HomePage() {
     logMsg(`👣 步數 -${n}`)
   }
 
+  // ── Clear all steps ──
+  const clearSteps = () => {
+    setSteps(0)
+    setTotalSteps(0)
+    logMsg('🗑️ 所有步數已清零')
+  }
+
   // ── Create test pet with ALL skills for development testing ──
   const createTestPet = async () => {
     const seed = genSeed()
@@ -1084,6 +1091,10 @@ export default function HomePage() {
                       <button className="btn btn-ghost" onClick={() => removeSt(500)}
                         style={{fontSize:10, padding:'4px 10px', color:'#ef4444'}}>
                         -500 步
+                      </button>
+                      <button className="btn btn-ghost" onClick={clearSteps}
+                        style={{fontSize:10, padding:'4px 10px', color:'#ef4444', fontWeight:800}}>
+                        🗑️ 清零
                       </button>
                       <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
                         onClick={() => setSimulating(v => !v)}
