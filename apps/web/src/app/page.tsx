@@ -124,6 +124,8 @@ export default function HomePage() {
   const addStRef = useRef<(n:number)=>void>(() => {})
   const orientRef = useRef<((e: DeviceOrientationEvent) => void) | null>(null)
   const orientThrottleRef = useRef(0)
+  const stepDetectRef = useRef({ totalSteps: 0, lastStepTime: 0, lastGpsSteps: 0, fallbackSteps: 0 })
+  const motionRef = useRef<((e: DeviceMotionEvent) => void) | null>(null)
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -410,6 +412,29 @@ export default function HomePage() {
       window.addEventListener('deviceorientation', handleOrientation)
     }
 
+    // ── DeviceMotion API: accelerometer step detection (60Hz) ──
+    const handleMotion = (e: DeviceMotionEvent) => {
+      const acc = e.accelerationIncludingGravity
+      if (!acc || acc.x === null || acc.y === null || acc.z === null) return
+      // Remove gravity: magnitude = sqrt(x²+y²+z²) - 9.81
+      const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2) - 9.81
+      const now = performance.now()
+      // Peak detection: foot-strike impact > threshold, min interval avoids double-count
+      if (magnitude > 1.0 && now - stepDetectRef.current.lastStepTime > 250) {
+        stepDetectRef.current.totalSteps++
+        stepDetectRef.current.lastStepTime = now
+      }
+    }
+    motionRef.current = handleMotion
+
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+      (DeviceMotionEvent as any).requestPermission().then((state: string) => {
+        if (state === 'granted') window.addEventListener('devicemotion', handleMotion, true)
+      }).catch(() => {})
+    } else {
+      window.addEventListener('devicemotion', handleMotion)
+    }
+
     wid.current = navigator.geolocation.watchPosition(
       pos => {
         // ── GPS warmup: first 5 readings (regardless of accuracy) stabilise sensor ──
@@ -469,8 +494,22 @@ export default function HomePage() {
           // ── Min 5m displacement to act ──
           if (d > 5) {
             if (mode === 'walk') {
-              const ns = Math.floor(d * 1300)
-              addSt(ns)
+              // Priority 1: accelerometer step count (accurate, real-time)
+              const accSteps = stepDetectRef.current.totalSteps - stepDetectRef.current.lastGpsSteps
+              stepDetectRef.current.lastGpsSteps = stepDetectRef.current.totalSteps
+              if (accSteps > 0) {
+                addSt(accSteps * 1000)
+                // Scale GPS displacement for fallback accumulator only
+                stepDetectRef.current.fallbackSteps += Math.floor(d * 1300)
+              } else {
+                // Priority 2: GPS displacement as fallback (no accelerometer data)
+                // Only use if we have accumulated enough fallback distance
+                stepDetectRef.current.fallbackSteps += Math.floor(d * 1300)
+                if (stepDetectRef.current.fallbackSteps >= 5000) {
+                  addSt(stepDetectRef.current.fallbackSteps)
+                  stepDetectRef.current.fallbackSteps = 0
+                }
+              }
               last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
             } else {
               // Vehicle mode: still update heading reference but don't count steps
@@ -491,8 +530,13 @@ export default function HomePage() {
       window.removeEventListener('deviceorientation', orientRef.current)
       orientRef.current = null
     }
+    // Clean up DeviceMotion listener
+    if (motionRef.current) {
+      window.removeEventListener('devicemotion', motionRef.current)
+      motionRef.current = null
+    }
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); stepDetectRef.current.totalSteps = 0; stepDetectRef.current.lastGpsSteps = 0; stepDetectRef.current.fallbackSteps = 0; logMsg('⏹ 停低咗')
   }
 
   // ── Auto GPS when map tab is active ──
@@ -740,6 +784,10 @@ export default function HomePage() {
     if (orientRef.current) {
       window.removeEventListener('deviceorientation', orientRef.current)
       orientRef.current = null
+    }
+    if (motionRef.current) {
+      window.removeEventListener('devicemotion', motionRef.current)
+      motionRef.current = null
     }
   } }, [])
 
