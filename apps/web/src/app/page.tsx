@@ -527,7 +527,8 @@ export default function HomePage() {
         }
 
         // ── Determine movement mode from speed ──
-        let mode: 'walk' | 'vehicle' | 'stationary' = 'stationary'
+        // Default to 'walk' when speed unavailable (iPhone often returns null)
+        let mode: 'walk' | 'vehicle' | 'stationary' = 'walk'
         if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
           mode = pos.coords.speed >= 2.0 ? 'vehicle' : pos.coords.speed >= 0.5 ? 'walk' : 'stationary'
         }
