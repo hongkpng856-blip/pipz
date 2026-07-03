@@ -124,7 +124,20 @@ export default function HomePage() {
   const addStRef = useRef<(n:number)=>void>(() => {})
   const orientRef = useRef<((e: DeviceOrientationEvent) => void) | null>(null)
   const orientThrottleRef = useRef(0)
-  const stepDetectRef = useRef({ totalSteps: 0, lastStepTime: 0, lastGpsSteps: 0, fallbackSteps: 0 })
+  const stepDetectRef = useRef({
+    // Step count
+    totalSteps: 0, lastStepTime: 0, lastGpsSteps: 0, fallbackSteps: 0,
+    // Band-pass filter state
+    lp: 0,          // low-pass (removes high freq noise)
+    dcBlock: 0,     // very slow average for DC/gravity removal
+    // Adaptive threshold (running stats)
+    runningMean: 0, runningVar: 0, alpha: 0.005,
+    // Peak-pair detection
+    peakValue: 0, peakTime: 0, lookingNeg: false,
+    minInterval: 200, // ms between steps
+    // Walking bout detection
+    consecutive: 0, boutThreshold: 5, lastBoutTime: 0,
+  })
   const motionRef = useRef<((e: DeviceMotionEvent) => void) | null>(null)
 
   const pet = pets[activeIdx] ?? null
@@ -413,16 +426,71 @@ export default function HomePage() {
     }
 
     // ── DeviceMotion API: accelerometer step detection (60Hz) ──
+    // Professional-grade algorithm with band-pass filter, adaptive threshold,
+    // positive+negative peak-pair detection, and walking bout gating
     const handleMotion = (e: DeviceMotionEvent) => {
       const acc = e.accelerationIncludingGravity
       if (!acc || acc.x === null || acc.y === null || acc.z === null) return
-      // Remove gravity: magnitude = sqrt(x²+y²+z²) - 9.81
-      const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2) - 9.81
+      const s = stepDetectRef.current
       const now = performance.now()
-      // Peak detection: foot-strike impact > threshold, min interval avoids double-count
-      if (magnitude > 1.0 && now - stepDetectRef.current.lastStepTime > 250) {
-        stepDetectRef.current.totalSteps++
-        stepDetectRef.current.lastStepTime = now
+
+      // 1. Extract signal magnitude (remove gravity)
+      const mag = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2) - 9.81
+
+      // 2. Band-pass filter:
+      //    Low-pass (IIR ~8Hz cutoff @ 60Hz): removes sensor noise
+      s.lp = s.lp * 0.8 + mag * 0.2
+      //    DC removal: subtract very slow average (removes gravity tilt changes)
+      s.dcBlock = s.dcBlock * 0.99 + s.lp * 0.01
+      const filtered = s.lp - s.dcBlock
+
+      // 3. Adaptive threshold (running mean + std over ~3s window)
+      const diff = filtered - s.runningMean
+      s.runningMean += s.alpha * diff
+      s.runningVar += s.alpha * (diff * diff - s.runningVar)
+      const threshold = Math.max(0.3, s.runningMean + 1.5 * Math.sqrt(s.runningVar))
+
+      // 4. Positive + negative peak-pair detection
+      //    A step = positive peak (foot impact) → negative peak (rebound) within 500ms
+      if (!s.lookingNeg) {
+        // Looking for positive peak above threshold
+        if (filtered > threshold && filtered > s.peakValue) {
+          s.peakValue = filtered
+          s.peakTime = now
+        }
+        // Positive peak has passed (signal dropped below threshold*0.3)
+        if (s.peakValue > 0 && filtered < threshold * 0.3) {
+          s.lookingNeg = true
+        }
+        // Timeout: reset if no positive peak found for 1s
+        if (now - s.peakTime > 1000) {
+          s.peakValue = 0
+        }
+      } else {
+        // Looking for negative peak (rebound) within 500ms of positive peak
+        if (filtered < -threshold * 0.3 && now - s.peakTime < 500 && now - s.lastStepTime > s.minInterval) {
+          // Valid step detected!
+          s.consecutive++
+          s.lastStepTime = now
+          // Walking bout gate: only count after 5 consecutive steps
+          if (s.consecutive >= s.boutThreshold) {
+            s.totalSteps++
+          }
+          // Reset peak search
+          s.lookingNeg = false
+          s.peakValue = 0
+        }
+        // Timeout: missed the negative peak within 500ms window
+        if (now - s.peakTime > 500) {
+          s.lookingNeg = false
+          s.peakValue = 0
+          s.consecutive = 0 // reset bout counter on false positive
+        }
+      }
+
+      // Reset bout if no step for 3 seconds (not walking)
+      if (now - s.lastStepTime > 3000 && s.consecutive > 0) {
+        s.consecutive = 0
       }
     }
     motionRef.current = handleMotion
@@ -536,7 +604,7 @@ export default function HomePage() {
       motionRef.current = null
     }
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); stepDetectRef.current.totalSteps = 0; stepDetectRef.current.lastGpsSteps = 0; stepDetectRef.current.fallbackSteps = 0; logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); Object.assign(stepDetectRef.current, { totalSteps: 0, lastStepTime: 0, lastGpsSteps: 0, fallbackSteps: 0, lp: 0, dcBlock: 0, runningMean: 0, runningVar: 0, peakValue: 0, peakTime: 0, lookingNeg: false, consecutive: 0, lastBoutTime: 0 }); logMsg('⏹ 停低咗')
   }
 
   // ── Auto GPS when map tab is active ──
