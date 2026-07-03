@@ -494,14 +494,9 @@ export default function HomePage() {
       }
     }
     motionRef.current = handleMotion
-
-    if (typeof DeviceMotionEvent !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-      (DeviceMotionEvent as any).requestPermission().then((state: string) => {
-        if (state === 'granted') window.addEventListener('devicemotion', handleMotion, true)
-      }).catch(() => {})
-    } else {
-      window.addEventListener('devicemotion', handleMotion)
-    }
+    // iOS: don't requestPermission (needs user gesture), just add listener directly
+    // On devices without accelerometer the events simply never fire → GPS fallback
+    try { window.addEventListener('devicemotion', handleMotion) } catch (_) {}
 
     wid.current = navigator.geolocation.watchPosition(
       pos => {
@@ -567,16 +562,10 @@ export default function HomePage() {
               stepDetectRef.current.lastGpsSteps = stepDetectRef.current.totalSteps
               if (accSteps > 0) {
                 addSt(accSteps * 1000)
-                // Scale GPS displacement for fallback accumulator only
-                stepDetectRef.current.fallbackSteps += Math.floor(d * 1300)
               } else {
                 // Priority 2: GPS displacement as fallback (no accelerometer data)
-                // Only use if we have accumulated enough fallback distance
-                stepDetectRef.current.fallbackSteps += Math.floor(d * 1300)
-                if (stepDetectRef.current.fallbackSteps >= 5000) {
-                  addSt(stepDetectRef.current.fallbackSteps)
-                  stepDetectRef.current.fallbackSteps = 0
-                }
+                const ns = Math.floor(d * 1300)
+                addSt(ns)
               }
               last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
             } else {
