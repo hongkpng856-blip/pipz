@@ -48,35 +48,31 @@ export default function RealMap({ position, walking, pet }: Props) {
   const buildPetIcon = useCallback(() => {
     const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
 
-    // If no pet, show a simple egg dot with compass ring
+    // If no pet, show a simple egg dot with direction chevron
     if (!pet) {
       return L.divIcon({
         className: 'pipz-player-marker',
         html: `<div style="
-          width:44px;height:44px;position:relative;
+          width:32px;height:32px;position:relative;
         ">
           <div style="
-            position:absolute;inset:-2px;border-radius:50%;
-            border:2px solid ${rarityColor}44;opacity:0.5;
-          ">
-            <div style="
-              position:absolute;top:-4px;left:50%;margin-left:-2px;
-              width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
-              border-bottom:6px solid ${rarityColor};
-              transform-origin:2px 26px;
-            " class="pipz-heading-arrow" />
-          </div>
+            position:absolute;top:-10px;left:50%;margin-left:-6px;
+            width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+            border-bottom:8px solid ${rarityColor};
+            filter:drop-shadow(0 0 3px ${rarityColor}88);
+            transition:transform 0.3s ease;
+          " class="pipz-heading-arrow" />
           <div style="
             width:32px;height:32px;border-radius:50%;
             background:${rarityColor}22;
             border:3px solid ${rarityColor};
             display:flex;align-items:center;justify-content:center;
             font-size:18px;line-height:1;
-            box-shadow:0 0 12px ${rarityColor}66, 0 0 0 4px ${rarityColor}22;
+            box-shadow:0 0 12px ${rarityColor}66;
           ">🥚</div>
         </div>`,
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       })
     }
 
@@ -86,32 +82,28 @@ export default function RealMap({ position, walking, pet }: Props) {
     return L.divIcon({
       className: 'pipz-player-marker',
       html: `<div style="
-        width:56px;height:56px;position:relative;
+        width:44px;height:44px;position:relative;
       ">
         <div style="
-          position:absolute;inset:-2px;border-radius:50%;
-          border:2px solid ${rarityColor}44;opacity:0.5;
-        ">
-          <div style="
-            position:absolute;top:-4px;left:50%;margin-left:-2px;
-            width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
-            border-bottom:6px solid ${rarityColor};
-            transform-origin:2px 30px;
-          " class="pipz-heading-arrow" />
-        </div>
+          position:absolute;top:-10px;left:50%;margin-left:-6px;
+          width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+          border-bottom:8px solid ${rarityColor};
+          filter:drop-shadow(0 0 3px ${rarityColor}88);
+          transition:transform 0.3s ease;
+        " class="pipz-heading-arrow" />
         <div style="
           width:44px;height:44px;border-radius:50%;
           background:${rarityColor}22;
           border:3px solid ${rarityColor};
           display:flex;align-items:center;justify-content:center;
-          box-shadow:0 0 14px ${rarityColor}66, 0 0 0 5px ${rarityColor}22;
+          box-shadow:0 0 14px ${rarityColor}66;
           overflow:hidden;
         ">
           <img src="${dataUrl}" style="width:36px;height:36px;image-rendering:pixelated;display:block;" />
         </div>
       </div>`,
-      iconSize: [56, 56],
-      iconAnchor: [28, 28],
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
     })
   }, [pet])
 
