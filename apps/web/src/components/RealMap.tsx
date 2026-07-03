@@ -40,6 +40,7 @@ function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
 
 export interface RealMapHandle {
   generateTestTrails: () => void
+  clearStoredTrails: () => void
 }
 
 const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode }, ref) {
@@ -114,6 +115,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         polylineByDay.current.set(day, poly)
         trailByDay.current.set(day, points)
       }
+    },
+    clearStoredTrails: () => {
+      localStorage.removeItem('pipz_trail_data')
+      polylineByDay.current.forEach(p => p.remove())
+      polylineByDay.current.clear()
+      trailByDay.current.clear()
     },
   }), [])
 

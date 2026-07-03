@@ -1210,6 +1210,31 @@ export default function HomePage() {
                         style={{fontSize:10, padding:'4px 10px', color:'#22d3ee'}}>
                         🎨 測試7日路線
                       </button>
+                      <button className="btn btn-ghost" onClick={() => realMapRef.current?.clearStoredTrails()}
+                        style={{fontSize:10, padding:'4px 10px', color:'#f59e0b'}}>
+                        🗑️ 清除路線記憶
+                      </button>
+                      <button className="btn btn-ghost" onClick={() => {
+                        // Generate test trail data for the initial zoom animation
+                        const hkLat = 22.3193, hkLng = 114.1694
+                        const testData: Record<string, [number,number][]> = {}
+                        const days = [0, 1, 2, 4, 6] // Sun, Mon, Tue, Thu, Sat
+                        days.forEach((day, di) => {
+                          const pts: [number,number][] = []
+                          for (let i = 0; i < 30; i++) {
+                            const angle = (di / days.length) * Math.PI * 2 + i * 0.08
+                            const lat = hkLat + Math.cos(angle) * 0.001 * (0.5 + di * 0.2)
+                            const lng = hkLng + Math.sin(angle) * 0.0008
+                            pts.push([lat, lng])
+                          }
+                          testData[String(day)] = pts
+                        })
+                        localStorage.setItem('pipz_trail_data', JSON.stringify(testData))
+                        window.location.reload()
+                      }}
+                        style={{fontSize:10, padding:'4px 10px', color:'#a78bfa'}}>
+                        🎬 重播初始動畫
+                      </button>
                     </div>
 
                     {/* ── Quick Modify (only when pet exists) ── */}
