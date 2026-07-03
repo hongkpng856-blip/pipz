@@ -73,12 +73,13 @@ export default function NotificationModal({ open, onClose, userId }: Props) {
       display: 'flex', justifyContent: 'center',
       background: '#0b1120',
       overflow: 'hidden',
+      bottom: '70px',
     }}>
       <div style={{
         width: '100%', maxWidth: '24rem',
         display: 'flex', flexDirection: 'column',
         background: '#0b1120',
-        height: '100dvh',
+        height: 'calc(100dvh - 70px)',
       }}>
         {/* ── Header ── */}
         <div style={{

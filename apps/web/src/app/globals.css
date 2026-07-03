@@ -665,7 +665,8 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   transform: translateZ(0) !important;
   -webkit-transform: translateZ(0) !important;
   will-change: transform !important;
-  z-index: 100 !important;
+  z-index: 9999 !important;
+  isolation: isolate !important;
 }
 .fixed-modal-layer-top {
   position: fixed !important;
@@ -673,7 +674,8 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   transform: translateZ(0) !important;
   -webkit-transform: translateZ(0) !important;
   will-change: transform !important;
-  z-index: 200 !important;
+  z-index: 9999 !important;
+  isolation: isolate !important;
 }
 
 
