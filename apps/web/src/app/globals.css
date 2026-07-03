@@ -667,6 +667,11 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   will-change: transform;
   z-index: 9999 !important;
   isolation: isolate !important;
+  /* Entry animation */
+  animation: modalFadeIn 0.2s ease-out;
+}
+.fixed-modal-layer > * {
+  animation: modalCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fixed-modal-layer-top {
   position: fixed !important;
@@ -676,6 +681,26 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   will-change: transform;
   z-index: 9999 !important;
   isolation: isolate !important;
+  /* Entry animation */
+  animation: modalFadeIn 0.2s ease-out;
+}
+.fixed-modal-layer-top > * {
+  animation: modalCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 
