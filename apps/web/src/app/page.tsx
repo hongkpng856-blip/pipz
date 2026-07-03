@@ -122,6 +122,8 @@ export default function HomePage() {
   const eggStepCounter = useRef(0) // for encounter eggs while walking
   const pity = useRef<Record<string,number>>({legendary:0,epic:0})
   const addStRef = useRef<(n:number)=>void>(() => {})
+  const orientRef = useRef<((e: DeviceOrientationEvent) => void) | null>(null)
+  const orientThrottleRef = useRef(0)
 
   const pet = pets[activeIdx] ?? null
   const cp = (p: Pet) => p.stats.speed + p.stats.luck + p.stats.charm + p.stats.energy
@@ -369,6 +371,40 @@ export default function HomePage() {
     setWalking(true); setPetAnim('walk'); logMsg('🚶 開始行路！')
     gpsWarmup.current = 0
     gpsLastTime.current = 0
+
+    // ── DeviceOrientation API: real-time compass heading (60Hz on iPhone) ──
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      let h: number | null = null
+      const iosEvent = e as any
+      if (iosEvent.webkitCompassHeading !== undefined && iosEvent.webkitCompassHeading !== null) {
+        h = iosEvent.webkitCompassHeading // iOS true compass heading
+      } else if (e.alpha !== null && e.absolute === true) {
+        h = (360 - e.alpha) % 360 // standard compass heading
+      }
+      if (h !== null && h >= 0) {
+        compassHeadingRef.current = h
+        // Throttle React state updates to ~10fps (CSS transition smooths the rest)
+        const now = performance.now()
+        if (now - orientThrottleRef.current > 100) {
+          orientThrottleRef.current = now
+          setCompassHeading(h)
+        }
+      }
+    }
+    orientRef.current = handleOrientation
+
+    // iOS 13+ requires explicit permission
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission().then((state: string) => {
+        if (state === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation, true)
+        }
+      }).catch(() => {})
+    } else {
+      // Non-iOS: add listener directly
+      window.addEventListener('deviceorientation', handleOrientation)
+    }
+
     wid.current = navigator.geolocation.watchPosition(
       pos => {
         // ── Skip inaccurate readings ──
@@ -381,18 +417,12 @@ export default function HomePage() {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         }
 
-        // ── Compute smoothed compass heading on EVERY reading ──
+        // ── GPS compass heading: fallback when DeviceOrientation unavailable ──
         const rawHeading = pos.coords.heading
         if (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0) {
-          // Exponential moving average with angle wrapping
-          let diff = rawHeading - compassHeadingRef.current
-          if (diff > 180) diff -= 360
-          if (diff < -180) diff += 360
-          const smoothed = (compassHeadingRef.current + diff * 0.35 + 360) % 360
-          compassHeadingRef.current = smoothed
-          setCompassHeading(smoothed)
+          compassHeadingRef.current = rawHeading
+          setCompassHeading(rawHeading)
         } else if (compassHeadingRef.current === 0 && rawHeading === null) {
-          // No heading available yet — leave as null
           setCompassHeading(null)
         }
 
@@ -437,6 +467,11 @@ export default function HomePage() {
     )
   }
   const walkStop = () => {
+    // Clean up DeviceOrientation listener
+    if (orientRef.current) {
+      window.removeEventListener('deviceorientation', orientRef.current)
+      orientRef.current = null
+    }
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
     wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); logMsg('⏹ 停低咗')
   }
@@ -680,7 +715,14 @@ export default function HomePage() {
     logMsg(`🗑️ 已刪除寵物 #${id.slice(0,6)}`)
   }
 
-  useEffect(() => { return () => { if (wid.current !== null) navigator.geolocation.clearWatch(wid.current) } }, [])
+  // Cleanup on unmount
+  useEffect(() => { return () => {
+    if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
+    if (orientRef.current) {
+      window.removeEventListener('deviceorientation', orientRef.current)
+      orientRef.current = null
+    }
+  } }, [])
 
   // ── Walk simulation: continuous steps for testing ──
   useEffect(() => {
