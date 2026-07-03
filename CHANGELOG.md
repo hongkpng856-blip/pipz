@@ -9,6 +9,7 @@
 
 ### Added
 - **`docs/BUGS_AND_PITFALLS.md`**：所有過去錯誤同 bug 修改記錄文件，方便其他平台 agent 參考避免重複錯誤。 📖
+- **Dev Tools -500 步**：紅色 `-500 步` button，直接從今日步數同總步數扣除（`removeSt(500)`），唔觸發 event check。方便測試步數倒退情境。 👣🔴
 
 ## v0.18.0 (2026-07-03)
 
