@@ -27,7 +27,7 @@ html, body {
   width: 100%;
   overflow: hidden;
 }
-body { position: fixed; }
+body { height: 100dvh; overflow: hidden; width: 100%; }
 
 /* ── Root layout ── */
 .layout {

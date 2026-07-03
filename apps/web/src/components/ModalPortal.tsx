@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 
 /**
  * Renders children into document.body via React portal with maximum z-index
- * and GPU compositing to defeat any stacking context (Leaflet tiles, etc.).
+ * and GPU compositing to defeat any stacking context (Leaflet tiles, iOS Safari).
  */
 export default function ModalPortal({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
@@ -18,6 +18,7 @@ export default function ModalPortal({ children }: { children: ReactNode }) {
       inset: 0,
       zIndex: 2147483647,
       transform: 'translateZ(0)',
+      WebkitTransform: 'translate3d(0,0,0)',
     }}>
       {children}
     </div>,
