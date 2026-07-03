@@ -4,24 +4,14 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 /**
- * Renders children into document.body via React portal with maximum z-index
- * and GPU compositing to defeat any stacking context (Leaflet tiles, iOS Safari).
+ * Renders children into document.body via React portal.
+ * Bypasses stacking context issues from Leaflet, overflow, etc.
+ * Falls back to inline rendering on server-side.
  */
 export default function ModalPortal({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
   if (!mounted) return null
-  return createPortal(
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 2147483647,
-      transform: 'translateZ(0)',
-      WebkitTransform: 'translate3d(0,0,0)',
-    }}>
-      {children}
-    </div>,
-    document.body
-  )
+  return createPortal(children, document.body)
 }
