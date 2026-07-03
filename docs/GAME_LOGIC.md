@@ -482,6 +482,7 @@ Each day of the week gets its own trail colour, used identically in both the map
 - `trailByDay` ref in `RealMap.tsx`: `Map<number, [number, number][]>` — keyed by `dayIndex` (0–6)
 - `polylineByDay` ref: `Map<number, L.Polyline>` — each day gets its own Leaflet polyline layer
 - **Permanent**: trails are never cleared when walking stops; they persist for the entire component lifetime
+- **localStorage persistence** (v0.19.0+): every new GPS point auto-saves to `localStorage` key `pipz_trail_data`. On component mount (`restoreTrailFromStorage()`), saved trails are restored and polylines drawn. Survives app restart / PWA close. 🗺️💾
 
 ### Colour Mapping
 
@@ -497,6 +498,31 @@ The day index is derived from `new Date().getDay()`:
 
 `RealMapHandle` interface (exposed via `forwardRef` + `useImperativeHandle`):
 - `generateTestTrails()`: draws 7 small coloured arcs around the current map centre using all 7 `DAY_COLORS`, each with `dashArray: '6 4'` style. Accessible via Dev Tools `🎨 測試7日路線` button (`realMapRef.current.generateTestTrails()`).
+- `clearStoredTrails()` (v0.19.0+): removes `pipz_trail_data` from localStorage and removes all polyline layers from the map. Dev Tools `🗑️ 清除路線記憶`.
+
+### Auto-Zoom by Movement Mode (v0.19.0+)
+
+The map zoom adjusts automatically based on the user's movement mode:
+
+| Mode | Trigger | Target Zoom | Visual |
+|------|---------|-------------|--------|
+| 🚶 Walk | `speed < 2.0 m/s` or `null` | **18** (street level) | Cyan badge |
+| 🚗 Vehicle | `speed >= 2.0 m/s` | **14** (city district) | Amber badge |
+
+**Manual override:** User zooming via +/- buttons records the time in `lastManualZoomRef`. Auto-zoom is suppressed for 15 seconds after any manual zoom. Distinguishes programmatic from user zoom via `autoZoomingRef` flag.
+
+### Initial Zoom Animation (v0.19.0+)
+
+On first valid GPS position after mount, if saved trails exist in localStorage:
+
+1. `map.fitBounds(allTrailPoints, { maxZoom: 14, padding: [50, 50] })` — zoom out to show every walked path
+2. 1.5s pause (after fitBounds animation completes)
+3. `map.flyTo(currentPosition, 18, { duration: 1.5 })` — slow zoom in to user's current location
+
+**Guards:**
+- Warmup positions (first 5 GPS readings) do NOT update `mapPos` to avoid interrupting the animation
+- `initialAnimBusyRef` blocks `setView()` during the fitBounds→flyTo sequence
+- Without saved trails: `map.setView(currentPos, 18)` immediately (no animation)
 
 ### Limitations
 

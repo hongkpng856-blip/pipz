@@ -85,24 +85,40 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
   - **No pet logged in**: shows 🥚 emoji with rarity tint
   - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
-- **Path trail** (v0.18.1+): **7-day colour per-day polyline** system via `trailByDay` ref (`Map<number, LatLng[]>`):
-  - Each day of week gets an independent `L.polyline` with its own colour from `DAY_COLORS`
-  - Day mapping: `0(日)=#8b5cf6` `1(一)=#06b6d4` `2(二)=#22c55e` `3(三)=#f59e0b` `4(四)=#ef4444` `5(五)=#ec4899` `6(六)=#3b82f6`
-  - Trail is **permanent** — never cleared when walking stops; persists as long as the component is mounted
-  - `getDay()` determines the day index automatically, so routes from different weekdays display different colours on the same map
-- **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label (only visible when `walking=true`)
+|- **Path trail** (v0.18.1+): **7-day colour per-day polyline** system via `trailByDay` ref (`Map<number, LatLng[]>`):
+|  - Each day of week gets an independent `L.polyline` with its own colour from `DAY_COLORS`
+|  - Day mapping: `0(日)=#8b5cf6` `1(一)=#06b6d4` `2(二)=#22c55e` `3(三)=#f59e0b` `4(四)=#ef4444` `5(五)=#ec4899` `6(六)=#3b82f6`
+|  - Trail is **permanent** — never cleared when walking stops; persists as long as the component is mounted
+|  - **localStorage persistence** (v0.19.0+): every new GPS point auto-saves to `localStorage` key `pipz_trail_data`. On mount, saved trails are restored and drawn as polylines. Survives app restart/PWA close. 🗺️💾
+|  - `getDay()` determines the day index automatically, so routes from different weekdays display different colours on the same map
+|- **GPS mode badge** (v0.19.0+): top-right overlay replacing old "GPS" static label. Shows movement mode detected from GPS speed:
+|  - 🚶 步行中 (cyan dot, `speed < 2 m/s` or `null`) — walking mode, trails drawn, steps counted
+|  - 🚗 乘車中 (amber dot, `speed >= 2 m/s`) — vehicle mode, no trail, no step counting
+|  - Only visible when `walking=true` (GPS active)
 
 **Position tracking:**
 - GPS position received via `position` prop (from `mapPos` state in `page.tsx`)
 - `page.tsx` `watchPosition` callback updates `mapPos` state
 - RealMap syncs markers + centers map on each position update
+- **GPS warmup**: First 5 GPS readings are skipped (sensor stabilisation) — `mapPos` NOT updated during warmup to avoid interrupting initial zoom animation
 - Trail is **permanent** — never resets when walking stops; `trailByDay` ref persists for the entire component lifecycle
+- **Auto-zoom** (v0.19.0+): Map zoom adjusts based on movement mode:
+  - 🚶 `walk` → zoom **18** (street level, close)
+  - 🚗 `vehicle` → zoom **14** (city district, wide)
+  - Manual zoom via +/- buttons pauses auto-zoom for **15 seconds** (tracked via `lastManualZoomRef` + `autoZoomingRef` to distinguish programmatic vs user zoom)
+- **Initial zoom animation** (v0.19.0+): On first GPS fix when saved trails exist:
+  1. `map.fitBounds(allTrailPoints, { maxZoom: 14 })` — zoom out to show all walked paths
+  2. 1.5s delay → `map.flyTo(currentPos, 18, { duration: 1.5 })` — slowly zoom in to current location
+  3. `initialAnimBusyRef` prevents `setView` from interrupting the animation sequence
 
 **CSS styles** (in `globals.css`):
 - `.real-map-container`: container sizing (4:3 aspect ratio, min-height 240px)
 - `.real-map-container .leaflet-tile`: default rendering (no pixel/CSS filters applied)
 - `.pipz-player-marker`: custom pet marker style (removes Leaflet default bg/border)
-- `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
+|- `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
+|- `.real-map-mode-vehicle`: vehicle mode badge override (amber border/text)
+|- `.gps-dot-vehicle`: amber pulsing dot for vehicle mode
+|- `@keyframes gps-pulse-vehicle`: amber pulse animation for vehicle dot
 - `.leaflet-control-zoom`: dark-theme styled zoom control (blend with app theme)
 - `.leaflet-popup-content-wrapper`: dark popup theme (ready for future quest points)
 
@@ -173,6 +189,8 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - **-500 步** (🔴 red) — subtracts 500 steps via `removeSt(500)`, direct state mutation, no triggers
   - **🗑️ 清零** (🔴 red bold) — resets today steps + total steps to 0 via `clearSteps()`
   - **🎨 測試7日路線** (cyan, v0.18.1+) — calls `realMapRef.current.generateTestTrails()` to draw 7 coloured arcs around the current map centre, previewing all trace colours at once
+  - **🗑️ 清除路線記憶** (amber, v0.19.0+) — calls `realMapRef.current.clearStoredTrails()`: clears `pipz_trail_data` from localStorage + removes all polyline layers from the map
+  - **🎬 重播初始動畫** (purple, v0.19.0+) — generates 5 days of test trail data around HK, saves to localStorage, then reloads the page. On next GPS fix, plays the full fitBounds→flyTo initial zoom animation
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
   - ⬆️ 升 Lv — level +1

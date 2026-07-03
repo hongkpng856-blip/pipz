@@ -339,7 +339,23 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Field | Value |
 |-------|-------|
 | **Severity** | 🟢 Minor |
-| **Lesson** | Always add `*.bak`, `*.log`, `.env.local`, `.env.production` to `.gitignore` early. Retroactive cleanup pollutes commit history. |
+| **Prevention** | Always add `*.bak`, `*.log`, `.env.local`, `.env.production` to `.gitignore` early. Retroactive cleanup pollutes commit history. |
+
+---
+
+## 10. GPS Warmup + Map Animation Interference
+
+### 10.1 Warmup Positions Interrupting `fitBounds` Animation
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (initial zoom animation never completes) |
+| **Symptom** | When opening the app with saved trails, the map zooms way out (fitBounds) but never zooms back in to the user's current location. The flyTo timeout is silently lost. |
+| **Root Cause** | GPS warmup (5 readings at ~1s intervals) calls `setMapPos` for each reading. This triggers the position-sync `useEffect`, which calls `map.setView(position, zoom, { animate: true })`. This Leaflet API calls `map.stop()` internally, which **interrupts the fitBounds animation mid-flight**. Since fitBounds never completes its zoom change, the `zoomend` event never fires. The `map.once('zoomend', ...)` listener that starts the 1.5s timeout → `flyTo()` sequence never fires, so the zoom-in animation is permanently lost. |
+| **Fix (two-part)** | |
+| | 1. **Remove `setMapPos` during warmup** (`page.tsx`): Warmup readings only update `last.current` (heading reference). The map doesn't update until the 6th reading (first real GPS fix). |
+| | 2. **`initialAnimBusyRef` guard** (`RealMap.tsx`): A ref flag that's `true` from `fitBounds` start until `flyTo` completes. During this window, the position-sync effect skips `map.setView()` entirely (`else if (!initialAnimBusyRef.current)`), protecting the animation sequence from being interrupted by subsequent position updates. |
+| **Prevention** | Any Leaflet animation sequence that uses `map.once('zoomend', callback)` must be protected against `setView`/`setZoom`/`fitBounds` calls that might fire during the animation. Use a busy flag ref that blocks view-altering operations during multi-step animation chains. Beware that Leaflet's `setView({ animate: true })` calls `map.stop()` which aborts *any* in-progress animation including fitBounds. |
 
 ---
 
@@ -360,6 +376,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
 | Map compass arrow direction/wrong pivot | All | SVG path + GPS trajectory heading (`atan2`) + same-container rotate |
+| fitBounds animation interrupted by GPS warmup | All | Busy flag ref to block `setView` during multi-step Leaflet animations |
 
 ---
 

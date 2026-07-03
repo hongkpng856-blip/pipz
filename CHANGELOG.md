@@ -1,6 +1,17 @@
 # Changelog
 
-## v0.18.1 (2026-07-31)
+## v0.19.0 (2026-08-01)
+
+### Added
+- **🚶🚗 步行/乘車檢測**：GPS speed 判斷模式（< 2 m/s = 步行，>= 2 m/s = 乘車），地圖 badge 顯示 🚶 步行中 / 🚗 乘車中。乘車時唔計步、唔畫 trail。 🔍🚗
+- **🔍 Auto-zoom 按模式**：步行自動 zoom 18（街道級），乘車自動 zoom 14（區域級）。人手 zoom 後暫停 auto-zoom 15 秒。 🗺️📏
+- **💾 路線持久化 (localStorage)**：trail 點自動 save 去 `localStorage`，熄 app 再開路線仍然存在。 `pipz_trail_data` key。 🗺️💾
+- **🎬 初始 zoom 動畫**：開 app 後先 `fitBounds` zoom out 顯示所有路線，再 `flyTo` zoom in 到目前位置（zoom 18）。暖機期間唔更新地圖，避免打斷動畫。 🎬✨
+- **Dev Tools 🗑️ 清除路線記憶**：清空 localStorage trail + 移除地圖上所有 polyline。 🔧🗑️
+- **Dev Tools 🎬 重播初始動畫**：生成 5 日測試路線 → reload 頁面，重播 fitBounds → flyTo 動畫。 🔧🎬
+
+### Fixed
+- **初始 zoom 動畫被 GPS 暖機打斷**：5 次 warmup 讀數本來每次都 call `setMapPos` → 觸發 `setView` → 中斷 `fitBounds` 動畫 → `zoomend` 唔 fire → `flyTo` timeout 永遠唔執行 → 地圖 keep 住遠 zoom。Fix：暖機期間唔 `setMapPos`，加 `initialAnimBusyRef` guard 確保動畫完整執行。 🐛✅
 
 ### Fixed
 - **地圖 tiles 覆蓋通知 modal**：Leaflet tile pane 內部 z-index 200 高過 `.fixed-modal-layer` 嘅 100。將 `z-index` 提升到 9999 + `isolation: isolate` 創建新 stacking context，確保所有 portal modal 喺地圖之上。 🗺️⬆️
