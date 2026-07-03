@@ -560,10 +560,11 @@ export default function HomePage() {
               const accSteps = stepDetectRef.current.totalSteps - stepDetectRef.current.lastGpsSteps
               stepDetectRef.current.lastGpsSteps = stepDetectRef.current.totalSteps
               if (accSteps > 0) {
-                addSt(accSteps * 1000)
+                addSt(accSteps)
               } else {
                 // Priority 2: GPS displacement as fallback (no accelerometer data)
-                const ns = Math.floor(d * 1300)
+                // ~1.4 real steps per meter (avg adult stride 0.7m)
+                const ns = Math.max(1, Math.floor(d * 1.4))
                 addSt(ns)
               }
               last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
