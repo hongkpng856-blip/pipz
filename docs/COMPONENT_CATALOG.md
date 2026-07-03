@@ -128,7 +128,7 @@ The PetCompanion component (interactive pet room canvas) was previously shown wh
 #### ~~WalkingCanvas~~ *(removed — no longer used)*
 Previously displayed a top-down pixel view during GPS walking and encounter animation. Replaced by RealMap which is now always visible.
 
-**Encounter eggs** are now handled entirely through a popup modal — no animation canvas needed.
+**Encounter eggs** now trigger a **🥚 Egg Found Popup** (v0.18.1) showing the egg name, rarity, and buttons to dismiss or go to eggs tab. The popup uses a **queue system** (`pendingEggRef`/`pendingEventRef`) — if an event triggers simultaneously, the event modal shows first, then the egg popup appears on dismiss (and vice versa).
 
 ### Stats Card
 - Bigger card with **bar chart visualization**
@@ -153,17 +153,21 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 - Click → opens Pet Detail Modal
 
 ### Dev Tools (always visible)
-- **🔧 Dev 工具** toggle button at bottom of Community tab — visible to **all users** (no login required, no email check)
+- **🔧 Dev 工具** toggle button at the top of the main content — visible to **all users** (no login required, no email check)
+- **GPS**: 📡 開GPS / ⏹ 熄GPS toggle (starts/stops `watchPosition`)
 - **🎲 Event** button — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, etc.); useful for testers to verify event flow without waiting 800 steps
 - **Walk Speed**: 1x / 5x / 10x / 50x buttons — set simulation step multiplier; 🟢 indicator shows current speed
 - **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous steps at selected multiplier (1x=~1-4 steps/800ms, 50x=~50-200 steps/tick)
+- **Step controls**:
+  - **+500 步** — adds 500 steps via `addSt()`, triggers event/egg checks
+  - **-500 步** (🔴 red) — subtracts 500 steps via `removeSt(500)`, direct state mutation, no triggers
+  - **🗑️ 清零** (🔴 red bold) — resets today steps + total steps to 0 via `clearSteps()`
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
   - ⬆️ 升 Lv — level +1
   - 👣 +10K 步 — add 10,000 steps to active pet
   - 🌟 進化 — advance evolution stage
   - 💪 MAX — max out all stats + level
-- **+500 步** button — adds 500 steps (triggers encounters)
 - **Log** — shows last 3 log messages (encounters, actions, etc.)
 
 ---
@@ -479,9 +483,50 @@ Full-screen overlay, max-width: 24rem centered.
 
 ---
 
+## 10. Egg Found Popup (inline in `page.tsx`)
+
+Popup that appears when walking triggers an egg encounter (every 2000 steps, 40% chance).
+
+### Triggers
+- **Automatic**: `addSt()` → egg encounter check → `setEggFoundData({ type, rarity, eggId })`
+- **Dev Tools**: Walk simulation generates steps which can trigger egg encounters normally
+
+### Queue System (Event/Egg Interleaving)
+Both event checks and egg checks run synchronously in `addSt()`. To prevent one modal overwriting the other:
+
+| Scenario | Behavior |
+|----------|----------|
+| Only egg triggers | Egg popup shows immediately |
+| Only event triggers | Event modal shows (existing) |
+| Both trigger in same `addSt()` call | Event shows first; egg queued via `pendingEggRef`. On event dismiss → egg popup appears |
+| Egg popup showing, event triggers | Event queued via `pendingEventRef`. On egg dismiss → event modal appears |
+| Event modal showing, egg triggers | Egg queued via `pendingEggRef`. On event dismiss → egg popup appears |
+
+**Implementation:**
+- `pendingEggRef` / `pendingEventRef` — `useRef`-based queue
+- `handleEventChoice()` checks `pendingEggRef` after `setCurrentEvent(null)`
+- `dismissEggFound()` / `goToEggsFromPopup()` check `pendingEventRef` after `setEggFoundData(null)`
+- Event check in `addSt()` checks `eggFoundData` before `setCurrentEvent(ev)`
+
+### UI
+- Full-screen overlay with backdrop blur
+- 🥚 48px emoji
+- "🚶 行路發現新蛋！" subtitle
+- Egg name (圓貓蛋 / 柴犬蛋)
+- Rarity badge (Rare for cat, Uncommon for shiba)
+- Description: "{emoji} 行路途中發現咗 {eggName}！快啲去孵化啦！"
+- Two buttons:
+  - **收埋**: closed overlay (dismisses popup, checks pendingEventRef)
+  - **🥚 去蛋頁面孵化**: closes overlay + switches to eggs tab (also checks pendingEventRef)
+
+### States
+- `eggFoundData: {type:'cat'|'shiba'; rarity:Rarity; eggId:string} | null` — null = hidden
+
+---
+
 ## 11. ~~WalkingCanvas~~ (`WalkingCanvas.tsx`) *(deprecated — no longer used in app)*
 
-Previously a canvas-based top-down pixel art view (VS Code Pixel Agents style). **No longer imported or rendered** — removed from map page in v0.3.6.
+Previously a canvas-based top-down pixel art view. **No longer imported or rendered** — removed from map page in v0.3.6.
 
 Encounter system now uses a direct popup modal instead of animation canvas.
 

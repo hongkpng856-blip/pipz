@@ -322,13 +322,14 @@ stepEggCounter % 2000 === 0 && Math.random() < 0.4 → spawn PixelLab egg
 ```
 
 - Independent from the 500-step pet encounter system — both can trigger during walking
-- Egg is saved to DB immediately, appears in Eggs tab
-- Console log: "🥚 行路發現咗圓貓蛋！" or "🥚 行路發現咗柴犬蛋！"
+- Egg is saved to DB immediately
+- **🥚 Egg Found Popup** (v0.18.1): shows egg name + rarity + "收埋" / "去蛋頁面孵化" buttons
+- **Queue system**: if an event triggers simultaneously, event shows first, egg popup appears on dismiss (via `pendingEggRef`/`pendingEventRef`)
 - Hatches into PixelLab pet (cat or shiba) matching egg type
 
 ### Egg & Hatching Flow
 
-1. **Encounter** (every 500 steps): popup appears immediately → egg saved to inventory → user dismisses popup
+1. **Encounter** (every 2000 steps, 40%): 🥚 Egg Found Popup appears → egg saved to DB → user taps "收埋" or "去蛋頁面孵化"
 2. **Hatch** (from eggs tab): Tap egg → 2-second hatching animation → pet spawned → **new pet popup appears**
 3. **New Pet Popup**: Shows pet's pixel art, rarity badge, species ID, level/stage, and 4 stats (⚡🍀💜🔋) in a bordered overlay
 4. "🎉 睇下寵物" button → closes popup + switches to pets tab
