@@ -191,6 +191,16 @@ export default function HomePage() {
 
   useEffect(() => { setReady(true) }, [])
 
+  // ── Pre-request iOS Motion & Orientation permission on mount ──
+  // iOS needs this before devicemotion/deviceorientation events will fire.
+  // Requesting early avoids delay when user starts walking.
+  // Note: DeviceOrientationEvent.requestPermission() grants BOTH orientation + motion on iOS.
+  useEffect(() => {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+      (DeviceOrientationEvent as any).requestPermission().catch(() => {})
+    }
+  }, [])
+
   // Auto-detect recently created pets as "new" (safety net for localStorage miss)
   useEffect(() => {
     if (pets.length === 0 || newPetId || popupDismissed) return
@@ -412,18 +422,8 @@ export default function HomePage() {
       }
     }
     orientRef.current = handleOrientation
-
-    // iOS 13+ requires explicit permission
-    if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-      (DeviceOrientationEvent as any).requestPermission().then((state: string) => {
-        if (state === 'granted') {
-          window.addEventListener('deviceorientation', handleOrientation, true)
-        }
-      }).catch(() => {})
-    } else {
-      // Non-iOS: add listener directly
-      window.addEventListener('deviceorientation', handleOrientation)
-    }
+    // iOS: listener added directly; permission requested on mount
+    try { window.addEventListener('deviceorientation', handleOrientation, true) } catch (_) {}
 
     // ── DeviceMotion API: accelerometer step detection (60Hz) ──
     // Professional-grade algorithm with band-pass filter, adaptive threshold,
