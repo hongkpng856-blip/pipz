@@ -253,8 +253,7 @@ export default function RealMap({ position, walking, pet }: Props) {
   // ── Clear trail when walking stops ──
   useEffect(() => {
     if (!walking) {
-      trailCoords.current = []
-      trailRef.current?.setLatLngs([])
+      // Keep trail visible — don't clear
     }
   }, [walking])
 
