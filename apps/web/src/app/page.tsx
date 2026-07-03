@@ -515,6 +515,13 @@ export default function HomePage() {
     addSt(500)
   }
 
+  // ── Step removal for testing ──
+  const removeSt = (n: number) => {
+    setSteps(s => Math.max(0, s - n))
+    setTotalSteps(s => Math.max(0, s - n))
+    logMsg(`👣 步數 -${n}`)
+  }
+
   // ── Create test pet with ALL skills for development testing ──
   const createTestPet = async () => {
     const seed = genSeed()
@@ -1073,6 +1080,10 @@ export default function HomePage() {
                       <button className="btn btn-ghost" onClick={addDebug}
                         style={{fontSize:10, padding:'4px 10px'}}>
                         +500 步
+                      </button>
+                      <button className="btn btn-ghost" onClick={() => removeSt(500)}
+                        style={{fontSize:10, padding:'4px 10px', color:'#ef4444'}}>
+                        -500 步
                       </button>
                       <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
                         onClick={() => setSimulating(v => !v)}
