@@ -815,6 +815,17 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   50% { opacity: 0.6; box-shadow: 0 0 6px 3px rgba(251,191,36,0.15); }
 }
 
+/* Stationary mode badge override */
+.real-map-mode-stationary {
+  border-color: rgba(163,163,163,0.4) !important;
+  color: #a3a3a3 !important;
+}
+.gps-dot-stationary {
+  background: #a3a3a3 !important;
+  animation: none;
+  opacity: 0.5;
+}
+
 /* Dark Leaflet popup for pet marker */
 .leaflet-popup-content-wrapper {
   background: #141b2d !important;

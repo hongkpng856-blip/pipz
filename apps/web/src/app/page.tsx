@@ -61,7 +61,7 @@ export default function HomePage() {
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
-    const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | null>(null)
+    const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | 'stationary' | null>(null)
     const [compassHeading, setCompassHeading] = useState<number | null>(null)
     const compassHeadingRef = useRef(0)
     const realMapRef = useRef<RealMapHandle>(null)
@@ -396,10 +396,10 @@ export default function HomePage() {
           setCompassHeading(null)
         }
 
-        // ── Determine movement mode (walk vs vehicle) from speed ──
-        let mode: 'walk' | 'vehicle' = 'walk'
+        // ── Determine movement mode from speed ──
+        let mode: 'walk' | 'vehicle' | 'stationary' = 'stationary'
         if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
-          mode = pos.coords.speed >= 2.0 ? 'vehicle' : 'walk'
+          mode = pos.coords.speed >= 2.0 ? 'vehicle' : pos.coords.speed >= 0.5 ? 'walk' : 'stationary'
         }
         setMovementMode(mode)
 

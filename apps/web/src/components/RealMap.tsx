@@ -8,7 +8,7 @@ import { generatePixelPet, drawPixelGrid } from '@pipz/core'
 interface Props {
   position: { lat: number; lng: number; heading?: number } | null
   walking: boolean
-  mode: 'walk' | 'vehicle' | null
+  mode: 'walk' | 'vehicle' | 'stationary' | null
   deviceHeading?: number | null
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
 }
@@ -399,9 +399,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     <div className="section card" style={{ padding: 0, position: 'relative', width: '100%' }}>
       <div ref={containerRef} className="real-map-container" />
       {walking && (
-        <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : ''}`}>
-          <span className={`gps-dot ${mode === 'vehicle' ? 'gps-dot-vehicle' : ''}`} />
-          {mode === 'vehicle' ? '🚗 乘車中' : '🚶 步行中'}
+        <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : mode === 'stationary' ? 'real-map-mode-stationary' : ''}`}>
+          <span className={`gps-dot ${mode === 'vehicle' ? 'gps-dot-vehicle' : mode === 'stationary' ? 'gps-dot-stationary' : ''}`} />
+          {mode === 'vehicle' ? '🚗 乘車中' : mode === 'stationary' ? '🧘 靜止中' : '🚶 步行中'}
         </div>
       )}
     </div>
