@@ -43,6 +43,7 @@ export default function RealMap({ position, walking, pet }: Props) {
   const trailRef = useRef<L.Polyline | null>(null)
   const trailCoords = useRef<[number, number][]>([])
   const headingRef = useRef(0)
+  const lastPosForHeading = useRef<{lat:number;lng:number} | null>(null)
   const initialised = useRef(false)
 
   const buildPetIcon = useCallback(() => {
@@ -53,15 +54,15 @@ export default function RealMap({ position, walking, pet }: Props) {
       return L.divIcon({
         className: 'pipz-player-marker',
         html: `<div style="
-          width:32px;height:32px;position:relative;
+          width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center;
         ">
-          <div style="
-            position:absolute;top:-10px;left:50%;margin-left:-6px;
-            width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
-            border-bottom:8px solid ${rarityColor};
-            filter:drop-shadow(0 0 3px ${rarityColor}88);
-            transition:transform 0.3s ease;
-          " class="pipz-heading-arrow" />
+          <svg class="pipz-heading-arrow" style="
+            position:absolute;top:-14px;width:16px;height:12px;overflow:visible;
+            filter:drop-shadow(0 0 2px ${rarityColor});
+            transition:transform 0.25s ease;
+          " viewBox="0 0 16 12" fill="none">
+            <path d="M8 0L16 12H0z" fill="${rarityColor}" />
+          </svg>
           <div style="
             width:32px;height:32px;border-radius:50%;
             background:${rarityColor}22;
@@ -82,15 +83,15 @@ export default function RealMap({ position, walking, pet }: Props) {
     return L.divIcon({
       className: 'pipz-player-marker',
       html: `<div style="
-        width:44px;height:44px;position:relative;
+        width:44px;height:44px;position:relative;display:flex;align-items:center;justify-content:center;
       ">
-        <div style="
-          position:absolute;top:-10px;left:50%;margin-left:-6px;
-          width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
-          border-bottom:8px solid ${rarityColor};
-          filter:drop-shadow(0 0 3px ${rarityColor}88);
-          transition:transform 0.3s ease;
-        " class="pipz-heading-arrow" />
+        <svg class="pipz-heading-arrow" style="
+          position:absolute;top:-14px;width:16px;height:12px;overflow:visible;
+          filter:drop-shadow(0 0 2px ${rarityColor});
+          transition:transform 0.25s ease;
+        " viewBox="0 0 16 12" fill="none">
+          <path d="M8 0L16 12H0z" fill="${rarityColor}" />
+        </svg>
         <div style="
           width:44px;height:44px;border-radius:50%;
           background:${rarityColor}22;
@@ -228,15 +229,25 @@ export default function RealMap({ position, walking, pet }: Props) {
     accCircleRef.current?.setLatLng([lat, lng])
     mapRef.current.setView([lat, lng], mapRef.current.getZoom(), { animate: true })
 
-    // Update heading arrow rotation
-    if (heading !== undefined && heading >= 0) {
-      headingRef.current = heading
-      const el = userMarkerRef.current.getElement()
-      if (el) {
-        const arrow = el.querySelector('.pipz-heading-arrow') as HTMLElement
-        if (arrow) {
-          arrow.style.transform = `rotate(${heading}deg)`
-        }
+    // Compute heading from GPS track (more reliable than pos.coords.heading)
+    let finalHeading = heading
+    if (lastPosForHeading.current) {
+      const dLat = lat - lastPosForHeading.current.lat
+      const dLng = lng - lastPosForHeading.current.lng
+      // Only compute if moved enough (>0.00001° ≈ ~1m)
+      if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
+        const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360
+        finalHeading = bearing
+      }
+    }
+    lastPosForHeading.current = { lat, lng }
+
+    // Apply heading rotation
+    if (finalHeading !== undefined && finalHeading >= 0) {
+      headingRef.current = finalHeading
+      const arrow = userMarkerRef.current.getElement()?.querySelector('.pipz-heading-arrow') as HTMLElement
+      if (arrow) {
+        arrow.style.transform = `rotate(${finalHeading}deg)`
       }
     }
 
