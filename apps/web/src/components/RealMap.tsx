@@ -16,6 +16,8 @@ const RC: Record<string, string> = {
   epic: '#8b5cf6', legendary: '#f59e0b',
 }
 
+const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
+
 /** Generate a data URL of the pet's pixel art sprite */
 function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
   const seed = parseInt(pet.speciesId ?? '0', 10) || 1
@@ -40,8 +42,8 @@ export default function RealMap({ position, walking, pet }: Props) {
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
   const accCircleRef = useRef<L.Circle | null>(null)
-  const trailRef = useRef<L.Polyline | null>(null)
-  const trailCoords = useRef<[number, number][]>([])
+  const trailByDay = useRef<Map<number, [number, number][]>>(new Map())
+  const polylineByDay = useRef<Map<number, L.Polyline>>(new Map())
   const headingRef = useRef(0)
   const lastPosForHeading = useRef<{lat:number;lng:number} | null>(null)
   const initialised = useRef(false)
@@ -167,14 +169,7 @@ export default function RealMap({ position, walking, pet }: Props) {
     }).addTo(map)
     accCircleRef.current = accC
 
-    // ── Path trail ──
-    const trail = L.polyline([], {
-      color: '#00ddff',
-      weight: 3,
-      opacity: 0.6,
-      dashArray: '6 4',
-    }).addTo(map)
-    trailRef.current = trail
+    // ── Per-day trails (created lazily) ──
 
     return () => {
       map.remove()
@@ -244,9 +239,22 @@ export default function RealMap({ position, walking, pet }: Props) {
     }
 
     if (walking) {
-      trailCoords.current.push([lat, lng])
-      if (trailCoords.current.length > 200) trailCoords.current.shift()
-      trailRef.current?.setLatLngs(trailCoords.current)
+      const dayIdx = new Date().getDay()
+      const points = trailByDay.current.get(dayIdx) || []
+      points.push([lat, lng])
+      trailByDay.current.set(dayIdx, points)
+
+      let poly = polylineByDay.current.get(dayIdx)
+      if (!poly) {
+        poly = L.polyline([], {
+          color: DAY_COLORS[dayIdx],
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '6 4',
+        }).addTo(mapRef.current!)
+        polylineByDay.current.set(dayIdx, poly)
+      }
+      poly.setLatLngs(points)
     }
   }, [position?.lat, position?.lng])
 

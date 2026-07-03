@@ -23,6 +23,7 @@ const PC: Record<string, string> = {
   common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
   epic: '#8b5cf6', legendary: '#f59e0b',
 }
+const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
 const ME: Record<string, string> = {
   happy: '😊', excited: '🤩', hungry: '🍽️', sleepy: '😴', sad: '😢',
 }
@@ -1381,7 +1382,9 @@ export default function HomePage() {
                       <div className="weekly-chart">
                         {(() => {
                           const maxSt = Math.max(...weeklySteps.map(d => d.steps), 1)
-                          return weeklySteps.map((day, i) => (
+                          return weeklySteps.map((day, i) => {
+                            const dayIdx = new Date(day.date).getDay()
+                            return (
                             <div key={day.date} className="weekly-bar-col">
                               <div className="weekly-bar-wrap">
                                 <div
@@ -1389,8 +1392,9 @@ export default function HomePage() {
                                   style={{
                                     height: `${Math.max(4, (day.steps / maxSt) * 60)}px`,
                                     background: day.isToday
-                                      ? 'linear-gradient(180deg, #8b5cf6, #22d3ee)'
-                                      : 'linear-gradient(180deg, #2a3a5a, #1e2a45)',
+                                      ? `linear-gradient(180deg, ${DAY_COLORS[dayIdx]}, ${DAY_COLORS[dayIdx]}88)`
+                                      : `linear-gradient(180deg, ${DAY_COLORS[dayIdx]}66, ${DAY_COLORS[dayIdx]}33)`,
+                                    boxShadow: day.isToday ? `0 0 8px ${DAY_COLORS[dayIdx]}66` : 'none',
                                   }}
                                 />
                               </div>
@@ -1399,7 +1403,7 @@ export default function HomePage() {
                                 <span className={`weekly-bar-label ${day.isToday ? 'weekly-bar-label-today' : ''}`}>{day.dayLabel}</span>
                               </div>
                             </div>
-                          ))
+                          )})
                         })()}
                       </div>
                     </div>
