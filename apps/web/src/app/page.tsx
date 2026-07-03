@@ -503,10 +503,9 @@ export default function HomePage() {
         // ── GPS warmup: first 5 readings (regardless of accuracy) stabilise sensor ──
         gpsWarmup.current++
         if (gpsWarmup.current <= 5) {
-          // Only store accurate warmup positions as displacement reference
-          if (pos.coords.accuracy <= 50) {
-            last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          }
+          // Always set displacement reference (even if accuracy is high) so
+          // step counting can begin immediately after warmup
+          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           return
         }
 
@@ -554,8 +553,8 @@ export default function HomePage() {
 
         if (last.current) {
           const d = haversine(last.current.lat, last.current.lng, pos.coords.latitude, pos.coords.longitude)
-          // ── Min 5m displacement to act ──
-          if (d > 5) {
+          // ── Min 3m displacement to act ──
+          if (d > 3) {
             if (mode === 'walk') {
               // Priority 1: accelerometer step count (accurate, real-time)
               const accSteps = stepDetectRef.current.totalSteps - stepDetectRef.current.lastGpsSteps
