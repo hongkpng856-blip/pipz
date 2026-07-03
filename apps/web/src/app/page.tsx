@@ -382,12 +382,17 @@ export default function HomePage() {
         h = (360 - e.alpha) % 360 // standard compass heading
       }
       if (h !== null && h >= 0) {
-        compassHeadingRef.current = h
+        // Light EMA smoothing (factor 0.5) dampens sensor jitter; at 60Hz converges in ~50ms
+        let diff = h - compassHeadingRef.current
+        if (diff > 180) diff -= 360
+        if (diff < -180) diff += 360
+        const smoothed = (compassHeadingRef.current + diff * 0.5 + 360) % 360
+        compassHeadingRef.current = smoothed
         // Throttle React state updates to ~10fps (CSS transition smooths the rest)
         const now = performance.now()
         if (now - orientThrottleRef.current > 100) {
           orientThrottleRef.current = now
-          setCompassHeading(h)
+          setCompassHeading(smoothed)
         }
       }
     }
@@ -407,21 +412,29 @@ export default function HomePage() {
 
     wid.current = navigator.geolocation.watchPosition(
       pos => {
-        // ── Skip inaccurate readings ──
-        if (pos.coords.accuracy > 50) return
-
-        // ── GPS warmup: skip first 5 readings for step counting stability ──
+        // ── GPS warmup: first 5 readings (regardless of accuracy) stabilise sensor ──
         gpsWarmup.current++
-        const warmedUp = gpsWarmup.current > 5
-        if (!warmedUp) {
-          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        if (gpsWarmup.current <= 5) {
+          // Only store accurate warmup positions as displacement reference
+          if (pos.coords.accuracy <= 50) {
+            last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          }
+          return
         }
 
+        // ── Skip inaccurate readings after warmup ──
+        if (pos.coords.accuracy > 50) return
+
         // ── GPS compass heading: fallback when DeviceOrientation unavailable ──
+        // Light EMA smoothing (factor 0.5) to dampen sensor jitter
         const rawHeading = pos.coords.heading
         if (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0) {
-          compassHeadingRef.current = rawHeading
-          setCompassHeading(rawHeading)
+          let diff = rawHeading - compassHeadingRef.current
+          if (diff > 180) diff -= 360
+          if (diff < -180) diff += 360
+          const smoothed = (compassHeadingRef.current + diff * 0.5 + 360) % 360
+          compassHeadingRef.current = smoothed
+          setCompassHeading(smoothed)
         } else if (compassHeadingRef.current === 0 && rawHeading === null) {
           setCompassHeading(null)
         }
@@ -433,11 +446,17 @@ export default function HomePage() {
         }
         setMovementMode(mode)
 
-        // ── Position: always update map after warmup + accuracy OK ──
-        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
+        // ── Position: always update map ──
+        const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined }
+        setMapPos(newPos)
+
+        // ── First post-warmup reading: set reference point, don't count steps ──
+        if (!last.current) {
+          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          return
+        }
 
         // ── Step counting: only when actually moving ──
-        if (!warmedUp) return
         // Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
         if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed < 0.5) return
         // Time gate: ignore updates faster than 3s apart (GPS noise) ──
