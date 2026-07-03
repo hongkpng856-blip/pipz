@@ -56,6 +56,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const autoZoomingRef = useRef(false)
   const lastManualZoomRef = useRef(0)
   const initialZoomDoneRef = useRef(false)
+  const initialAnimBusyRef = useRef(false)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
 
   function saveTrailToStorage() {
@@ -308,18 +309,22 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       const allPoints: [number, number][] = []
       trailByDay.current.forEach(pts => allPoints.push(...pts))
       if (allPoints.length > 0) {
+        initialAnimBusyRef.current = true
         autoZoomingRef.current = true
-        map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50], animate: true })
+        map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50], animate: true, maxZoom: 14 })
         map.once('zoomend', () => {
           setTimeout(() => {
             map.flyTo([lat, lng], 18, { duration: 1.5 })
-            map.once('zoomend', () => { autoZoomingRef.current = false })
+            map.once('zoomend', () => {
+              initialAnimBusyRef.current = false
+              autoZoomingRef.current = false
+            })
           }, 1500)
         })
       } else {
         map.setView([lat, lng], 18, { animate: true })
       }
-    } else {
+    } else if (!initialAnimBusyRef.current) {
       map.setView([lat, lng], map.getZoom(), { animate: true })
     }
 

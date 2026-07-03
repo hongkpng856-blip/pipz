@@ -373,7 +373,6 @@ export default function HomePage() {
         gpsWarmup.current++
         if (gpsWarmup.current <= 5) {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
           return
         }
         // ── Skip inaccurate readings ──
