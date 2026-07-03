@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.18.1 (2026-07-31)
+
+### Fixed
+- **地圖 tiles 覆蓋通知 modal**：Leaflet tile pane 內部 z-index 200 高過 `.fixed-modal-layer` 嘅 100。將 `z-index` 提升到 9999 + `isolation: isolate` 創建新 stacking context，確保所有 portal modal 喺地圖之上。 🗺️⬆️
+- **通知 modal 遮擋底部導航欄**：`css class` 嘅 `inset: 0 !important` 覆蓋咗 inline `bottom: 85px`，令底部空間無效。移除 `!important` 令 inline style 正常生效，modal 內容留 85px 底部空間俾導航欄。 🔔✅
+- **CSS `!important` 壓過 inline override**：`.fixed-modal-layer` 嘅 `inset: 0 !important` 阻止任何 component 自訂定位。全部改為非 `!important`，保留 `position: fixed !important` 同 `z-index: 9999 !important`，其他定位屬性可由 component override。 ⚡
+
+### Added
+- **`docs/BUGS_AND_PITFALLS.md`**：所有過去錯誤同 bug 修改記錄文件，方便其他平台 agent 參考避免重複錯誤。 📖
+
 ## v0.18.0 (2026-07-03)
 
 ### Fixed

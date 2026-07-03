@@ -121,6 +121,26 @@ activePet (from page.tsx state)
 | Client-side auth callback | Server-side always returned null user |
 | Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |
 | Env vars via vercel.json | `SUPABASE_SERVICE_ROLE_KEY` set in `vercel.json` at project root + `apps/web/.env.production` for Next.js |
+| **React Portal for all modals** | Leaflet GPU compositing (`translate3d`) creates stacking context that overrides CSS z-index. All full-screen modals render via `createPortal()` to `document.body` to escape `.layout`'s stacking context. Modal CSS class `.fixed-modal-layer` uses `z-index: 9999; isolation: isolate` to ensure it renders above Leaflet tile pane (internal z-index 200). |
+
+## Critical Patterns (Cross-Platform)
+
+### CSS `!important` Discipline
+- **Only use `!important` on `position: fixed` and `z-index`** — these must always win
+- **Never use `!important` on positioning properties** (`inset`, `top`, `left`, `right`, `bottom`) — individual modal components need to override these for layout (e.g., notification modal needs `bottom: 85px` for nav space)
+- Violation: `.fixed-modal-layer` had `inset: 0 !important` which blocked inline `bottom: 85px` from working
+
+### iOS Stacking Context Golden Rules
+1. **`position: fixed` inside `transform`/`will-change` ancestors** breaks on iOS Safari — the fixed element attaches to the transformed ancestor instead of the viewport
+2. **Leaflet tiles use GPU compositing** (`translateZ(0)`) that creates a layer above regular positioned elements — always use `z-index: 9999` for overlays
+3. **`body { overflow: hidden }` + `position: fixed`** causes iOS PWA click dead zones — use `overflow: hidden` on body, never `position: fixed`
+4. **React Portal (`createPortal` to `document.body`)** is the only reliable way to escape Leaflet/transform stacking contexts
+
+### Leaflet Stacking Context (iOS-specific)
+- Leaflet internally uses `z-index: 200` on `.leaflet-tile-pane` and `translate3d` on tiles
+- `position: fixed` overlays need `z-index` **above 200** to appear above the map
+- Even with correct z-index, iOS may still render fixed elements behind Leaflet if any ancestor has `will-change`, `transform`, or `-webkit-overflow-scrolling`
+- Solution: render modals as direct children of `document.body` (React createPortal) with `isolation: isolate`
 
 ## Deployment
 

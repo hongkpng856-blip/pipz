@@ -649,6 +649,15 @@ Each notification card shows:
   - **pet_sold**: seller receives "你嘅寵物以 ⚡X 能量賣出！"
   - **pet_bought**: buyer receives "你以 ⚡X 能量買入咗新寵物！"
 
+### Notification Generation (Server-side) (above)
+
+### Modal Positioning (Critical — iOS stacking context fix)
+
+- Renders via **ModalPortal** (`createPortal` → `document.body`) to escape Leaflet's GPU compositing stacking context
+- Uses `.fixed-modal-layer` CSS class: `position: fixed; z-index: 9999; isolation: isolate`
+- **Bottom nav guard**: inline `bottom: 85px` overrides CSS `inset: 0` — modal stops 85px above viewport bottom, leaving room for the 5 bottom nav buttons
+- `.fixed-modal-layer` does NOT use `!important` on `inset`/`top`/`bottom`/`left`/`right` — only `position: fixed` and `z-index: 9999` are `!important`. This allows individual modals to override positioning (e.g., notification modal sets `bottom: 85px`).
+
 ### Unread Count
 - 🔔 **Golden bell** in header (between title and right controls): colour = `#fbbf24` (unread > 0) or `#9ca3af` (none)
 - Red badge on bell's top-right corner, capped at 99+
