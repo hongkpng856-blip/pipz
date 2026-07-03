@@ -58,7 +58,7 @@ export default function HomePage() {
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
-    const [mapPos, setMapPos] = useState<{lat: number; lng: number} | null>(null)
+    const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
     const [newPetId, setNewPetId] = useState<string | null>(() => {
@@ -369,7 +369,7 @@ export default function HomePage() {
         gpsWarmup.current++
         if (gpsWarmup.current <= 5) {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+          setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
           return
         }
         // ── Skip inaccurate readings ──
@@ -392,7 +392,7 @@ export default function HomePage() {
         } else {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         }
-        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setMapPos({ lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined })
       },
       () => { setWalking(false); setPetAnim('idle') },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
