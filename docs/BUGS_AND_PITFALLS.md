@@ -372,6 +372,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Pixel art blurring | All | `imageSmoothingEnabled = false` |
 | `!important` blocking overrides | All | Only use `!important` on truly invariant properties |
 | Merge conflict resurrecting dead code | All | Manual review of merge diffs |
+| Speed gate blocks map position (stationary marker never appears) | All | Separate position update from step counting gates. Call `setMapPos` before the speed/time/displacement checks so the marker shows even when stationary. |
 | Concurrent state updates (popups) | All | Dismiss old before showing new |
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |

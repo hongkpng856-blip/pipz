@@ -280,11 +280,33 @@ Each rarity has 3 colour variants (randomly chosen):
 
 ### GPS Walking
 - Uses `navigator.geolocation.watchPosition()`
-- Accuracy threshold: < 100m
+- **Accuracy threshold**: `< 50m` (readings with accuracy > 50m are discarded entirely)
+- **Warmup**: First 5 GPS readings are used only for sensor stabilisation — no position update, no step counting
+- **Position update**: After warmup + accuracy check, `setMapPos` is called on **every** valid reading — marker visible even when stationary
+- **Step counting** separated from position: speed gate (`< 0.5 m/s`), time gate (`> 3s` since last), displacement gate (`> 5m`) only gate step accumulation, not the map marker
 - Distance formula: Haversine
 - Steps = `floor(distance_in_meters * 1300)`
-- Walk button toggles GPS on/off
 - High accuracy mode: `enableHighAccuracy: true, maximumAge: 5000, timeout: 10000`
+
+### Movement Mode Detection (v0.19.0+)
+
+The GPS callback determines movement mode based on `pos.coords.speed` (every reading, independently of stepping):
+
+| Mode | Threshold | Badge | Map Zoom | Step Counting | Trail Drawing |
+|------|-----------|-------|----------|---------------|---------------|
+| 🧘 Stationary | `speed < 0.5 m/s` or `null` | Grey badge, static dot | — (previous) | ❌ | ❌ |
+| 🚶 Walk | `0.5 ≤ speed < 2.0 m/s` | Cyan badge, pulsing dot | 18 (street level) | ✅ | ✅ |
+| 🚗 Vehicle | `speed ≥ 2.0 m/s` | Amber badge, pulsing dot | 14 (city district) | ❌ | ❌ |
+
+- Vehicle mode: count 0 steps, draw no trail (prevents public-transport step inflation)
+- Movement mode updates every GPS reading (not gated by time/displacement checks)
+
+### Heading / Compass (v0.20.0+)
+- **Every GPS reading**: device compass heading (`pos.coords.heading`) goes through **EMA smoothing** (`factor = 0.35`) with angle wrapping (`diff = raw - prev`, clamped to ±180°)
+- Smoothed heading stored in `compassHeadingRef` + `setCompassHeading` state → passed as `deviceHeading` prop to RealMap
+- **RealMap heading priority**: `deviceHeading ?? position.heading ?? trajectory(atan2)`
+- Heading updates are **fully decoupled from position** — the arrow rotates on every GPS tick (~1Hz) even when standing still
+- `walkStop()` resets heading ref to 0 for clean restart
 ### Manual Testing
 
 - Debug button: "+500 測試步數" adds 500 steps instantly (no longer skips encounters)
@@ -506,7 +528,8 @@ The map zoom adjusts automatically based on the user's movement mode:
 
 | Mode | Trigger | Target Zoom | Visual |
 |------|---------|-------------|--------|
-| 🚶 Walk | `speed < 2.0 m/s` or `null` | **18** (street level) | Cyan badge |
+| 🧘 Stationary | `speed < 0.5 m/s` or `null` | — (preserves last zoom) | Grey badge |
+| 🚶 Walk | `0.5 ≤ speed < 2.0 m/s` | **18** (street level) | Cyan badge |
 | 🚗 Vehicle | `speed >= 2.0 m/s` | **14** (city district) | Amber badge |
 
 **Manual override:** User zooming via +/- buttons records the time in `lastManualZoomRef`. Auto-zoom is suppressed for 15 seconds after any manual zoom. Distinguishes programmatic from user zoom via `autoZoomingRef` flag.

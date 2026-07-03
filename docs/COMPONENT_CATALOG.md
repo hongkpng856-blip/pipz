@@ -91,18 +91,21 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 |  - Trail is **permanent** — never cleared when walking stops; persists as long as the component is mounted
 |  - **localStorage persistence** (v0.19.0+): every new GPS point auto-saves to `localStorage` key `pipz_trail_data`. On mount, saved trails are restored and drawn as polylines. Survives app restart/PWA close. 🗺️💾
 |  - `getDay()` determines the day index automatically, so routes from different weekdays display different colours on the same map
-|- **GPS mode badge** (v0.19.0+): top-right overlay replacing old "GPS" static label. Shows movement mode detected from GPS speed:
-|  - 🚶 步行中 (cyan dot, `speed < 2 m/s` or `null`) — walking mode, trails drawn, steps counted
-|  - 🚗 乘車中 (amber dot, `speed >= 2 m/s`) — vehicle mode, no trail, no step counting
-|  - Only visible when `walking=true` (GPS active)
+||- **GPS mode badge** (v0.19.0+): top-right overlay replacing old "GPS" static label. Shows movement mode detected from GPS speed:
+||  - 🧘 靜止中 (grey dot, `speed < 0.5 m/s` or `null`) — stationary, no trail, no step counting
+||  - 🚶 步行中 (cyan dot, `0.5 ≤ speed < 2 m/s`) — walking mode, trails drawn, steps counted
+||  - 🚗 乘車中 (amber dot, `speed >= 2 m/s`) — vehicle mode, no trail, no step counting
+||  - Only visible when `walking=true` (GPS active)
 
 **Position tracking:**
 - GPS position received via `position` prop (from `mapPos` state in `page.tsx`)
-- `page.tsx` `watchPosition` callback updates `mapPos` state
+- `page.tsx` `watchPosition` callback updates `mapPos` state — called on **every** valid GPS reading (accuracy < 50m) after warmup, NOT gated by speed/time/displacement
 - RealMap syncs markers + centers map on each position update
-- **GPS warmup**: First 5 GPS readings are skipped (sensor stabilisation) — `mapPos` NOT updated during warmup to avoid interrupting initial zoom animation
+- **GPS warmup**: First 5 GPS readings skip `setMapPos` (sensor stabilisation). However `setMapPos` now runs on **every** post-warmup reading, so the marker appears even when stationary
+- **deviceHeading prop** (v0.20.0+): `page.tsx` passes smoothed compass heading as separate `deviceHeading` prop → RealMap uses `deviceHeading ?? position.heading ?? trajectory(atan2)` priority chain
 - Trail is **permanent** — never resets when walking stops; `trailByDay` ref persists for the entire component lifecycle
 - **Auto-zoom** (v0.19.0+): Map zoom adjusts based on movement mode:
+  - 🧘 `stationary` → preserves last zoom (no change)
   - 🚶 `walk` → zoom **18** (street level, close)
   - 🚗 `vehicle` → zoom **14** (city district, wide)
   - Manual zoom via +/- buttons pauses auto-zoom for **15 seconds** (tracked via `lastManualZoomRef` + `autoZoomingRef` to distinguish programmatic vs user zoom)
@@ -115,10 +118,12 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 - `.real-map-container`: container sizing (4:3 aspect ratio, min-height 240px)
 - `.real-map-container .leaflet-tile`: default rendering (no pixel/CSS filters applied)
 - `.pipz-player-marker`: custom pet marker style (removes Leaflet default bg/border)
-|- `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
-|- `.real-map-mode-vehicle`: vehicle mode badge override (amber border/text)
-|- `.gps-dot-vehicle`: amber pulsing dot for vehicle mode
-|- `@keyframes gps-pulse-vehicle`: amber pulse animation for vehicle dot
+||- `.real-map-gps-badge`: GPS status badge with `@keyframes gps-pulse` animation
+||- `.real-map-mode-vehicle`: vehicle mode badge override (amber border/text)
+||- `.gps-dot-vehicle`: amber pulsing dot for vehicle mode
+||- `@keyframes gps-pulse-vehicle`: amber pulse animation for vehicle dot
+||- `.real-map-mode-stationary`: stationary mode badge override (grey border/text, no dot pulse)
+||- `.gps-dot-stationary`: grey static dot for stationary mode (animation: none, opacity: 0.5)
 - `.leaflet-control-zoom`: dark-theme styled zoom control (blend with app theme)
 - `.leaflet-popup-content-wrapper`: dark popup theme (ready for future quest points)
 
