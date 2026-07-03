@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.20.0 (2026-08-01)
+
+### Added
+- **🧘 GPS 狀態 badge 三態**：🚶 步行中 / 🧘 靜止中 / 🚗 乘車中，各自不同顏色 badge + dot animation
+- **方向即時回饋**：device compass heading EMA smoothing（factor 0.35），每個 GPS tick 更新方向箭嘴
+
+### Fixed
+- **🐛 定位 marker 唔顯示**：企定定嗰陣 speed gate（< 0.5 m/s）唔再 block mapPos，位置 marker 即時出現
+- **🐛 方向更新延遲**：heading 同位置分離，唔再受 3s time gate / 5m displacement gate 限制
+
+### Changed
+- **♻️ GPS 重構**：分離位置更新同步數計算，每個 GPS reading 都 update 地圖位置同方向
+
 ## v0.19.0 (2026-08-01)
 
 ### Added
