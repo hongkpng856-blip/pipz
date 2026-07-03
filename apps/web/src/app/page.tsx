@@ -6,6 +6,7 @@ import { generateStats, generateSkills, generateAllSkills, calculateEvolution, E
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import ModalPortal from '../components/ModalPortal'
 const RealMap = dynamic(() => import('../components/RealMap'), { ssr: false })
+import type { RealMapHandle } from '../components/RealMap'
 import PetDetailModal from '../components/PetDetailModal'
 import EventModal from '../components/EventModal'
 import InventoryModal from '../components/InventoryModal'
@@ -60,6 +61,7 @@ export default function HomePage() {
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
+    const realMapRef = useRef<RealMapHandle>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
     const [newPetId, setNewPetId] = useState<string | null>(() => {
@@ -1188,6 +1190,14 @@ export default function HomePage() {
                       )}
                     </div>
 
+                    {/* ── 7日路線測試 ── */}
+                    <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
+                      <button className="btn btn-ghost" onClick={() => realMapRef.current?.generateTestTrails()}
+                        style={{fontSize:10, padding:'4px 10px', color:'#22d3ee'}}>
+                        🎨 測試7日路線
+                      </button>
+                    </div>
+
                     {/* ── Quick Modify (only when pet exists) ── */}
                     {pets[activeIdx] && (
                       <div style={{background:'#1a2338', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
@@ -1318,9 +1328,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap position={mapPos} walking={walking} pet={pet} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} />
               ) : (
-                <RealMap position={null} walking={false} pet={pet} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>

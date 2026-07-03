@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
@@ -37,7 +37,11 @@ function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
   return canvas.toDataURL()
 }
 
-export default function RealMap({ position, walking, pet }: Props) {
+export interface RealMapHandle {
+  generateTestTrails: () => void
+}
+
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -47,6 +51,37 @@ export default function RealMap({ position, walking, pet }: Props) {
   const headingRef = useRef(0)
   const lastPosForHeading = useRef<{lat:number;lng:number} | null>(null)
   const initialised = useRef(false)
+
+  useImperativeHandle(ref, () => ({
+    generateTestTrails: () => {
+      const map = mapRef.current
+      if (!map) return
+      const center = map.getCenter()
+      // Clear existing trails
+      polylineByDay.current.forEach(p => p.remove())
+      polylineByDay.current.clear()
+      trailByDay.current.clear()
+      // Create 7 small arcs, one per day, spread around the center
+      for (let day = 0; day < 7; day++) {
+        const angle = (day / 7) * Math.PI * 2
+        const points: [number, number][] = []
+        for (let t = 0; t <= 30; t++) {
+          const rad = angle + (t / 30) * 0.8
+          const lat = center.lat + Math.cos(rad) * 0.0007 * (1 + day * 0.06)
+          const lng = center.lng + Math.sin(rad) * 0.0005
+          points.push([lat, lng])
+        }
+        const poly = L.polyline(points, {
+          color: DAY_COLORS[day],
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '6 4',
+        }).addTo(map)
+        polylineByDay.current.set(day, poly)
+        trailByDay.current.set(day, points)
+      }
+    },
+  }), [])
 
   const buildPetIcon = useCallback(() => {
     const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
@@ -275,4 +310,6 @@ export default function RealMap({ position, walking, pet }: Props) {
       )}
     </div>
   )
-}
+})
+
+export default RealMap
