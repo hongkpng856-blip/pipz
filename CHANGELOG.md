@@ -4,6 +4,7 @@
 
 ### Fixed
 - **Modal popups invisible on mobile**: Added `inset: 0` to `.fixed-modal-layer` and `.fixed-modal-layer-top` CSS classes. Without it, `position: fixed` elements had no positioning — modals rendered at their DOM position (below nav, off-screen on mobile). Now covers full viewport correctly. 🖼️
+- **Map tiles still covering all modals**: Root cause was `body { position: fixed; }` combined with Leaflet's GPU compositing creating conflicting stacking contexts. All modals now render via React `createPortal` directly to `document.body`, completely outside the `.layout` div and any parent `transform`/`overflow`/`z-index` constraints. Includes new `ModalPortal` component. 🗺️🔝
 - **Event popup overlapped with new pet popup**: Auto-dismiss new pet popup when an event triggers (`addSt` → `rollEvent` → `dismissNewPet()` before `setCurrentEvent`). Prevents two overlays stacking.
 - **Simulation interval stale closure**: Added `addStRef` to ensure `setInterval` callback inside simulation always calls the latest `addSt` function, preventing stale render-context bugs with event checks.
 - **Event `pet` check used closure instead of ref**: Changed `if (... && pet)` to `if (... && petRef.current)` in `addSt` event trigger, consistent with other ref-based state reads in the function.
