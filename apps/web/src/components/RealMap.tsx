@@ -54,6 +54,37 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const initialised = useRef(false)
   const autoZoomingRef = useRef(false)
   const lastManualZoomRef = useRef(0)
+  const initialZoomDoneRef = useRef(false)
+  const TRAIL_STORAGE_KEY = 'pipz_trail_data'
+
+  function saveTrailToStorage() {
+    const obj: Record<string, [number, number][]> = {}
+    trailByDay.current.forEach((pts, day) => {
+      if (pts.length > 0) obj[String(day)] = pts
+    })
+    try { localStorage.setItem(TRAIL_STORAGE_KEY, JSON.stringify(obj)) } catch {}
+  }
+
+  function restoreTrailFromStorage(map: L.Map) {
+    try {
+      const raw = localStorage.getItem(TRAIL_STORAGE_KEY)
+      if (!raw) return
+      const obj = JSON.parse(raw)
+      Object.entries(obj).forEach(([dayStr, pts]) => {
+        const day = parseInt(dayStr)
+        const points = pts as [number, number][]
+        if (points.length === 0) return
+        trailByDay.current.set(day, points)
+        const poly = L.polyline(points, {
+          color: DAY_COLORS[day],
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '6 4',
+        }).addTo(map)
+        polylineByDay.current.set(day, poly)
+      })
+    } catch {}
+  }
 
   useImperativeHandle(ref, () => ({
     generateTestTrails: () => {
@@ -170,6 +201,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     })
 
+    // ── Restore saved trails from localStorage ──
+    restoreTrailFromStorage(map)
+
     // ── Player marker (shows real pet pixel art) ──
     const userM = L.marker([0, 0], {
       icon: buildPetIcon(),
@@ -256,17 +290,37 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   useEffect(() => {
     if (!position || !mapRef.current || !userMarkerRef.current) return
     const { lat, lng, heading } = position
+    const map = mapRef.current
 
     userMarkerRef.current.setLatLng([lat, lng])
     accCircleRef.current?.setLatLng([lat, lng])
-    mapRef.current.setView([lat, lng], mapRef.current.getZoom(), { animate: true })
 
-    // Compute heading from GPS track (more reliable than pos.coords.heading)
+    // ── Initial zoom: show all trails first, then fly to current ──
+    if (!initialZoomDoneRef.current) {
+      initialZoomDoneRef.current = true
+      const allPoints: [number, number][] = []
+      trailByDay.current.forEach(pts => allPoints.push(...pts))
+      if (allPoints.length > 0) {
+        autoZoomingRef.current = true
+        map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50], animate: true })
+        map.once('zoomend', () => {
+          setTimeout(() => {
+            map.flyTo([lat, lng], 18, { duration: 1.5 })
+            map.once('zoomend', () => { autoZoomingRef.current = false })
+          }, 1500)
+        })
+      } else {
+        map.setView([lat, lng], 18, { animate: true })
+      }
+    } else {
+      map.setView([lat, lng], map.getZoom(), { animate: true })
+    }
+
+    // ── Compute heading from GPS track ──
     let finalHeading = heading
     if (lastPosForHeading.current) {
       const dLat = lat - lastPosForHeading.current.lat
       const dLng = lng - lastPosForHeading.current.lng
-      // Only compute if moved enough (>0.00001° ≈ ~1m)
       if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
         const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360
         finalHeading = bearing
@@ -274,7 +328,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
     lastPosForHeading.current = { lat, lng }
 
-    // Apply heading rotation
     if (finalHeading !== undefined && finalHeading >= 0) {
       headingRef.current = finalHeading
       const arrow = userMarkerRef.current.getElement()?.querySelector('.pipz-heading-arrow') as HTMLElement
@@ -283,6 +336,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     }
 
+    // ── Trail drawing + persist ──
     if (walking && mode === 'walk') {
       const dayIdx = new Date().getDay()
       const points = trailByDay.current.get(dayIdx) || []
@@ -296,10 +350,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           weight: 3,
           opacity: 0.7,
           dashArray: '6 4',
-        }).addTo(mapRef.current!)
+        }).addTo(map)
         polylineByDay.current.set(dayIdx, poly)
       }
       poly.setLatLngs(points)
+      saveTrailToStorage()
     }
   }, [position?.lat, position?.lng, mode])
 
