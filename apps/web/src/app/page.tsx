@@ -62,6 +62,8 @@ export default function HomePage() {
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
     const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | null>(null)
+    const [compassHeading, setCompassHeading] = useState<number | null>(null)
+    const compassHeadingRef = useRef(0)
     const realMapRef = useRef<RealMapHandle>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
@@ -378,6 +380,21 @@ export default function HomePage() {
         // ── Skip inaccurate readings ──
         if (pos.coords.accuracy > 50) return
 
+        // ── Compute smoothed compass heading on EVERY reading ──
+        const rawHeading = pos.coords.heading
+        if (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0) {
+          // Exponential moving average with angle wrapping
+          let diff = rawHeading - compassHeadingRef.current
+          if (diff > 180) diff -= 360
+          if (diff < -180) diff += 360
+          const smoothed = (compassHeadingRef.current + diff * 0.35 + 360) % 360
+          compassHeadingRef.current = smoothed
+          setCompassHeading(smoothed)
+        } else if (compassHeadingRef.current === 0 && rawHeading === null) {
+          // No heading available yet — leave as null
+          setCompassHeading(null)
+        }
+
         // ── Determine movement mode (walk vs vehicle) from speed ──
         let mode: 'walk' | 'vehicle' = 'walk'
         if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
@@ -416,7 +433,7 @@ export default function HomePage() {
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); compassHeadingRef.current = 0; setCompassHeading(null); logMsg('⏹ 停低咗')
   }
 
   // ── Auto GPS when map tab is active ──
@@ -1366,9 +1383,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>

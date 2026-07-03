@@ -9,6 +9,7 @@ interface Props {
   position: { lat: number; lng: number; heading?: number } | null
   walking: boolean
   mode: 'walk' | 'vehicle' | null
+  deviceHeading?: number | null
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
 }
 
@@ -43,7 +44,7 @@ export interface RealMapHandle {
   clearStoredTrails: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -328,17 +329,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       map.setView([lat, lng], map.getZoom(), { animate: true })
     }
 
-    // ── Compute heading from GPS track ──
-    let finalHeading = heading
-    if (lastPosForHeading.current) {
-      const dLat = lat - lastPosForHeading.current.lat
-      const dLng = lng - lastPosForHeading.current.lng
-      if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
-        const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360
-        finalHeading = bearing
+    // ── Compute heading from GPS track (fallback when deviceHeading unavailable) ──
+    let finalHeading = deviceHeading ?? heading
+    if (deviceHeading === null || deviceHeading === undefined) {
+      if (lastPosForHeading.current) {
+        const dLat = lat - lastPosForHeading.current.lat
+        const dLng = lng - lastPosForHeading.current.lng
+        if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
+          const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360
+          finalHeading = bearing
+        }
       }
+      lastPosForHeading.current = { lat, lng }
     }
-    lastPosForHeading.current = { lat, lng }
 
     if (finalHeading !== undefined && finalHeading >= 0) {
       headingRef.current = finalHeading
@@ -368,7 +371,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       poly.setLatLngs(points)
       saveTrailToStorage()
     }
-  }, [position?.lat, position?.lng, mode])
+  }, [position?.lat, position?.lng, mode, deviceHeading])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {
