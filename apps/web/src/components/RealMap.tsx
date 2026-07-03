@@ -53,24 +53,20 @@ export default function RealMap({ position, walking, pet }: Props) {
     if (!pet) {
       return L.divIcon({
         className: 'pipz-player-marker',
-        html: `<div style="
-          width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center;
-        ">
-          <svg class="pipz-heading-arrow" style="
-            position:absolute;top:-14px;width:16px;height:12px;overflow:visible;
-            filter:drop-shadow(0 0 2px ${rarityColor});
-            transition:transform 0.25s ease;
-          " viewBox="0 0 16 12" fill="none">
-            <path d="M8 0L16 12H0z" fill="${rarityColor}" />
-          </svg>
-          <div style="
-            width:32px;height:32px;border-radius:50%;
-            background:${rarityColor}22;
-            border:3px solid ${rarityColor};
-            display:flex;align-items:center;justify-content:center;
-            font-size:18px;line-height:1;
-            box-shadow:0 0 12px ${rarityColor}66;
-          ">🥚</div>
+        html: `<div style="width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center;">
+          <div class="pipz-heading-arrow" style="transition:transform 0.25s ease;">
+            <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:8px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
+              <path d="M8 0L16 12H0z" fill="${rarityColor}" />
+            </svg>
+            <div style="
+              width:32px;height:32px;border-radius:50%;
+              background:${rarityColor}22;
+              border:3px solid ${rarityColor};
+              display:flex;align-items:center;justify-content:center;
+              font-size:18px;line-height:1;
+              box-shadow:0 0 12px ${rarityColor}66;
+            ">🥚</div>
+          </div>
         </div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
@@ -82,25 +78,21 @@ export default function RealMap({ position, walking, pet }: Props) {
 
     return L.divIcon({
       className: 'pipz-player-marker',
-      html: `<div style="
-        width:44px;height:44px;position:relative;display:flex;align-items:center;justify-content:center;
-      ">
-        <svg class="pipz-heading-arrow" style="
-          position:absolute;top:-14px;width:16px;height:12px;overflow:visible;
-          filter:drop-shadow(0 0 2px ${rarityColor});
-          transition:transform 0.25s ease;
-        " viewBox="0 0 16 12" fill="none">
-          <path d="M8 0L16 12H0z" fill="${rarityColor}" />
-        </svg>
-        <div style="
-          width:44px;height:44px;border-radius:50%;
-          background:${rarityColor}22;
-          border:3px solid ${rarityColor};
-          display:flex;align-items:center;justify-content:center;
-          box-shadow:0 0 14px ${rarityColor}66;
-          overflow:hidden;
-        ">
-          <img src="${dataUrl}" style="width:36px;height:36px;image-rendering:pixelated;display:block;" />
+      html: `<div style="width:44px;height:44px;position:relative;display:flex;align-items:center;justify-content:center;">
+        <div class="pipz-heading-arrow" style="transition:transform 0.25s ease;">
+          <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:14px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
+            <path d="M8 0L16 12H0z" fill="${rarityColor}" />
+          </svg>
+          <div style="
+            width:44px;height:44px;border-radius:50%;
+            background:${rarityColor}22;
+            border:3px solid ${rarityColor};
+            display:flex;align-items:center;justify-content:center;
+            box-shadow:0 0 14px ${rarityColor}66;
+            overflow:hidden;
+          ">
+            <img src="${dataUrl}" style="width:36px;height:36px;image-rendering:pixelated;display:block;" />
+          </div>
         </div>
       </div>`,
       iconSize: [44, 44],
