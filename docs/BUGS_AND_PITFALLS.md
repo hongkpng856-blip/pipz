@@ -264,6 +264,23 @@
 | **Fix** | Per-species facing detection: Cat frames face RIGHT, Shiba/generic face LEFT. Combined `shouldFlip` condition for both canvas and PNG paths. |
 | **Prevention** | When fixing flip animations, verify BOTH rendering paths (canvas grid + PNG sprite) and ALL species. Write a visual regression test. |
 
+### 6.5 Map Compass / Heading Arrow Misaligned
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (arrow direction wrong or jittery) |
+| **Symptom** | The direction arrow on the map marker either points the wrong way, jitters erratically, or has a rotated/offset pivot point |
+| **Root Cause** | Three independent issues: |
+| | 1. **CSS border triangle** had unpredictable `transform-origin` — the visual arrow didn't rotate around its centre, causing offset/pivot misalignment |
+| | 2. **`pos.coords.heading`** (device compass heading) is unreliable — many devices return `null`, 0, or wildly fluctuating values, especially when phone orientation changes |
+| | 3. **Arrow and circle rotated separately** — if only the arrow rotates inside a fixed circle container, there's a visual disconnect and the arrow can clip against the circle edge |
+| **Fix** | |
+| | 1. **SVG `<path>` arrow** instead of CSS border triangle — explicit `viewBox="0 0 16 12"` with `M8 0L16 12H0z` triangle, no transform-origin ambiguity |
+| | 2. **GPS trajectory heading** (`atan2(dLng, dLat)`) instead of `pos.coords.heading` — compute actual movement direction from successive GPS position deltas |
+| | 3. **Min 1m displacement gate** — discard tiny GPS fluctuations (<1m) that cause 180° heading flips when standing still |
+| | 4. **Arrow + circle in same wrapper `<div>`** — `rotate()` on the parent div rotates both the SVG arrow AND the circular container together as one unit, preventing visual disconnect |
+| **Prevention** | Never trust `pos.coords.heading` for walking direction — compute heading from `atan2(dLng, dLat)` with a min-displacement threshold. Use SVG `<path>` for direction indicators, not CSS border triangles. Wrap all marker elements in a single container for rotation.
+
 ---
 
 ## 7. Performance & Build
@@ -342,6 +359,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Concurrent state updates (popups) | All | Dismiss old before showing new |
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
+| Map compass arrow direction/wrong pivot | All | SVG path + GPS trajectory heading (`atan2`) + same-container rotate |
 
 ---
 

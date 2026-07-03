@@ -8,6 +8,7 @@ import { generatePixelPet, drawPixelGrid } from '@pipz/core'
 interface Props {
   position: { lat: number; lng: number; heading?: number } | null
   walking: boolean
+  mode: 'walk' | 'vehicle' | null
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
 }
 
@@ -41,7 +42,7 @@ export interface RealMapHandle {
   generateTestTrails: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -273,7 +274,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     }
 
-    if (walking) {
+    if (walking && mode === 'walk') {
       const dayIdx = new Date().getDay()
       const points = trailByDay.current.get(dayIdx) || []
       points.push([lat, lng])
@@ -291,7 +292,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
       poly.setLatLngs(points)
     }
-  }, [position?.lat, position?.lng])
+  }, [position?.lat, position?.lng, mode])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {
@@ -304,8 +305,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     <div className="section card" style={{ padding: 0, position: 'relative', width: '100%' }}>
       <div ref={containerRef} className="real-map-container" />
       {walking && (
-        <div className="real-map-gps-badge">
-          <span className="gps-dot" /> GPS
+        <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : ''}`}>
+          <span className={`gps-dot ${mode === 'vehicle' ? 'gps-dot-vehicle' : ''}`} />
+          {mode === 'vehicle' ? '🚗 乘車中' : '🚶 步行中'}
         </div>
       )}
     </div>

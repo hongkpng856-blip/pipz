@@ -85,14 +85,18 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
   - **No pet logged in**: shows 🥚 emoji with rarity tint
   - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
-- **Path trail**: dashed deep-cyan polyline (`#00ddff`, weight 3, opacity 0.6) tracing the user's walking path (last ~200 points)
+- **Path trail** (v0.18.1+): **7-day colour per-day polyline** system via `trailByDay` ref (`Map<number, LatLng[]>`):
+  - Each day of week gets an independent `L.polyline` with its own colour from `DAY_COLORS`
+  - Day mapping: `0(日)=#8b5cf6` `1(一)=#06b6d4` `2(二)=#22c55e` `3(三)=#f59e0b` `4(四)=#ef4444` `5(五)=#ec4899` `6(六)=#3b82f6`
+  - Trail is **permanent** — never cleared when walking stops; persists as long as the component is mounted
+  - `getDay()` determines the day index automatically, so routes from different weekdays display different colours on the same map
 - **GPS badge**: top-right overlay showing pulsing green dot + "GPS" label (only visible when `walking=true`)
 
 **Position tracking:**
 - GPS position received via `position` prop (from `mapPos` state in `page.tsx`)
 - `page.tsx` `watchPosition` callback updates `mapPos` state
 - RealMap syncs markers + centers map on each position update
-- Trail resets when walking stops
+- Trail is **permanent** — never resets when walking stops; `trailByDay` ref persists for the entire component lifecycle
 
 **CSS styles** (in `globals.css`):
 - `.real-map-container`: container sizing (4:3 aspect ratio, min-height 240px)
@@ -112,7 +116,7 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
 │  │       │ 🐱 px │ ← pet    │  │
 │  │       │ sprite │   marker  │  │
 │  │       └────────┘          │  │
-│  │    ••••• ← path trail     │  │
+|-> `generateTestTrails()` method (v0.18.1+) — exposed via `forwardRef` + `useImperativeHandle` (`RealMapHandle` interface): draws 7 small coloured arcs around the map center to preview all 7 day colours at once. Each arc uses `DAY_COLORS[day]` with `dashArray: '6 4'`.
 │  │                    [GPS ●]│  │
 │  └───────────────────────────┘  │
 ├─────────────────────────────────┤
@@ -141,8 +145,14 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
     - Skill-triggered steps → larger arrows, brighter flash, longer duration
   - **Skill hints below today steps**: amber `👟 雙倍步伐` + cyan `💨 疾步如飛` badges (shown automatically when active pet has the effect)
   - **Skill hints below total steps**: amber `⚡ 能量過載` badge (shown automatically when active pet has the effect)
-- Three bars:
-  - 📊 **今日進度**: today's steps / 5,000 goal
+- **7-day weekly bar chart** (📊 **每週步數**, v0.18.1+):
+  - Shows last 7 days of step data (Sun–Sat) in vertical bar chart
+  - Each bar colour matches the corresponding weekday colour from `DAY_COLORS` (same as trail colour system)
+    - `0(日)=#8b5cf6` `1(一)=#06b6d4` `2(二)=#22c55e` `3(三)=#f59e0b` `4(四)=#ef4444` `5(五)=#ec4899` `6(六)=#3b82f6`
+  - **Today** bar: solid gradient (`DAY_COLORS[dayIdx]` → `DAY_COLORS[dayIdx]88`) + glow shadow (`0 0 8px`)
+  - **Other days**: semi-transparent gradient (`DAY_COLORS[dayIdx]66` → `DAY_COLORS[dayIdx]33`)
+  - Max height: 60px, min: 4px; scales proportionally to the day with the most steps in the week
+  - Labels below each bar: abbreviated step count (e.g. `127`), day label (e.g. `一` or `Tue`)
 - **Walk button** moved to **header** (top-right area)
 - Green bg when idle, red bg when walking
 - **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 蛋（50/50 cat or shiba）— egg saved to DB, shown in eggs tab
@@ -162,6 +172,7 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - **+500 步** — adds 500 steps via `addSt()`, triggers event/egg checks
   - **-500 步** (🔴 red) — subtracts 500 steps via `removeSt(500)`, direct state mutation, no triggers
   - **🗑️ 清零** (🔴 red bold) — resets today steps + total steps to 0 via `clearSteps()`
+  - **🎨 測試7日路線** (cyan, v0.18.1+) — calls `realMapRef.current.generateTestTrails()` to draw 7 coloured arcs around the current map centre, previewing all trace colours at once
 - **Test Pet**: 🧪 全能測試寵物 — spawns Legendary pet with all 18 skills (Lv.99, max stats)
 - **Quick Modify** (when pet selected):
   - ⬆️ 升 Lv — level +1

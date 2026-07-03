@@ -459,6 +459,45 @@ PixelPetData (16×16 RGB grid)
 - **Pixel manipulation**: handles: body shift (horizontal sway) + bottom row stride + vertical bob = convincing walk cycle on any sprite shape
 - **Additional animations**: sleep (half-closed), jump (vertical arc), or species-specific can be added as additional frame sets — add a new function in `animation.ts` and extend `PetAnimation`
 
+---
+
+## Trail System (v0.18.1+)
+
+### 7-Day Colour Map
+
+Each day of the week gets its own trail colour, used identically in both the map trail polylines and the weekly bar chart:
+
+| Day | Index | Colour | Hex |
+|-----|-------|--------|-----|
+| 星期日 | 0 | 🟣 Purple | `#8b5cf6` |
+| 星期一 | 1 | 🔵 Cyan | `#06b6d4` |
+| 星期二 | 2 | 🟢 Green | `#22c55e` |
+| 星期三 | 3 | 🟠 Orange | `#f59e0b` |
+| 星期四 | 4 | 🔴 Red | `#ef4444` |
+| 星期五 | 5 | 🩷 Pink | `#ec4899` |
+| 星期六 | 6 | 🔵 Blue | `#3b82f6` |
+
+### Storage
+
+- `trailByDay` ref in `RealMap.tsx`: `Map<number, [number, number][]>` — keyed by `dayIndex` (0–6)
+- `polylineByDay` ref: `Map<number, L.Polyline>` — each day gets its own Leaflet polyline layer
+- **Permanent**: trails are never cleared when walking stops; they persist for the entire component lifetime
+
+### Colour Mapping
+
+Both `RealMap.tsx` and `page.tsx` define the same `DAY_COLORS` array:
+```ts
+const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
+```
+
+The day index is derived from `new Date().getDay()`:
+- `0` = Sunday, `1` = Monday ... `6` = Saturday
+
+### Test Tool
+
+`RealMapHandle` interface (exposed via `forwardRef` + `useImperativeHandle`):
+- `generateTestTrails()`: draws 7 small coloured arcs around the current map centre using all 7 `DAY_COLORS`, each with `dashArray: '6 4'` style. Accessible via Dev Tools `🎨 測試7日路線` button (`realMapRef.current.generateTestTrails()`).
+
 ### Limitations
 
 - PNG sprite path (Tier 2) doesn't support frame-by-frame changes — static image moves as a whole

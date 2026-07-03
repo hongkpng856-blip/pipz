@@ -61,6 +61,7 @@ export default function HomePage() {
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
+    const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | null>(null)
     const realMapRef = useRef<RealMapHandle>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
@@ -377,6 +378,14 @@ export default function HomePage() {
         }
         // ── Skip inaccurate readings ──
         if (pos.coords.accuracy > 50) return
+
+        // ── Determine movement mode (walk vs vehicle) from speed ──
+        let mode: 'walk' | 'vehicle' = 'walk'
+        if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
+          mode = pos.coords.speed >= 2.0 ? 'vehicle' : 'walk'
+        }
+        setMovementMode(mode)
+
         // ── Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
         if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed < 0.5) return
         // ── Time gate: ignore updates faster than 3s apart (GPS noise) ──
@@ -386,11 +395,16 @@ export default function HomePage() {
 
         if (last.current) {
           const d = haversine(last.current.lat, last.current.lng, pos.coords.latitude, pos.coords.longitude)
-          // ── Min 5m displacement to count as real walking ──
+          // ── Min 5m displacement to act ──
           if (d > 5) {
-            const ns = Math.floor(d * 1300)
-            addSt(ns)
-            last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+            if (mode === 'walk') {
+              const ns = Math.floor(d * 1300)
+              addSt(ns)
+              last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+            } else {
+              // Vehicle mode: still update heading reference but don't count steps
+              last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+            }
           }
         } else {
           last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
@@ -403,7 +417,7 @@ export default function HomePage() {
   }
   const walkStop = () => {
     if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
-    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); logMsg('⏹ 停低咗')
+    wid.current = null; setWalking(false); setPetAnim('idle'); setMapPos(null); setMovementMode(null); logMsg('⏹ 停低咗')
   }
 
   // ── Auto GPS when map tab is active ──
@@ -1328,9 +1342,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
