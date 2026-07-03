@@ -59,6 +59,24 @@
 
 ## 2. Modal/Popup Stacking & Overlap
 
+### 2.0 Egg Encounter No Popup (Silent Save)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (user can't see egg found) |
+| **Root Cause** | `addSt()` egg encounter only called `addPixelLabEgg()` → `logMsg()` + `setTab('eggs')`. No UI confirmation — user might not notice they found an egg. |
+| **Fix** | Add `eggFoundData` state. When egg triggers: save to DB, then show popup with 🥚 icon, egg name, rarity badge, and two buttons (收埋 / 去蛋頁面孵化). |
+| **Prevention** | Any "item acquired" event must show a visible popup/notification, not just a log message. |
+
+### 2.0.1 Event & Egg Trigger Simultaneously (Queue Missing)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (one modal lost behind other) |
+| **Root Cause** | Both event check and egg check run synchronously in `addSt()`. If both trigger, only `setCurrentEvent(ev)` runs (event shows). Egg is saved silently — no popup ever appears. |
+| **Fix** | Add `pendingEggRef` and `pendingEventRef` (useRef). If both trigger: show event, queue egg. On event dismiss (`handleEventChoice`): check `pendingEggRef` and show egg popup. If egg showing and event triggers: queue event in `pendingEventRef`. On egg dismiss (`dismissEggFound`): check `pendingEventRef` and show event. |
+| **Prevention** | Any system with multiple independent modal triggers must have a queue/priority mechanism. Never assume only one modal type will fire at a time. |
+
 ### 2.1 Multiple Popups Overlapping
 
 | Field | Value |
@@ -322,6 +340,8 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | `!important` blocking overrides | All | Only use `!important` on truly invariant properties |
 | Merge conflict resurrecting dead code | All | Manual review of merge diffs |
 | Concurrent state updates (popups) | All | Dismiss old before showing new |
+| Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
+| Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
 
 ---
 

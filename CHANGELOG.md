@@ -10,6 +10,8 @@
 ### Added
 - **`docs/BUGS_AND_PITFALLS.md`**：所有過去錯誤同 bug 修改記錄文件，方便其他平台 agent 參考避免重複錯誤。 📖
 - **Dev Tools -500 步**：紅色 `-500 步` button，直接從今日步數同總步數扣除（`removeSt(500)`），唔觸發 event check。方便測試步數倒退情境。 👣🔴
+- **🥚 蛋獲得 popup**：行路發現蛋時會彈出「🚶 行路發現新蛋！」視窗，顯示蛋名、稀有度，可「收埋」或「去蛋頁面孵化」。取代之前嘅靜默 logMsg。 🥚✨
+- **Event/蛋排隊機制**：如果蛋同 event 同時觸發，先顯示 event，dismiss 後自動彈出蛋 popup（反之亦然）。用 `pendingEggRef` / `pendingEventRef` 做 queue。 🔄
 
 ## v0.18.0 (2026-07-03)
 
