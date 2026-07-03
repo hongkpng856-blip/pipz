@@ -280,13 +280,41 @@ Each rarity has 3 colour variants (randomly chosen):
 
 ### GPS Walking
 - Uses `navigator.geolocation.watchPosition()`
-- **Accuracy threshold**: `< 50m` (readings with accuracy > 50m are discarded entirely)
-- **Warmup**: First 5 GPS readings are used only for sensor stabilisation — no position update, no step counting
+- **Accuracy threshold**: `< 50m` (readings with accuracy > 50m are discarded after warmup)
+- **Warmup**: First 5 GPS readings (regardless of accuracy) count toward sensor stabilisation — they don't count steps. After warmup, the first reading sets the displacement reference without counting steps.
 - **Position update**: After warmup + accuracy check, `setMapPos` is called on **every** valid reading — marker visible even when stationary
-- **Step counting** separated from position: speed gate (`< 0.5 m/s`), time gate (`> 3s` since last), displacement gate (`> 5m`) only gate step accumulation, not the map marker
+- **Step counting** separated from position: speed gate (`< 0.5 m/s`), time gate (`> 3s` since last), displacement gate (`> 3m`) only gate step accumulation, not the map marker
+- **Default mode**: `'walk'` when speed unavailable (`null`), to avoid iPhone GPS not providing speed blocking all steps
 - Distance formula: Haversine
-- Steps = `floor(distance_in_meters * 1300)`
 - High accuracy mode: `enableHighAccuracy: true, maximumAge: 5000, timeout: 10000`
+
+### Step Detection Algorithm (v0.21.0+)
+
+**Method:** Accelerometer-based (primary) + GPS displacement fallback
+
+**Priority 1: Accelerometer (`devicemotion`, 60Hz)**
+Professional-grade algorithm:
+1. **Band-pass filter** (0.5-3 Hz): IIR low-pass + DC removal removes sensor noise and gravity tilt
+2. **Adaptive threshold**: `threshold = max(0.3, runningMean + 1.5 × sqrt(runningVar))` — adjusts to walking intensity
+3. **Peak-pair detection**: positive peak (foot-strike impact) → negative peak (rebound) within 500ms = 1 step
+4. **Walking bout gate**: only count steps after 5 consecutive steps (rejects random phone movement)
+5. **Bout timeout**: reset after 3s of inactivity
+
+When accelerometer steps available: `addSt(stepsCounted)` (1 step = 1 point)
+
+**Priority 2: GPS displacement fallback**
+When accelerometer unavailable (desktop, permission denied):
+- `d = haversine(lastPos, currentPos)`
+- `addSt(Math.max(1, floor(d × 1.4)))` (~1.4 steps per meter, avg stride 0.7m)
+- Minimum 3m displacement to act
+
+### iOS Permission Flow (v0.21.0+)
+- `DeviceOrientationEvent.requestPermission()` called via **native DOM click listener** (`document.addEventListener('click', grant, { once: true })`) on component mount
+- iOS 13+ requires this before `deviceorientation` / `devicemotion` events fire
+- Native DOM click (not React synthetic event) ensures iOS recognizes the user gesture
+- `{ once: true }` auto-removes after first click
+- Event listeners are added in `walkStart()` before permission; once granted by iOS, they start receiving events
+- The GPS tab-switch effect (`walkStop()` → `walkStart()`) re-adds listeners with fresh references
 
 ### Movement Mode Detection (v0.19.0+)
 
@@ -302,10 +330,11 @@ The GPS callback determines movement mode based on `pos.coords.speed` (every rea
 - Movement mode updates every GPS reading (not gated by time/displacement checks)
 
 ### Heading / Compass (v0.20.0+)
-- **Every GPS reading**: device compass heading (`pos.coords.heading`) goes through **EMA smoothing** (`factor = 0.35`) with angle wrapping (`diff = raw - prev`, clamped to ±180°)
-- Smoothed heading stored in `compassHeadingRef` + `setCompassHeading` state → passed as `deviceHeading` prop to RealMap
+- **DeviceOrientation API** (iOS `webkitCompassHeading`, Android `event.alpha`): 60Hz real-time magnetometer heading
+- **EMA smoothing**: factor 0.5 on both DeviceOrientation and GPS heading — at 60Hz converges in ~50ms, at 1Hz (GPS) still responsive enough
+- Smoothed heading stored in `compassHeadingRef` + `setCompassHeading` state (throttled to ~10fps React updates) → passed as `deviceHeading` prop to RealMap
 - **RealMap heading priority**: `deviceHeading ?? position.heading ?? trajectory(atan2)`
-- Heading updates are **fully decoupled from position** — the arrow rotates on every GPS tick (~1Hz) even when standing still
+- Heading updates are **fully decoupled from position** — compass arrow rotates independently of GPS position updates
 - `walkStop()` resets heading ref to 0 for clean restart
 ### Manual Testing
 
@@ -533,6 +562,11 @@ The map zoom adjusts automatically based on the user's movement mode:
 | 🚗 Vehicle | `speed >= 2.0 m/s` | **14** (city district) | Amber badge |
 
 **Manual override:** User zooming via +/- buttons records the time in `lastManualZoomRef`. Auto-zoom is suppressed for 15 seconds after any manual zoom. Distinguishes programmatic from user zoom via `autoZoomingRef` flag.
+
+### Displacement Gate (v0.21.0+)
+- Minimum GPS displacement to trigger step counting: **3m** (was 5m in v0.19.0)
+- Walking at 1.4 m/s × 3s (time gate) = 4.2m, passes threshold
+- Reduces GPS drift false steps while still responsive to slow walking
 
 ### Initial Zoom Animation (v0.19.0+)
 

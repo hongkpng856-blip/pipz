@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.21.0 (2026-08-01)
+
+### Added
+- **Accelerometer step detection** (60Hz): professional-grade algorithm with band-pass filter (0.5-3 Hz), adaptive threshold (running mean + std), positive+negative peak-pair detection, walking bout gating (≥5 consecutive steps)
+- **DeviceOrientation API compass**: real-time magnetometer heading (60Hz) with EMA smoothing (factor 0.5), independent of GPS position updates
+
+### Fixed
+- **🐛 步數狂跳（十幾萬步）**: warmup accuracy filter 阻住 `last.current` 初始化 → displacement gate 永遠過唔到；accuracy filter 放 warmup 後面 + displacement gate 放寬至 3m
+- **🐛 永遠冇步數**: `mode` default 由 `'stationary'` → `'walk'`（iPhone 經常冇 `pos.coords.speed` → `null` 就走咗去 stationary branch）
+- **🐛 iOS motion permission 唔彈**: permission request 由 React synthetic event → native DOM click listener（`document.addEventListener('click', ...)`）
+- **🐛 Compass 箭嘴 jitter**: EMA smoothing factor 0.5 加返但因為係 60Hz 所以 ~50ms converge
+
+### Changed
+- **♻️ 步數 calibration**: 1 步 = 1 真步（was `d × 1300` inflated），accelerometer: `addSt(accSteps)`，GPS fallback: `addSt(d × 1.4)`
+- **♻️ GPS fallback**: 移除 5000-point accumulator，每個 reading 即時計步
+- **♻️ iOS permission**: 由 `walkStart()` 搬去 component mount，`requestPermission()` 用 native DOM click，`{ once: true }` 自動清理
+- **♻️ Warmup**: accuracy check 放 warmup 後面（所有 5 個 warmup reading 都計數），warmup 期間無條件 set `last.current`
+
 ## v0.20.0 (2026-08-01)
 
 ### Added

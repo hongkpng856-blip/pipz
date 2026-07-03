@@ -373,6 +373,9 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | `!important` blocking overrides | All | Only use `!important` on truly invariant properties |
 | Merge conflict resurrecting dead code | All | Manual review of merge diffs |
 | Speed gate blocks map position (stationary marker never appears) | All | Separate position update from step counting gates. Call `setMapPos` before the speed/time/displacement checks so the marker shows even when stationary. |
+| GPS cold-start jump causes 100k+ phantom steps in one reading | All | Move accuracy check AFTER warmup; first post-warmup reading sets reference point without counting steps |
+| `pos.coords.speed === null` on iPhone leads to `'stationary'` mode blocking all steps | iOS | Default movement mode to `'walk'` when speed is unavailable; only gate on `stationary` / `vehicle` when speed is explicitly known |
+| iOS `DeviceOrientationEvent.requestPermission()` silent fails in React useEffect / synthetic onClick | iOS | Use native DOM `document.addEventListener('click', grant, { once: true })` — iOS only recognises direct DOM event for permission prompts |
 | Concurrent state updates (popups) | All | Dismiss old before showing new |
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
@@ -381,4 +384,4 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 
 ---
 
-*Last updated: 2026-07-31. Add new entries at the top when you discover new pitfalls.*
+*Last updated: 2026-08-01. Add new entries at the top when you discover new pitfalls.*
