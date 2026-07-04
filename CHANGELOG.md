@@ -28,6 +28,7 @@
 - **🐛 Grid not visible during fly animation** — canvas overlay only redrew on `moveend`, so the grid was invisible mid-animation. `L.Rectangle` objects are rendered by Leaflet's vector pane which handles all tile/pan/zoom lifecycle natively.
 - **🐛 No interaction on grid cells** — canvas overlay didn't support per-cell hover/click. Each `L.Rectangle` has independent tooltip, click handler, and highlight animation.
 - **🐛 Popup ownership check used wrong URL** — `RealMap.tsx` called `/api/properties/check` but the API route is at `/api/properties`. Fixed URL to `/api/properties?anchor_lat=...&anchor_lng=...&cell_row=...&cell_col=...`.
+- **🐛 Vercel pipz-web build failure** — `apps/web/.env.production` was missing `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (only `SUPABASE_SERVICE_ROLE_KEY` was present). Root `.env.production` had them but Vercel reads from `apps/web/` when root directory is set there. Added the two missing vars from root `.env.production`.
 
 ## v0.27.0 (2026-08-01)
 
