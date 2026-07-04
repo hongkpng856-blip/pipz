@@ -286,7 +286,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     })
     // Check ownership + show buy/manage
     if (anchor) {
-      fetch(`/api/properties/check?anchor_lat=${anchor.lat}&anchor_lng=${anchor.lng}&cell_row=${cellRow}&cell_col=${cellCol}`)
+      fetch(`/api/properties?anchor_lat=${anchor.lat}&anchor_lng=${anchor.lng}&cell_row=${cellRow}&cell_col=${cellCol}`)
         .then(r => r.json())
         .then(data => {
           const el = document.getElementById(`pipz-own-${key}`)
