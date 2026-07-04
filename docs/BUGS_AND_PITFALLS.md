@@ -343,6 +343,28 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 
 ---
 
+## 12. React useRef + useState Sync Timing (Stale Ref)
+
+### 12.1 Grid Toggle `gridVisibleRef` Read Before Render
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (toggle button doesn't show grid) |
+| **Root Cause** | `gridVisibleRef.current = gridVisible` is set during render. When `onClick` → `setGridVisible(true)` is called, React schedules a re-render but hasn't executed it yet. A subsequent call to `updateGrid()` that reads `gridVisibleRef.current` sees the OLD value (`false`) and exits early. |
+| **Fix** | Sync the ref synchronously in the onClick handler BEFORE the action: `gridVisibleRef.current = newVal; setGridVisible(newVal); ... updateGrid(...)` — ensures the ref is up-to-date for any function called in the same tick. |
+| **Prevention** | When using `useRef` as a "mirror" of `useState` for use in callbacks/event handlers, always update the ref synchronously in the same event handler that calls `setState`, not just in the render body. The render body sync (`gridVisibleRef.current = gridVisible`) only guarantees consistency for the render itself, not for functions called between `setState` and the next render. |
+
+### 12.2 Zoom Auto-Toggle-Off Overriding Manual Toggle
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (toggle button to show grid while zoomed out has no effect) |
+| **Root Cause** | When `updateGrid()` detects `zoomFactor ≤ 0`, it auto-toggles `gridVisible` to `false`. If the user presses the toggle button to show while zoomed out, the same `updateGrid()` call (triggered by the toggle) immediately auto-toggles back off. |
+| **Fix** | Add a `fromToggle` parameter to `updateGrid()`. When `true`, skip the auto-toggle-off logic. Call `updateGrid(map, anchor, true)` from the manual toggle button, and `updateGrid(map, anchor)` from zoom/move events (use default `false`). |
+| **Prevention** | Any "auto state change" logic in shared functions needs a way to distinguish between user-triggered and system-triggered calls. Use an optional parameter (e.g. `fromUser = false`) that callers set appropriately. |
+
+---
+
 ## 11. Canvas Overlay Grid — Container Coordinate Drift
 
 ### 11.1 Grid Cells Drifting During Map Pan

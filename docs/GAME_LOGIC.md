@@ -623,11 +623,21 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 ### Grid Layout (v0.28.0+ — `L.Rectangle` Vector Grid, stable)
 - **Reverted to `L.Rectangle`** — each cell is a native Leaflet vector layer. Grid moves with map naturally during pan/zoom/fly. No canvas, no per-frame redraw.
 - **Cell cap**: 5,000 cells (MAX_GRID_CELLS), past viewport padding: 8 cells (GRID_PAD) — covers zoom 16–20 fully
-- **Cell interaction**: each rectangle has hover tooltip + click highlight animation (opacity 0.2, 1.5s) + Leaflet popup
+- **Cell interaction**: each rectangle has hover tooltip (Monopoly-style, Georgia serif + uppercase cell name in zone colour) + click highlight animation (opacity 0.2, 1.5s) + Monopoly property card popup
 - **Click on map** → `getCellInfo()` detects cell, then **Nominatim reverse geocoding** fetches real address (area/road name) — popup shows "🔍 載入地區資訊…" while loading, then updates to real address like 「屯門區 · 蝴蝶邨 · 湖景路」
 - **Geocode cache**: results cached per cell via `geocodeCache` ref — repeated clicks are instant
 - **Rate limit**: 1 req/s queue (respects Nominatim policy)
 - **Redraw**: on `moveend` / `zoomend` events — old rectangles removed, new ones created for visible viewport
+
+### Grid Toggle & Zoom Fade (v0.28.0+)
+- **Grid toggle button** — `▦`/`▢` button at bottom-right (above recenter button). Press to hide/show grid instantly.
+- **Zoom-based fade** — grid opacity/weight linearly interpolates between zoom 13 (0%) → zoom 16 (100%):
+  - Zoom ≥ 16: full opacity, weight 3, interactive
+  - Zoom 14–15: partial fade — opacity, weight, fill all scaled by `zoomFactor`
+  - Zoom ≤ 13: fully invisible, `updateGrid()` skips rendering entirely
+- **Auto-toggle-off**: when zoom reaches ≤ 13, grid auto-toggles off (`gridVisibleRef.current = false`, `setGridVisible(false)`) so it stays hidden when zooming back in. The button shows `▢` (hidden state).
+- **Manual toggle override**: pressing the toggle button to show while zoomed out bypasses auto-toggle-off (`fromToggle = true` parameter), preventing the zoom check from immediately toggling it back off.
+- **Toggle state ref**: `gridVisibleRef.current` is synced synchronously in the onClick handler (before `setGridVisible` re-render) to prevent stale-ref bugs where `updateGrid` reads the old value.
 
 ### Cell Properties
 - Each cell = one Monopoly-style property
