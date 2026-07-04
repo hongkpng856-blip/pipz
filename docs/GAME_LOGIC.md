@@ -644,10 +644,16 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Cell size: ~60m × 60m (0.0006° × 0.0006°)
 - Cells have alternating zone colors to distinguish regions
 
-### Occupation (coming soon)
-- Each cell will require a fixed step cost to claim
-- Claimed cells are tied to player ID
-- First player to walk enough steps in an area can claim it
+### Occupation / 地皮買賣系統
+- Click any unowned grid cell → Monopoly popup shows **💪 佔領此地** button
+- **Cost**: 100 steps per cell (deducted from `profiles.total_steps`)
+- Claimed cells are tied to player ID (`properties.user_id`)
+- **Ownership check**: `GET /api/properties?anchor_lat=...&anchor_lng=...&cell_row=...&cell_col=...` returns `{owner: bool, isMine: bool}`
+- **Buy flow**: POST `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price: 100}` → deducts steps → inserts row in `properties` table
+- **Sell flow**: `DELETE /api/properties?id=X&user_id=Y` in Properties tab → removes property row
+- **Properties tab** (`🏠 地產`): lists all owned properties with name, price, purchase date, and sell button
+- Client functions in `supabase-db.ts`: `loadProperties(userId)`, `getPropertyOwner(anchorLat, anchorLng, cellRow, cellCol)`, `buyProperty(...)`, `sellProperty(propertyId)`
+- Table: `properties` (see DATA_MODEL.md for schema). API route uses `SUPABASE_SERVICE_ROLE_KEY`; client-side uses RLS.
 
 ### Technical
 - Grid is rendered using **`L.Rectangle` per-cell vectors** — each cell is a native Leaflet vector layer added to the map

@@ -221,6 +221,15 @@
 | **Fix** | Use PostgreSQL `upsert()` (INSERT ON CONFLICT DO UPDATE) in a single query. `ensureProfile()` now uses `.upsert()` with `onConflict: 'id'`. |
 | **Prevention** | Never SELECT-then-INSERT. Always use upsert. |
 
+### 5.6 Property API Wrong URL Path
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (property popup shows no buy button) |
+| **Root Cause** | `RealMap.tsx` called `fetch('/api/properties/check?anchor_lat=...&...)`. The actual route is at `/api/properties` (GET handler), not `/api/properties/check`. |
+| **Fix** | Use `fetch('/api/properties?anchor_lat=...&anchor_lng=...&cell_row=...&cell_col=...')` directly. |
+| **Prevention** | When adding new API routes, verify the exact URL path matches the file structure in `app/api/`. Next.js `app/api/properties/route.ts` only creates `/api/properties`, not sub-paths. |
+
 ---
 
 ## 6. Pixel Art & UI Rendering

@@ -119,7 +119,8 @@ activePet (from page.tsx state)
 | Canvas pixel art | Free, no API key needed for procedural fallback; PICO-8 PNG sprites via Pollinations.ai for primary display; `generatePixelPet()` + `drawPixelGrid()` on Leaflet map marker via canvas `toDataURL()` |
 | Monorepo | Core logic reusable across platforms |
 | Client-side auth callback | Server-side always returned null user |
-| Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |
+|| Server API route for cross-user data | `/api/market` uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS for market |
+|| Property system API | `/api/properties` (GET/POST/DELETE) uses `SUPABASE_SERVICE_ROLE_KEY` for ownership checks, buying, and selling across users. Client-side `supabase-db.ts` also has direct Supabase functions (`loadProperties`, `buyProperty`, `sellProperty`) that rely on RLS. |
 | Env vars via vercel.json | `SUPABASE_SERVICE_ROLE_KEY` set in `vercel.json` at project root + `apps/web/.env.production` for Next.js |
 | **React Portal for all modals** | Leaflet GPU compositing (`translate3d`) creates stacking context that overrides CSS z-index. All full-screen modals render via `createPortal()` to `document.body` to escape `.layout`'s stacking context. Modal CSS class `.fixed-modal-layer` uses `z-index: 9999; isolation: isolate` to ensure it renders above Leaflet tile pane (internal z-index 200). |
 

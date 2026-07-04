@@ -142,9 +142,26 @@ Legendary = 'legendary'
 
 ## Database Schema (PostgreSQL)
 
-Tables: `profiles`, `pets`, `daily_activity`, `transactions`
+Tables: `profiles`, `pets`, `daily_activity`, `transactions`, `properties`
 
-See `supabase-schema.sql` for full DDL.
+See `supabase-schema.sql` for full DDL. For `properties` DDL see `supabase/migrations/20260802_properties.sql`.
+
+### `properties` table
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | BIGINT (PK, auto-increment) | Primary key |
+| `user_id` | UUID (FK → auth.users) | Owner of the property |
+| `anchor_lat` | DOUBLE PRECISION | Grid anchor latitude |
+| `anchor_lng` | DOUBLE PRECISION | Grid anchor longitude |
+| `cell_row` | INTEGER | Grid cell row offset |
+| `cell_col` | INTEGER | Grid cell column offset |
+| `price` | INTEGER (default 100) | Cost in steps |
+| `purchased_at` | TIMESTAMPTZ (default now()) | When the property was bought |
+
+**Constraints:**
+- UNIQUE `(anchor_lat, anchor_lng, cell_row, cell_col)` — one owner per cell
+- RLS enabled: users can read their own rows, service role (API route) can read/write all
 
 Key constraints:
 - `pets.rarity` CHECK: `('common','uncommon','rare','epic','legendary')`

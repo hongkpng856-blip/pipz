@@ -378,7 +378,41 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 
 ---
 
-## 5. Community / Market Tab (`tab === 'community'`)
+## 5. Properties Tab (`tab === 'properties'`)
+
+### Auth Gate
+- Not logged in: 🔑 "需要登入先可以使用地產"
+
+### Layout
+- Title: 🏠 地產 (large, top-left)
+- Scrollable list of property cards, each showing:
+  - Zone colour header bar
+  - Cell name: `第${row+1}區 ${col+1}號` (Georgia serif, uppercase)
+  - Price: ⚡ {price} 步
+  - Purchased date
+  - 🟢 "你擁有" badge
+  - Red sell button: "出售" → confirm → `sellProperty(id)` → refresh list
+- Empty state: "未有地產 — 點擊地圖購買地皮！"
+
+### Data
+- `loadUserProperties` (useCallback): calls `loadProperties(user.id)` → sets `properties` state
+- Loaded on mount when user is logged in, and after buy/sell actions
+
+### API
+- **GET** `/api/properties?anchor_lat=X&anchor_lng=Y&cell_row=R&cell_col=C` — check ownership (used by RealMap popup)
+- **POST** `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price}` — buy cell (deducts steps)
+- **DELETE** `/api/properties?id=X&user_id=Y` — sell property (removes row, called from supabase-db.ts)
+
+### Global Callbacks (on window)
+- `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup button → POST to `/api/properties`
+- `window.__pipzManageProperty(row, col)` — called from Leaflet popup "管理" button → switches to `tab='properties'`
+
+### Supabase Table
+- `properties`: see DATA_MODEL.md for full schema
+
+---
+
+## 6. Community / Market Tab (`tab === 'community'`)
 
 ### Auth Gate
 - Not logged in: 🔑 "需要登入先可以使用交易市場"
@@ -849,7 +883,7 @@ Pixel grid (string[] of 24 palette-index chars)
 
 ---
 
-## 17. Inventory Tab (`tab === 'inventory'`)
+## 18. Inventory Tab (`tab === 'inventory'`)
 
 Full-page inventory view accessible as the 5th bottom nav tab (🎒 背包).
 
