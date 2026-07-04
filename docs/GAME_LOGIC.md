@@ -585,4 +585,29 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 
 - PNG sprite path (Tier 2) doesn't support frame-by-frame changes — static image moves as a whole
 - 16×16 grid limits detail; AI-gen 24×24 or 32×32 base sprites would improve animation quality
-- `generatePlayFrames()` uses generic stretch/shift that works on all body shapes but lacks species-specific personality (e.g. cat plays differently from slime)
+| `generatePlayFrames()` uses generic stretch/shift that works on all body shapes but lacks species-specific personality (e.g. cat plays differently from slime)
+
+---
+
+## Monopoly Grid (v0.22.0+)
+
+### World Anchor
+- Grid is defined by a **fixed geographic anchor** stored on the server (`grid_config` table in Supabase)
+- Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0006° ≈ 60m)
+- Once set, the anchor **cannot be changed** — all players see the same grid cells
+
+### Grid Layout
+- **6×6 grid** (36 cells) centered on the world anchor
+- Each cell = one Monopoly-style property
+- Cell size: ~60m × 60m (0.0006° × 0.0006°)
+- Cells have alternating zone colors to distinguish regions
+
+### Occupation (coming soon)
+- Each cell will require a fixed step cost to claim
+- Claimed cells are tied to player ID
+- First player to walk enough steps in an area can claim it
+
+### Technical
+- Grid is rendered as Leaflet `L.Rectangle` objects at fixed lat/lng coordinates
+- Grid persists on server — survives localStorage clears and browser changes
+- API: `GET /api/grid-config` to read anchor, `POST /api/grid-config` (lat, lng) to set it (only first call succeeds)

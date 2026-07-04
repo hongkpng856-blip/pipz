@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.22.0 (2026-08-01)
+
+### Added
+- **Monopoly grid overlay**: 6×6 fixed grid on Leaflet map, each cell is a Monopoly-style property
+- **Server-side world anchor**: grid anchored to fixed geographic coordinates stored in Supabase `grid_config` table — shared across all players, cannot be tampered with client-side
+- **`/api/grid-config` endpoint**: GET returns the world anchor, POST sets it once (server-authoritative)
+- **Grid persistence**: anchor saved to server on first GPS fix → all players see the same cells
+
+### Changed
+- **♻️ Grid positioning**: from localStorage + center-on-GPS → server-side fixed anchor rounded to grid boundaries
+
 ## v0.21.0 (2026-08-01)
 
 ### Added
