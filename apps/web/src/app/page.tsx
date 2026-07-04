@@ -1770,9 +1770,30 @@ export default function HomePage() {
                         </>
                       )}
                       {eggs.length === 0 && (
-                        <div style={{fontSize:8, color:'#5a6d85', marginTop:6}}>
-                          行路有機會獲得 🥚
-                        </div>
+                        <>
+                          <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
+                          <div className="pet-grid" style={{gap:6, justifyContent:'flex-start'}}>
+                            {[1,2,3].map(i => (
+                              <div key={`empty-egg-${i}`}
+                                className="pet-card"
+                                style={{
+                                  borderColor: 'rgba(255,255,255,0.08)',
+                                  padding: '8px 4px 6px', width:56,
+                                  flex:'none', opacity:0.4,
+                                }}>
+                                <div style={{fontSize:22, marginBottom:2, filter:'grayscale(0.6)'}}>🥚</div>
+                                <div style={{
+                                  fontSize:6, fontWeight:700, color:'#5a6d85',
+                                  display:'inline-block', padding:'1px 6px', borderRadius:3,
+                                  background:'rgba(255,255,255,0.04)',
+                                }}>
+                                  蛋槽 {i}
+                                </div>
+                                <div style={{fontSize:6, color:'#3a4a5a', marginTop:2}}>行路獲得</div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
