@@ -22,8 +22,9 @@ const RC: Record<string, string> = {
 const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
 
 /* ── Monopoly grid config ── */
-const GRID_CELLS = 6        // 6×6 grid
 const CELL_SIZE_DEG = 0.0006  // ~60m per cell (at HK latitude)
+const MAX_GRID_CELLS = 400    // safety cap — skip rendering if viewport covers more
+const GRID_PAD = 1            // extra cells beyond viewport for smooth panning
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 
 /** Generate a data URL of the pet's pixel art sprite */
@@ -66,6 +67,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const initialAnimBusyRef = useRef(false)
   const gridRectsRef = useRef<L.Rectangle[]>([])
   const gridInitializedRef = useRef(false)
+  const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
 
@@ -99,20 +101,37 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   }
 
-  // ── Monopoly grid creation (outside useEffect, callable from anywhere) ──
-  const createGrid = useCallback((map: L.Map, center: { lat: number; lng: number }) => {
+  // ── Dynamic full-map grid: renders visible cells based on viewport ──
+  const updateGrid = useCallback(() => {
+    const map = mapRef.current
+    const anchor = anchorRef.current
+    if (!map || !anchor) return
+
     // Remove old grid
     gridRectsRef.current.forEach(r => r.remove())
     gridRectsRef.current = []
 
-    const half = GRID_CELLS / 2
-    let cellId = 0
+    const bounds = map.getBounds()
+    const sw = bounds.getSouthWest()
+    const ne = bounds.getNorthEast()
 
-    for (let row = 0; row < GRID_CELLS; row++) {
-      for (let col = 0; col < GRID_CELLS; col++) {
-        const north = center.lat + (row - half) * CELL_SIZE_DEG
+    // Calculate visible cell range (relative to anchor)
+    const minRow = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) - GRID_PAD
+    const maxRow = Math.ceil((ne.lat - anchor.lat) / CELL_SIZE_DEG) + GRID_PAD
+    const minCol = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) - GRID_PAD
+    const maxCol = Math.ceil((ne.lng - anchor.lng) / CELL_SIZE_DEG) + GRID_PAD
+
+    const nRows = maxRow - minRow + 1
+    const nCols = maxCol - minCol + 1
+
+    // Safety cap: skip if too many cells (too zoomed out)
+    if (nRows * nCols > MAX_GRID_CELLS) return
+
+    for (let row = minRow; row <= maxRow; row++) {
+      for (let col = minCol; col <= maxCol; col++) {
+        const north = anchor.lat + row * CELL_SIZE_DEG
         const south = north + CELL_SIZE_DEG
-        const west = center.lng + (col - half) * CELL_SIZE_DEG
+        const west = anchor.lng + col * CELL_SIZE_DEG
         const east = west + CELL_SIZE_DEG
         const zoneIdx = (row * 7 + col * 13) % ZONE_COLORS.length
         const color = ZONE_COLORS[zoneIdx]
@@ -363,12 +382,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Fetch grid anchor from server (shared world anchor for all players)
     fetchGridAnchor().then(anchor => {
       if (anchor && !gridInitializedRef.current) {
-        createGrid(map, anchor)
+        anchorRef.current = anchor
         gridInitializedRef.current = true
+        updateGrid()
       }
     })
 
+    // Dynamic grid: redraw on every pan/zoom
+    map.on('moveend zoomend', updateGrid)
+
     return () => {
+      map.off('moveend zoomend', updateGrid)
       gridRectsRef.current.forEach(r => r.remove())
       gridRectsRef.current = []
       map.remove()
@@ -416,9 +440,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (!gridInitializedRef.current) {
       gridInitializedRef.current = true
       const anchor = roundToGrid(lat, lng)
+      anchorRef.current = anchor
       // Save to server (silent if already set by another player)
       setGridAnchor(anchor.lat, anchor.lng)
-      createGrid(map, anchor)
+      updateGrid()
     }
 
     userMarkerRef.current.setLatLng([lat, lng])
