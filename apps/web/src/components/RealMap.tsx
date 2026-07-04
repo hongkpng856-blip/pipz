@@ -235,7 +235,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       return L.divIcon({
         className: 'pipz-player-marker',
         html: `<div style="width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center;">
-          <div class="pipz-heading-arrow" style="transition:transform 0.25s ease;">
+          <div class="pipz-heading-arrow" style="transition:transform 0.08s ease-out;">
             <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:8px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
               <path d="M8 0L16 12H0z" fill="${rarityColor}" />
             </svg>
@@ -260,7 +260,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     return L.divIcon({
       className: 'pipz-player-marker',
       html: `<div style="width:44px;height:44px;position:relative;display:flex;align-items:center;justify-content:center;">
-        <div class="pipz-heading-arrow" style="transition:transform 0.25s ease;">
+        <div class="pipz-heading-arrow" style="transition:transform 0.08s ease-out;">
           <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:14px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
             <path d="M8 0L16 12H0z" fill="${rarityColor}" />
           </svg>
