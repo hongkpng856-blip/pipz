@@ -2,6 +2,10 @@
 
 ## v0.28.0 (2026-08-01)
 
+### Added
+- **🗺️ Real address on grid click** — clicking any grid cell performs Nominatim reverse geocoding (OpenStreetMap) to show real area name (e.g. 「屯門區 · 蝴蝶邨 · 湖景路」). Cached per cell so repeated clicks are instant. Rate-limited queue (1 req/s) respects Nominatim's usage policy.
+- **🔍 Loading state** — popup shows "🔍 載入地區資訊…" while geocode fetches, then updates to real address in-place
+
 ### Changed
 - **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
 - **♻️ Cell cap raised to 5000**, **padding 8 cells** beyond viewport — full coverage at all walkable zoom levels (16–20), cells appear smoothly on all edges during pan

@@ -624,7 +624,9 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - **Reverted to `L.Rectangle`** — each cell is a native Leaflet vector layer. Grid moves with map naturally during pan/zoom/fly. No canvas, no per-frame redraw.
 - **Cell cap**: 5,000 cells (MAX_GRID_CELLS), past viewport padding: 8 cells (GRID_PAD) — covers zoom 16–20 fully
 - **Cell interaction**: each rectangle has hover tooltip + click highlight animation (opacity 0.2, 1.5s) + Leaflet popup
-- **Click on map** → `getCellInfo()` detects cell from `lat/lng` using `Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)` formula, shows popup with cell name
+- **Click on map** → `getCellInfo()` detects cell, then **Nominatim reverse geocoding** fetches real address (area/road name) — popup shows "🔍 載入地區資訊…" while loading, then updates to real address like 「屯門區 · 蝴蝶邨 · 湖景路」
+- **Geocode cache**: results cached per cell via `geocodeCache` ref — repeated clicks are instant
+- **Rate limit**: 1 req/s queue (respects Nominatim policy)
 - **Redraw**: on `moveend` / `zoomend` events — old rectangles removed, new ones created for visible viewport
 
 ### Cell Properties
