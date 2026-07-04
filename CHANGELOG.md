@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.26.0 (2026-08-01)
+
+### Changed
+- **🖼️ Grid rendering: `L.rectangle` → Canvas `L.GridLayer`** — replaces per-cell SVG rectangles with a single canvas-based grid layer. Each Leaflet tile gets a `<canvas>` with grid lines + zone fills drawn programmatically
+- **♻️ No cell count cap** — canvas rendering has no polygon count limit, covers full viewport at any zoom level
+- **♻️ Grid click via map click** — cell popup now triggers on map `click` event (detects cell from lat/lng), no more per-rectangle event handlers
+
+### Removed
+- **🗑️ `updateGrid()`, `GRID_PAD`, `MAX_GRID_CELLS`, `gridRectsRef`** — all replaced by Canvas GridLayer auto-tiling
+
+### Fixed
+- **🐛 Grid gaps at viewport edges** — canvas tiles always cover every visible pixel, no more missing cells at top-left corners or gaps during panning
+- **🐛 Grid hiding at medium zoom (16-17)** — 2000-cell cap previously hid grid at zoom 16+; canvas layer has no such limit
+
 ## v0.25.0 (2026-08-01)
 
 ### Added

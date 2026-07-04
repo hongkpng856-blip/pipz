@@ -612,16 +612,16 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0006° ≈ 60m)
 - Once set, the anchor **cannot be changed** — all players see the same grid cells
 
-### Grid Layout (v0.22.0 – v0.23.0)
-- **6×6 grid** (36 cells) centered on the world anchor
+### Grid Layout (v0.24.0 – v0.25.0)
+- **6×6 grid** → dynamic viewport-based using `L.Rectangle` objects (removed in v0.26.0)
 
-### Grid Layout (v0.24.0+ — Dynamic Full-Map Grid)
-- Grid is **dynamic**: cells are created based on the current map viewport (`map.getBounds()`)
-- Visible cell range is calculated from the viewport bounds relative to the world anchor
-- **4-cell padding** around viewport for smooth panning (was 1-cell in v0.24.0)
-- **Safety cap: 2000 cells max** (was 400 in v0.24.0) — at very low zoom (≤15) grid hides to prevent performance lag; at walk zooms 16–20 the grid is fully visible
-- Grid redraws on every `moveend` / `zoomend` event
-- Grid anchor (`anchorRef`) persists across redraws — panning and zooming always use the same world origin
+### Grid Layout (v0.26.0+ — Canvas GridLayer)
+- Grid is rendered as a **Canvas `L.GridLayer`** — Leaflet draws a `<canvas>` per tile, grid lines + fills are painted programmatically
+- **No cell count cap** — always covers full viewport regardless of zoom level
+- No padding, no cap constants — the canvas automatically covers every visible pixel
+- Grid lines: purple (`rgba(139, 92, 246, 0.35)`), 1.2px
+- Cell fills: subtle zone colours at 7% opacity
+- **Click on map** → detects cell from `lat/lng` using `Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)` formula, shows popup with cell name
 
 ### Cell Properties
 - Each cell = one Monopoly-style property
@@ -634,7 +634,9 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - First player to walk enough steps in an area can claim it
 
 ### Technical
-- Grid is rendered as Leaflet `L.Rectangle` objects at fixed lat/lng coordinates
+- Grid is rendered as a **Canvas `L.GridLayer`** — each Leaflet tile gets a `<canvas>` element with grid lines + zone fills drawn via `CanvasRenderingContext2D`
+- Canvas drawing uses `Math.floor()` to find the first cell origin within each tile, then iterates east/north to draw all visible lines
+- Grid anchor stored in `anchorRef` on the React component; grid layer receives anchor via `setAnchor()` method
 - Grid persists on server — survives localStorage clears and browser changes
 - API: `GET /api/grid-config` to read anchor, `POST /api/grid-config` (lat, lng) to set it (only first call succeeds)
 
