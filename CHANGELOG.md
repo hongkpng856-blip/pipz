@@ -10,6 +10,7 @@
 - **💅 Tooltip redesign** — now shows cell name in Georgia serif, uppercase, zone colour, matching the Monopoly theme
 - **🔘 Grid toggle button** — bottom-right `▦`/`▢` button hides/shows the grid instantly. Perfect for checking the map without grid distraction.
 - **👁️ Zoom-based grid fade** — grid gradually fades out between zoom 13→16 (linear opacity+weight). Fully visible at zoom ≥16, completely gone at zoom ≤13. Grid cells only respond to clicks when >30% visible.
+- **🥚🐾 蛋頁合併入寵物頁** — eggs tab removed, eggs now show as a section within the pets tab (below ⭐主力隊伍 and 🐾其他寵物). Nav bar simplified from 5→4 tabs.
 
 ### Changed
 - **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
