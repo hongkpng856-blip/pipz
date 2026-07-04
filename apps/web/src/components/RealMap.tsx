@@ -112,45 +112,46 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   }
 
   // ── Canvas grid overlay: draws grid lines + fills on a single canvas ──
-  //    Covers full map container, redraws on move/zoom/resize.
-  //    No Leaflet tile management issues — always fully visible.
-  function redrawGrid(map: L.Map, anchor: { lat: number; lng: number }) {
-    const canvas = gridCanvasRef.current
-    if (!canvas) return
-    const size = map.getSize()
-    canvas.width = size.x
-    canvas.height = size.y
+  //    Canvas sits inside Leaflet's overlayPane and moves with the map.
+  //    We draw using latLngToLayerPoint, offset by the viewport top-left.
+  function drawGridOnCanvas(
+    canvas: HTMLCanvasElement,
+    map: L.Map,
+    anchor: { lat: number; lng: number },
+    offset: L.Point,
+    size: L.Point,
+  ) {
     const ctx = canvas.getContext('2d')!
     const bounds = map.getBounds()
     const sw = bounds.getSouthWest()
     const ne = bounds.getNorthEast()
-    const degX = ne.lng - sw.lng
-    const degY = ne.lat - sw.lat
-    if (degX === 0 || degY === 0) return
 
     // First cell origin at or before sw
     const startLat = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lat
     const startLng = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lng
 
     // ── Grid lines ──
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.strokeStyle = hexToRgba('#8b5cf6', 0.35)
     ctx.lineWidth = 1.2
 
     // Vertical lines
     for (let lng = startLng; lng <= ne.lng; lng += CELL_SIZE_DEG) {
-      const p = map.latLngToContainerPoint([(sw.lat + ne.lat) / 2, lng])
+      const p = map.latLngToLayerPoint([(sw.lat + ne.lat) / 2, lng])
+      const x = Math.round(p.x - offset.x) + 0.5
       ctx.beginPath()
-      ctx.moveTo(Math.round(p.x) + 0.5, 0)
-      ctx.lineTo(Math.round(p.x) + 0.5, size.y)
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, size.y)
       ctx.stroke()
     }
 
     // Horizontal lines
     for (let lat = startLat; lat <= ne.lat; lat += CELL_SIZE_DEG) {
-      const p = map.latLngToContainerPoint([lat, (sw.lng + ne.lng) / 2])
+      const p = map.latLngToLayerPoint([lat, (sw.lng + ne.lng) / 2])
+      const y = Math.round(p.y - offset.y) + 0.5
       ctx.beginPath()
-      ctx.moveTo(0, Math.round(p.y) + 0.5)
-      ctx.lineTo(size.x, Math.round(p.y) + 0.5)
+      ctx.moveTo(0, y)
+      ctx.lineTo(size.x, y)
       ctx.stroke()
     }
 
@@ -162,10 +163,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         const zoneIdx = ((row * 7 + col * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
         const color = ZONE_COLORS[zoneIdx]
 
-        const nw = map.latLngToContainerPoint([lat + CELL_SIZE_DEG, lng])
-        const se = map.latLngToContainerPoint([lat, lng + CELL_SIZE_DEG])
-        const x = nw.x
-        const y = nw.y
+        const nw = map.latLngToLayerPoint([lat + CELL_SIZE_DEG, lng])
+        const se = map.latLngToLayerPoint([lat, lng + CELL_SIZE_DEG])
+        const x = nw.x - offset.x
+        const y = nw.y - offset.y
         const w = se.x - nw.x
         const h = se.y - nw.y
 
@@ -188,6 +189,22 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       name: `第${row+1}區 ${col+1}號`,
       color: ZONE_COLORS[zoneIdx],
     }
+  }
+
+  /** Redraw the grid canvas to match current map view + anchor */
+  function triggerGridRedraw() {
+    const map = mapRef.current
+    const cvs = gridCanvasRef.current
+    if (!map || !cvs || !anchorRef.current) return
+    const pxBounds = map.getPixelBounds()
+    const topLeft = pxBounds.min
+    const size = pxBounds.getSize()
+    if (!topLeft || !size) return
+    cvs.style.left = topLeft.x + 'px'
+    cvs.style.top = topLeft.y + 'px'
+    cvs.width = size.x
+    cvs.height = size.y
+    drawGridOnCanvas(cvs, map, anchorRef.current, topLeft, size)
   }
 
   function saveTrailToStorage() {
@@ -425,35 +442,29 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     // ── Per-day trails (created lazily) ──
 
-    // ── Canvas grid overlay (full container canvas, redrawn on move/zoom) ──
+    // ── Canvas grid overlay (inside Leaflet overlay pane — moves with map) ──
     const canvas = document.createElement('canvas')
     canvas.className = 'pipz-grid-canvas'
-    canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:400;image-rendering:auto;'
-    map.getContainer().appendChild(canvas)
+    canvas.style.cssText = 'position:absolute;pointer-events:none;'
+    map.getPane('overlayPane')!.appendChild(canvas)
     gridCanvasRef.current = canvas
-
-    function onGridRedraw() {
-      if (anchorRef.current && map) {
-        redrawGrid(map, anchorRef.current)
-      }
-    }
 
     // Fetch grid anchor from server (shared world anchor for all players)
     fetchGridAnchor().then(anchor => {
       if (anchor && !gridInitializedRef.current) {
         anchorRef.current = anchor
         gridInitializedRef.current = true
-        redrawGrid(map, anchor)
+        triggerGridRedraw()
       }
     })
 
-    map.on('moveend zoomend', onGridRedraw)
-    map.on('resize', onGridRedraw)
+    map.on('moveend zoomend', triggerGridRedraw)
+    map.on('resize', triggerGridRedraw)
     // Redraw during pan so grid follows the map smoothly
     let rafId = 0
     map.on('move', () => {
       if (rafId) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(onGridRedraw)
+      rafId = requestAnimationFrame(triggerGridRedraw)
     })
 
     // ── Click on grid cell → show popup ──
@@ -473,8 +484,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     return () => {
       map.off('click', onMapClick)
-      map.off('moveend zoomend', onGridRedraw)
-      map.off('resize', onGridRedraw)
+      map.off('moveend zoomend', triggerGridRedraw)
+      map.off('resize', triggerGridRedraw)
       map.off('move')
       if (rafId) cancelAnimationFrame(rafId)
       if (gridCanvasRef.current) {
@@ -532,7 +543,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       setGridAnchor(anchor.lat, anchor.lng)
       // Draw grid immediately
       if (gridCanvasRef.current && map) {
-        redrawGrid(map, anchor)
+        triggerGridRedraw()
       }
     }
 
