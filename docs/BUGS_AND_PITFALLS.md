@@ -379,8 +379,12 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Concurrent state updates (popups) | All | Dismiss old before showing new |
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
-| Map compass arrow direction/wrong pivot | All | SVG path + GPS trajectory heading (`atan2`) + same-container rotate |
-| fitBounds animation interrupted by GPS warmup | All | Busy flag ref to block `setView` during multi-step Leaflet animations |
+|| Map compass arrow direction/wrong pivot | All | SVG path + GPS trajectory heading (`atan2`) + same-container rotate |
+|| **ModalPortal always-mounted modals block all clicks** | All | When `ModalPortal` is used with always-mounted modals (like `<ModalPortal><LoginModal open={bool}/></ModalPortal>`), the portal wrapper is always in the DOM with `z-index: 9999`. Setting `pointer-events` inline via `open ? 'auto' : 'none'` caused even "closed" modals to capture clicks after mounting animation. **Fix:** Keep `.modal-portal-wrapper` at `pointer-events: none` in CSS permanently. Children get `pointer-events: auto` via `.modal-portal-wrapper > *`. Never set `pointer-events` inline on the wrapper. |
+|| **Map auto-centers on every GPS update, ignores user pan** | All | `else if (!initialAnimBusyRef.current) { map.setView([lat, lng], ...) }` in position sync runs on EVERY position fix, overriding user's manual pan. **Fix:** Remove the else-if block entirely. Only center on initial zoom. Add a 🎯 recenter button instead. |
+|| **Map remounts every tab switch** | All | `{tab === 'map' && (<RealMap />)}` causes React to unmount/remount the entire Leaflet map when switching away and back. **Fix:** Always render the map tab div, toggle visibility via `style={{ display: tab === 'map' ? '' : 'none' }}`. |
+|| **GPS position drift bearing causes random arrow direction** | All | Computing `atan2(dLng, dLat)` from consecutive GPS positions at walking speed gives unreliable bearing (GPS noise ~5-10m). Arrow points in random direction when user stands or walks slowly. **Fix:** Remove bearing computation entirely. Arrow only updates from compass (`deviceHeading`) or Geolocation API `coords.heading`. Defaults to north (0°) when no source available. |
+|| **Compass arrow jitters on large turns** | All | CSS `transition: 0.25s ease` on arrow rotation is longer than state throttle (100ms). Each new heading arrives before the previous transition completes, causing visible vibration. **Fix:** Change transition to `0.08s ease-out` (faster than 100ms throttle). Each transition completes before the next update. |
 
 ---
 
