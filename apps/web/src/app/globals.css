@@ -678,37 +678,39 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   isolation: isolate !important;
 }
 
-/* ── Modal portal entrance animation (state-driven CSS transition, reliable on iOS) ── */
+/* ── Modal portal entrance animation (inline styles now, CSS for positioning only) ── */
 .modal-portal-wrapper {
   position: fixed;
   inset: 0;
   z-index: 9999 !important;
   isolation: isolate !important;
-  pointer-events: none;
-}
-.modal-portal-wrapper > * {
-  pointer-events: auto;
-  opacity: 0;
-  transform: scale(0.92) translateY(16px) translateZ(0);
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.modal-portal-wrapper[data-entered="true"] > * {
-  opacity: 1;
-  transform: scale(1) translateY(0) translateZ(0);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 
 /* ════ RealMap — Leaflet GPS Map ════ */
 
 .real-map-container {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  min-height: 240px;
-  background: #0b1120;
-  border-radius: 0;
-  position: relative;
+  height: 300px; width: 100%; border-radius: 16px; overflow: hidden;
+  background: #0f172a;
 }
+/* ── Monopoly grid tooltip ── */
+.monopoly-grid-tooltip {
+  background: #1a2338 !important;
+  border: 1px solid #2a3a5a !important;
+  color: #f0f4f8 !important;
+  font-family: inherit !important;
+  font-size: 10px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+.monopoly-grid-tooltip::before {
+  display: none !important;
+}
+
 
 /* Clean map tiles — Google Maps style (Voyager) */
 .real-map-container .leaflet-tile {
@@ -833,6 +835,35 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 @keyframes gps-pulse-vehicle {
   0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
   50% { opacity: 0.6; box-shadow: 0 0 6px 3px rgba(251,191,36,0.15); }
+}
+
+/* Recenter map button */
+.real-map-recenter-btn {
+  position: absolute;
+  bottom: 24px;
+  right: 10px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(11,17,32,0.8);
+  border: 1px solid rgba(139,92,246,0.4);
+  color: #8b5cf6;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.real-map-recenter-btn:active {
+  background: rgba(139,92,246,0.3);
+  border-color: #8b5cf6;
+  transform: scale(0.92);
 }
 
 /* Stationary mode badge override */

@@ -1469,9 +1469,8 @@ export default function HomePage() {
           ) : (
 
           <>
-          {/* ════ MAP TAB ════ */}
-          {tab === 'map' && (
-            <div className="fade-up">
+          {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
+          <div className="fade-up" style={{ display: tab === 'map' ? '' : 'none' }}>
 
 
               {/* ── 探險進度 ── 打怪拎獎品風格 ── */}
@@ -1653,7 +1652,6 @@ export default function HomePage() {
 
 
             </div>
-          )}
 
           {/* ════ PETS TAB ════ */}
           {tab === 'pets' && (

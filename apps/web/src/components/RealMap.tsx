@@ -47,6 +47,7 @@ function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
 export interface RealMapHandle {
   generateTestTrails: () => void
   clearStoredTrails: () => void
+  recenterMap: () => void
 }
 
 const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading }, ref) {
@@ -65,6 +66,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const initialAnimBusyRef = useRef(false)
   const gridRectsRef = useRef<L.Rectangle[]>([])
   const gridInitializedRef = useRef(false)
+  const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
 
   /** Fetch grid anchor from server (shared across all players) */
@@ -215,6 +217,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       polylineByDay.current.forEach(p => p.remove())
       polylineByDay.current.clear()
       trailByDay.current.clear()
+    },
+    recenterMap: () => {
+      const map = mapRef.current
+      const pos = lastKnownPosRef.current
+      if (map && pos) {
+        map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
+      }
     },
   }), [])
 
@@ -414,8 +423,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     userMarkerRef.current.setLatLng([lat, lng])
     accCircleRef.current?.setLatLng([lat, lng])
+    lastKnownPosRef.current = { lat, lng }
 
-    // ── Initial zoom: show all trails first, then fly to current ──
+    // ── Initial zoom: show all trails first, then fly to current (one-time) ──
     if (!initialZoomDoneRef.current) {
       initialZoomDoneRef.current = true
       const allPoints: [number, number][] = []
@@ -436,8 +446,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       } else {
         map.setView([lat, lng], 18, { animate: true })
       }
-    } else if (!initialAnimBusyRef.current) {
-      map.setView([lat, lng], map.getZoom(), { animate: true })
     }
 
     // ── Compute heading from GPS track (fallback when deviceHeading unavailable) ──
@@ -515,6 +523,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           {mode === 'vehicle' ? '🚗 乘車中' : mode === 'stationary' ? '🧘 靜止中' : '🚶 步行中'}
         </div>
       )}
+      {/* ── Recenter button ── */}
+      <button
+        className="real-map-recenter-btn"
+        onClick={() => {
+          const map = mapRef.current
+          const pos = lastKnownPosRef.current
+          if (map && pos) {
+            map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
+          }
+        }}
+        aria-label="回到我的位置"
+      >
+        🎯
+      </button>
     </div>
   )
 })
