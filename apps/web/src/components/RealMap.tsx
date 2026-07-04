@@ -59,6 +59,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const accCircleRef = useRef<L.Circle | null>(null)
   const trailByDay = useRef<Map<number, [number, number][]>>(new Map())
   const polylineByDay = useRef<Map<number, L.Polyline>>(new Map())
+  const vehicleTrailByDay = useRef<Map<number, [number, number][]>>(new Map())
+  const vehiclePolylineByDay = useRef<Map<number, L.Polyline>>(new Map())
   const headingRef = useRef(0)
   const initialised = useRef(false)
   const autoZoomingRef = useRef(false)
@@ -70,6 +72,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
+  const VEHICLE_TRAIL_KEY = 'pipz_vehicle_trail'
 
   /** Fetch grid anchor from server (shared across all players) */
   async function fetchGridAnchor(): Promise<{ lat: number; lng: number } | null> {
@@ -179,6 +182,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (pts.length > 0) obj[String(day)] = pts
     })
     try { localStorage.setItem(TRAIL_STORAGE_KEY, JSON.stringify(obj)) } catch {}
+
+    const vObj: Record<string, [number, number][]> = {}
+    vehicleTrailByDay.current.forEach((pts, day) => {
+      if (pts.length > 0) vObj[String(day)] = pts
+    })
+    try { localStorage.setItem(VEHICLE_TRAIL_KEY, JSON.stringify(vObj)) } catch {}
   }
 
   function restoreTrailFromStorage(map: L.Map) {
@@ -198,6 +207,25 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           dashArray: '6 4',
         }).addTo(map)
         polylineByDay.current.set(day, poly)
+      })
+    } catch {}
+
+    // Restore vehicle trails (solid blue, thinner, more transparent)
+    try {
+      const vRaw = localStorage.getItem(VEHICLE_TRAIL_KEY)
+      if (!vRaw) return
+      const vObj = JSON.parse(vRaw)
+      Object.entries(vObj).forEach(([dayStr, pts]) => {
+        const day = parseInt(dayStr)
+        const points = pts as [number, number][]
+        if (points.length === 0) return
+        vehicleTrailByDay.current.set(day, points)
+        const poly = L.polyline(points, {
+          color: '#60a5fa',    // blue-400
+          weight: 2,
+          opacity: 0.45,
+        }).addTo(map)
+        vehiclePolylineByDay.current.set(day, poly)
       })
     } catch {}
   }
@@ -232,10 +260,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     },
     clearStoredTrails: () => {
-      localStorage.removeItem('pipz_trail_data')
+      localStorage.removeItem(TRAIL_STORAGE_KEY)
+      localStorage.removeItem(VEHICLE_TRAIL_KEY)
       polylineByDay.current.forEach(p => p.remove())
       polylineByDay.current.clear()
       trailByDay.current.clear()
+      vehiclePolylineByDay.current.forEach(p => p.remove())
+      vehiclePolylineByDay.current.clear()
+      vehicleTrailByDay.current.clear()
     },
     recenterMap: () => {
       const map = mapRef.current
@@ -455,6 +487,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       initialZoomDoneRef.current = true
       const allPoints: [number, number][] = []
       trailByDay.current.forEach(pts => allPoints.push(...pts))
+      vehicleTrailByDay.current.forEach(pts => allPoints.push(...pts))
       if (allPoints.length > 0) {
         initialAnimBusyRef.current = true
         autoZoomingRef.current = true
@@ -486,23 +519,43 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // No heading source → arrow stays at last known heading (default = north)
 
     // ── Trail drawing + persist ──
-    if (walking && mode === 'walk') {
+    if (walking && (mode === 'walk' || mode === 'vehicle')) {
       const dayIdx = new Date().getDay()
-      const points = trailByDay.current.get(dayIdx) || []
-      points.push([lat, lng])
-      trailByDay.current.set(dayIdx, points)
 
-      let poly = polylineByDay.current.get(dayIdx)
-      if (!poly) {
-        poly = L.polyline([], {
-          color: DAY_COLORS[dayIdx],
-          weight: 3,
-          opacity: 0.7,
-          dashArray: '6 4',
-        }).addTo(map)
-        polylineByDay.current.set(dayIdx, poly)
+      if (mode === 'walk') {
+        const points = trailByDay.current.get(dayIdx) || []
+        points.push([lat, lng])
+        trailByDay.current.set(dayIdx, points)
+
+        let poly = polylineByDay.current.get(dayIdx)
+        if (!poly) {
+          poly = L.polyline([], {
+            color: DAY_COLORS[dayIdx],
+            weight: 3,
+            opacity: 0.7,
+            dashArray: '6 4',
+          }).addTo(map)
+          polylineByDay.current.set(dayIdx, poly)
+        }
+        poly.setLatLngs(points)
+      } else {
+        // Vehicle trail: solid blue, thinner, more transparent
+        const vPoints = vehicleTrailByDay.current.get(dayIdx) || []
+        vPoints.push([lat, lng])
+        vehicleTrailByDay.current.set(dayIdx, vPoints)
+
+        let vPoly = vehiclePolylineByDay.current.get(dayIdx)
+        if (!vPoly) {
+          vPoly = L.polyline([], {
+            color: '#60a5fa',   // blue-400
+            weight: 2,
+            opacity: 0.45,
+          }).addTo(map)
+          vehiclePolylineByDay.current.set(dayIdx, vPoly)
+        }
+        vPoly.setLatLngs(vPoints)
       }
-      poly.setLatLngs(points)
+
       saveTrailToStorage()
     }
   }, [position?.lat, position?.lng, mode, deviceHeading])
