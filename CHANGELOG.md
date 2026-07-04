@@ -5,6 +5,9 @@
 ### Added
 - **🗺️ Real address on grid click** — clicking any grid cell performs Nominatim reverse geocoding (OpenStreetMap) to show real area name (e.g. 「屯門區 · 蝴蝶邨 · 湖景路」). Cached per cell so repeated clicks are instant. Rate-limited queue (1 req/s) respects Nominatim's usage policy.
 - **🔍 Loading state** — popup shows "🔍 載入地區資訊…" while geocode fetches, then updates to real address in-place
+- **🏠 Monopoly-style property card popup** — each grid cell click shows a 大富翁 property card with colored top bar (zone colour), property name in all-caps serif, address strip, occupation cost (100 steps) in gold, and contract header "✦ 物 業 契 約 ✦"
+- **🎨 Thicker grid cell borders** — cell outline weight 1.5→3, opacity 0.4→0.55, fill 0.06→0.08 for more visible Monopoly-board look
+- **💅 Tooltip redesign** — now shows cell name in Georgia serif, uppercase, zone colour, matching the Monopoly theme
 
 ### Changed
 - **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
