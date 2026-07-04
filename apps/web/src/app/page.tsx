@@ -14,7 +14,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -35,7 +35,7 @@ interface EggItem {
   collectedAt: number
 }
 
-type Tab = 'map' | 'pets' | 'community' | 'inventory'
+type Tab = 'map' | 'pets' | 'community' | 'inventory' | 'properties'
 
 export default function HomePage() {
   const [steps, setSteps] = useState(0)
@@ -78,6 +78,9 @@ export default function HomePage() {
   const [marketListings, setMarketListings] = useState<Pet[]>([])
   const [myListings, setMyListings] = useState<Pet[]>([])
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
+  // ── Monopoly Properties ──
+  const [properties, setProperties] = useState<Property[]>([])
+  const [showProperties, setShowProperties] = useState(false)
   // ── Roguelike: pet equipment ──
   const [petEquipment, setPetEquipment] = useState<{equipmentId: string; slot: string}[]>([])
   // ── Roguelike: inventory ──
@@ -350,6 +353,51 @@ export default function HomePage() {
   useEffect(() => {
     if (user) loadMarketData()
   }, [user?.id])
+
+  // ── Monopoly Properties: load + global callbacks ──
+  const loadUserProperties = useCallback(async () => {
+    if (!user) return
+    try {
+      const props = await loadProperties(user.id)
+      setProperties(props)
+    } catch {}
+  }, [user])
+
+  useEffect(() => {
+    loadUserProperties()
+  }, [user?.id])
+
+  // Expose global callbacks for Leaflet popup buttons
+  useEffect(() => {
+    if (!user) return
+    ;(window as any).__pipzBuyCell = async (row: number, col: number, anchorLat: number, anchorLng: number) => {
+      if (totalSteps < 100) { logMsg('❌ 步驟不足！需要 100 步'); return }
+      try {
+        const res = await fetch('/api/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, anchorLat, anchorLng, cellRow: row, cellCol: col, price: 100 }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          const newSteps = totalSteps - 100
+          setTotalSteps(newSteps)
+          await updateTotalSteps(user.id, newSteps)
+          logMsg(`🏠 佔領地皮成功！ ${row},${col}`)
+          loadUserProperties()
+        } else {
+          logMsg(`❌ ${data.error || '佔領失敗'}`)
+        }
+      } catch { logMsg('❌ 網絡錯誤') }
+    }
+    ;(window as any).__pipzManageProperty = (_row: number, _col: number) => {
+      setTab('properties')
+    }
+    return () => {
+      delete (window as any).__pipzBuyCell
+      delete (window as any).__pipzManageProperty
+    }
+  }, [user, totalSteps, loadUserProperties])
 
   // ── Reload market + notifs when switching to community tab ──
   useEffect(() => {
@@ -2068,6 +2116,63 @@ export default function HomePage() {
             </div>
           )}
 
+          {/* ════ PROPERTIES TAB ════ */}
+          {tab === 'properties' && (
+            <div className="fade-up">
+              <div className="section-header">
+                <span className="section-title">🏠 地產</span>
+                <span className="section-count">{properties.length}塊</span>
+              </div>
+              {!user ? (
+                <div className="card empty-state">
+                  <div className="empty-icon">🔑</div>
+                  <div className="empty-text">需要登入先可以購買地皮</div>
+                </div>
+              ) : properties.length === 0 ? (
+                <div className="card empty-state">
+                  <div className="empty-icon">🏠</div>
+                  <div className="empty-text">未擁有任何地皮</div>
+                  <div style={{fontSize:10, color:'#5a6d85', marginTop:4}}>
+                    喺地圖點擊格仔即可佔領（100 步）
+                  </div>
+                </div>
+              ) : (
+                <div className="pet-grid" style={{gap:8}}>
+                  {properties.map(prop => {
+                    const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
+                    const zoneIdx = ((prop.cellRow * 7 + prop.cellCol * 13) % 6 + 6) % 6
+                    const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+                    const color = colors[zoneIdx]
+                    return (
+                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px'}}>
+                        <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
+                        <div style={{fontSize:24, marginBottom:2}}>🏠</div>
+                        <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                        <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
+                          ⚡ {formatSteps(prop.price)}
+                        </div>
+                        <button onClick={async () => {
+                          if (!confirm('確定出售此地？')) return
+                          const err = await sellProperty(prop.id)
+                          if (err) { logMsg(`❌ 出售失敗: ${err}`); return }
+                          logMsg(`🏠 已出售 ${name}`)
+                          loadUserProperties()
+                        }} style={{
+                          marginTop:6, padding:'2px 10px', border:'1px solid #ef444444',
+                          borderRadius:6, background:'rgba(239,68,68,0.1)',
+                          color:'#ef4444', fontSize:8, fontWeight:700, cursor:'pointer',
+                          fontFamily:'inherit',
+                        }}>
+                          出售
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           </>
           )}
 
@@ -2081,6 +2186,7 @@ export default function HomePage() {
             {([
               { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
               { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
+              { k: 'properties' as Tab, icon: '🏠', label: '地產' },
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (

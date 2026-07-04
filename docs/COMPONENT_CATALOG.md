@@ -33,8 +33,8 @@ The entire app is a single page with 5 tabs and modals.
 - Right: sync indicator, Walk button (🚶/⏹), GPS indicator, profile button 👤, steps counter 👣
 
 ### Bottom Navigation
-- 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 社群 (Community), 背包 (Inventory)
-- Nav grid uses `grid-template-columns: 1fr 1fr 1fr 1fr` (4 equal columns)
+- 5 fixed tabs: 地圖 (Map), 寵物 (Pets), 地產 (Properties), 社群 (Community), 背包 (Inventory)
+- Nav grid uses `grid-template-columns: 1fr 1fr 1fr 1fr 1fr` (5 equal columns)
 - Active tab: purple highlight
 - Navigation is `position: absolute; bottom: 0`
 

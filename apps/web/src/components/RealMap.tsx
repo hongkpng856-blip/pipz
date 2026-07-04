@@ -195,7 +195,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           setTimeout(() => rect.setStyle({ fillOpacity: 0.06, weight: 1.5, opacity: 0.4 }), 1500)
 
           const center = rect.getBounds().getCenter()
-          showCellPopup(map, center, name, color, north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
+          showCellPopup(map, center, name, color, north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2, row, col)
         })
 
         gridRectsRef.current.push(rect)
@@ -260,10 +260,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     })
   }
 
-  /** Open a Monopoly-style property card popup with real address */
-  function showCellPopup(map: L.Map, latlng: L.LatLng, name: string, color: string, cellLat: number, cellLng: number) {
+  /** Open a Monopoly-style property card popup with real address + buy/manage */
+  function showCellPopup(map: L.Map, latlng: L.LatLng, name: string, color: string, cellLat: number, cellLng: number, cellRow: number, cellCol: number) {
     const key = `${Math.round(cellLat / CELL_SIZE_DEG)}:${Math.round(cellLng / CELL_SIZE_DEG)}`
-    const lighter = color + '66' // 40% opacity for secondary accents
+    const lighter = color + '66'
+    const anchor = anchorRef.current
     map.openPopup(
       `<div style="width:180px;font-family:Georgia,'Times New Roman',system-ui,sans-serif;border-radius:10px;overflow:hidden;background:#1a1b2e;box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 0 1px ${lighter};">
         <div style="background:${color};height:22px;display:flex;align-items:center;justify-content:center;">
@@ -272,11 +273,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         <div style="padding:12px 14px 14px;text-align:center;">
           <div style="font-size:14px;font-weight:900;letter-spacing:1px;color:#e8e0d0;text-transform:uppercase;margin-bottom:2px;">${name}</div>
           <div style="font-size:10px;color:${color};font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid ${lighter};border-bottom:1px solid ${lighter};padding:4px 0;margin-bottom:4px;" id="pipz-geocode-${key}">🔍 載入地區資訊…</div>
-          <div style="font-size:9px;color:#94a5b8;text-transform:uppercase;letter-spacing:1px;margin-top:6px;">佔領費用</div>
-          <div style="font-size:20px;font-weight:900;color:#fbbf24;line-height:1.2;">100 <span style="font-size:11px;font-weight:600;color:#fbbf24;">步</span></div>
-          <div style="margin-top:8px;border-top:1px dashed ${lighter};padding-top:6px;">
-            <span style="font-size:8px;color:#94a5b8;text-transform:uppercase;letter-spacing:0.5px;">👣 步行至此即可佔領</span>
-          </div>
+          <div style="margin-top:6px;" id="pipz-own-${key}">🔍 檢查擁有權…</div>
         </div>
       </div>`,
       latlng,
@@ -285,10 +282,33 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Fetch real address in background
     reverseGeocode(key, cellLat, cellLng).then(addr => {
       const el = document.getElementById(`pipz-geocode-${key}`)
-      if (el) {
-        el.innerHTML = addr.full
-      }
+      if (el) el.innerHTML = addr.full
     })
+    // Check ownership + show buy/manage
+    if (anchor) {
+      fetch(`/api/properties/check?anchor_lat=${anchor.lat}&anchor_lng=${anchor.lng}&cell_row=${cellRow}&cell_col=${cellCol}`)
+        .then(r => r.json())
+        .then(data => {
+          const el = document.getElementById(`pipz-own-${key}`)
+          if (!el) return
+          if (data.owner) {
+            if (data.isMine) {
+              el.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:600;margin-bottom:4px;">✅ 你擁有此地</div>
+                <button onclick="window.__pipzManageProperty(${cellRow},${cellCol})" style="padding:4px 16px;border:1px solid ${color};border-radius:6px;background:transparent;color:${color};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 管理</button>`
+            } else {
+              el.innerHTML = `<div style="font-size:11px;color:#f59e0b;font-weight:600;">👤 已被佔領</div>`
+            }
+          } else {
+            el.innerHTML = `<div style="font-size:9px;color:#94a5b8;margin-bottom:4px;">佔領費用</div>
+              <div style="font-size:20px;font-weight:900;color:#fbbf24;">100 <span style="font-size:11px;font-weight:600;">步</span></div>
+              <button onclick="window.__pipzBuyCell(${cellRow},${cellCol},${anchor.lat},${anchor.lng})" style="margin-top:6px;padding:4px 20px;border:none;border-radius:6px;background:${color};color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">💪 佔領此地</button>`
+          }
+        })
+        .catch(() => {
+          const el = document.getElementById(`pipz-own-${key}`)
+          if (el) el.innerHTML = `<div style="font-size:9px;color:#5a6d85;">無法檢查擁有權</div>`
+        })
+    }
   }
 
   function saveTrailToStorage() {
@@ -545,7 +565,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     function onMapClick(e: L.LeafletMouseEvent) {
       const info = getCellInfo(e.latlng.lat, e.latlng.lng)
       if (!info) return
-      showCellPopup(map, e.latlng, info.name, info.color, e.latlng.lat, e.latlng.lng)
+      showCellPopup(map, e.latlng, info.name, info.color, e.latlng.lat, e.latlng.lng, info.row, info.col)
     }
     map.on('click', onMapClick)
 

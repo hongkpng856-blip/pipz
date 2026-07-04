@@ -538,3 +538,87 @@ export async function logEvent(
     pet_id: petId ?? null, choice_index: choiceIndex ?? null,
   } as never)
 }
+
+// ── Monopoly Properties ──
+
+export interface Property {
+  id: number
+  userId: string
+  anchorLat: number
+  anchorLng: number
+  cellRow: number
+  cellCol: number
+  purchasedAt: string
+  price: number
+  name: string | null
+}
+
+function mapDbProp(d: any): Property {
+  return {
+    id: d.id,
+    userId: d.user_id,
+    anchorLat: d.anchor_lat,
+    anchorLng: d.anchor_lng,
+    cellRow: d.cell_row,
+    cellCol: d.cell_col,
+    purchasedAt: d.purchased_at,
+    price: d.price,
+    name: d.name,
+  }
+}
+
+export async function loadProperties(userId: string): Promise<Property[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('user_id', userId)
+    .order('purchased_at', { ascending: false })
+  return ((data as any[]) ?? []).map(mapDbProp)
+}
+
+export async function getPropertyOwner(
+  anchorLat: number, anchorLng: number, cellRow: number, cellCol: number
+): Promise<{ userId: string; price: number } | null> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('properties')
+    .select('user_id, price')
+    .eq('anchor_lat', anchorLat)
+    .eq('anchor_lng', anchorLng)
+    .eq('cell_row', cellRow)
+    .eq('cell_col', cellCol)
+    .maybeSingle()
+  if (!data) return null
+  return { userId: (data as any).user_id, price: (data as any).price }
+}
+
+export async function buyProperty(
+  userId: string,
+  anchorLat: number, anchorLng: number,
+  cellRow: number, cellCol: number,
+  price: number,
+): Promise<string | null> {
+  const supabase = db()
+  // Check if already owned
+  const existing = await getPropertyOwner(anchorLat, anchorLng, cellRow, cellCol)
+  if (existing) return 'already owned'
+
+  // Insert property
+  const { error } = await supabase
+    .from('properties')
+    .insert({
+      user_id: userId, anchor_lat: anchorLat, anchor_lng: anchorLng,
+      cell_row: cellRow, cell_col: cellCol, price,
+    } as never)
+  return error?.message ?? null
+}
+
+export async function sellProperty(propertyId: number): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('properties')
+    .delete()
+    .eq('id', propertyId)
+  return error?.message ?? null
+}

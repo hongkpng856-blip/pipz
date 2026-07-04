@@ -11,6 +11,7 @@
 - **🔘 Grid toggle button** — bottom-right `▦`/`▢` button hides/shows the grid instantly. Perfect for checking the map without grid distraction.
 - **👁️ Zoom-based grid fade** — grid gradually fades out between zoom 13→16 (linear opacity+weight). Fully visible at zoom ≥16, completely gone at zoom ≤13. Grid cells only respond to clicks when >30% visible.
 - **🥚🐾 蛋頁合併入寵物頁** — eggs tab removed, eggs now shown as a 5-column card grid inside the energy card (`⚡ 你擁有的能量`). Nav bar simplified from 5→4 tabs. Empty state shows 3 dimmed egg slot placeholders.
+- **🏠 地皮買賣系統** — new Properties tab + API: click any unowned grid cell → check ownership → buy for 100 steps. Owned cells show "管理" button. Properties tab lists all owned land with sell option.
 
 ### Changed
 - **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
