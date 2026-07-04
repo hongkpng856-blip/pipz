@@ -20,6 +20,8 @@
 - **🗑️ Canvas overlay** — the single `<canvas>` element positioned over the map container is removed. No more `latLngToContainerPoint()` per-frame redraw, no `move` event handler, no `requestAnimationFrame` throttle
 
 ### Fixed
+- **🐛 Grid toggle button unable to show grid** — stale ref bug: `gridVisibleRef.current` was read inside `updateGrid` before React re-rendered from `setGridVisible(true)`. Fix: sync `gridVisibleRef.current = newVal` synchronously in onClick before calling `updateGrid`.
+- **🐛 Manual toggle conflicts with zoom auto-toggle-off** — pressing toggle to show grid while zoomed out (zoomFactor ≤ 0) immediately triggered auto-toggle-off, making the grid flash and disappear. Fix: `fromToggle` flag prevents auto-toggle-off when called from the manual button.
 - **🐛 Grid cells drifting during map pan** — previous canvas overlay used container coordinates (`latLngToContainerPoint`) that required manual tracking of map offset. `L.Rectangle` objects are geographic vector layers — Leaflet handles all pan/zoom transforms natively. Grid stays perfectly anchored to geographic coordinates like a landmark.
 - **🐛 Grid not visible during fly animation** — canvas overlay only redrew on `moveend`, so the grid was invisible mid-animation. `L.Rectangle` objects are rendered by Leaflet's vector pane which handles all tile/pan/zoom lifecycle natively.
 - **🐛 No interaction on grid cells** — canvas overlay didn't support per-cell hover/click. Each `L.Rectangle` has independent tooltip, click handler, and highlight animation.
