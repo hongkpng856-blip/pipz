@@ -23,8 +23,8 @@ const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4
 
 /* ── Monopoly grid config ── */
 const CELL_SIZE_DEG = 0.0006  // ~60m per cell (at HK latitude)
-const MAX_GRID_CELLS = 400    // safety cap — skip rendering if viewport covers more
-const GRID_PAD = 1            // extra cells beyond viewport for smooth panning
+const MAX_GRID_CELLS = 2000   // safety cap — skip rendering if viewport covers more
+const GRID_PAD = 4            // extra cells beyond viewport for smooth panning
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 
 /** Generate a data URL of the pet's pixel art sprite */
