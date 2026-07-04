@@ -715,6 +715,33 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   display: none !important;
 }
 
+/* ── Monopoly property card popup ── */
+.monopoly-popup .leaflet-popup-content-wrapper {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.monopoly-popup .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.monopoly-popup .leaflet-popup-tip {
+  background: #1a1b2e !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.1) !important;
+}
+.monopoly-popup .leaflet-popup-close-button {
+  color: #94a5b8 !important;
+  font-size: 16px !important;
+  top: 28px !important;
+  right: 4px !important;
+  z-index: 10;
+}
+.monopoly-popup .leaflet-popup-close-button:hover {
+  color: #f0f4f8 !important;
+}
+
 
 /* Clean map tiles — Google Maps style (Voyager) */
 .real-map-container .leaflet-tile {

@@ -150,15 +150,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
         const rect = L.rectangle([[north, west], [south, east]], {
           color,
-          weight: 1.5,
-          opacity: 0.4,
+          weight: 3,
+          opacity: 0.55,
           fillColor: color,
-          fillOpacity: 0.06,
+          fillOpacity: 0.08,
           interactive: true,
         }).addTo(map)
 
-        // Tooltip on hover
-        rect.bindTooltip(`📍 ${name}`, {
+        // Tooltip on hover — Monopoly-style
+        rect.bindTooltip(`<div style="font-family:Georgia,serif;font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.5px;text-align:center;">${name}</div>`, {
           permanent: false,
           direction: 'center',
           className: 'monopoly-grid-tooltip',
@@ -235,18 +235,27 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     })
   }
 
-  /** Open a popup with real address, loading reverse geocode in background */
+  /** Open a Monopoly-style property card popup with real address */
   function showCellPopup(map: L.Map, latlng: L.LatLng, name: string, color: string, cellLat: number, cellLng: number) {
     const key = `${Math.round(cellLat / CELL_SIZE_DEG)}:${Math.round(cellLng / CELL_SIZE_DEG)}`
-    // Show initial popup with generic name
+    const lighter = color + '66' // 40% opacity for secondary accents
     map.openPopup(
-      `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:130px;">
-        <div style="font-size:24px;margin-bottom:2px;">📋</div>
-        <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:4px;">${name}</div>
-        <div style="font-size:10px;color:#94a5b8;" id="pipz-geocode-${key}">🔍 載入地區資訊…</div>
-        <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
+      `<div style="width:180px;font-family:Georgia,'Times New Roman',system-ui,sans-serif;border-radius:10px;overflow:hidden;background:#1a1b2e;box-shadow:0 4px 20px rgba(0,0,0,0.5),0 0 0 1px ${lighter};">
+        <div style="background:${color};height:22px;display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:9px;font-weight:900;letter-spacing:3px;color:#fff;text-transform:uppercase;text-shadow:0 1px 1px rgba(0,0,0,0.3);">✦ 物 業 契 約 ✦</span>
+        </div>
+        <div style="padding:12px 14px 14px;text-align:center;">
+          <div style="font-size:14px;font-weight:900;letter-spacing:1px;color:#e8e0d0;text-transform:uppercase;margin-bottom:2px;">${name}</div>
+          <div style="font-size:10px;color:${color};font-weight:600;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid ${lighter};border-bottom:1px solid ${lighter};padding:4px 0;margin-bottom:4px;" id="pipz-geocode-${key}">🔍 載入地區資訊…</div>
+          <div style="font-size:9px;color:#94a5b8;text-transform:uppercase;letter-spacing:1px;margin-top:6px;">佔領費用</div>
+          <div style="font-size:20px;font-weight:900;color:#fbbf24;line-height:1.2;">100 <span style="font-size:11px;font-weight:600;color:#fbbf24;">步</span></div>
+          <div style="margin-top:8px;border-top:1px dashed ${lighter};padding-top:6px;">
+            <span style="font-size:8px;color:#94a5b8;text-transform:uppercase;letter-spacing:0.5px;">👣 步行至此即可佔領</span>
+          </div>
+        </div>
       </div>`,
-      latlng
+      latlng,
+      { className: 'monopoly-popup', closeButton: true, maxWidth: 220 }
     )
     // Fetch real address in background
     reverseGeocode(key, cellLat, cellLng).then(addr => {
