@@ -35,7 +35,7 @@ interface EggItem {
   collectedAt: number
 }
 
-type Tab = 'map' | 'pets' | 'eggs' | 'community' | 'inventory'
+type Tab = 'map' | 'pets' | 'community' | 'inventory'
 
 export default function HomePage() {
   const [steps, setSteps] = useState(0)
@@ -249,7 +249,7 @@ export default function HomePage() {
 
   const goToEggsFromPopup = () => {
     setEggFoundData(null)
-    setTab('eggs')
+    setTab('pets')
     // Check for pending event after egg dismiss
     if (pendingEventRef.current) {
       const pe = pendingEventRef.current
@@ -1156,8 +1156,8 @@ export default function HomePage() {
     const dbId = await saveEgg(user.id, Rarity.Rare, eggId)
     if (dbId) newEgg.id = dbId
     setEggs(v => [...v, newEgg])
-    logMsg('🥚 圓貓蛋已加入！去蛋頁面孵化')
-    setTab('eggs')
+    logMsg('🥚 圓貓蛋已加入！去寵物頁孵化')
+    setTab('pets')
   }
 
   // ── PixelLab Shiba egg ──
@@ -1172,8 +1172,8 @@ export default function HomePage() {
     const dbId = await saveEgg(user.id, Rarity.Uncommon, eggId)
     if (dbId) newEgg.id = dbId
     setEggs(v => [...v, newEgg])
-    logMsg('🥚 柴犬蛋已加入！去蛋頁面孵化')
-    setTab('eggs')
+    logMsg('🥚 柴犬蛋已加入！去寵物頁孵化')
+    setTab('pets')
   }
 
   const doEvolve = () => {
@@ -1831,79 +1831,71 @@ export default function HomePage() {
                         </div>
                       </>
                     )}
+
+                    {/* 🥚 蛋 — 合併到寵物頁 */}
+                    <div className="section" style={{marginBottom:8, flexShrink:0}}>
+                      <div className="section-header">
+                        <span className="section-title">🥚 蛋</span>
+                        <span className="section-count">{eggs.length}粒</span>
+                      </div>
+                      {eggs.length > 0 ? (
+                        <div className="pet-grid" style={{marginBottom:8}}>
+                          {eggs.map(egg => {
+                            const isHatching = eggHatchingId === egg.id
+                            return (
+                              <div key={egg.id}
+                                className="pet-card"
+                                onClick={() => !isHatching && hatchEgg(egg)}
+                                style={{
+                                  borderColor: `${PC[egg.rarity]}44`,
+                                  cursor: isHatching ? 'default' : 'pointer',
+                                  padding: '12px 4px',
+                                }}>
+                                {isHatching ? (
+                                  <>
+                                    <div style={{fontSize:32, animation:'pulse 0.5s ease-in-out infinite', marginBottom:4}}>✨</div>
+                                    <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div style={{fontSize:32, marginBottom:4}}>🥚</div>
+                                    <div style={{
+                                      fontSize:7, fontWeight:700, color:PC[egg.rarity],
+                                      background: `${PC[egg.rarity]}18`,
+                                      display:'inline-block', padding:'1px 8px',
+                                    }}>
+                                      {RARITY_LABELS[egg.rarity]}
+                                    </div>
+                                    <div style={{fontSize:8, color:'#5a6d85', marginTop:2}}>
+                                      點擊孵化
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="card empty-state" style={{marginBottom:8}}>
+                          <div style={{fontSize:36, marginBottom:8}}>🥚</div>
+                          <div style={{fontSize:11, color:'#5a6d85'}}>
+                            未有蛋，行路有機會獲得！
+                          </div>
+                        </div>
+                      )}
+                      <div className="locked-grid">
+                        {[1,2].map(i => (
+                          <div key={i} className="card locked-slot">
+                            <div className="locked-icon">🔒</div>
+                            <div className="locked-title">額外孵化器</div>
+                            <div className="locked-sub">即將開放</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </>
                 )
               })()}
-            </div>
-          )}
-
-          {/* ════ EGGS TAB ════ */}
-          {tab === 'eggs' && (
-            <div className="fade-up">
-              <div className="section-header">
-                <span className="section-title">🥚 蛋</span>
-                <span className="section-count">{eggs.length}粒</span>
-              </div>
-
-              {/* Collected eggs grid */}
-              {eggs.length > 0 && (
-                <div className="pet-grid" style={{marginBottom:12}}>
-                  {eggs.map(egg => {
-                    const isHatching = eggHatchingId === egg.id
-                    return (
-                      <div key={egg.id}
-                        className="pet-card"
-                        onClick={() => !isHatching && hatchEgg(egg)}
-                        style={{
-                          borderColor: `${PC[egg.rarity]}44`,
-                          cursor: isHatching ? 'default' : 'pointer',
-                          padding: '12px 4px',
-                        }}>
-                        {isHatching ? (
-                          <>
-                            <div style={{fontSize:32, animation:'pulse 0.5s ease-in-out infinite', marginBottom:4}}>✨</div>
-                            <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
-                          </>
-                        ) : (
-                          <>
-                            <div style={{fontSize:32, marginBottom:4}}>🥚</div>
-                            <div style={{
-                              fontSize:7, fontWeight:700, color:PC[egg.rarity],
-                              background: `${PC[egg.rarity]}18`,
-                              display:'inline-block', padding:'1px 8px',
-                            }}>
-                              {RARITY_LABELS[egg.rarity]}
-                            </div>
-                            <div style={{fontSize:8, color:'#5a6d85', marginTop:2}}>
-                              點擊孵化
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* Empty state */}
-              {eggs.length === 0 && (
-                <div className="card empty-state" style={{marginBottom:12}}>
-                  <div style={{fontSize:36, marginBottom:8}}>🥚</div>
-                  <div style={{fontSize:11, color:'#5a6d85'}}>
-                    用 Dev 工具產生圓貓蛋孵化
-                  </div>
-                </div>
-              )}
-
-              <div className="locked-grid">
-                {[1,2].map(i => (
-                  <div key={i} className="card locked-slot">
-                    <div className="locked-icon">🔒</div>
-                    <div className="locked-title">額外孵化器</div>
-                    <div className="locked-sub">即將開放</div>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
@@ -2083,7 +2075,6 @@ export default function HomePage() {
             {([
               { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
               { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
-              { k: 'eggs' as Tab, icon: '🥚', label: '蛋' },
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
