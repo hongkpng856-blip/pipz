@@ -2377,7 +2377,7 @@ export default function HomePage() {
                     color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
                     fontFamily:'inherit',
                   }}>
-                  🥚 去蛋頁面孵化
+                  🥚 去寵物頁孵化
                 </button>
               </div>
             </div>

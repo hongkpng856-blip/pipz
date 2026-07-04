@@ -22,7 +22,7 @@ The entire app is a single page with 5 tabs and modals.
 │  └───────────────────────┘  │
 │                              │
 ├──────────────────────────────┤
-│   Bottom Navigation (fixed)  │  ← 5 tabs: 地圖 🐾 蛋 🥚 社群 🏪 背包 🎒
+│   Bottom Navigation (fixed)  │  ← 4 tabs: 地圖 🗺️ 寵物 🐾 社群 🏪 背包 🎒
 └──────────────────────────────┘
 ```
 
@@ -33,8 +33,8 @@ The entire app is a single page with 5 tabs and modals.
 - Right: sync indicator, Walk button (🚶/⏹), GPS indicator, profile button 👤, steps counter 👣
 
 ### Bottom Navigation
-- 5 fixed tabs: 地圖 (Map), 寵物 (Pets), 蛋 (Eggs), 社群 (Community), 背包 (Inventory)
-- Nav grid uses `grid-template-columns: 1fr 1fr 1fr 1fr 1fr` (5 equal columns)
+- 4 fixed tabs: 地圖 (Map), 寵物 (Pets), 社群 (Community), 背包 (Inventory)
+- Nav grid uses `grid-template-columns: 1fr 1fr 1fr 1fr` (4 equal columns)
 - Active tab: purple highlight
 - Navigation is `position: absolute; bottom: 0`
 
@@ -176,7 +176,7 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
   - Labels below each bar: abbreviated step count (e.g. `127`), day label (e.g. `一` or `Tue`)
 - **Walk button** moved to **header** (top-right area)
 - Green bg when idle, red bg when walking
-- **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 蛋（50/50 cat or shiba）— egg saved to DB, shown in eggs tab
+- **Random egg encounters**: Every 2000 steps accumulated while walking, 40% chance to find a PixelLab 蛋（50/50 cat or shiba）— egg saved to DB, shown in pets tab (inside energy card)
 
 ### Nearby Pets
 - Horizontal scroll row of recent pets
@@ -357,16 +357,24 @@ const effectivePixelVal = pixelVal * sizeMult
 
 ---
 
-## 4. Eggs Tab (`tab === 'eggs'`)
+## 4. Eggs (merged into Pets Tab, inside Energy Card)
+
+As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as part of the **energy card** (`⚡ 你擁有的能量`) in the Pets tab.
+
+### Display
+- **Eggs > 0**: Shown as a 5-column grid (`repeat(5, 1fr)`) inside the energy card, below the energy number. Each egg is a compact `pet-card` with rarity-coloured border, 🥚 emoji (fontSize 32), rarity label badge, and "點擊孵化" hint.
+- **Eggs = 0**: 3 dimmed placeholder slots (opacity 0.4, grayscale) labelled "蛋槽 1/2/3" + "行路獲得".
+- **Hatching**: Tapping an egg shows ✨ pulse animation + "孵化中..." text.
 
 ### Incubator
-- Slot with egg/badge icon
-- Name: "基本孵化器" / "已孵化"
-- Progress bar to 1,000 steps
-- "進度: X/1.0K" labels
+- The energy card has 5 grid slots total, accommodating up to 5 eggs per row.
+- Locked incubators (🔒 額外孵化器) were removed — they were "coming soon" placeholders from the old eggs tab.
 
-### Locked Slots
-- 2 locked slots with 🔒 "額外孵化器" "即將開放"
+### Flow
+1. Walk 2000 steps → 40% chance to find an egg → saved to DB → `setTab('pets')` navigates there
+2. Egg appears in the energy card as a clickable card
+3. Tap to hatch → `hatchEgg()` → pet created → "收埋" / "去蛋頁面孵化" popup
+4. Egg popup and event popup use a queue system (`pendingEggRef` / `pendingEventRef`)
 
 ---
 
