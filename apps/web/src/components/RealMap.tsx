@@ -59,7 +59,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const trailByDay = useRef<Map<number, [number, number][]>>(new Map())
   const polylineByDay = useRef<Map<number, L.Polyline>>(new Map())
   const headingRef = useRef(0)
-  const lastPosForHeading = useRef<{lat:number;lng:number} | null>(null)
   const initialised = useRef(false)
   const autoZoomingRef = useRef(false)
   const lastManualZoomRef = useRef(0)
@@ -449,27 +448,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     }
 
-    // ── Compute heading from GPS track (fallback when deviceHeading unavailable) ──
-    let finalHeading = deviceHeading ?? heading
-    if (deviceHeading === null || deviceHeading === undefined) {
-      if (lastPosForHeading.current) {
-        const dLat = lat - lastPosForHeading.current.lat
-        const dLng = lng - lastPosForHeading.current.lng
-        if (Math.abs(dLat) > 0.00001 || Math.abs(dLng) > 0.00001) {
-          const bearing = (Math.atan2(dLng, dLat) * 180 / Math.PI + 360) % 360
-          finalHeading = bearing
-        }
-      }
-      lastPosForHeading.current = { lat, lng }
-    }
+    // ── Heading: compass first, GPS heading as fallback (no position drift noise) ──
+    let finalHeading: number | undefined | null = deviceHeading ?? heading
 
-    if (finalHeading !== undefined && finalHeading >= 0) {
+    if (finalHeading !== undefined && finalHeading !== null && finalHeading >= 0) {
       headingRef.current = finalHeading
       const arrow = userMarkerRef.current.getElement()?.querySelector('.pipz-heading-arrow') as HTMLElement
       if (arrow) {
         arrow.style.transform = `rotate(${finalHeading}deg)`
       }
     }
+    // No heading source → arrow stays at last known heading (default = north)
 
     // ── Trail drawing + persist ──
     if (walking && mode === 'walk') {
