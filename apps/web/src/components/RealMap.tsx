@@ -21,10 +21,10 @@ const RC: Record<string, string> = {
 
 const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
 
-/* ── Monopoly grid config ── */
+// ── Monopoly grid config ──
 const CELL_SIZE_DEG = 0.0006  // ~60m per cell (at HK latitude)
-const MAX_GRID_CELLS = 2000   // safety cap — skip rendering if viewport covers more
-const GRID_PAD = 4            // extra cells beyond viewport for smooth panning
+const MAX_GRID_CELLS = 5000   // safety cap — skip rendering if viewport covers way more
+const GRID_PAD = 8            // extra cells beyond viewport for smooth panning
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -74,7 +74,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const lastManualZoomRef = useRef(0)
   const initialZoomDoneRef = useRef(false)
   const initialAnimBusyRef = useRef(false)
-  const gridCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const gridRectsRef = useRef<L.Rectangle[]>([])
   const gridInitializedRef = useRef(false)
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -111,71 +111,74 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   }
 
-  // ── Canvas grid overlay: draws grid lines + fills on a single canvas ──
-  //    Canvas sits inside Leaflet's overlayPane and moves with the map.
-  //    We draw using latLngToLayerPoint, offset by the viewport top-left.
-  function drawGridOnCanvas(
-    canvas: HTMLCanvasElement,
-    map: L.Map,
-    anchor: { lat: number; lng: number },
-    offset: L.Point,
-    size: L.Point,
-  ) {
-    const ctx = canvas.getContext('2d')!
+  // ── Dynamic full-map grid: renders visible L.Rectangle cells based on viewport ──
+  //    Leaflet vector layers move with map automatically (no per-frame redraw).
+  function updateGrid(map: L.Map, anchor: { lat: number; lng: number }) {
+    // Remove old grid
+    gridRectsRef.current.forEach(r => r.remove())
+    gridRectsRef.current = []
+
     const bounds = map.getBounds()
     const sw = bounds.getSouthWest()
     const ne = bounds.getNorthEast()
 
-    // First cell origin at or before sw
-    const startLat = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lat
-    const startLng = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lng
+    // Calculate visible cell range (relative to anchor)
+    const minRow = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) - GRID_PAD
+    const maxRow = Math.ceil((ne.lat - anchor.lat) / CELL_SIZE_DEG) + GRID_PAD
+    const minCol = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) - GRID_PAD
+    const maxCol = Math.ceil((ne.lng - anchor.lng) / CELL_SIZE_DEG) + GRID_PAD
 
-    // ── Grid lines ──
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = hexToRgba('#8b5cf6', 0.35)
-    ctx.lineWidth = 1.2
+    const nRows = maxRow - minRow + 1
+    const nCols = maxCol - minCol + 1
 
-    // Vertical lines
-    for (let lng = startLng; lng <= ne.lng; lng += CELL_SIZE_DEG) {
-      const p = map.latLngToLayerPoint([(sw.lat + ne.lat) / 2, lng])
-      const x = Math.round(p.x - offset.x) + 0.5
-      ctx.beginPath()
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, size.y)
-      ctx.stroke()
-    }
+    // Safety cap: skip if too many cells (too zoomed out)
+    if (nRows * nCols > MAX_GRID_CELLS) return
 
-    // Horizontal lines
-    for (let lat = startLat; lat <= ne.lat; lat += CELL_SIZE_DEG) {
-      const p = map.latLngToLayerPoint([lat, (sw.lng + ne.lng) / 2])
-      const y = Math.round(p.y - offset.y) + 0.5
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      ctx.lineTo(size.x, y)
-      ctx.stroke()
-    }
-
-    // ── Cell fills (subtle zone colors) ──
-    for (let lat = startLat; lat < ne.lat; lat += CELL_SIZE_DEG) {
-      for (let lng = startLng; lng < ne.lng; lng += CELL_SIZE_DEG) {
-        const row = Math.round((lat - anchor.lat) / CELL_SIZE_DEG)
-        const col = Math.round((lng - anchor.lng) / CELL_SIZE_DEG)
+    for (let row = minRow; row <= maxRow; row++) {
+      for (let col = minCol; col <= maxCol; col++) {
+        const north = anchor.lat + row * CELL_SIZE_DEG
+        const south = north + CELL_SIZE_DEG
+        const west = anchor.lng + col * CELL_SIZE_DEG
+        const east = west + CELL_SIZE_DEG
         const zoneIdx = ((row * 7 + col * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
         const color = ZONE_COLORS[zoneIdx]
+        const name = `第${row+1}區 ${col+1}號`
 
-        const nw = map.latLngToLayerPoint([lat + CELL_SIZE_DEG, lng])
-        const se = map.latLngToLayerPoint([lat, lng + CELL_SIZE_DEG])
-        const x = nw.x - offset.x
-        const y = nw.y - offset.y
-        const w = se.x - nw.x
-        const h = se.y - nw.y
+        const rect = L.rectangle([[north, west], [south, east]], {
+          color,
+          weight: 1.5,
+          opacity: 0.4,
+          fillColor: color,
+          fillOpacity: 0.06,
+          interactive: true,
+        }).addTo(map)
 
-        ctx.fillStyle = hexToRgba(color, 0.07)
-        ctx.fillRect(x, y, w, h)
+        // Tooltip on hover
+        rect.bindTooltip(`📍 ${name}`, {
+          permanent: false,
+          direction: 'center',
+          className: 'monopoly-grid-tooltip',
+        })
+
+        // Click handler
+        rect.on('click', () => {
+          rect.setStyle({ fillOpacity: 0.2, weight: 2.5, opacity: 0.8 })
+          setTimeout(() => rect.setStyle({ fillOpacity: 0.06, weight: 1.5, opacity: 0.4 }), 1500)
+
+          map.openPopup(
+            `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
+              <div style="font-size:24px;margin-bottom:2px;">📋</div>
+              <div style="font-weight:700;font-size:13px;color:${color};">${name}</div>
+              <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
+            </div>`,
+            rect.getBounds().getCenter()
+          )
+        })
+
+        gridRectsRef.current.push(rect)
       }
     }
   }
-
   /** Get grid cell name from lat/lng */
   function getCellInfo(lat: number, lng: number) {
     const anchor = anchorRef.current
@@ -189,22 +192,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       name: `第${row+1}區 ${col+1}號`,
       color: ZONE_COLORS[zoneIdx],
     }
-  }
-
-  /** Redraw the grid canvas to match current map view + anchor */
-  function triggerGridRedraw() {
-    const map = mapRef.current
-    const cvs = gridCanvasRef.current
-    if (!map || !cvs || !anchorRef.current) return
-    const pxBounds = map.getPixelBounds()
-    const topLeft = pxBounds.min
-    const size = pxBounds.getSize()
-    if (!topLeft || !size) return
-    cvs.style.left = topLeft.x + 'px'
-    cvs.style.top = topLeft.y + 'px'
-    cvs.width = size.x
-    cvs.height = size.y
-    drawGridOnCanvas(cvs, map, anchorRef.current, topLeft, size)
   }
 
   function saveTrailToStorage() {
@@ -442,30 +429,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     // ── Per-day trails (created lazily) ──
 
-    // ── Canvas grid overlay (inside Leaflet overlay pane — moves with map) ──
-    const canvas = document.createElement('canvas')
-    canvas.className = 'pipz-grid-canvas'
-    canvas.style.cssText = 'position:absolute;pointer-events:none;'
-    map.getPane('overlayPane')!.appendChild(canvas)
-    gridCanvasRef.current = canvas
-
     // Fetch grid anchor from server (shared world anchor for all players)
     fetchGridAnchor().then(anchor => {
       if (anchor && !gridInitializedRef.current) {
         anchorRef.current = anchor
         gridInitializedRef.current = true
-        triggerGridRedraw()
+        updateGrid(map, anchor)
       }
     })
 
-    map.on('moveend zoomend', triggerGridRedraw)
-    map.on('resize', triggerGridRedraw)
-    // Redraw during pan so grid follows the map smoothly
-    let rafId = 0
-    map.on('move', () => {
-      if (rafId) cancelAnimationFrame(rafId)
-      rafId = requestAnimationFrame(triggerGridRedraw)
-    })
+    // Dynamic grid: redraw on every pan/zoom
+    const onViewChange = () => {
+      if (anchorRef.current) updateGrid(map, anchorRef.current)
+    }
+    map.on('moveend zoomend', onViewChange)
 
     // ── Click on grid cell → show popup ──
     function onMapClick(e: L.LeafletMouseEvent) {
@@ -484,15 +461,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     return () => {
       map.off('click', onMapClick)
-      map.off('moveend zoomend', triggerGridRedraw)
-      map.off('resize', triggerGridRedraw)
-      map.off('move')
-      if (rafId) cancelAnimationFrame(rafId)
-      if (gridCanvasRef.current) {
-        const parent = gridCanvasRef.current.parentNode
-        if (parent) parent.removeChild(gridCanvasRef.current)
-        gridCanvasRef.current = null
-      }
+      map.off('moveend zoomend', onViewChange)
+      gridRectsRef.current.forEach(r => r.remove())
+      gridRectsRef.current = []
       map.remove()
       initialised.current = false
     }
@@ -542,9 +513,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       // Save to server (silent if already set by another player)
       setGridAnchor(anchor.lat, anchor.lng)
       // Draw grid immediately
-      if (gridCanvasRef.current && map) {
-        triggerGridRedraw()
-      }
+      if (map) updateGrid(map, anchor)
     }
 
     userMarkerRef.current.setLatLng([lat, lng])
