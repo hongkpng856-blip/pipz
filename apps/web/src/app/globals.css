@@ -684,8 +684,12 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   inset: 0;
   z-index: 9999 !important;
   isolation: isolate !important;
+  pointer-events: none;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+}
+.modal-portal-wrapper > * {
+  pointer-events: auto;
 }
 
 

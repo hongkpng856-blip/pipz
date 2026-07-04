@@ -46,7 +46,6 @@ export default function ModalPortal({ children }: { children: ReactNode }) {
           : 'scale(0.92) translateY(16px) translateZ(0)',
         transition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         WebkitTransition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-        pointerEvents: open ? 'auto' : 'none',
       }}
     >
       {children}
