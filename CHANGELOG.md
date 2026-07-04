@@ -27,6 +27,7 @@
 - **🐛 Grid cells drifting during map pan** — previous canvas overlay used container coordinates (`latLngToContainerPoint`) that required manual tracking of map offset. `L.Rectangle` objects are geographic vector layers — Leaflet handles all pan/zoom transforms natively. Grid stays perfectly anchored to geographic coordinates like a landmark.
 - **🐛 Grid not visible during fly animation** — canvas overlay only redrew on `moveend`, so the grid was invisible mid-animation. `L.Rectangle` objects are rendered by Leaflet's vector pane which handles all tile/pan/zoom lifecycle natively.
 - **🐛 No interaction on grid cells** — canvas overlay didn't support per-cell hover/click. Each `L.Rectangle` has independent tooltip, click handler, and highlight animation.
+- **🐛 Popup ownership check used wrong URL** — `RealMap.tsx` called `/api/properties/check` but the API route is at `/api/properties`. Fixed URL to `/api/properties?anchor_lat=...&anchor_lng=...&cell_row=...&cell_col=...`.
 
 ## v0.27.0 (2026-08-01)
 
