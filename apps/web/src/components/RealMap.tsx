@@ -137,8 +137,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     const zoom = map.getZoom()
     const zoomFactor = getGridZoomFactor(zoom)
-    // Skip if fully faded out at this zoom
-    if (zoomFactor <= 0) return
+    // Skip if fully faded out at this zoom — auto-toggle off so it stays hidden on zoom-in
+    if (zoomFactor <= 0) {
+      if (gridVisibleRef.current) {
+        gridVisibleRef.current = false
+        setGridVisible(false)
+      }
+      return
+    }
 
     const bounds = map.getBounds()
     const sw = bounds.getSouthWest()
