@@ -78,6 +78,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const gridInitializedRef = useRef(false)
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
+  // ── Reverse geocode cache (Nominatim, 1 req/s) ──
+  const geocodeCache = useRef<Map<string, { label: string; detail: string; full: string }>>(new Map())
+  const geocodeQueue = useRef<Array<{ key: string; lat: number; lng: number; resolve: (v: { label: string; detail: string; full: string }) => void }>>([])
+  const geocodeBusy = useRef(false)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
   const VEHICLE_TRAIL_KEY = 'pipz_vehicle_trail'
 
@@ -165,14 +169,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           rect.setStyle({ fillOpacity: 0.2, weight: 2.5, opacity: 0.8 })
           setTimeout(() => rect.setStyle({ fillOpacity: 0.06, weight: 1.5, opacity: 0.4 }), 1500)
 
-          map.openPopup(
-            `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
-              <div style="font-size:24px;margin-bottom:2px;">📋</div>
-              <div style="font-weight:700;font-size:13px;color:${color};">${name}</div>
-              <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
-            </div>`,
-            rect.getBounds().getCenter()
-          )
+          const center = rect.getBounds().getCenter()
+          showCellPopup(map, center, name, color, north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
         })
 
         gridRectsRef.current.push(rect)
@@ -192,6 +190,71 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       name: `第${row+1}區 ${col+1}號`,
       color: ZONE_COLORS[zoneIdx],
     }
+  }
+
+  // ── Reverse geocode (Nominatim OpenStreetMap) with rate-limited queue ──
+  const UKNOWN_AREA = { label: '📍 未知地區', detail: '', full: '📍 未知地區' }
+
+  async function processGeocodeQueue() {
+    if (geocodeBusy.current || geocodeQueue.current.length === 0) return
+    geocodeBusy.current = true
+    const item = geocodeQueue.current.shift()!
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.lat}&lon=${item.lng}&accept-language=zh`,
+        { headers: { 'User-Agent': 'Pipz/1.0 (HongKong)' } }
+      )
+      if (!res.ok) throw new Error(`Nominatim ${res.status}`)
+      const data = await res.json()
+      const addr = data?.address || {}
+      const district = addr.district || addr.town || addr.city || addr.county || ''
+      const suburb = addr.suburb || addr.village || addr.neighbourhood || ''
+      const road = addr.road || addr.highway || addr.pedestrian || ''
+      const parts = [district, suburb].filter(Boolean)
+      const label = parts.length > 0 ? `📍 ${parts.join(' · ')}` : UKNOWN_AREA.label
+      const detail = road ? `📍 ${road}` : ''
+      const full = [label, detail].filter(Boolean).join('\n')
+      const entry = { label, detail, full }
+      geocodeCache.current.set(item.key, entry)
+      item.resolve(entry)
+    } catch {
+      item.resolve(UKNOWN_AREA)
+    } finally {
+      geocodeBusy.current = false
+      // Rate limit: 1 req/s
+      setTimeout(processGeocodeQueue, 1100)
+    }
+  }
+
+  function reverseGeocode(key: string, lat: number, lng: number): Promise<{ label: string; detail: string; full: string }> {
+    const cached = geocodeCache.current.get(key)
+    if (cached) return Promise.resolve(cached)
+    return new Promise(resolve => {
+      geocodeQueue.current.push({ key, lat, lng, resolve })
+      processGeocodeQueue()
+    })
+  }
+
+  /** Open a popup with real address, loading reverse geocode in background */
+  function showCellPopup(map: L.Map, latlng: L.LatLng, name: string, color: string, cellLat: number, cellLng: number) {
+    const key = `${Math.round(cellLat / CELL_SIZE_DEG)}:${Math.round(cellLng / CELL_SIZE_DEG)}`
+    // Show initial popup with generic name
+    map.openPopup(
+      `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:130px;">
+        <div style="font-size:24px;margin-bottom:2px;">📋</div>
+        <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:4px;">${name}</div>
+        <div style="font-size:10px;color:#94a5b8;" id="pipz-geocode-${key}">🔍 載入地區資訊…</div>
+        <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
+      </div>`,
+      latlng
+    )
+    // Fetch real address in background
+    reverseGeocode(key, cellLat, cellLng).then(addr => {
+      const el = document.getElementById(`pipz-geocode-${key}`)
+      if (el) {
+        el.innerHTML = addr.full
+      }
+    })
   }
 
   function saveTrailToStorage() {
@@ -444,18 +507,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
     map.on('moveend zoomend', onViewChange)
 
-    // ── Click on grid cell → show popup ──
+    // ── Click on grid cell → show popup with real address ──
     function onMapClick(e: L.LeafletMouseEvent) {
       const info = getCellInfo(e.latlng.lat, e.latlng.lng)
       if (!info) return
-      map.openPopup(
-        `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
-          <div style="font-size:24px;margin-bottom:2px;">📋</div>
-          <div style="font-weight:700;font-size:13px;color:${info.color};">${info.name}</div>
-          <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
-        </div>`,
-        e.latlng
-      )
+      showCellPopup(map, e.latlng, info.name, info.color, e.latlng.lat, e.latlng.lng)
     }
     map.on('click', onMapClick)
 
