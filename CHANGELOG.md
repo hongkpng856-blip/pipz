@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.27.0 (2026-08-01)
+
+### Changed
+- **🖼️ Grid rendering: Canvas `L.GridLayer` → direct canvas overlay** — replaces the tile-based `L.GridLayer` with a single `<canvas>` element positioned over the map container. Grid is drawn using `map.latLngToContainerPoint()` for pixel-perfect alignment at every zoom.
+- **♻️ Grid redraw on `moveend`/`zoomend`/`resize`** — no Leaflet tile management, always covers the full container
+- **♻️ Grid click preserved** — map `click` event handler uses the same `getCellInfo()` logic
+
+### Fixed
+- **🐛 Grid disappearing after `flyTo`/`setView` animation** — previous `L.GridLayer` canvas tiles were subject to Leaflet's tile lifecycle (tiles created during animation might not trigger `createTile` reliably or the `_tileReady` callback was never called). Direct canvas overlay redraws explicitly on every `moveend`, so the grid is always present regardless of animation state.
+- **🐛 No more tile boundary gaps** — single canvas covers the entire map container
+
 ## v0.26.0 (2026-08-01)
 
 ### Changed

@@ -615,10 +615,11 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 ### Grid Layout (v0.24.0 – v0.25.0)
 - **6×6 grid** → dynamic viewport-based using `L.Rectangle` objects (removed in v0.26.0)
 
-### Grid Layout (v0.26.0+ — Canvas GridLayer)
-- Grid is rendered as a **Canvas `L.GridLayer`** — Leaflet draws a `<canvas>` per tile, grid lines + fills are painted programmatically
-- **No cell count cap** — always covers full viewport regardless of zoom level
-- No padding, no cap constants — the canvas automatically covers every visible pixel
+### Grid Layout (v0.26.0+ — Canvas GridLayer → Direct Canvas Overlay)
+- **v0.26.0**: Canvas `L.GridLayer` (tile-based, removed in v0.27.0)
+- **v0.27.0+**: Direct `<canvas>` overlay positioned over the map container, redrawn on every `moveend` / `zoomend` / `resize` event
+- Uses `map.latLngToContainerPoint()` to convert geographic cell boundaries to pixel positions — pixel-perfect alignment at every zoom
+- **No tile management** — single canvas covers the full viewport, no gaps, no animation issues
 - Grid lines: purple (`rgba(139, 92, 246, 0.35)`), 1.2px
 - Cell fills: subtle zone colours at 7% opacity
 - **Click on map** → detects cell from `lat/lng` using `Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)` formula, shows popup with cell name
