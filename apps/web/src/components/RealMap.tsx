@@ -426,7 +426,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // ── Per-day trails (created lazily) ──
 
     // ── Canvas grid overlay (full container canvas, redrawn on move/zoom) ──
-    const canvas = L.DomUtil.create('canvas', 'pipz-grid-canvas') as HTMLCanvasElement
+    const canvas = document.createElement('canvas')
+    canvas.className = 'pipz-grid-canvas'
     canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:400;image-rendering:auto;'
     map.getContainer().appendChild(canvas)
     gridCanvasRef.current = canvas
