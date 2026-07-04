@@ -8,6 +8,8 @@
 - **🏠 Monopoly-style property card popup** — each grid cell click shows a 大富翁 property card with colored top bar (zone colour), property name in all-caps serif, address strip, occupation cost (100 steps) in gold, and contract header "✦ 物 業 契 約 ✦"
 - **🎨 Thicker grid cell borders** — cell outline weight 1.5→3, opacity 0.4→0.55, fill 0.06→0.08 for more visible Monopoly-board look
 - **💅 Tooltip redesign** — now shows cell name in Georgia serif, uppercase, zone colour, matching the Monopoly theme
+- **🔘 Grid toggle button** — bottom-right `▦`/`▢` button hides/shows the grid instantly. Perfect for checking the map without grid distraction.
+- **👁️ Zoom-based grid fade** — grid gradually fades out between zoom 13→16 (linear opacity+weight). Fully visible at zoom ≥16, completely gone at zoom ≤13. Grid cells only respond to clicks when >30% visible.
 
 ### Changed
 - **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
