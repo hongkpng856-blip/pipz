@@ -551,6 +551,8 @@ export interface Property {
   purchasedAt: string
   price: number
   name: string | null
+  isListed: boolean
+  listPrice: number | null
 }
 
 function mapDbProp(d: any): Property {
@@ -564,6 +566,8 @@ function mapDbProp(d: any): Property {
     purchasedAt: d.purchased_at,
     price: d.price,
     name: d.name,
+    isListed: d.is_listed ?? false,
+    listPrice: d.list_price ?? null,
   }
 }
 
@@ -619,6 +623,34 @@ export async function sellProperty(propertyId: number): Promise<string | null> {
   const { error } = await supabase
     .from('properties')
     .delete()
+    .eq('id', propertyId)
+  return error?.message ?? null
+}
+
+export async function loadAllListedProperties(): Promise<Property[]> {
+  const supabase = db()
+  const { data } = await supabase
+    .from('properties')
+    .select('*')
+    .eq('is_listed', true)
+    .order('list_price', { ascending: true })
+  return ((data as any[]) ?? []).map(mapDbProp)
+}
+
+export async function listProperty(propertyId: number, listPrice: number): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('properties')
+    .update({ is_listed: true, list_price: listPrice } as never)
+    .eq('id', propertyId)
+  return error?.message ?? null
+}
+
+export async function unlistProperty(propertyId: number): Promise<string | null> {
+  const supabase = db()
+  const { error } = await supabase
+    .from('properties')
+    .update({ is_listed: false, list_price: null } as never)
     .eq('id', propertyId)
   return error?.message ?? null
 }

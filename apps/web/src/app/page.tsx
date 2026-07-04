@@ -14,7 +14,7 @@ import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty, loadAllListedProperties, listProperty, unlistProperty } from '../lib/supabase-db'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -81,6 +81,9 @@ export default function HomePage() {
   // ── Monopoly Properties ──
   const [properties, setProperties] = useState<Property[]>([])
   const [showProperties, setShowProperties] = useState(false)
+  const [listingPropId, setListingPropId] = useState<number | null>(null)
+  const [listingPriceStr, setListingPriceStr] = useState('')
+  const [listedProperties, setListedProperties] = useState<Property[]>([])
   // ── Roguelike: pet equipment ──
   const [petEquipment, setPetEquipment] = useState<{equipmentId: string; slot: string}[]>([])
   // ── Roguelike: inventory ──
@@ -366,6 +369,17 @@ export default function HomePage() {
   useEffect(() => {
     loadUserProperties()
   }, [user?.id])
+
+  const loadListedProperties = useCallback(async () => {
+    try {
+      const props = await loadAllListedProperties()
+      setListedProperties(props)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    loadListedProperties()
+  }, [])
 
   // Expose global callbacks for Leaflet popup buttons
   useEffect(() => {
@@ -2024,6 +2038,79 @@ export default function HomePage() {
                     )}
                   </div>
 
+                  {/* Section: Property Market */}
+                  <div className="section" style={{marginBottom:10}}>
+                    <div className="section-header">
+                      <span className="section-title">🏠 地皮市集</span>
+                      <span className="section-count">{listedProperties.length}塊</span>
+                    </div>
+                    {listedProperties.length === 0 ? (
+                      <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
+                        <div style={{fontSize:11, color:'#5a6d85'}}>
+                          市集暫時未有地皮出售
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="pet-grid" style={{gap:8}}>
+                        {listedProperties
+                          .filter(p => p.userId !== user?.id)
+                          .map(prop => {
+                            const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
+                            const zoneIdx = ((prop.cellRow * 7 + prop.cellCol * 13) % 6 + 6) % 6
+                            const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+                            const color = colors[zoneIdx]
+                            const sellPrice = prop.listPrice ?? prop.price
+                            return (
+                              <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px'}}>
+                                <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
+                                <div style={{fontSize:24, marginBottom:2}}>🏠</div>
+                                <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                                <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>由賣家出售</div>
+                                <div style={{fontSize:8, fontWeight:700, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(sellPrice)}</div>
+                                <button onClick={async () => {
+                                  if (!user) { logMsg('❌ 需要登入'); return }
+                                  if (totalSteps < sellPrice) { logMsg(`❌ 步驟不足！需要 ${sellPrice} 步`); return }
+                                  if (!confirm(`確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`)) return
+                                  try {
+                                    const res = await fetch('/api/properties/transfer', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ propertyId: prop.id, buyerId: user.id }),
+                                    })
+                                    const data = await res.json()
+                                    if (data.success) {
+                                      const newSteps = totalSteps - sellPrice
+                                      setTotalSteps(newSteps)
+                                      await updateTotalSteps(user.id, newSteps)
+                                      logMsg(`🏠 成功購買 ${name}！`)
+                                      loadListedProperties()
+                                      loadUserProperties()
+                                    } else {
+                                      logMsg(`❌ ${data.error || '購買失敗'}`)
+                                    }
+                                  } catch { logMsg('❌ 網絡錯誤') }
+                                }} style={{
+                                  marginTop:6, padding:'2px 14px', border:'1px solid #a855f744',
+                                  borderRadius:6, background:'rgba(168,85,247,0.15)',
+                                  color:'#a855f7', fontSize:8, fontWeight:700, cursor:'pointer',
+                                  fontFamily:'inherit',
+                                }}>
+                                 購買
+                                </button>
+                              </div>
+                            )
+                          })}
+                        {listedProperties.filter(p => p.userId !== user?.id).length === 0 && (
+                          <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
+                            <div style={{fontSize:11, color:'#5a6d85'}}>
+                              全部係你嘅地皮 🎉
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                 </>
               )}
 
@@ -2144,27 +2231,81 @@ export default function HomePage() {
                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                     const color = colors[zoneIdx]
                     return (
-                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px'}}>
+                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', position:'relative'}}>
                         <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
                         <div style={{fontSize:24, marginBottom:2}}>🏠</div>
                         <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
                         <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
                           ⚡ {formatSteps(prop.price)}
                         </div>
-                        <button onClick={async () => {
-                          if (!confirm('確定出售此地？')) return
-                          const err = await sellProperty(prop.id)
-                          if (err) { logMsg(`❌ 出售失敗: ${err}`); return }
-                          logMsg(`🏠 已出售 ${name}`)
-                          loadUserProperties()
-                        }} style={{
-                          marginTop:6, padding:'2px 10px', border:'1px solid #ef444444',
-                          borderRadius:6, background:'rgba(239,68,68,0.1)',
-                          color:'#ef4444', fontSize:8, fontWeight:700, cursor:'pointer',
-                          fontFamily:'inherit',
-                        }}>
-                          出售
-                        </button>
+                        {prop.isListed ? (
+                          <div style={{marginTop:6, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+                            <div style={{fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
+                            <button onClick={async () => {
+                              const err = await unlistProperty(prop.id)
+                              if (err) { logMsg(`❌ 下架失敗: ${err}`); return }
+                              logMsg(`📭 ${name} 已下架`)
+                              loadUserProperties()
+                            }} style={{
+                              padding:'2px 10px', border:'1px solid #f59e0b44',
+                              borderRadius:6, background:'rgba(245,158,11,0.1)',
+                              color:'#f59e0b', fontSize:8, fontWeight:700, cursor:'pointer',
+                              fontFamily:'inherit',
+                            }}>下架</button>
+                          </div>
+                        ) : listingPropId === prop.id ? (
+                          <div style={{marginTop:6, display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
+                            <input type="number" min={1} placeholder="售價（步）"
+                              onChange={e => setListingPriceStr(e.target.value)}
+                              value={listingPriceStr}
+                              style={{width:80, padding:'2px 6px', borderRadius:4, border:'1px solid #334155', background:'#1e293b', color:'#f1f5f9', fontSize:9, textAlign:'center', fontFamily:'inherit'}}
+                              autoFocus />
+                            <div style={{display:'flex', gap:4}}>
+                              <button onClick={async () => {
+                                const price = parseInt(listingPriceStr)
+                                if (isNaN(price) || price <= 0) { logMsg('❌ 請輸入有效價格'); return }
+                                const err = await listProperty(prop.id, price)
+                                if (err) { logMsg(`❌ 上架失敗: ${err}`); return }
+                                logMsg(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                                setListingPropId(null)
+                                setListingPriceStr('')
+                                loadUserProperties()
+                              }} style={{
+                                padding:'2px 10px', border:'1px solid #22c55e44',
+                                borderRadius:6, background:'rgba(34,197,94,0.1)',
+                                color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
+                                fontFamily:'inherit',
+                              }}>確認</button>
+                              <button onClick={() => { setListingPropId(null); setListingPriceStr('') }} style={{
+                                padding:'2px 10px', border:'1px solid #5a6d8544',
+                                borderRadius:6, background:'transparent',
+                                color:'#5a6d85', fontSize:8, fontWeight:700, cursor:'pointer',
+                                fontFamily:'inherit',
+                              }}>取消</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{marginTop:6, display:'flex', gap:4}}>
+                            <button onClick={() => { setListingPropId(prop.id); setListingPriceStr('') }} style={{
+                              padding:'2px 10px', border:'1px solid #22c55e44',
+                              borderRadius:6, background:'rgba(34,197,94,0.1)',
+                              color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
+                              fontFamily:'inherit',
+                            }}>上架出售</button>
+                            <button onClick={async () => {
+                              if (!confirm('確定放棄此地？(唔會拎返步數)')) return
+                              const err = await sellProperty(prop.id)
+                              if (err) { logMsg(`❌ 放棄失敗: ${err}`); return }
+                              logMsg(`🏚️ 已放棄 ${name}`)
+                              loadUserProperties()
+                            }} style={{
+                              padding:'2px 10px', border:'1px solid #ef444444',
+                              borderRadius:6, background:'rgba(239,68,68,0.1)',
+                              color:'#ef4444', fontSize:8, fontWeight:700, cursor:'pointer',
+                              fontFamily:'inherit',
+                            }}>放棄</button>
+                          </div>
+                        )}
                       </div>
                     )
                   })}

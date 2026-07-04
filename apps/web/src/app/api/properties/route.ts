@@ -134,3 +134,47 @@ export async function DELETE(req: NextRequest) {
 
   return NextResponse.json({ success: true })
 }
+
+// PATCH — list/unlist a property for sale
+export async function PATCH(req: NextRequest) {
+  const body = await req.json()
+  const { propertyId, userId, listPrice } = body
+
+  if (!propertyId || !userId) {
+    return NextResponse.json({ error: 'missing params' }, { status: 400 })
+  }
+
+  // Verify ownership
+  const { data: prop } = await supabase
+    .from('properties')
+    .select('user_id')
+    .eq('id', propertyId)
+    .single()
+
+  if (!prop) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 })
+  }
+  if (prop.user_id !== userId) {
+    return NextResponse.json({ error: 'not yours' }, { status: 403 })
+  }
+
+  const updates: Record<string, any> = {}
+  if (listPrice !== undefined && listPrice !== null) {
+    updates.is_listed = true
+    updates.list_price = listPrice
+  } else {
+    updates.is_listed = false
+    updates.list_price = null
+  }
+
+  const { error } = await supabase
+    .from('properties')
+    .update(updates)
+    .eq('id', propertyId)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
+}
