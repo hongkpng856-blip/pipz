@@ -549,7 +549,23 @@ The day index is derived from `new Date().getDay()`:
 
 `RealMapHandle` interface (exposed via `forwardRef` + `useImperativeHandle`):
 - `generateTestTrails()`: draws 7 small coloured arcs around the current map centre using all 7 `DAY_COLORS`, each with `dashArray: '6 4'` style. Accessible via Dev Tools `🎨 測試7日路線` button (`realMapRef.current.generateTestTrails()`).
-- `clearStoredTrails()` (v0.19.0+): removes `pipz_trail_data` from localStorage and removes all polyline layers from the map. Dev Tools `🗑️ 清除路線記憶`.
+- `clearStoredTrails()` (v0.19.0+): removes both `pipz_trail_data` and `pipz_vehicle_trail` from localStorage and removes all polyline layers. Dev Tools `🗑️ 清除路線記憶`.
+
+### Vehicle Trails (v0.25.0+)
+
+When `mode === 'vehicle'`, the trail is recorded separately with a distinct visual style so vehicle routes are immediately recognisable:
+
+| Property | Walk Trail | Vehicle Trail |
+|----------|-----------|---------------|
+| Line style | Dashed (`dashArray: '6 4'`) | **Solid** (no dash) |
+| Colour | Per-day `DAY_COLORS` | **Blue** (`#60a5fa`) |
+| Weight | 3 | **2** (thinner) |
+| Opacity | 0.7 | **0.45** (more transparent) |
+
+- Stored in a separate ref: `vehicleTrailByDay` + `vehiclePolylineByDay`
+- Persisted to `localStorage` under key `pipz_vehicle_trail`
+- Restored on map init alongside walk trails
+- Included in initial auto-fit bounds computation
 
 ### Auto-Zoom by Movement Mode (v0.19.0+)
 

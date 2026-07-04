@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.25.0 (2026-08-01)
+
+### Added
+- **🚗 Vehicle trail lines**: vehicle mode now also records GPS trail — drawn as solid blue (`#60a5fa`), thinner (weight 2), more transparent (opacity 0.45)
+- **💾 Separate vehicle trail storage**: saved to `localStorage` under `pipz_vehicle_trail` key, restored on map init
+
+### Changed
+- **♻️ Trail drawing**: `mode === 'walk' || mode === 'vehicle'` now both record trails; walking = dashed colored, vehicle = solid blue
+- **♻️ Initial zoom**: vehicle trail points included in auto-fit bounds computation
+
 ## v0.24.0 (2026-08-01)
 
 ### Added
