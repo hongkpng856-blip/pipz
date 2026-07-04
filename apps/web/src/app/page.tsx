@@ -63,6 +63,7 @@ export default function HomePage() {
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
     const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | 'stationary' | null>(null)
     const [compassHeading, setCompassHeading] = useState<number | null>(null)
+    const [compassActive, setCompassActive] = useState(false)
     const compassHeadingRef = useRef(0)
     const realMapRef = useRef<RealMapHandle>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -195,7 +196,18 @@ export default function HomePage() {
   useEffect(() => {
     const grant = () => {
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-        (DeviceOrientationEvent as any).requestPermission().catch(() => {})
+        (DeviceOrientationEvent as any).requestPermission()
+          .then((state: string) => {
+            if (state === 'granted') {
+              logMsg('🧭 指南針已授權')
+            } else {
+              logMsg('🧭 指南針被拒絕 — 用 GPS 方向代替')
+            }
+          })
+          .catch(() => {})
+      }
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
+        (DeviceMotionEvent as any).requestPermission().catch(() => {})
       }
     }
     // Native DOM click bypasses React's synthetic event delegation that iOS may not accept
@@ -409,6 +421,7 @@ export default function HomePage() {
         h = (360 - e.alpha) % 360 // standard compass heading
       }
       if (h !== null && h >= 0) {
+        setCompassActive(true) // mark compass as receiving data
         // Light EMA smoothing (factor 0.5) dampens sensor jitter; at 60Hz converges in ~50ms
         let diff = h - compassHeadingRef.current
         if (diff > 180) diff -= 360
@@ -1556,7 +1569,7 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} />
               ) : (
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} />
               )}

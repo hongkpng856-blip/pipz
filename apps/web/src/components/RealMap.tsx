@@ -10,6 +10,7 @@ interface Props {
   walking: boolean
   mode: 'walk' | 'vehicle' | 'stationary' | null
   deviceHeading?: number | null
+  compassActive?: boolean
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
 }
 
@@ -50,7 +51,7 @@ export interface RealMapHandle {
   recenterMap: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -520,7 +521,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       {walking && (
         <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : mode === 'stationary' ? 'real-map-mode-stationary' : ''}`}>
           <span className={`gps-dot ${mode === 'vehicle' ? 'gps-dot-vehicle' : mode === 'stationary' ? 'gps-dot-stationary' : ''}`} />
-          {mode === 'vehicle' ? '🚗 乘車中' : mode === 'stationary' ? '🧘 靜止中' : '🚶 步行中'}
+          {compassActive ? '🧭' : '🛰️'}
+          {' '}
+          {mode === 'vehicle' ? '乘車中' : mode === 'stationary' ? '靜止中' : '步行中'}
         </div>
       )}
       {/* ── Recenter button ── */}
