@@ -1728,44 +1728,49 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
-                      {/* 🥚 蛋 row — compact, inside energy card */}
+                      {/* 🥚 蛋 card grid — inside energy card */}
                       {eggs.length > 0 && (
                         <>
                           <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
-                          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                          <div className="pet-grid" style={{gap:6, justifyContent:'flex-start'}}>
                             {eggs.map(egg => {
                               const isHatching = eggHatchingId === egg.id
                               return (
                                 <div key={egg.id}
+                                  className="pet-card"
                                   onClick={() => !isHatching && hatchEgg(egg)}
                                   style={{
-                                    position:'relative', cursor: isHatching ? 'default' : 'pointer',
-                                    textAlign:'center',
+                                    borderColor: `${PC[egg.rarity]}44`,
+                                    cursor: isHatching ? 'default' : 'pointer',
+                                    padding: '8px 4px 6px', width:56,
+                                    flex:'none',
                                   }}>
                                   {isHatching ? (
-                                    <div style={{fontSize:18, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                                    <>
+                                      <div style={{fontSize:16, animation:'pulse 0.5s ease-in-out infinite', marginBottom:2}}>✨</div>
+                                      <div style={{fontSize:7, color:'#f59e0b', fontWeight:700}}>孵化中</div>
+                                    </>
                                   ) : (
                                     <>
-                                      <div style={{fontSize:22, lineHeight:1}}>🥚</div>
+                                      <div style={{fontSize:22, marginBottom:2}}>🥚</div>
                                       <div style={{
                                         fontSize:6, fontWeight:700, color:PC[egg.rarity],
                                         background:`${PC[egg.rarity]}18`,
-                                        padding:'0 4px', borderRadius:3, marginTop:1,
-                                        whiteSpace:'nowrap',
+                                        display:'inline-block', padding:'1px 6px', borderRadius:3,
                                       }}>
                                         {RARITY_LABELS[egg.rarity]}
                                       </div>
+                                      <div style={{fontSize:6, color:'#5a6d85', marginTop:2}}>點擊孵化</div>
                                     </>
                                   )}
                                 </div>
                               )
                             })}
-                            <div style={{fontSize:8, color:'#5a6d85', marginLeft:4}}>點擊孵化</div>
                           </div>
                         </>
                       )}
                       {eggs.length === 0 && (
-                        <div style={{fontSize:8, color:'#5a6d85', marginTop:4}}>
+                        <div style={{fontSize:8, color:'#5a6d85', marginTop:6}}>
                           行路有機會獲得 🥚
                         </div>
                       )}
