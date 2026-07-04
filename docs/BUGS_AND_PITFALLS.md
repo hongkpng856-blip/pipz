@@ -343,6 +343,37 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 
 ---
 
+## 11. Canvas Overlay Grid — Container Coordinate Drift
+
+### 11.1 Grid Cells Drifting During Map Pan
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (grid not anchored to geographic coordinates) |
+| **Root Cause** | Direct canvas overlay was positioned over the map container and drawn using `map.latLngToContainerPoint()`. During pan, Leaflet transforms the tile pane via CSS `translate3d` but the canvas itself doesn't participate in the transform — it stays fixed at `[0,0]` in the container. Even with `move` event + `rAF` redraw, the canvas coordinate system doesn't perfectly track the map's internal offset, causing visible drift. |
+| **Fix** | Revert to Leaflet vector layers (`L.Rectangle` per-cell). Each rectangle is a geographic feature added to Leaflet's overlay pane — Leaflet automatically handles all CSS transforms during pan/zoom/fly. No per-frame redraw needed. |
+| **Prevention** | Never use a bare `<canvas>` element positioned outside Leaflet's overlay pane for geographic rendering. Always use `L.GridLayer`, `L.Rectangle`, or other native Leaflet layers. Canvas overlays break because they don't participate in Leaflet's coordinate transform pipeline. |
+
+### 11.2 Grid Not Visible During `flyTo` Animation
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (grid hidden mid-animation) |
+| **Root Cause** | Canvas overlay only redrew on `moveend`/`zoomend` events. `flyTo()` and `setView({ animate: true })` trigger `move` but `moveend` only fires when the animation completes. Mid-flight, the canvas kept the old content — invisible because the geographic area moved away. |
+| **Fix** | Revert to `L.Rectangle` — Leaflet renders vector layers during all animation phases. |
+| **Prevention** | Any custom rendering that depends on `moveend` will be invisible during Leaflet animations. Use native Leaflet layers or hook into `move` events with aggressive redraw. |
+
+### 11.3 Canvas Overlay Has No Per-Cell Interactivity
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Minor (no hover/click per cell) |
+| **Root Cause** | A single `<canvas>` element cannot have per-polygon click targets. All grid interaction had to be handled through the map's `click` event and manual `getCellInfo()` coordinate detection. |
+| **Fix** | Each `L.Rectangle` has its own `click`, `mouseover`, `mouseout` events. Hover tooltip + click highlight animation + Leaflet popup — all native. |
+| **Verification** | Pan map → grid stays with geographic landmarks. Click any cell → highlight + popup. Scroll/zoom → no gaps. |
+
+---
+
 ## 10. GPS Warmup + Map Animation Interference
 
 ### 10.1 Warmup Positions Interrupting `fitBounds` Animation

@@ -615,14 +615,17 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 ### Grid Layout (v0.24.0 – v0.25.0)
 - **6×6 grid** → dynamic viewport-based using `L.Rectangle` objects (removed in v0.26.0)
 
-### Grid Layout (v0.26.0+ — Canvas GridLayer → Direct Canvas Overlay)
-- **v0.26.0**: Canvas `L.GridLayer` (tile-based, removed in v0.27.0)
-- **v0.27.0+**: Direct `<canvas>` overlay positioned over the map container, redrawn on every `moveend` / `zoomend` / `resize` event
-- Uses `map.latLngToContainerPoint()` to convert geographic cell boundaries to pixel positions — pixel-perfect alignment at every zoom
-- **No tile management** — single canvas covers the full viewport, no gaps, no animation issues
-- Grid lines: purple (`rgba(139, 92, 246, 0.35)`), 1.2px
-- Cell fills: subtle zone colours at 7% opacity
-- **Click on map** → detects cell from `lat/lng` using `Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)` formula, shows popup with cell name
+### Grid Layout (v0.26.0 – v0.27.0 — Canvas Experiments, REMOVED)
+- **v0.26.0**: Canvas `L.GridLayer` (tile-based canvas, fly animation gaps)
+- **v0.27.0**: Direct `<canvas>` overlay with `latLngToContainerPoint()` redraw — grid drifted during pan, invisible mid-fly
+- **Both removed in v0.28.0** — canvas approaches caused grid-to-map misalignment, interaction issues
+
+### Grid Layout (v0.28.0+ — `L.Rectangle` Vector Grid, stable)
+- **Reverted to `L.Rectangle`** — each cell is a native Leaflet vector layer. Grid moves with map naturally during pan/zoom/fly. No canvas, no per-frame redraw.
+- **Cell cap**: 5,000 cells (MAX_GRID_CELLS), past viewport padding: 8 cells (GRID_PAD) — covers zoom 16–20 fully
+- **Cell interaction**: each rectangle has hover tooltip + click highlight animation (opacity 0.2, 1.5s) + Leaflet popup
+- **Click on map** → `getCellInfo()` detects cell from `lat/lng` using `Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)` formula, shows popup with cell name
+- **Redraw**: on `moveend` / `zoomend` events — old rectangles removed, new ones created for visible viewport
 
 ### Cell Properties
 - Each cell = one Monopoly-style property
@@ -635,9 +638,13 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - First player to walk enough steps in an area can claim it
 
 ### Technical
-- Grid is rendered as a **Canvas `L.GridLayer`** — each Leaflet tile gets a `<canvas>` element with grid lines + zone fills drawn via `CanvasRenderingContext2D`
-- Canvas drawing uses `Math.floor()` to find the first cell origin within each tile, then iterates east/north to draw all visible lines
-- Grid anchor stored in `anchorRef` on the React component; grid layer receives anchor via `setAnchor()` method
+- Grid is rendered using **`L.Rectangle` per-cell vectors** — each cell is a native Leaflet vector layer added to the map
+- Cells are created dynamically: `updateGrid(map, anchor)` calculates visible cell range from `map.getBounds()` with `GRID_PAD` (8 cells) padding, then creates `L.Rectangle` for each cell
+- Cell identity: `row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)`, `col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)`
+- Naming: `第${row+1}區 ${col+1}號`
+- Zone colours: deterministic hash `(row * 7 + col * 13) % ZONE_COLORS.length` — same cell always gets same colour
+- Old cells are removed (`r.remove()`) and recreated on every view change — safe because L.Rectangle creation is fast (< 1ms per cell at ≤ 5000 cells)
+- Grid anchor stored in `anchorRef` on the React component
 - Grid persists on server — survives localStorage clears and browser changes
 - API: `GET /api/grid-config` to read anchor, `POST /api/grid-config` (lat, lng) to set it (only first call succeeds)
 

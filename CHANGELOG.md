@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.28.0 (2026-08-01)
+
+### Changed
+- **🗺️ Grid rendering: Direct canvas overlay → `L.Rectangle` vector grid** — reverted from direct canvas overlay back to `L.Rectangle` per-cell vectors. Each cell is a native Leaflet vector layer that moves naturally with the map during pan/zoom/fly animations. No more container-coordinate drift during pan.
+- **♻️ Cell cap raised to 5000**, **padding 8 cells** beyond viewport — full coverage at all walkable zoom levels (16–20), cells appear smoothly on all edges during pan
+- **♻️ Grid cells are interactive** — each `L.Rectangle` has hover tooltip + click highlight animation (opacity 0.2 for 1.5s) + Leaflet popup with cell name
+
+### Removed
+- **🗑️ Canvas overlay** — the single `<canvas>` element positioned over the map container is removed. No more `latLngToContainerPoint()` per-frame redraw, no `move` event handler, no `requestAnimationFrame` throttle
+
+### Fixed
+- **🐛 Grid cells drifting during map pan** — previous canvas overlay used container coordinates (`latLngToContainerPoint`) that required manual tracking of map offset. `L.Rectangle` objects are geographic vector layers — Leaflet handles all pan/zoom transforms natively. Grid stays perfectly anchored to geographic coordinates like a landmark.
+- **🐛 Grid not visible during fly animation** — canvas overlay only redrew on `moveend`, so the grid was invisible mid-animation. `L.Rectangle` objects are rendered by Leaflet's vector pane which handles all tile/pan/zoom lifecycle natively.
+- **🐛 No interaction on grid cells** — canvas overlay didn't support per-cell hover/click. Each `L.Rectangle` has independent tooltip, click handler, and highlight animation.
+
 ## v0.27.0 (2026-08-01)
 
 ### Changed
