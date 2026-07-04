@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.24.0 (2026-08-01)
+
+### Added
+- **🗺️ Dynamic full-map grid**: grid now covers the entire visible map viewport — cells are dynamically created/removed as the user pans and zooms
+- **🔄 Auto-refresh on pan/zoom**: grid redraws on every `moveend`/`zoomend` event, with 1-cell padding for smooth scrolling
+- **🧮 Safety cap (400 cells)**: at too-low zoom levels, grid hides automatically to prevent performance issues
+
+### Changed
+- **♻️ Grid from 6×6 fixed → dynamic viewport-based**: removed fixed `GRID_CELLS=6` constant, now calculates cell range from `map.getBounds()`
+- **♻️ Grid anchor stored in ref**: `anchorRef` keeps the world anchor for reuse across pan/zoom redraws
+- **♻️ `createGrid(map,center)` → `updateGrid()`**: no parameters, reads `mapRef` + `anchorRef` internally
+
 ## v0.23.0 (2026-08-01)
 
 ### Added

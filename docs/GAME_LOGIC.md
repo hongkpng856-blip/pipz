@@ -596,8 +596,18 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0006° ≈ 60m)
 - Once set, the anchor **cannot be changed** — all players see the same grid cells
 
-### Grid Layout
+### Grid Layout (v0.22.0 – v0.23.0)
 - **6×6 grid** (36 cells) centered on the world anchor
+
+### Grid Layout (v0.24.0+ — Dynamic Full-Map Grid)
+- Grid is **dynamic**: cells are created based on the current map viewport (`map.getBounds()`)
+- Visible cell range is calculated from the viewport bounds relative to the world anchor
+- **1-cell padding** around viewport for smooth panning
+- **Safety cap: 400 cells max** — at low zoom levels (vehicle / overview), grid hides automatically to prevent performance lag
+- Grid redraws on every `moveend` / `zoomend` event
+- Grid anchor (`anchorRef`) persists across redraws — panning and zooming always use the same world origin
+
+### Cell Properties
 - Each cell = one Monopoly-style property
 - Cell size: ~60m × 60m (0.0006° × 0.0006°)
 - Cells have alternating zone colors to distinguish regions
