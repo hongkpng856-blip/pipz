@@ -449,6 +449,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     map.on('moveend zoomend', onGridRedraw)
     map.on('resize', onGridRedraw)
+    // Redraw during pan so grid follows the map smoothly
+    let rafId = 0
+    map.on('move', () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(onGridRedraw)
+    })
 
     // ── Click on grid cell → show popup ──
     function onMapClick(e: L.LeafletMouseEvent) {
@@ -469,6 +475,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       map.off('click', onMapClick)
       map.off('moveend zoomend', onGridRedraw)
       map.off('resize', onGridRedraw)
+      map.off('move')
+      if (rafId) cancelAnimationFrame(rafId)
       if (gridCanvasRef.current) {
         const parent = gridCanvasRef.current.parentNode
         if (parent) parent.removeChild(gridCanvasRef.current)
