@@ -27,6 +27,13 @@ const MAX_GRID_CELLS = 2000   // safety cap — skip rendering if viewport cover
 const GRID_PAD = 4            // extra cells beyond viewport for smooth panning
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
 /** Generate a data URL of the pet's pixel art sprite */
 function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
   const seed = parseInt(pet.speciesId ?? '0', 10) || 1
@@ -67,7 +74,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const lastManualZoomRef = useRef(0)
   const initialZoomDoneRef = useRef(false)
   const initialAnimBusyRef = useRef(false)
-  const gridRectsRef = useRef<L.Rectangle[]>([])
+  const gridLayerRef = useRef<L.GridLayer | null>(null)
   const gridInitializedRef = useRef(false)
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
@@ -104,77 +111,116 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   }
 
-  // ── Dynamic full-map grid: renders visible cells based on viewport ──
-  const updateGrid = useCallback(() => {
-    const map = mapRef.current
-    const anchor = anchorRef.current
-    if (!map || !anchor) return
+  // ── Canvas-based grid layer: draws grid lines + fills on every tile ──
+  //    No per-rectangle overhead, always covers full viewport
+  const GridCanvasLayer = L.GridLayer.extend({
+    initialize: function () {
+      ;(L.GridLayer.prototype as any).initialize.call(this, {
+        opacity: 1,
+        zIndex: 500,
+      })
+      this._anchor = null
+    },
 
-    // Remove old grid
-    gridRectsRef.current.forEach(r => r.remove())
-    gridRectsRef.current = []
+    setAnchor: function (anchor: { lat: number; lng: number }) {
+      this._anchor = anchor
+      this.redraw()
+    },
 
-    const bounds = map.getBounds()
-    const sw = bounds.getSouthWest()
-    const ne = bounds.getNorthEast()
+    createTile: function (coords: L.Coords) {
+      const tile = L.DomUtil.create('canvas', 'leaflet-tile') as HTMLCanvasElement
+      const size = this.getTileSize()
+      tile.width = size.x
+      tile.height = size.y
 
-    // Calculate visible cell range (relative to anchor)
-    const minRow = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) - GRID_PAD
-    const maxRow = Math.ceil((ne.lat - anchor.lat) / CELL_SIZE_DEG) + GRID_PAD
-    const minCol = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) - GRID_PAD
-    const maxCol = Math.ceil((ne.lng - anchor.lng) / CELL_SIZE_DEG) + GRID_PAD
+      const ctx = tile.getContext('2d')!
+      const bounds = this._tileCoordsToBounds(coords)
+      this._drawGrid(ctx, bounds, size)
+      return tile
+    },
 
-    const nRows = maxRow - minRow + 1
-    const nCols = maxCol - minCol + 1
+    _drawGrid: function (ctx: CanvasRenderingContext2D, bounds: L.LatLngBounds, size: L.Point) {
+      const anchor = this._anchor
+      if (!anchor) return
 
-    // Safety cap: skip if too many cells (too zoomed out)
-    if (nRows * nCols > MAX_GRID_CELLS) return
+      const sw = bounds.getSouthWest()
+      const ne = bounds.getNorthEast()
+      const degX = ne.lng - sw.lng
+      const degY = ne.lat - sw.lat
+      if (degX === 0 || degY === 0) return
 
-    for (let row = minRow; row <= maxRow; row++) {
-      for (let col = minCol; col <= maxCol; col++) {
-        const north = anchor.lat + row * CELL_SIZE_DEG
-        const south = north + CELL_SIZE_DEG
-        const west = anchor.lng + col * CELL_SIZE_DEG
-        const east = west + CELL_SIZE_DEG
-        const zoneIdx = (row * 7 + col * 13) % ZONE_COLORS.length
-        const color = ZONE_COLORS[zoneIdx]
-        const name = `第${row+1}區 ${col+1}號`
+      // First cell origin at or before sw
+      const startLat = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lat
+      const startLng = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG) * CELL_SIZE_DEG + anchor.lng
 
-        const rect = L.rectangle([[north, west], [south, east]], {
-          color,
-          weight: 1.5,
-          opacity: 0.4,
-          fillColor: color,
-          fillOpacity: 0.06,
-          interactive: true,
-        }).addTo(map)
+      // ── Grid lines ──
+      ctx.strokeStyle = hexToRgba('#8b5cf6', 0.35)
+      ctx.lineWidth = 1.2
 
-        // Tooltip on hover
-        rect.bindTooltip(`📍 ${name}`, {
-          permanent: false,
-          direction: 'center',
-          className: 'monopoly-grid-tooltip',
-        })
-
-        // Click handler
-        rect.on('click', () => {
-          rect.setStyle({ fillOpacity: 0.2, weight: 2.5, opacity: 0.8 })
-          setTimeout(() => rect.setStyle({ fillOpacity: 0.06, weight: 1.5, opacity: 0.4 }), 1500)
-
-          map.openPopup(
-            `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
-              <div style="font-size:24px;margin-bottom:2px;">📋</div>
-              <div style="font-weight:700;font-size:13px;color:${color};">${name}</div>
-              <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
-            </div>`,
-            rect.getBounds().getCenter()
-          )
-        })
-
-        gridRectsRef.current.push(rect)
+      // Vertical lines
+      for (let lng = startLng; lng <= ne.lng; lng += CELL_SIZE_DEG) {
+        const x = (lng - sw.lng) / degX * size.x
+        ctx.beginPath()
+        ctx.moveTo(Math.round(x) + 0.5, 0)
+        ctx.lineTo(Math.round(x) + 0.5, size.y)
+        ctx.stroke()
       }
+
+      // Horizontal lines
+      for (let lat = startLat; lat <= ne.lat; lat += CELL_SIZE_DEG) {
+        const y = (ne.lat - lat) / degY * size.y
+        ctx.beginPath()
+        ctx.moveTo(0, Math.round(y) + 0.5)
+        ctx.lineTo(size.x, Math.round(y) + 0.5)
+        ctx.stroke()
+      }
+
+      // ── Cell fills (subtle zone colors) ──
+      for (let lat = startLat; lat < ne.lat; lat += CELL_SIZE_DEG) {
+        for (let lng = startLng; lng < ne.lng; lng += CELL_SIZE_DEG) {
+          const row = Math.round((lat - anchor.lat) / CELL_SIZE_DEG)
+          const col = Math.round((lng - anchor.lng) / CELL_SIZE_DEG)
+          const zoneIdx = (row * 7 + col * 13) % ZONE_COLORS.length
+          const color = ZONE_COLORS[zoneIdx]
+
+          const x = (lng - sw.lng) / degX * size.x
+          const y = (ne.lat - (lat + CELL_SIZE_DEG)) / degY * size.y
+          const w = CELL_SIZE_DEG / degX * size.x
+          const h = CELL_SIZE_DEG / degY * size.y
+
+          ctx.fillStyle = hexToRgba(color, 0.07)
+          ctx.fillRect(x, y, w, h)
+        }
+      }
+    },
+  })
+
+  /** Get grid cell name from lat/lng */
+  function getCellInfo(lat: number, lng: number) {
+    const anchor = anchorRef.current
+    if (!anchor) return null
+    const row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)
+    const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
+    const zoneIdx = ((row * 7 + col * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+    return {
+      row,
+      col,
+      name: `第${row+1}區 ${col+1}號`,
+      color: ZONE_COLORS[zoneIdx],
     }
-  }, [])
+  }
+
+  /** Create or update the grid overlay layer */
+  function ensureGridLayer(map: L.Map, anchor: { lat: number; lng: number }) {
+    // Remove existing grid layer if any
+    if (gridLayerRef.current) {
+      map.removeLayer(gridLayerRef.current)
+    }
+    const layer = new GridCanvasLayer()
+    layer.setAnchor(anchor)
+    layer.addTo(map)
+    gridLayerRef.current = layer
+  }
 
   function saveTrailToStorage() {
     const obj: Record<string, [number, number][]> = {}
@@ -411,22 +457,41 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     // ── Per-day trails (created lazily) ──
 
+    // ── Canvas grid overlay (initially without anchor) ──
+    const gridLayer = new GridCanvasLayer()
+    gridLayer.addTo(map)
+    gridLayerRef.current = gridLayer
+
     // Fetch grid anchor from server (shared world anchor for all players)
     fetchGridAnchor().then(anchor => {
       if (anchor && !gridInitializedRef.current) {
         anchorRef.current = anchor
         gridInitializedRef.current = true
-        updateGrid()
+        ;(gridLayer as any).setAnchor(anchor)
       }
     })
 
-    // Dynamic grid: redraw on every pan/zoom
-    map.on('moveend zoomend', updateGrid)
+    // ── Click on grid cell → show popup ──
+    function onMapClick(e: L.LeafletMouseEvent) {
+      const info = getCellInfo(e.latlng.lat, e.latlng.lng)
+      if (!info) return
+      map.openPopup(
+        `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
+          <div style="font-size:24px;margin-bottom:2px;">📋</div>
+          <div style="font-weight:700;font-size:13px;color:${info.color};">${info.name}</div>
+          <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
+        </div>`,
+        e.latlng
+      )
+    }
+    map.on('click', onMapClick)
 
     return () => {
-      map.off('moveend zoomend', updateGrid)
-      gridRectsRef.current.forEach(r => r.remove())
-      gridRectsRef.current = []
+      map.off('click', onMapClick)
+      if (gridLayerRef.current) {
+        map.removeLayer(gridLayerRef.current)
+        gridLayerRef.current = null
+      }
       map.remove()
       initialised.current = false
     }
@@ -475,7 +540,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       anchorRef.current = anchor
       // Save to server (silent if already set by another player)
       setGridAnchor(anchor.lat, anchor.lng)
-      updateGrid()
+      // Set anchor on canvas grid layer (if layer exists, this redraws)
+      if (gridLayerRef.current) {
+        (gridLayerRef.current as any).setAnchor(anchor)
+      } else {
+        ensureGridLayer(map, anchor)
+      }
     }
 
     userMarkerRef.current.setLatLng([lat, lng])
