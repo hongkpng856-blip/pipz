@@ -20,6 +20,11 @@ const RC: Record<string, string> = {
 
 const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
 
+/* ── Monopoly grid config ── */
+const GRID_CELLS = 6        // 6×6 grid
+const CELL_SIZE_DEG = 0.0006  // ~60m per cell (at HK latitude)
+const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+
 /** Generate a data URL of the pet's pixel art sprite */
 function petSpriteDataUrl(pet: NonNullable<Props['pet']>): string {
   const seed = parseInt(pet.speciesId ?? '0', 10) || 1
@@ -58,7 +63,94 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const lastManualZoomRef = useRef(0)
   const initialZoomDoneRef = useRef(false)
   const initialAnimBusyRef = useRef(false)
+  const gridRectsRef = useRef<L.Rectangle[]>([])
+  const gridInitializedRef = useRef(false)
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
+
+  /** Fetch grid anchor from server (shared across all players) */
+  async function fetchGridAnchor(): Promise<{ lat: number; lng: number } | null> {
+    try {
+      const res = await fetch('/api/grid-config')
+      if (!res.ok) return null
+      const json = await res.json()
+      if (!json.anchor) return null
+      return { lat: json.anchor.anchor_lat, lng: json.anchor.anchor_lng }
+    } catch { return null }
+  }
+
+  /** Set grid anchor on server (only works if none exists yet) */
+  async function setGridAnchor(lat: number, lng: number): Promise<boolean> {
+    try {
+      const res = await fetch('/api/grid-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      })
+      return res.ok
+    } catch { return false }
+  }
+
+  function roundToGrid(lat: number, lng: number) {
+    return {
+      lat: Math.round(lat / CELL_SIZE_DEG) * CELL_SIZE_DEG,
+      lng: Math.round(lng / CELL_SIZE_DEG) * CELL_SIZE_DEG,
+    }
+  }
+
+  // ── Monopoly grid creation (outside useEffect, callable from anywhere) ──
+  const createGrid = useCallback((map: L.Map, center: { lat: number; lng: number }) => {
+    // Remove old grid
+    gridRectsRef.current.forEach(r => r.remove())
+    gridRectsRef.current = []
+
+    const half = GRID_CELLS / 2
+    let cellId = 0
+
+    for (let row = 0; row < GRID_CELLS; row++) {
+      for (let col = 0; col < GRID_CELLS; col++) {
+        const north = center.lat + (row - half) * CELL_SIZE_DEG
+        const south = north + CELL_SIZE_DEG
+        const west = center.lng + (col - half) * CELL_SIZE_DEG
+        const east = west + CELL_SIZE_DEG
+        const zoneIdx = (row * 7 + col * 13) % ZONE_COLORS.length
+        const color = ZONE_COLORS[zoneIdx]
+        const name = `第${row+1}區 ${col+1}號`
+
+        const rect = L.rectangle([[north, west], [south, east]], {
+          color,
+          weight: 1.5,
+          opacity: 0.4,
+          fillColor: color,
+          fillOpacity: 0.06,
+          interactive: true,
+        }).addTo(map)
+
+        // Tooltip on hover
+        rect.bindTooltip(`📍 ${name}`, {
+          permanent: false,
+          direction: 'center',
+          className: 'monopoly-grid-tooltip',
+        })
+
+        // Click handler
+        rect.on('click', () => {
+          rect.setStyle({ fillOpacity: 0.2, weight: 2.5, opacity: 0.8 })
+          setTimeout(() => rect.setStyle({ fillOpacity: 0.06, weight: 1.5, opacity: 0.4 }), 1500)
+
+          map.openPopup(
+            `<div style="text-align:center;font-family:system-ui,sans-serif;min-width:100px;">
+              <div style="font-size:24px;margin-bottom:2px;">📋</div>
+              <div style="font-weight:700;font-size:13px;color:${color};">${name}</div>
+              <div style="font-size:10px;color:#94a5b8;margin-top:4px;">需要 100 步佔領</div>
+            </div>`,
+            rect.getBounds().getCenter()
+          )
+        })
+
+        gridRectsRef.current.push(rect)
+      }
+    }
+  }, [])
 
   function saveTrailToStorage() {
     const obj: Record<string, [number, number][]> = {}
@@ -259,7 +351,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     // ── Per-day trails (created lazily) ──
 
+    // Fetch grid anchor from server (shared world anchor for all players)
+    fetchGridAnchor().then(anchor => {
+      if (anchor && !gridInitializedRef.current) {
+        createGrid(map, anchor)
+        gridInitializedRef.current = true
+      }
+    })
+
     return () => {
+      gridRectsRef.current.forEach(r => r.remove())
+      gridRectsRef.current = []
       map.remove()
       initialised.current = false
     }
@@ -300,6 +402,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (!position || !mapRef.current || !userMarkerRef.current) return
     const { lat, lng, heading } = position
     const map = mapRef.current
+
+    // ── Create fixed grid on first GPS fix (saved to server for all players) ──
+    if (!gridInitializedRef.current) {
+      gridInitializedRef.current = true
+      const anchor = roundToGrid(lat, lng)
+      // Save to server (silent if already set by another player)
+      setGridAnchor(anchor.lat, anchor.lng)
+      createGrid(map, anchor)
+    }
 
     userMarkerRef.current.setLatLng([lat, lng])
     accCircleRef.current?.setLatLng([lat, lng])
