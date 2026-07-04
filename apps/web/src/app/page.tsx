@@ -1742,25 +1742,25 @@ export default function HomePage() {
                                   style={{
                                     borderColor: `${PC[egg.rarity]}44`,
                                     cursor: isHatching ? 'default' : 'pointer',
-                                    padding: '8px 4px 6px',
+                                    padding: '12px 4px',
                                     flex:'1 1 0', minWidth:0,
                                   }}>
                                   {isHatching ? (
                                     <>
-                                      <div style={{fontSize:16, animation:'pulse 0.5s ease-in-out infinite', marginBottom:2}}>✨</div>
-                                      <div style={{fontSize:7, color:'#f59e0b', fontWeight:700}}>孵化中</div>
+                                      <div style={{fontSize:28, animation:'pulse 0.5s ease-in-out infinite', marginBottom:6}}>✨</div>
+                                      <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
                                     </>
                                   ) : (
                                     <>
-                                      <div style={{fontSize:22, marginBottom:2}}>🥚</div>
+                                      <div style={{fontSize:32, marginBottom:4}}>🥚</div>
                                       <div style={{
-                                        fontSize:6, fontWeight:700, color:PC[egg.rarity],
+                                        fontSize:7, fontWeight:700, color:PC[egg.rarity],
                                         background:`${PC[egg.rarity]}18`,
-                                        display:'inline-block', padding:'1px 6px', borderRadius:3,
+                                        display:'inline-block', padding:'1px 8px', borderRadius:3,
                                       }}>
                                         {RARITY_LABELS[egg.rarity]}
                                       </div>
-                                      <div style={{fontSize:6, color:'#5a6d85', marginTop:2}}>點擊孵化</div>
+                                      <div style={{fontSize:8, color:'#5a6d85', marginTop:4}}>點擊孵化</div>
                                     </>
                                   )}
                                 </div>
@@ -1778,18 +1778,18 @@ export default function HomePage() {
                                 className="pet-card"
                                 style={{
                                   borderColor: 'rgba(255,255,255,0.08)',
-                                  padding: '8px 4px 6px',
+                                  padding: '12px 4px',
                                   flex:'1 1 0', minWidth:0, opacity:0.4,
                                 }}>
-                                <div style={{fontSize:22, marginBottom:2, filter:'grayscale(0.6)'}}>🥚</div>
+                                <div style={{fontSize:32, marginBottom:4, filter:'grayscale(0.6)'}}>🥚</div>
                                 <div style={{
-                                  fontSize:6, fontWeight:700, color:'#5a6d85',
-                                  display:'inline-block', padding:'1px 6px', borderRadius:3,
+                                  fontSize:7, fontWeight:700, color:'#5a6d85',
+                                  display:'inline-block', padding:'1px 8px', borderRadius:3,
                                   background:'rgba(255,255,255,0.04)',
                                 }}>
                                   蛋槽 {i}
                                 </div>
-                                <div style={{fontSize:6, color:'#3a4a5a', marginTop:2}}>行路獲得</div>
+                                <div style={{fontSize:8, color:'#3a4a5a', marginTop:4}}>行路獲得</div>
                               </div>
                             ))}
                           </div>
