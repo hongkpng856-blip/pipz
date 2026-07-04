@@ -618,8 +618,8 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 ### Grid Layout (v0.24.0+ — Dynamic Full-Map Grid)
 - Grid is **dynamic**: cells are created based on the current map viewport (`map.getBounds()`)
 - Visible cell range is calculated from the viewport bounds relative to the world anchor
-- **1-cell padding** around viewport for smooth panning
-- **Safety cap: 400 cells max** — at low zoom levels (vehicle / overview), grid hides automatically to prevent performance lag
+- **4-cell padding** around viewport for smooth panning (was 1-cell in v0.24.0)
+- **Safety cap: 2000 cells max** (was 400 in v0.24.0) — at very low zoom (≤15) grid hides to prevent performance lag; at walk zooms 16–20 the grid is fully visible
 - Grid redraws on every `moveend` / `zoomend` event
 - Grid anchor (`anchorRef`) persists across redraws — panning and zooming always use the same world origin
 

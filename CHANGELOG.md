@@ -10,6 +10,9 @@
 - **♻️ Trail drawing**: `mode === 'walk' || mode === 'vehicle'` now both record trails; walking = dashed colored, vehicle = solid blue
 - **♻️ Initial zoom**: vehicle trail points included in auto-fit bounds computation
 
+### Fixed
+- **🐛 Grid missing at edges / low zoom**: `MAX_GRID_CELLS` 400→2000, `GRID_PAD` 1→4 — grid now covers full viewport at walk zooms 16–20, with generous buffer for smooth panning
+
 ## v0.24.0 (2026-08-01)
 
 ### Added
