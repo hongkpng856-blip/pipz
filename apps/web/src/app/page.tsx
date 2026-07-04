@@ -1732,7 +1732,7 @@ export default function HomePage() {
                       {eggs.length > 0 && (
                         <>
                           <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
-                          <div className="pet-grid" style={{gap:6, justifyContent:'flex-start'}}>
+                          <div className="pet-grid" style={{gap:6}}>
                             {eggs.map(egg => {
                               const isHatching = eggHatchingId === egg.id
                               return (
@@ -1742,8 +1742,8 @@ export default function HomePage() {
                                   style={{
                                     borderColor: `${PC[egg.rarity]}44`,
                                     cursor: isHatching ? 'default' : 'pointer',
-                                    padding: '8px 4px 6px', width:56,
-                                    flex:'none',
+                                    padding: '8px 4px 6px',
+                                    flex:'1 1 0', minWidth:0,
                                   }}>
                                   {isHatching ? (
                                     <>
@@ -1778,8 +1778,8 @@ export default function HomePage() {
                                 className="pet-card"
                                 style={{
                                   borderColor: 'rgba(255,255,255,0.08)',
-                                  padding: '8px 4px 6px', width:56,
-                                  flex:'none', opacity:0.4,
+                                  padding: '8px 4px 6px',
+                                  flex:'1 1 0', minWidth:0, opacity:0.4,
                                 }}>
                                 <div style={{fontSize:22, marginBottom:2, filter:'grayscale(0.6)'}}>🥚</div>
                                 <div style={{
