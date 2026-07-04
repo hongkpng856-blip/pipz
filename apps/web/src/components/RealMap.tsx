@@ -127,7 +127,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
   // ── Dynamic full-map grid: renders visible L.Rectangle cells based on viewport ──
   //    Leaflet vector layers move with map automatically (no per-frame redraw).
-  function updateGrid(map: L.Map, anchor: { lat: number; lng: number }) {
+  function updateGrid(map: L.Map, anchor: { lat: number; lng: number }, fromToggle = false) {
     // Skip if grid is toggled off
     if (!gridVisibleRef.current) return
 
@@ -137,9 +137,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     const zoom = map.getZoom()
     const zoomFactor = getGridZoomFactor(zoom)
-    // Skip if fully faded out at this zoom — auto-toggle off so it stays hidden on zoom-in
+    // Skip if fully faded out at this zoom
     if (zoomFactor <= 0) {
-      if (gridVisibleRef.current) {
+      // Auto-toggle off only when NOT called from manual toggle button
+      if (!fromToggle && gridVisibleRef.current) {
         gridVisibleRef.current = false
         setGridVisible(false)
       }
@@ -740,14 +741,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         onClick={() => {
           const map = mapRef.current
           const newVal = !gridVisible
+          gridVisibleRef.current = newVal // Sync ref immediately (before next render)
           setGridVisible(newVal)
           if (!newVal) {
             // Hide: remove all grid rects
             gridRectsRef.current.forEach(r => r.remove())
             gridRectsRef.current = []
           } else if (map && anchorRef.current) {
-            // Show: redraw grid
-            updateGrid(map, anchorRef.current)
+            // Show: redraw grid — fromToggle=true prevents zoom auto-off
+            updateGrid(map, anchorRef.current, true)
           }
         }}
         aria-label={gridVisible ? '隱藏網格' : '顯示網格'}
