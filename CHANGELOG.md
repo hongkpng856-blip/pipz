@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.23.0 (2026-08-01)
+
+### Added
+- **🎯 Recenter button**: bottom-right of map, manually returns to player's GPS location
+- **🧭/🛰️ Heading source indicator**: GPS badge shows compass vs GPS heading source
+- **Compass permission feedback**: log messages show permission grant/deny status
+
+### Fixed
+- **🐛 地圖一直自動拖返原位**: removed `map.setView()` from every GPS update — map no longer auto-centers
+- **🐛 地圖每次轉 tab reload**: map tab now uses `display:none` instead of conditional mount — RealMap stays mounted
+- **🐛 Modal animation 閃 + 乜都撳唔到**: portal wrapper always `pointer-events:none`, only children get `auto` — fixed empty portal wrappers blocking clicks
+- **🐛 箭嘴抖動 (大轉向時)**: CSS transition `0.25s` → `0.08s` (faster than 100ms throttle), transition completes before next update
+- **🐛 GPS noise 箭嘴亂指**: removed position drift bearing computation — arrow only updates from compass or GPS heading, defaults to north otherwise
+
+### Changed
+- **♻️ Heading priority**: compass > GPS heading > last known heading (no more GPS drift bearing)
+- **♻️ ModalPortal animation**: inline styles instead of `data-entered` CSS, single rAF entrance
+
 ## v0.22.0 (2026-08-01)
 
 ### Added

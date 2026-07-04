@@ -611,3 +611,29 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Grid is rendered as Leaflet `L.Rectangle` objects at fixed lat/lng coordinates
 - Grid persists on server — survives localStorage clears and browser changes
 - API: `GET /api/grid-config` to read anchor, `POST /api/grid-config` (lat, lng) to set it (only first call succeeds)
+
+---
+
+## Heading / Compass (v0.23.0+)
+
+### Heading Sources (priority order)
+1. **🧭 DeviceOrientation compass** — real-time magnetometer heading (60Hz). iOS: `webkitCompassHeading`. Fallback: `(360 - alpha) % 360` (when `absolute === true`).
+2. **🛰️ GPS heading** — Geolocation API `coords.heading`. Only available when moving > 1 m/s. Used when compass is unavailable.
+3. **Default: north (0°)** — arrow points up when no heading source available.
+
+### Smoothing
+- **EMA filter** (factor 0.5, 60Hz): converges in ~50ms, removes sensor noise
+- **Throttle**: React state updates at ~10fps (every 100ms)
+- **CSS transition**: `0.08s ease-out` on arrow rotation — completes before next throttle tick to prevent jitter
+- No GPS position drift bearing computation (removed v0.23.0 — GPS noise caused random arrow direction)
+
+### iOS Permission
+- Requested via native DOM `click` listener (`{ once: true }`) on mount — React synthetic events not accepted by iOS 16.4+
+- Permission result logged to event log (🧭 指南針已授權 / 指南針被拒絕)
+- Denied compass → GPS badge shows 🛰️ instead of 🧭
+- If denied: go to iOS Settings → Safari → Pipz site → enable Motion & Orientation
+
+### GPS Badge
+- Shows: `[gps-dot] 🧭 步行中` (compass active) or `[gps-dot] 🛰️ 步行中` (GPS heading)
+- Mode indicator: 步行中 / 乘車中 / 靜止中
+- Color: cyan (walk), amber (vehicle), grey (stationary)
