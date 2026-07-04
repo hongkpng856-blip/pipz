@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react'
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
@@ -78,6 +78,16 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const gridInitializedRef = useRef(false)
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
+  const [gridVisible, setGridVisible] = useState(true)
+  const gridVisibleRef = useRef(true)
+  gridVisibleRef.current = gridVisible
+
+  /** Zoom-based grid fade: grid gradually disappears when zoomed out */
+  function getGridZoomFactor(zoom: number): number {
+    if (zoom >= 16) return 1
+    if (zoom <= 13) return 0
+    return (zoom - 13) / 3 // linear 0→1 between zoom 13-16
+  }
   // ── Reverse geocode cache (Nominatim, 1 req/s) ──
   const geocodeCache = useRef<Map<string, { label: string; detail: string; full: string }>>(new Map())
   const geocodeQueue = useRef<Array<{ key: string; lat: number; lng: number; resolve: (v: { label: string; detail: string; full: string }) => void }>>([])
@@ -118,9 +128,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   // ── Dynamic full-map grid: renders visible L.Rectangle cells based on viewport ──
   //    Leaflet vector layers move with map automatically (no per-frame redraw).
   function updateGrid(map: L.Map, anchor: { lat: number; lng: number }) {
+    // Skip if grid is toggled off
+    if (!gridVisibleRef.current) return
+
     // Remove old grid
     gridRectsRef.current.forEach(r => r.remove())
     gridRectsRef.current = []
+
+    const zoom = map.getZoom()
+    const zoomFactor = getGridZoomFactor(zoom)
+    // Skip if fully faded out at this zoom
+    if (zoomFactor <= 0) return
 
     const bounds = map.getBounds()
     const sw = bounds.getSouthWest()
@@ -150,11 +168,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
         const rect = L.rectangle([[north, west], [south, east]], {
           color,
-          weight: 3,
-          opacity: 0.55,
+          weight: 3 * zoomFactor,
+          opacity: 0.55 * zoomFactor,
           fillColor: color,
-          fillOpacity: 0.08,
-          interactive: true,
+          fillOpacity: 0.08 * zoomFactor,
+          interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
 
         // Tooltip on hover — Monopoly-style
@@ -709,6 +727,26 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         aria-label="回到我的位置"
       >
         🎯
+      </button>
+      {/* ── Grid toggle button ── */}
+      <button
+        className="real-map-grid-toggle-btn"
+        onClick={() => {
+          const map = mapRef.current
+          const newVal = !gridVisible
+          setGridVisible(newVal)
+          if (!newVal) {
+            // Hide: remove all grid rects
+            gridRectsRef.current.forEach(r => r.remove())
+            gridRectsRef.current = []
+          } else if (map && anchorRef.current) {
+            // Show: redraw grid
+            updateGrid(map, anchorRef.current)
+          }
+        }}
+        aria-label={gridVisible ? '隱藏網格' : '顯示網格'}
+      >
+        {gridVisible ? '▦' : '▢'}
       </button>
     </div>
   )
