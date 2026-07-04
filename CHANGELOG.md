@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.29.0 (2026-08-01)
+
+### Added
+- **🏠 地皮市集** — new section in Community tab (🏪 社群) showing all listed properties from other players. Filtered to exclude own properties. Each card shows cell name, price, and "購買" button.
+- **📌 上架/下架系統** — Properties tab (🏠 地產) now has "上架出售" (set a price and list on marketplace) and "下架" (remove from marketplace) buttons instead of a simple delete. "放棄" option still available for permanent deletion without refund.
+- **🔄 跨玩家地皮轉讓** — new `POST /api/properties/transfer` endpoint handles buying listed properties from other users: deducts steps from buyer, credits steps to seller, transfers ownership atomically.
+- **🗄️ `is_listed` + `list_price` columns** on `properties` table via migration `20260803_property_market.sql`. Also added UPDATE RLS policy and index.
+
+### Changed
+- Properties tab UI: three states per card — "unlisted" (show list button), "listing" (price input), "listed" (show price + unlist button)
+
 ## v0.28.0 (2026-08-01)
 
 ### Added
