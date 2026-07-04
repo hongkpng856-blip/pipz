@@ -1732,7 +1732,7 @@ export default function HomePage() {
                       {eggs.length > 0 && (
                         <>
                           <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
-                          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(52px, 1fr))', gap:6}}>
+                          <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:6}}>
                             {eggs.map(egg => {
                               const isHatching = eggHatchingId === egg.id
                               return (
@@ -1771,7 +1771,7 @@ export default function HomePage() {
                       {eggs.length === 0 && (
                         <>
                           <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
-                          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(52px, 1fr))', gap:6}}>
+                          <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:6}}>
                             {[1,2,3].map(i => (
                               <div key={`empty-egg-${i}`}
                                 className="pet-card"
