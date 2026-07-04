@@ -1701,10 +1701,11 @@ export default function HomePage() {
                 const displayEnergy = Math.round(totalSteps * energyMult)
                 return (
                 <>
-                  {/* ⚡ 你擁有的能量 */}
+                  {/* ⚡ 你擁有的能量 + 🥚 蛋 */}
                   <div className="section" style={{marginBottom:8, flexShrink:0}}>
                     <div className="section-header">
                       <span className="section-title">⚡ 你擁有的能量</span>
+                      {eggs.length > 0 && <span className="section-count">🥚 ×{eggs.length}</span>}
                     </div>
                     <div className="card" style={{padding:'10px 16px'}}>
                       <div style={{display:'flex', alignItems:'center', gap:12}}>
@@ -1727,8 +1728,49 @@ export default function HomePage() {
                           </div>
                         </div>
                       </div>
+                      {/* 🥚 蛋 row — compact, inside energy card */}
+                      {eggs.length > 0 && (
+                        <>
+                          <div style={{height:1, background:'rgba(255,255,255,0.06)', margin:'8px 0 6px'}} />
+                          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+                            {eggs.map(egg => {
+                              const isHatching = eggHatchingId === egg.id
+                              return (
+                                <div key={egg.id}
+                                  onClick={() => !isHatching && hatchEgg(egg)}
+                                  style={{
+                                    position:'relative', cursor: isHatching ? 'default' : 'pointer',
+                                    textAlign:'center',
+                                  }}>
+                                  {isHatching ? (
+                                    <div style={{fontSize:18, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                                  ) : (
+                                    <>
+                                      <div style={{fontSize:22, lineHeight:1}}>🥚</div>
+                                      <div style={{
+                                        fontSize:6, fontWeight:700, color:PC[egg.rarity],
+                                        background:`${PC[egg.rarity]}18`,
+                                        padding:'0 4px', borderRadius:3, marginTop:1,
+                                        whiteSpace:'nowrap',
+                                      }}>
+                                        {RARITY_LABELS[egg.rarity]}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )
+                            })}
+                            <div style={{fontSize:8, color:'#5a6d85', marginLeft:4}}>點擊孵化</div>
+                          </div>
+                        </>
+                      )}
+                      {eggs.length === 0 && (
+                        <div style={{fontSize:8, color:'#5a6d85', marginTop:4}}>
+                          行路有機會獲得 🥚
+                        </div>
+                      )}
                     </div>
-                    </div>
+                  </div>
 
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
                     <div className="section" style={{marginBottom:8, flexShrink:0}}>
@@ -1832,67 +1874,6 @@ export default function HomePage() {
                       </>
                     )}
 
-                    {/* 🥚 蛋 — 合併到寵物頁 */}
-                    <div className="section" style={{marginBottom:8, flexShrink:0}}>
-                      <div className="section-header">
-                        <span className="section-title">🥚 蛋</span>
-                        <span className="section-count">{eggs.length}粒</span>
-                      </div>
-                      {eggs.length > 0 ? (
-                        <div className="pet-grid" style={{marginBottom:8}}>
-                          {eggs.map(egg => {
-                            const isHatching = eggHatchingId === egg.id
-                            return (
-                              <div key={egg.id}
-                                className="pet-card"
-                                onClick={() => !isHatching && hatchEgg(egg)}
-                                style={{
-                                  borderColor: `${PC[egg.rarity]}44`,
-                                  cursor: isHatching ? 'default' : 'pointer',
-                                  padding: '12px 4px',
-                                }}>
-                                {isHatching ? (
-                                  <>
-                                    <div style={{fontSize:32, animation:'pulse 0.5s ease-in-out infinite', marginBottom:4}}>✨</div>
-                                    <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div style={{fontSize:32, marginBottom:4}}>🥚</div>
-                                    <div style={{
-                                      fontSize:7, fontWeight:700, color:PC[egg.rarity],
-                                      background: `${PC[egg.rarity]}18`,
-                                      display:'inline-block', padding:'1px 8px',
-                                    }}>
-                                      {RARITY_LABELS[egg.rarity]}
-                                    </div>
-                                    <div style={{fontSize:8, color:'#5a6d85', marginTop:2}}>
-                                      點擊孵化
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className="card empty-state" style={{marginBottom:8}}>
-                          <div style={{fontSize:36, marginBottom:8}}>🥚</div>
-                          <div style={{fontSize:11, color:'#5a6d85'}}>
-                            未有蛋，行路有機會獲得！
-                          </div>
-                        </div>
-                      )}
-                      <div className="locked-grid">
-                        {[1,2].map(i => (
-                          <div key={i} className="card locked-slot">
-                            <div className="locked-icon">🔒</div>
-                            <div className="locked-title">額外孵化器</div>
-                            <div className="locked-sub">即將開放</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </>
                 )
               })()}
