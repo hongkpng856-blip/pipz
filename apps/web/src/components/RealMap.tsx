@@ -170,11 +170,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Skip if grid is toggled off
     if (!gridVisibleRef.current) return
 
-    // Remove old grid + flags + highlight
+    // Remove old grid + highlight
     gridRectsRef.current.forEach(r => r.remove())
     gridRectsRef.current = []
-    flagMarkersRef.current.forEach(m => m.remove())
-    flagMarkersRef.current = []
     if (highlightCircleRef.current) {
       highlightCircleRef.current.remove()
       highlightCircleRef.current = null
@@ -227,22 +225,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
 
-        // ── Flag on owned cells ──
-        const isOwned = ownedCells?.has(`${row},${col}`)
-        if (isOwned) {
-          // Make owned cell more visible
-          rect.setStyle({ fillOpacity: 0.2 * zoomFactor, opacity: 0.8 * zoomFactor })
-          const flagIcon = L.divIcon({
-            className: 'pipz-flag-marker',
-            html: '<div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">🚩</div>',
-            iconSize: [14, 14],
-            iconAnchor: [7, 14],
-          })
-          const center = rect.getBounds().getCenter()
-          const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false }).addTo(map)
-          flagMarkersRef.current.push(flag)
-        }
-
         // ── Highlight user's current cell (on top of owned style) ──
         const isHighlightCell = highlightCellRowRef.current !== null &&
           row === highlightCellRowRef.current &&
@@ -293,7 +275,34 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         gridRectsRef.current.push(rect)
       }
     }
+    // Place flags on top of grid
   }
+
+  /** Place or update flag markers on all owned cells */
+  function placeAllFlags(map: L.Map) {
+    // Remove old flags
+    flagMarkersRef.current.forEach(m => m.remove())
+    flagMarkersRef.current = []
+    if (!ownedCells || !anchorRef.current || ownedCells.size === 0) return
+    const anchor = anchorRef.current
+    ownedCells.forEach(key => {
+      const parts = key.split(',')
+      const row = parseInt(parts[0])
+      const col = parseInt(parts[1])
+      const north = anchor.lat + row * CELL_SIZE_DEG
+      const west = anchor.lng + col * CELL_SIZE_DEG
+      const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
+      const flagIcon = L.divIcon({
+        className: 'pipz-flag-marker',
+        html: '<div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">🚩</div>',
+        iconSize: [14, 14],
+        iconAnchor: [7, 14],
+      })
+      const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false }).addTo(map)
+      flagMarkersRef.current.push(flag)
+    })
+  }
+
   /** Get grid cell name from lat/lng */
   function getCellInfo(lat: number, lng: number) {
     const anchor = anchorRef.current
@@ -660,6 +669,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         anchorRef.current = anchor
         gridInitializedRef.current = true
         updateGrid(map, anchor)
+        placeAllFlags(map)
       }
     })
 
@@ -731,7 +741,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       // Save to server (silent if already set by another player)
       setGridAnchor(anchor.lat, anchor.lng)
       // Draw grid immediately
-      if (map) updateGrid(map, anchor)
+      if (map) {
+        updateGrid(map, anchor)
+        placeAllFlags(map)
+      }
     }
 
     // ── Compute user's current cell highlight ──
@@ -845,13 +858,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   }, [position?.lat, position?.lng, mode, deviceHeading])
 
-  // ── Rebuild grid when owned cells change (e.g. after buying/selling) ──
+  // ── Refresh flags when owned cells change (e.g. after buying/selling) ──
   useEffect(() => {
-    if (mapRef.current && anchorRef.current) {
-      updateGrid(mapRef.current, anchorRef.current)
+    if (mapRef.current) {
+      placeAllFlags(mapRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ownedCells?.size])
+  }, [ownedCells])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {
