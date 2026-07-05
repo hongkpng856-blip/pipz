@@ -117,6 +117,21 @@ export default function HomePage() {
       }
     }
   }, [detailProperty?.id])
+  
+  // ── Batch-fetch location names for properties ──
+  const enrichWithLocation = useCallback(async (props: Property[]): Promise<Property[]> => {
+    const needsFetch = props.filter(p => !p.locationName)
+    if (needsFetch.length === 0) return props
+    // Fetch in parallel with a small concurrency limit (Nominatim rate)
+    const results = await Promise.all(
+      needsFetch.map(async (p) => {
+        const name = await fetchLocationName(p.anchorLat, p.anchorLng)
+        p.locationName = name
+        return p
+      })
+    )
+    return [...props]
+  }, [])
   // ── Buy confirmation modal (map grid) ──
   const [buyConfirm, setBuyConfirm] = useState<{row:number; col:number; anchorLat:number; anchorLng:number} | null>(null)
   // ── Alert modal (replaces toast) ──
@@ -402,9 +417,10 @@ export default function HomePage() {
     if (!user) return
     try {
       const props = await loadProperties(user.id)
-      setProperties(props)
+      await enrichWithLocation(props)
+      setProperties([...props])
     } catch {}
-  }, [user])
+  }, [user, enrichWithLocation])
 
   useEffect(() => {
     loadUserProperties()
@@ -413,9 +429,10 @@ export default function HomePage() {
   const loadListedProperties = useCallback(async () => {
     try {
       const props = await loadAllListedProperties()
-      setListedProperties(props)
+      await enrichWithLocation(props)
+      setListedProperties([...props])
     } catch {}
-  }, [])
+  }, [enrichWithLocation])
 
   useEffect(() => {
     loadListedProperties()
@@ -2107,6 +2124,9 @@ export default function HomePage() {
                                 <div style={{fontSize:24, marginBottom:2}}>{isOwn ? '✅' : '🏠'}</div>
                                 <div style={{fontSize:9, fontWeight:700, color: isOwn ? '#22c55e' : color,
                                   textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                                <div style={{fontSize:6, color:'#94a5b8', marginTop:1, lineHeight:1.2}}>
+                                  {prop.locationName ? prop.locationName.replace('📍 ','') : '🔍 載入地段…'}
+                                </div>
                                 <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
                                   {isOwn ? '👤 你擁有' : (prop.sellerName ? `👤 ${prop.sellerName}` : '由賣家出售')}
                                 </div>
@@ -2246,6 +2266,13 @@ export default function HomePage() {
                         <div style={{fontSize:24, marginBottom:2}}>🏠</div>
                         <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
                         <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
+                          {prop.locationName ? (
+                            <span style={{fontSize:6, color:'#94a5b8'}}>{prop.locationName.replace('📍 ','')}</span>
+                          ) : (
+                            <span style={{fontSize:6, color:'#3a4d65'}}>🔍 載入地段…</span>
+                          )}
+                        </div>
+                        <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>
                           ⚡ {formatSteps(prop.price)}
                         </div>
                         {prop.isListed ? (
