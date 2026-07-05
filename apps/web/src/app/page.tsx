@@ -116,9 +116,8 @@ export default function HomePage() {
   const ownedCells = useMemo(() => {
     const s = new Set<string>()
     properties.forEach(p => s.add(`${p.cellRow},${p.cellCol}`))
-    listedProperties.forEach(p => s.add(`${p.cellRow},${p.cellCol}`))
     return s
-  }, [properties, listedProperties])
+  }, [properties])
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
   const [detailLocName, setDetailLocName] = useState('')
   // When detailProperty changes, fetch its location name
