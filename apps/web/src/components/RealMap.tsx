@@ -112,6 +112,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const geocodeBusy = useRef(false)
   const flagGroupRef = useRef<L.LayerGroup | null>(null)
   const flagZoomHandlerRef = useRef<(() => void) | null>(null)
+  const walkingRef = useRef(false)
   // ── Smooth marker animation ──
   const animTargetRef = useRef({ lat: 22.3193, lng: 114.1694 })
   const animDisplayRef = useRef({ lat: 22.3193, lng: 114.1694 })
@@ -314,21 +315,22 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       group.addLayer(flag)
     })
 
-    // Zoom-based visibility: show only at zoom 17+ (close-up only)
+    // Zoom-based visibility: show only when walking AND zoom 17+
     const zoomHandler = () => {
       const z = map.getZoom()
       if (!group || !flagGroupRef.current) return
-      if (z >= 17 && !map.hasLayer(group)) {
+      const shouldShow = z >= 17 && walkingRef.current
+      if (shouldShow && !map.hasLayer(group)) {
         group.addTo(map)
-      } else if (z < 17 && map.hasLayer(group)) {
+      } else if (!shouldShow && map.hasLayer(group)) {
         map.removeLayer(group)
       }
     }
     map.on('zoomend', zoomHandler)
     flagZoomHandlerRef.current = zoomHandler
 
-    // Initial visibility
-    if (map.getZoom() >= 17) {
+    // Initial visibility — only add if walking AND zoom 17+
+    if (map.getZoom() >= 17 && walkingRef.current) {
       group.addTo(map)
     }
 
@@ -919,6 +921,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownedCells])
+
+  // ── Sync walkingRef and toggle flags when walking starts/stops ──
+  useEffect(() => {
+    walkingRef.current = walking
+    if (mapRef.current && flagGroupRef.current) {
+      const map = mapRef.current
+      if (walking && map.getZoom() >= 17 && !map.hasLayer(flagGroupRef.current)) {
+        flagGroupRef.current.addTo(map)
+      } else if (!walking && map.hasLayer(flagGroupRef.current)) {
+        map.removeLayer(flagGroupRef.current)
+      }
+    }
+  }, [walking])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {
