@@ -2067,11 +2067,7 @@ export default function HomePage() {
                                 padding:'10px 4px 8px', cursor:'pointer',
                                 opacity: isOwn ? 0.7 : 1,
                               }} onClick={() => {
-                                if (isOwn) {
-                                  showAlert('🏠 這是你嘅地皮，不能購買', 'error')
-                                } else {
                                   setDetailProperty(prop)
-                                }
                               }}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2,
                                   background: isOwn ? '#22c55e' : color,
