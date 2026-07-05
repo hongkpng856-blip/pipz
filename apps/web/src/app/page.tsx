@@ -2249,7 +2249,7 @@ export default function HomePage() {
                   <div className="empty-icon">🏠</div>
                   <div className="empty-text">未擁有任何地皮</div>
                   <div style={{fontSize:10, color:'#5a6d85', marginTop:4}}>
-                    喺地圖點擊格仔即可佔領（100 步）
+                    喺地圖點擊格仔即可佔領（25 步）
                   </div>
                 </div>
               ) : (
@@ -2774,7 +2774,7 @@ export default function HomePage() {
               <div style={{background:'#0f1729', borderRadius:12, padding:12, marginBottom:16}}>
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>價格</span>
-                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800}}>⚡100</span>
+                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800}}>⚡25</span>
                 </div>
                 <div style={{display:'flex', justifyContent:'space-between'}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>你嘅步數</span>
@@ -2795,11 +2795,11 @@ export default function HomePage() {
                     const res = await fetch('/api/properties', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: user.id, anchorLat, anchorLng, cellRow: row, cellCol: col, price: 100 }),
+                      body: JSON.stringify({ userId: user.id, anchorLat, anchorLng, cellRow: row, cellCol: col, price: 25 }),
                     })
                     const data = await res.json()
                     if (data.success) {
-                      const newSteps = totalSteps - 100
+                      const newSteps = totalSteps - 25
                       setTotalSteps(newSteps)
                       await updateTotalSteps(user.id, newSteps)
                       showAlert(`🏠 佔領地皮成功！ ${name}`)

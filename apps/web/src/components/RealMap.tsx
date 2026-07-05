@@ -23,9 +23,9 @@ const RC: Record<string, string> = {
 const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
 
 // ── Monopoly grid config ──
-const CELL_SIZE_DEG = 0.0006  // ~60m per cell (at HK latitude)
-const MAX_GRID_CELLS = 5000   // safety cap — skip rendering if viewport covers way more
-const GRID_PAD = 8            // extra cells beyond viewport for smooth panning
+const CELL_SIZE_DEG = 0.0003  // ~30m per cell (at HK latitude) — 4x smaller than original 0.0006
+const MAX_GRID_CELLS = 8000   // safety cap (increased for 4x smaller cells)
+const GRID_PAD = 10            // extra cells beyond viewport for smooth panning (slightly more for smaller cells)
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 
 function hexToRgba(hex: string, alpha: number): string {
@@ -313,7 +313,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
             }
           } else {
             el.innerHTML = `<div style="font-size:9px;color:#94a5b8;margin-bottom:4px;">佔領費用</div>
-              <div style="font-size:20px;font-weight:900;color:#fbbf24;">100 <span style="font-size:11px;font-weight:600;">步</span></div>
+              <div style="font-size:20px;font-weight:900;color:#fbbf24;">25 <span style="font-size:11px;font-weight:600;">步</span></div>
               <button onclick="window.__pipzBuyCell(${cellRow},${cellCol},${anchor.lat},${anchor.lng})" style="margin-top:6px;padding:4px 20px;border:none;border-radius:6px;background:${color};color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">💪 佔領此地</button>`
           }
         })
