@@ -85,6 +85,8 @@ export default function HomePage() {
   const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
+  // ── Buy confirmation modal (map grid) ──
+  const [buyConfirm, setBuyConfirm] = useState<{row:number; col:number; anchorLat:number; anchorLng:number} | null>(null)
   // ── Toast ──
   const [toast, setToast] = useState<{message:string; type:'success'|'error'; id:number} | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -395,23 +397,8 @@ export default function HomePage() {
     if (!user) return
     ;(window as any).__pipzBuyCell = async (row: number, col: number, anchorLat: number, anchorLng: number) => {
       if (totalSteps < 100) { showToast('❌ 步驟不足！需要 100 步', 'error'); return }
-      try {
-        const res = await fetch('/api/properties', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, anchorLat, anchorLng, cellRow: row, cellCol: col, price: 100 }),
-        })
-        const data = await res.json()
-        if (data.success) {
-          const newSteps = totalSteps - 100
-          setTotalSteps(newSteps)
-          await updateTotalSteps(user.id, newSteps)
-          showToast(`🏠 佔領地皮成功！ ${row},${col}`)
-          loadUserProperties()
-        } else {
-          showToast(`❌ ${data.error || '佔領失敗'}`, 'error')
-        }
-      } catch { showToast('❌ 網絡錯誤', 'error') }
+      // Show confirmation popup instead of buying directly
+      setBuyConfirm({row, col, anchorLat, anchorLng})
     }
     ;(window as any).__pipzManageProperty = (_row: number, _col: number) => {
       setTab('properties')
@@ -2062,62 +2049,40 @@ export default function HomePage() {
                     ) : (
                       <div className="pet-grid" style={{gap:8}}>
                         {listedProperties
-                          .filter(p => p.userId !== user?.id)
                           .map(prop => {
                             const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
                             const zoneIdx = ((prop.cellRow * 7 + prop.cellCol * 13) % 6 + 6) % 6
                             const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                             const color = colors[zoneIdx]
                             const sellPrice = prop.listPrice ?? prop.price
+                            const isOwn = user && prop.userId === user.id
                             return (
-                              <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', cursor:'pointer'}} onClick={() => setDetailProperty(prop)}>
-                                <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
-                                <div style={{fontSize:24, marginBottom:2}}>🏠</div>
-                                <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
-                                <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>{prop.sellerName ? `👤 ${prop.sellerName}` : '由賣家出售'}</div>
-                                <div style={{fontSize:8, fontWeight:700, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(sellPrice)}</div>
-                                <button onClick={async (e) => {
-                                  e.stopPropagation()
-                                  if (!user) { showToast('❌ 需要登入', 'error'); return }
-                                  if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
-                                  if (!confirm(`確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`)) return
-                                  try {
-                                    const res = await fetch('/api/properties/transfer', {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ propertyId: prop.id, buyerId: user.id }),
-                                    })
-                                    const data = await res.json()
-                                    if (data.success) {
-                                      const newSteps = totalSteps - sellPrice
-                                      setTotalSteps(newSteps)
-                                      await updateTotalSteps(user.id, newSteps)
-                                      showToast(`🏠 成功購買 ${name}！`)
-                                      loadListedProperties()
-                                      loadUserProperties()
-                                      setDetailProperty(null)
-                                    } else {
-                                      showToast(`❌ ${data.error || '購買失敗'}`, 'error')
-                                    }
-                                  } catch { showToast('❌ 網絡錯誤', 'error') }
-                                }} style={{
-                                  marginTop:6, padding:'2px 14px', border:'1px solid #a855f744',
-                                  borderRadius:6, background:'rgba(168,85,247,0.15)',
-                                  color:'#a855f7', fontSize:8, fontWeight:700, cursor:'pointer',
-                                  fontFamily:'inherit',
-                                }}>
-                                 購買
-                                </button>
+                              <div key={prop.id} className="pet-card" style={{
+                                borderColor: isOwn ? '#22c55e44' : `${color}44`,
+                                padding:'10px 4px 8px', cursor:'pointer',
+                                opacity: isOwn ? 0.7 : 1,
+                              }} onClick={() => {
+                                if (isOwn) {
+                                  showToast('🏠 這是你嘅地皮，不能購買', 'error')
+                                } else {
+                                  setDetailProperty(prop)
+                                }
+                              }}>
+                                <div style={{position:'absolute', top:0, left:0, right:0, height:2,
+                                  background: isOwn ? '#22c55e' : color,
+                                  borderRadius:'14px 14px 0 0'}} />
+                                <div style={{fontSize:24, marginBottom:2}}>{isOwn ? '✅' : '🏠'}</div>
+                                <div style={{fontSize:9, fontWeight:700, color: isOwn ? '#22c55e' : color,
+                                  textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                                <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
+                                  {isOwn ? '👤 你擁有' : (prop.sellerName ? `👤 ${prop.sellerName}` : '由賣家出售')}
+                                </div>
+                                <div style={{fontSize:8, fontWeight:700, color:'#f59e0b', marginTop:1}}>
+                                  ⚡{formatSteps(sellPrice)}
+                                </div>
                               </div>
                             )
                           })}
-                        {listedProperties.filter(p => p.userId !== user?.id).length === 0 && (
-                          <div className="card" style={{padding:'14px 16px', textAlign:'center'}}>
-                            <div style={{fontSize:11, color:'#5a6d85'}}>
-                              全部係你嘅地皮 🎉
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -2663,6 +2628,79 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ════ Buy Confirmation Modal (from map grid) ════ */}
+      {buyConfirm && (() => {
+        const {row, col, anchorLat, anchorLng} = buyConfirm
+        const name = `第${row+1}區 ${col+1}號`
+        const zoneIdx = ((row * 7 + col * 13) % 6 + 6) % 6
+        const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+        const color = colors[zoneIdx]
+        return (
+          <div className="fixed-modal-layer" style={{
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+            padding:16,
+          }} onClick={() => setBuyConfirm(null)}>
+            <div style={{
+              background:'#141b2d', border:`2px solid ${color}66`,
+              borderRadius:24, padding:24, maxWidth:320, width:'100%',
+            }} onClick={e => e.stopPropagation()}>
+              <div style={{textAlign:'center', marginBottom:16}}>
+                <div style={{fontSize:36, marginBottom:4}}>🏠</div>
+                <div style={{fontSize:14, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                <div style={{fontSize:9, color:'#5a6d85', marginTop:4}}>確認購買地皮</div>
+              </div>
+              <div style={{background:'#0f1729', borderRadius:12, padding:12, marginBottom:16}}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>價格</span>
+                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800}}>⚡100</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>你嘅步數</span>
+                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600}}>👣 {formatSteps(totalSteps)}</span>
+                </div>
+              </div>
+              <div style={{display:'flex', gap:8}}>
+                <button onClick={() => setBuyConfirm(null)} style={{
+                  flex:1, padding:'10px 0', border:'1px solid #2a3a5a', borderRadius:14,
+                  background:'transparent', color:'#5a6d85',
+                  fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                  取消
+                </button>
+                <button onClick={async () => {
+                  if (!user) { showToast('❌ 需要登入', 'error'); setBuyConfirm(null); return }
+                  try {
+                    const res = await fetch('/api/properties', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userId: user.id, anchorLat, anchorLng, cellRow: row, cellCol: col, price: 100 }),
+                    })
+                    const data = await res.json()
+                    if (data.success) {
+                      const newSteps = totalSteps - 100
+                      setTotalSteps(newSteps)
+                      await updateTotalSteps(user.id, newSteps)
+                      showToast(`🏠 佔領地皮成功！ ${name}`)
+                      loadUserProperties()
+                    } else {
+                      showToast(`❌ ${data.error || '佔領失敗'}`, 'error')
+                    }
+                  } catch { showToast('❌ 網絡錯誤', 'error') }
+                  setBuyConfirm(null)
+                }} style={{
+                  flex:1, padding:'10px 0', border:'none', borderRadius:14,
+                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+                  color:'white', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                  ✅ 確認佔領
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ════ Property Detail Modal ════ */}
       <ModalPortal>
       {detailProperty && (() => {
@@ -2673,6 +2711,7 @@ export default function HomePage() {
         const color = colors[zoneIdx]
         const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
         const sellPrice = p.listPrice ?? p.price
+        const isOwn = user && p.userId === user.id
         return (
           <div className="fixed-modal-layer" style={{
             display:'flex', alignItems:'center', justifyContent:'center',
@@ -2713,37 +2752,49 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Buy button */}
-              <button onClick={async () => {
-                if (!user) { showToast('❌ 需要登入', 'error'); return }
-                if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
-                try {
-                  const res = await fetch('/api/properties/transfer', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ propertyId: p.id, buyerId: user.id }),
-                  })
-                  const data = await res.json()
-                  if (data.success) {
-                    const newSteps = totalSteps - sellPrice
-                    setTotalSteps(newSteps)
-                    await updateTotalSteps(user.id, newSteps)
-                    showToast(`🏠 成功購買 ${name}！`)
-                    loadListedProperties()
-                    loadUserProperties()
-                    setDetailProperty(null)
-                  } else {
-                    showToast(`❌ ${data.error || '購買失敗'}`, 'error')
-                  }
-                } catch { showToast('❌ 網絡錯誤', 'error') }
-              }} style={{
-                width:'100%', padding:'10px 0',
-                border:'1px solid #a855f744', borderRadius:14,
-                background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
-                color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-              }}>
-                ⚡ 購買地皮
-              </button>
+              {/* Buy button or own-property notice */}
+              {isOwn ? (
+                <div style={{
+                  textAlign:'center', padding:'10px 0',
+                  background:'rgba(34,197,94,0.08)', borderRadius:14,
+                  border:'1px solid #22c55e33',
+                  color:'#22c55e', fontSize:12, fontWeight:700,
+                }}>
+                  ✅ 這是你嘅地皮
+                </div>
+              ) : (
+                <button onClick={async () => {
+                  if (!user) { showToast('❌ 需要登入', 'error'); return }
+                  if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
+                  if (!confirm(`確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`)) return
+                  try {
+                    const res = await fetch('/api/properties/transfer', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ propertyId: p.id, buyerId: user.id }),
+                    })
+                    const data = await res.json()
+                    if (data.success) {
+                      const newSteps = totalSteps - sellPrice
+                      setTotalSteps(newSteps)
+                      await updateTotalSteps(user.id, newSteps)
+                      showToast(`🏠 成功購買 ${name}！`)
+                      loadListedProperties()
+                      loadUserProperties()
+                      setDetailProperty(null)
+                    } else {
+                      showToast(`❌ ${data.error || '購買失敗'}`, 'error')
+                    }
+                  } catch { showToast('❌ 網絡錯誤', 'error') }
+                }} style={{
+                  width:'100%', padding:'10px 0',
+                  border:'1px solid #a855f744', borderRadius:14,
+                  background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
+                  color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                }}>
+                  ⚡ 購買地皮
+                </button>
+              )}
 
               {/* Cancel */}
               <button onClick={() => setDetailProperty(null)} style={{
