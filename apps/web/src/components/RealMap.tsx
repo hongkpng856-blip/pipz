@@ -12,6 +12,7 @@ interface Props {
   deviceHeading?: number | null
   compassActive?: boolean
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
+  userId?: string | null
 }
 
 const RC: Record<string, string> = {
@@ -59,7 +60,7 @@ export interface RealMapHandle {
   recenterMap: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -81,6 +82,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const [gridVisible, setGridVisible] = useState(true)
   const gridVisibleRef = useRef(true)
   gridVisibleRef.current = gridVisible
+  const userIdRef = useRef(userId ?? null)
+  userIdRef.current = userId ?? null
 
   /** Zoom-based grid fade: grid gradually disappears when zoomed out */
   function getGridZoomFactor(zoom: number): number {
@@ -286,7 +289,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     })
     // Check ownership + show buy/manage
     if (anchor) {
-      fetch(`/api/properties?anchor_lat=${anchor.lat}&anchor_lng=${anchor.lng}&cell_row=${cellRow}&cell_col=${cellCol}`)
+      const uid = userIdRef.current
+      fetch(`/api/properties?anchor_lat=${anchor.lat}&anchor_lng=${anchor.lng}&cell_row=${cellRow}&cell_col=${cellCol}${uid ? `&user_id=${uid}` : ''}`)
         .then(r => r.json())
         .then(data => {
           const el = document.getElementById(`pipz-own-${key}`)
