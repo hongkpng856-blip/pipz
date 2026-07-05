@@ -55,6 +55,16 @@ interface EggItem {
 
 type Tab = 'map' | 'pets' | 'community' | 'inventory' | 'properties'
 
+// ── Zone colours: cells in same 10×10 block share the same colour ──
+const REGION_SIZE = 10
+const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+const ZONE_NAMES = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+function getZoneIdx(row: number, col: number): number {
+  const r = Math.floor(row / REGION_SIZE)
+  const c = Math.floor(col / REGION_SIZE)
+  return ((r * 7 + c * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+}
+
 export default function HomePage() {
   const [steps, setSteps] = useState(0)
   const [totalSteps, setTotalSteps] = useState(0)
@@ -2115,7 +2125,7 @@ export default function HomePage() {
                         {listedProperties
                           .map(prop => {
                             const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
-                            const zoneIdx = ((prop.cellRow * 7 + prop.cellCol * 13) % 6 + 6) % 6
+                            const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                             const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                             const color = colors[zoneIdx]
                             const sellPrice = prop.listPrice ?? prop.price
@@ -2266,7 +2276,7 @@ export default function HomePage() {
                 <div className="pet-grid" style={{gap:8}}>
                   {properties.map(prop => {
                     const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
-                    const zoneIdx = ((prop.cellRow * 7 + prop.cellCol * 13) % 6 + 6) % 6
+                    const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                     const color = colors[zoneIdx]
                     return (
@@ -2763,7 +2773,7 @@ export default function HomePage() {
       {buyConfirm && (() => {
         const {row, col, anchorLat, anchorLng} = buyConfirm
         const name = `第${row+1}區 ${col+1}號`
-        const zoneIdx = ((row * 7 + col * 13) % 6 + 6) % 6
+        const zoneIdx = getZoneIdx(row, col)
         const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
         const color = colors[zoneIdx]
         return (
@@ -2837,7 +2847,7 @@ export default function HomePage() {
       {detailProperty && (() => {
         const p = detailProperty
         const name = `第${p.cellRow+1}區 ${p.cellCol+1}號`
-        const zoneIdx = ((p.cellRow * 7 + p.cellCol * 13) % 6 + 6) % 6
+        const zoneIdx = getZoneIdx(p.cellRow, p.cellCol)
         const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
         const color = colors[zoneIdx]
         const lighter = color + '66'

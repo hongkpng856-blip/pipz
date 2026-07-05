@@ -27,6 +27,15 @@ const CELL_SIZE_DEG = 0.0003  // ~30m per cell (at HK latitude) — 4x smaller t
 const MAX_GRID_CELLS = 8000   // safety cap (increased for 4x smaller cells)
 const GRID_PAD = 10            // extra cells beyond viewport for smooth panning (slightly more for smaller cells)
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+const ZONE_NAMES = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+const REGION_SIZE = 10  // cells per region — 10×10 blocks share the same zone colour
+
+/** Get zone index from grid position — cells in same 10×10 block get same colour */
+function getZoneIdx(row: number, col: number): number {
+  const r = Math.floor(row / REGION_SIZE)
+  const c = Math.floor(col / REGION_SIZE)
+  return ((r * 7 + c * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+}
 
 function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16)
@@ -193,7 +202,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         const south = north + CELL_SIZE_DEG
         const west = anchor.lng + col * CELL_SIZE_DEG
         const east = west + CELL_SIZE_DEG
-        const zoneIdx = ((row * 7 + col * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+        const zoneIdx = getZoneIdx(row, col)
         const color = ZONE_COLORS[zoneIdx]
         const name = `第${row+1}區 ${col+1}號`
 
@@ -232,7 +241,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (!anchor) return null
     const row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)
     const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
-    const zoneIdx = ((row * 7 + col * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+    const zoneIdx = getZoneIdx(row, col)
     return {
       row,
       col,
