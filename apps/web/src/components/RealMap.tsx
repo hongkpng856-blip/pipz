@@ -297,8 +297,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           if (!el) return
           if (data.owner) {
             if (data.isMine) {
-              el.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:600;margin-bottom:4px;">✅ 你擁有此地</div>
-                <button onclick="window.__pipzManageProperty(${cellRow},${cellCol})" style="padding:4px 16px;border:1px solid ${color};border-radius:6px;background:transparent;color:${color};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 管理</button>`
+              const dateStr = data.purchasedAt ? new Date(data.purchasedAt).toLocaleDateString('zh-HK', { year:'numeric', month:'2-digit', day:'2-digit' }) : ''
+              el.innerHTML = `<div style="text-align:center;">
+                <div style="font-size:11px;color:#22c55e;font-weight:600;margin-bottom:4px;">✅ 你擁有此地</div>
+                <div style="display:flex;justify-content:center;gap:12px;font-size:9px;color:#94a5b8;margin-bottom:6px;">
+                  <span>💎 ${data.price} 步</span>
+                  ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+                </div>
+                <button onclick="window.__pipzManageProperty(${cellRow},${cellCol})" style="padding:4px 16px;border:1px solid ${color};border-radius:6px;background:transparent;color:${color};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 管理</button>
+              </div>`
             } else {
               const ownerName = data.ownerName || '未知玩家'
               const propName = data.name ? `<div style="font-size:12px;font-weight:700;color:#e8e0d0;margin-bottom:4px;">${data.name}</div>` : ''
