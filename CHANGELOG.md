@@ -7,8 +7,10 @@
 - **📍 Map-to-property navigation** — Property Detail Modal now has a "🗺️ 在地圖上顯示" button that switches to Map tab and flies to the cell location (zoom 18).
 - **🖱️ Properties tab card click** — clicking any property card in the Properties tab now opens the Property Detail Modal (with manage options). Action buttons use `stopPropagation` to prevent interference.
 - **🏪 Community tab own property** — clicking own property in Community tab now opens Property Detail Modal (with map link) instead of an error alert.
+- **🏡 Real-world district display** — Property Detail Modal now shows the actual district name (e.g. `📍 屯門區 · 蝴蝶邨`) with gradient text on a "地段" header, giving a luxury/prestige feel. Fetched lazily from `/api/geocode` when modal opens, cached per coordinate.
 
 ### Changed
+- **Property Detail Modal redesign**: now features a top gradient accent bar, "地段" prestige header with gradient district name, and a serif property-name badge. Full Monopoly-deed style layout.
 - **RealMap**: client-side Nominatim fetch replaced with server-side `/api/geocode` call
 - **RealMapHandle**: added `flyToCell(anchorLat, anchorLng, cellRow, cellCol)` method
 - **Property Detail Modal**: buy button hidden for own properties; own properties show "✅ 這是你嘅地皮" + map link; other properties show buy button + map link
