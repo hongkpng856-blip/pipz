@@ -112,6 +112,7 @@ export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [showProperties, setShowProperties] = useState(false)
   const [listingPropId, setListingPropId] = useState<number | null>(null)
+  const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
 
   // Build owned cells map: "anchorLat,anchorLng,row,col" — each cell with its own anchor
