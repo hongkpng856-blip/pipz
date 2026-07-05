@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.30.0 (2026-07-05)
+
+### Added
+- **🆕 Alert Modal system** — all user feedback messages now shown as centered popup modals with coloured borders (green for success ✅, red for error ❌, purple for info ℹ️). User must tap "關閉" to dismiss. Replaces the old Toast (bottom auto-dismiss bar).
+- **🆕 Confirm Modal system** — replaces native browser `confirm()` dialogs with styled modal (⚠️ message + 取消/確定). Used for: abandoning property, buying from detail modal.
+- **🛒 Community tab: show all listed properties** — now shows every listed property including the current user's own. Own properties are visually distinct: ✅ icon, green accent, semi-transparent, "👤 你擁有" label. Clicking shows alert "🏠 這是你嘅地皮，不能購買".
+
+### Changed
+- **🏠 Map buy flow**: clicking "佔領此地" now shows a **Buy Confirmation Modal** (cell name, price, steps balance + 確認/取消 buttons). No more direct purchase.
+- **📌 Properties tab**: list/unlist/abandon actions now use `showAlert` modal instead of DevTools log or Toast.
+- **🔄 Community buy flow**: "購買" button now opens Confirm Modal before executing transfer.
+- `loadAllListedProperties()` no longer joins `profiles` table (profiles RLS blocks cross-user reads).
+
+### Fixed
+- **🐛 Own properties not showing in Community tab**: `profiles!inner(username)` join silently dropped rows when seller lacked profile. Changed to `select('*')` without join.
+- **🐛 Red error on buy at app start**: `__pipzBuyCell` had `totalSteps < 100` guard that fired before steps loaded. Removed client-side guard — server validates step balance.
+- **🐛 Community tab not refreshing after list/unlist**: added `loadListedProperties()` calls after all Properties tab actions, and on community tab switch.
+
 ## v0.29.0 (2026-08-01)
 
 ### Added

@@ -409,7 +409,7 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 - **POST** `/api/properties/transfer` with `{propertyId, buyerId, sellerId, price}` — atomic transfer: deduct steps from buyer → credit seller → transfer ownership
 
 ### Global Callbacks (on window)
-- `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup button → POST to `/api/properties`
+- `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup button → opens **Buy Confirmation Modal** (shows cell name, price, steps balance + 確認/取消 buttons). No longer has client-side steps check (server validates).
 - `window.__pipzManageProperty(row, col)` — called from Leaflet popup "管理" button → switches to `tab='properties'`
 
 ### Supabase Table
@@ -438,15 +438,60 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 
 ### Property Marketplace Section (v0.29.0+)
 - Section title: "🏠 地皮市集" + count
-- Shows all **listed properties from other players** (is_listed=true, user_id != current user)
+- Shows **all listed properties from all players** (including the current user's own)
 - Each card shows:
   - Zone colour header
   - Cell name: `第${row+1}區 ${col+1}號`
   - List price: ⚡{list_price} 步
-  - Seller info + purchase date
-  - 🟢 **購買** button → confirm → calls `POST /api/properties/transfer`
+  - Seller name (if available) or "由賣家出售"
+  - **Own property styling**: ✅ icon, green border, semi-transparent (opacity 0.7), "👤 你擁有" label
+  - Clicking an own property → Alert "🏠 這是你嘅地皮，不能購買"
+  - Clicking another's property → **Property Detail Modal** with buy option
 - Empty state: "地皮市集暫時未有地皮出售 — 等玩家上架更多地皮！"
 - Loaded on tab switch via `loadAllListedProperties()` from `supabase-db.ts` (client-side, uses RLS-read)
+
+---
+
+## 7. App-wide Modal System (v0.30.0+)
+
+Three reusable modals defined directly in `page.tsx`, rendered near the bottom of the component tree.
+
+### 7.1 Alert Modal
+- **State:** `alertModal: { message: string; type: 'success' | 'error' | 'info' } | null`
+- **Trigger:** `showAlert(msg, type)` — replaces Toast and DevTools log
+- **UI:**
+  - Centered overlay with backdrop blur
+  - Emoji: ✅ (success), ❌ (error), ℹ️ (info)
+  - Message text + "關閉" button
+  - User must actively dismiss (no auto-dismiss)
+- **Usage:** All success/error feedback after actions (buy, sell, list, unlist, transfer)
+
+### 7.2 Confirm Modal
+- **State:** `confirmModal: { message: string; onConfirm: () => void; onCancel?: () => void } | null`
+- **Trigger:** `setConfirmModal({ message, onConfirm })`
+- **UI:** ⚠️ icon + message + 取消/確定 buttons
+- **Usage:** Replaces native `confirm()` for:
+  - Abandoning property ("確定放棄此地？")
+  - Buying from Property Detail Modal ("確定用 ⚡X 購買 X？")
+
+### 7.3 Buy Confirmation Modal (map grid)
+- **State:** `buyConfirm: { row, col, anchorLat, anchorLng } | null`
+- **Trigger:** Clicking "💪 佔領此地" in the Leaflet grid cell popup
+- **UI:**
+  - Zone colour header + cell name
+  - Price: ⚡100
+  - Current steps: 👣 {steps}
+  - 取消 / ✅ 確認佔領 buttons
+- **On confirm:** POST to `/api/properties`, deducts steps, refreshes property list
+
+### 7.4 Property Detail Modal
+- **State:** `detailProperty: Property | null`
+- **Trigger:** Clicking a non-owned property card in Community tab
+- **UI:**
+  - Zone colour bar + cell name + zone name
+  - Seller info, price, coordinates, listing date
+  - If own property: "✅ 這是你嘅地皮" badge (no buy button)
+  - If other's property: "⚡ 購買地皮" button → Confirm Modal → transfer
 
 ### PetDetailModal Market Mode
 - **isMarket={isMarketView && !isOwnPet}**: Shows seller asking price + ⚡ **購買** button

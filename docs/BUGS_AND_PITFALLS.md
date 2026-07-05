@@ -203,6 +203,15 @@
 | **Fix** | Add explicit `CREATE POLICY "Users can update own properties" ON properties FOR UPDATE USING (auth.uid() = user_id)` — grants UPDATE on user's own rows only. |
 | **Prevention** | Any new mutation API must be checked against existing RLS policies. Adding a PATCH or PUT endpoint requires a corresponding UPDATE policy in Supabase. |
 
+### 5.8 profiles LEFT JOIN RLS Block
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (properties invisible in Community tab) |
+| **Root Cause** | `loadAllListedProperties()` used `.select('*, profiles(username)')` to get seller usernames. The `profiles` table RLS policy (`auth.uid() = id`) blocks reading OTHER users' profile rows. In Supabase, LEFT JOIN + RLS on the joined table can silently drop the **entire parent row** — not just the joined fields. |
+| **Fix** | Remove the `profiles` join entirely: `.select('*')`. Seller names are not shown; cards display "由賣家出售" instead. |
+| **Prevention** | When using Supabase client-side joins (`db()` with RLS), understand that RLS on the joined table can filter out rows from the parent query. Use the service role API route pattern (`SUPABASE_SERVICE_ROLE_KEY`) when cross-user data access is required. |
+
 ### 5.2 Pet Skills Lost on Hard Refresh
 
 | Field | Value |
