@@ -87,7 +87,7 @@ export default function HomePage() {
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
   // ── Toast ──
   const [toast, setToast] = useState<{message:string; type:'success'|'error'; id:number} | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout>>()
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const showToast = (m: string, type: 'success'|'error' = 'success') => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast({message:m, type, id:Date.now()})
