@@ -553,6 +553,7 @@ export interface Property {
   name: string | null
   isListed: boolean
   listPrice: number | null
+  sellerName?: string | null
 }
 
 function mapDbProp(d: any): Property {
@@ -568,6 +569,7 @@ function mapDbProp(d: any): Property {
     name: d.name,
     isListed: d.is_listed ?? false,
     listPrice: d.list_price ?? null,
+    sellerName: d.profiles?.username ?? null,
   }
 }
 
@@ -631,7 +633,7 @@ export async function loadAllListedProperties(): Promise<Property[]> {
   const supabase = db()
   const { data } = await supabase
     .from('properties')
-    .select('*')
+    .select('*, profiles!inner(username)')
     .eq('is_listed', true)
     .order('list_price', { ascending: true })
   return ((data as any[]) ?? []).map(mapDbProp)

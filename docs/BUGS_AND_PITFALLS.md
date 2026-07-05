@@ -185,6 +185,24 @@
 | **Fix** | `/api/market` buy endpoint uses `SUPABASE_SERVICE_ROLE_KEY` with a **stored procedure** or **transaction block** to atomically check balance, deduct, and transfer ownership. |
 | **Prevention** | Any "deduct + transfer" operation MUST be atomic. Use stored procedures or Supabase RPC with transaction isolation. |
 
+### 5.6 Property Transfer Atomicity
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (steps lost or double-spent) |
+| **Root Cause** | If the transfer flow deducts steps from buyer BEFORE crediting seller (non-atomic), a crash between the two operations permanently loses the buyer's steps. |
+| **Fix** | `POST /api/properties/transfer` uses Supabase RPC in a single transaction: check buyer balance → deduct → credit seller → transfer property → unlist — all in one `rpc()` call. See `apps/web/src/app/api/properties/transfer/route.ts`. |
+| **Prevention** | Any two-step financial transaction MUST be wrapped in a database transaction or RPC. Never use separate client-side API calls for deduct + credit. |
+
+### 5.7 UPDATE RLS Must Be Explicit
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (cannot list/unlist) |
+| **Root Cause** | The original `properties` table had only `SELECT` and `INSERT` RLS policies. The new `PATCH` endpoint for listing/unlisting silently failed because users could not UPDATE their own rows. |
+| **Fix** | Add explicit `CREATE POLICY "Users can update own properties" ON properties FOR UPDATE USING (auth.uid() = user_id)` — grants UPDATE on user's own rows only. |
+| **Prevention** | Any new mutation API must be checked against existing RLS policies. Adding a PATCH or PUT endpoint requires a corresponding UPDATE policy in Supabase. |
+
 ### 5.2 Pet Skills Lost on Hard Refresh
 
 | Field | Value |

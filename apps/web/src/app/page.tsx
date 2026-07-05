@@ -84,6 +84,15 @@ export default function HomePage() {
   const [listingPropId, setListingPropId] = useState<number | null>(null)
   const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
+  const [detailProperty, setDetailProperty] = useState<Property | null>(null)
+  // ── Toast ──
+  const [toast, setToast] = useState<{message:string; type:'success'|'error'; id:number} | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>()
+  const showToast = (m: string, type: 'success'|'error' = 'success') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    setToast({message:m, type, id:Date.now()})
+    toastTimer.current = setTimeout(() => setToast(null), 3000)
+  }
   // ── Roguelike: pet equipment ──
   const [petEquipment, setPetEquipment] = useState<{equipmentId: string; slot: string}[]>([])
   // ── Roguelike: inventory ──
@@ -385,7 +394,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return
     ;(window as any).__pipzBuyCell = async (row: number, col: number, anchorLat: number, anchorLng: number) => {
-      if (totalSteps < 100) { logMsg('❌ 步驟不足！需要 100 步'); return }
+      if (totalSteps < 100) { showToast('❌ 步驟不足！需要 100 步', 'error'); return }
       try {
         const res = await fetch('/api/properties', {
           method: 'POST',
@@ -397,12 +406,12 @@ export default function HomePage() {
           const newSteps = totalSteps - 100
           setTotalSteps(newSteps)
           await updateTotalSteps(user.id, newSteps)
-          logMsg(`🏠 佔領地皮成功！ ${row},${col}`)
+          showToast(`🏠 佔領地皮成功！ ${row},${col}`)
           loadUserProperties()
         } else {
-          logMsg(`❌ ${data.error || '佔領失敗'}`)
+          showToast(`❌ ${data.error || '佔領失敗'}`, 'error')
         }
-      } catch { logMsg('❌ 網絡錯誤') }
+      } catch { showToast('❌ 網絡錯誤', 'error') }
     }
     ;(window as any).__pipzManageProperty = (_row: number, _col: number) => {
       setTab('properties')
@@ -2061,15 +2070,16 @@ export default function HomePage() {
                             const color = colors[zoneIdx]
                             const sellPrice = prop.listPrice ?? prop.price
                             return (
-                              <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px'}}>
+                              <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', cursor:'pointer'}} onClick={() => setDetailProperty(prop)}>
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
                                 <div style={{fontSize:24, marginBottom:2}}>🏠</div>
                                 <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
-                                <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>由賣家出售</div>
+                                <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>{prop.sellerName ? `👤 ${prop.sellerName}` : '由賣家出售'}</div>
                                 <div style={{fontSize:8, fontWeight:700, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(sellPrice)}</div>
-                                <button onClick={async () => {
-                                  if (!user) { logMsg('❌ 需要登入'); return }
-                                  if (totalSteps < sellPrice) { logMsg(`❌ 步驟不足！需要 ${sellPrice} 步`); return }
+                                <button onClick={async (e) => {
+                                  e.stopPropagation()
+                                  if (!user) { showToast('❌ 需要登入', 'error'); return }
+                                  if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
                                   if (!confirm(`確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`)) return
                                   try {
                                     const res = await fetch('/api/properties/transfer', {
@@ -2082,13 +2092,14 @@ export default function HomePage() {
                                       const newSteps = totalSteps - sellPrice
                                       setTotalSteps(newSteps)
                                       await updateTotalSteps(user.id, newSteps)
-                                      logMsg(`🏠 成功購買 ${name}！`)
+                                      showToast(`🏠 成功購買 ${name}！`)
                                       loadListedProperties()
                                       loadUserProperties()
+                                      setDetailProperty(null)
                                     } else {
-                                      logMsg(`❌ ${data.error || '購買失敗'}`)
+                                      showToast(`❌ ${data.error || '購買失敗'}`, 'error')
                                     }
-                                  } catch { logMsg('❌ 網絡錯誤') }
+                                  } catch { showToast('❌ 網絡錯誤', 'error') }
                                 }} style={{
                                   marginTop:6, padding:'2px 14px', border:'1px solid #a855f744',
                                   borderRadius:6, background:'rgba(168,85,247,0.15)',
@@ -2627,6 +2638,122 @@ export default function HomePage() {
                   🥚 去寵物頁孵化
                 </button>
               </div>
+            </div>
+          </div>
+        )
+      })()}
+      </ModalPortal>
+
+      {/* ════ Toast ════ */}
+      {toast && (
+        <div style={{
+          position:'fixed', bottom:80, left:16, right:16, zIndex:99999,
+          display:'flex', justifyContent:'center', pointerEvents:'none',
+        }}>
+          <div key={toast.id} style={{
+            background: toast.type === 'success' ? '#065f46cc' : '#7f1d1dcc',
+            backdropFilter:'blur(8px)', border:`1px solid ${toast.type === 'success' ? '#34d39944' : '#f8717144'}`,
+            borderRadius:14, padding:'10px 20px', maxWidth:320,
+            color:'#f0f4f8', fontSize:13, fontWeight:600, textAlign:'center',
+            animation:'fadeUp 0.25s ease-out',
+            pointerEvents:'auto',
+          }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
+
+      {/* ════ Property Detail Modal ════ */}
+      <ModalPortal>
+      {detailProperty && (() => {
+        const p = detailProperty
+        const name = `第${p.cellRow+1}區 ${p.cellCol+1}號`
+        const zoneIdx = ((p.cellRow * 7 + p.cellCol * 13) % 6 + 6) % 6
+        const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+        const color = colors[zoneIdx]
+        const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+        const sellPrice = p.listPrice ?? p.price
+        return (
+          <div className="fixed-modal-layer" style={{
+            display:'flex', alignItems:'center', justifyContent:'center',
+            background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+            padding:16,
+          }} onClick={() => setDetailProperty(null)}>
+            <div style={{
+              background:'#141b2d', border:`2px solid ${color}66`,
+              borderRadius:24, padding:24, maxWidth:320, width:'100%',
+            }} onClick={e => e.stopPropagation()}>
+              {/* Zone colour bar */}
+              <div style={{height:4, background:color, borderRadius:'14px 14px 0 0', margin:'-24px -24px 16px'}} />
+
+              {/* Header */}
+              <div style={{textAlign:'center', marginBottom:16}}>
+                <div style={{fontSize:32, marginBottom:4}}>🏠</div>
+                <div style={{fontSize:14, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
+                <div style={{fontSize:9, color:'#5a6d85', marginTop:2}}>{zoneNames[zoneIdx]}</div>
+              </div>
+
+              {/* Details */}
+              <div style={{background:'#0f1729', borderRadius:12, padding:12, marginBottom:16}}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>賣家</span>
+                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600}}>{p.sellerName ? `👤 ${p.sellerName}` : '匿名賣家'}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>價格</span>
+                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800}}>⚡{formatSteps(sellPrice)}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>座標</span>
+                  <span style={{fontSize:9, color:'#94a5b8'}}>{p.anchorLat.toFixed(4)}, {p.anchorLng.toFixed(4)}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between'}}>
+                  <span style={{fontSize:9, color:'#5a6d85'}}>上架日</span>
+                  <span style={{fontSize:9, color:'#94a5b8'}}>{new Date(p.purchasedAt).toLocaleDateString('zh-HK')}</span>
+                </div>
+              </div>
+
+              {/* Buy button */}
+              <button onClick={async () => {
+                if (!user) { showToast('❌ 需要登入', 'error'); return }
+                if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
+                try {
+                  const res = await fetch('/api/properties/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ propertyId: p.id, buyerId: user.id }),
+                  })
+                  const data = await res.json()
+                  if (data.success) {
+                    const newSteps = totalSteps - sellPrice
+                    setTotalSteps(newSteps)
+                    await updateTotalSteps(user.id, newSteps)
+                    showToast(`🏠 成功購買 ${name}！`)
+                    loadListedProperties()
+                    loadUserProperties()
+                    setDetailProperty(null)
+                  } else {
+                    showToast(`❌ ${data.error || '購買失敗'}`, 'error')
+                  }
+                } catch { showToast('❌ 網絡錯誤', 'error') }
+              }} style={{
+                width:'100%', padding:'10px 0',
+                border:'1px solid #a855f744', borderRadius:14,
+                background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
+                color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+              }}>
+                ⚡ 購買地皮
+              </button>
+
+              {/* Cancel */}
+              <button onClick={() => setDetailProperty(null)} style={{
+                width:'100%', marginTop:8, padding:'6px 0',
+                border:'1px solid #2a3a5a', borderRadius:14,
+                background:'transparent', color:'#5a6d85',
+                fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+              }}>
+                關閉
+              </button>
             </div>
           </div>
         )

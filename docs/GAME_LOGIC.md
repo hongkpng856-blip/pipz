@@ -650,10 +650,20 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Claimed cells are tied to player ID (`properties.user_id`)
 - **Ownership check**: `GET /api/properties?anchor_lat=...&anchor_lng=...&cell_row=...&cell_col=...` returns `{owner: bool, isMine: bool}`
 - **Buy flow**: POST `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price: 100}` → deducts steps → inserts row in `properties` table
-- **Sell flow**: `DELETE /api/properties?id=X&user_id=Y` in Properties tab → removes property row
-- **Properties tab** (`🏠 地產`): lists all owned properties with name, price, purchase date, and sell button
-- Client functions in `supabase-db.ts`: `loadProperties(userId)`, `getPropertyOwner(anchorLat, anchorLng, cellRow, cellCol)`, `buyProperty(...)`, `sellProperty(propertyId)`
-- Table: `properties` (see DATA_MODEL.md for schema). API route uses `SUPABASE_SERVICE_ROLE_KEY`; client-side uses RLS.
+
+### 地皮市集 (v0.29.0+) — Community Marketplace
+- **List flow** (Properties tab): set `is_listed=true` + `list_price` via PATCH `/api/properties` → property appears in Community tab marketplace
+- **Unlist flow**: set `is_listed=false` via PATCH `/api/properties` → property removed from marketplace
+- **Permanent deletion**: DELETE `/api/properties` → removes row entirely (no refund)
+- **Transfer flow** (buy from other player):
+  1. Buyer clicks **購買** on a listed property in Community tab
+  2. `POST /api/properties/transfer` with `{propertyId, buyerId, sellerId, price}`
+  3. Server atomically: deducts `price` steps from buyer → credits `price` steps to seller → sets `user_id` to buyer → sets `is_listed=false`
+  4. Buyer's property list refreshes, seller gets steps credited
+- **Marketplace view** (Community tab): shows all `is_listed=true` properties where `user_id != current user`
+- **Properties tab** (`🏠 地產`): three states per card — unlisted (default), listing (price input open), listed (on market)
+- Client functions in `supabase-db.ts`: `loadProperties(userId)`, `getPropertyOwner(...)`, `buyProperty(...)`, `sellProperty(propertyId)`, `loadAllListedProperties()`, `listProperty(id, price)`, `unlistProperty(id)`
+- Table: `properties` (see DATA_MODEL.md for schema). API route uses `SUPABASE_SERVICE_ROLE_KEY` for transfer; client-side uses RLS for read/update.
 
 ### Technical
 - Grid is rendered using **`L.Rectangle` per-cell vectors** — each cell is a native Leaflet vector layer added to the map

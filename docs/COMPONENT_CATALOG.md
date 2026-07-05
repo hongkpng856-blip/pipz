@@ -391,24 +391,29 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
   - Price: ⚡ {price} 步
   - Purchased date
   - 🟢 "你擁有" badge
-  - Red sell button: "出售" → confirm → `sellProperty(id)` → refresh list
+  - **Three states per card:**
+    - **Unlisted (default):** 🟢 上架出售 (opens price input) + 🔴 放棄 (permanent deletion, no refund)
+    - **Listing (price input):** 💰 `{price}` input + ✅ 確認 / ❌ 取消
+    - **Listed (on market):** 🟡 已上架 @ ⚡{price} + 🔴 下架 (removes from marketplace) + 🔴 放棄
 - Empty state: "未有地產 — 點擊地圖購買地皮！"
 
 ### Data
 - `loadUserProperties` (useCallback): calls `loadProperties(user.id)` → sets `properties` state
-- Loaded on mount when user is logged in, and after buy/sell actions
+- Loaded on mount when user is logged in, and after buy/sell/list/unlist/transfer actions
 
 ### API
 - **GET** `/api/properties?anchor_lat=X&anchor_lng=Y&cell_row=R&cell_col=C` — check ownership (used by RealMap popup)
 - **POST** `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price}` — buy cell (deducts steps)
-- **DELETE** `/api/properties?id=X&user_id=Y` — sell property (removes row, called from supabase-db.ts)
+- **PATCH** `/api/properties` with `{id, is_listed: bool, list_price?: number}` — list/unlist property on marketplace
+- **DELETE** `/api/properties?id=X&user_id=Y` — delete property (permanent, no refund)
+- **POST** `/api/properties/transfer` with `{propertyId, buyerId, sellerId, price}` — atomic transfer: deduct steps from buyer → credit seller → transfer ownership
 
 ### Global Callbacks (on window)
 - `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup button → POST to `/api/properties`
 - `window.__pipzManageProperty(row, col)` — called from Leaflet popup "管理" button → switches to `tab='properties'`
 
 ### Supabase Table
-- `properties`: see DATA_MODEL.md for full schema
+- `properties`: see DATA_MODEL.md for full schema. Additional marketplace columns: `is_listed` (boolean), `list_price` (integer). Migration: `20260803_property_market.sql`.
 
 ---
 
@@ -430,6 +435,18 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 - Each card: PixelPetCanvas (size 2.2), Lv, ⚡price
 - Click → opens PetDetailModal in **market mode** with Buy option
 - Empty state: "市集暫時未有寵物出售"
+
+### Property Marketplace Section (v0.29.0+)
+- Section title: "🏠 地皮市集" + count
+- Shows all **listed properties from other players** (is_listed=true, user_id != current user)
+- Each card shows:
+  - Zone colour header
+  - Cell name: `第${row+1}區 ${col+1}號`
+  - List price: ⚡{list_price} 步
+  - Seller info + purchase date
+  - 🟢 **購買** button → confirm → calls `POST /api/properties/transfer`
+- Empty state: "地皮市集暫時未有地皮出售 — 等玩家上架更多地皮！"
+- Loaded on tab switch via `loadAllListedProperties()` from `supabase-db.ts` (client-side, uses RLS-read)
 
 ### PetDetailModal Market Mode
 - **isMarket={isMarketView && !isOwnPet}**: Shows seller asking price + ⚡ **購買** button

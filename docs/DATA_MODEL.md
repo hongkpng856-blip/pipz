@@ -157,11 +157,16 @@ See `supabase-schema.sql` for full DDL. For `properties` DDL see `supabase/migra
 | `cell_row` | INTEGER | Grid cell row offset |
 | `cell_col` | INTEGER | Grid cell column offset |
 | `price` | INTEGER (default 100) | Cost in steps |
+| `is_listed` | BOOLEAN (default false) | Listed on marketplace (v0.29.0) |
+| `list_price` | INTEGER | Selling price on marketplace (v0.29.0) |
 | `purchased_at` | TIMESTAMPTZ (default now()) | When the property was bought |
+
+**Indexes:**
+- `idx_properties_is_listed` on `(is_listed)` — fast marketplace queries (v0.29.0)
 
 **Constraints:**
 - UNIQUE `(anchor_lat, anchor_lng, cell_row, cell_col)` — one owner per cell
-- RLS enabled: users can read their own rows, service role (API route) can read/write all
+- RLS: users can read their own rows, UPDATE their own `is_listed`/`list_price`, service role (API route) can read/write all
 
 Key constraints:
 - `pets.rarity` CHECK: `('common','uncommon','rare','epic','legendary')`
