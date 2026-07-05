@@ -96,6 +96,26 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const geocodeCache = useRef<Map<string, { label: string; detail: string; full: string }>>(new Map())
   const geocodeQueue = useRef<Array<{ key: string; lat: number; lng: number; resolve: (v: { label: string; detail: string; full: string }) => void }>>([])
   const geocodeBusy = useRef(false)
+  // ── Smooth marker animation ──
+  const animTargetRef = useRef({ lat: 22.3193, lng: 114.1694 })
+  const animDisplayRef = useRef({ lat: 22.3193, lng: 114.1694 })
+  const animStartedRef = useRef(false)
+  function animateMarker() {
+    const target = animTargetRef.current
+    const display = animDisplayRef.current
+    const dx = target.lat - display.lat
+    const dy = target.lng - display.lng
+    const dist = Math.sqrt(dx * dx + dy * dy)
+    if (dist > 0.00001) {
+      // Ease: cover ~25% of remaining distance per frame (60fps → smooth)
+      const factor = 0.25
+      display.lat += dx * factor
+      display.lng += dy * factor
+      userMarkerRef.current?.setLatLng([display.lat, display.lng])
+      accCircleRef.current?.setLatLng([display.lat, display.lng])
+    }
+    requestAnimationFrame(animateMarker)
+  }
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
   const VEHICLE_TRAIL_KEY = 'pipz_vehicle_trail'
 
@@ -646,9 +666,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (map) updateGrid(map, anchor)
     }
 
-    userMarkerRef.current.setLatLng([lat, lng])
-    accCircleRef.current?.setLatLng([lat, lng])
+    // ── Smooth position animation target ──
+    animTargetRef.current = { lat, lng }
+    if (!lastKnownPosRef.current) {
+      // First fix: set directly (no animation from nowhere)
+      animDisplayRef.current = { lat, lng }
+      userMarkerRef.current.setLatLng([lat, lng])
+      accCircleRef.current?.setLatLng([lat, lng])
+    }
     lastKnownPosRef.current = { lat, lng }
+    if (!animStartedRef.current) {
+      animStartedRef.current = true
+      animateMarker()
+    }
 
     // ── Initial zoom: show all trails first, then fly to current (one-time) ──
     if (!initialZoomDoneRef.current) {

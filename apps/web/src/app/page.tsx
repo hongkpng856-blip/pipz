@@ -32,6 +32,7 @@ async function fetchLocationName(lat: number, lng: number): Promise<string> {
 }
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty, loadAllListedProperties, listProperty, unlistProperty } from '../lib/supabase-db'
+import { PositionTracker } from '../lib/position-tracker'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
 
@@ -172,6 +173,7 @@ export default function HomePage() {
   const wid = useRef<number|null>(null)
   const last = useRef<{lat:number;lng:number}|null>(null)
   const gpsWarmup = useRef(0) // skip first N readings for GPS stabilization
+  const posTrackerRef = useRef(new PositionTracker()) // Kalman filter for smooth position
   const gpsLastTime = useRef(0) // timestamp of last valid GPS reading
   const loadedUser = useRef<string|null>(null)
   const syncTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
@@ -627,20 +629,14 @@ export default function HomePage() {
 
     wid.current = navigator.geolocation.watchPosition(
       pos => {
-        // ── GPS warmup: first 5 readings (regardless of accuracy) stabilise sensor ──
+        // ── GPS warmup: first 5 readings stabilise sensor ──
         gpsWarmup.current++
-        if (gpsWarmup.current <= 5) {
-          // Always set displacement reference (even if accuracy is high) so
-          // step counting can begin immediately after warmup
-          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          return
-        }
+        if (gpsWarmup.current <= 5) return
 
-        // ── Skip inaccurate readings after warmup ──
+        // ── Skip inaccurate readings ──
         if (pos.coords.accuracy > 50) return
 
         // ── GPS compass heading: fallback when DeviceOrientation unavailable ──
-        // Light EMA smoothing (factor 0.5) to dampen sensor jitter
         const rawHeading = pos.coords.heading
         if (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0) {
           let diff = rawHeading - compassHeadingRef.current
@@ -654,55 +650,23 @@ export default function HomePage() {
         }
 
         // ── Determine movement mode from speed ──
-        // Default to 'walk' when speed unavailable (iPhone often returns null)
         let mode: 'walk' | 'vehicle' | 'stationary' = 'walk'
         if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
           mode = pos.coords.speed >= 2.0 ? 'vehicle' : pos.coords.speed >= 0.5 ? 'walk' : 'stationary'
         }
         setMovementMode(mode)
 
-        // ── Position: always update map ──
-        const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, heading: pos.coords.heading ?? undefined }
-        setMapPos(newPos)
-
-        // ── First post-warmup reading: set reference point, don't count steps ──
-        if (!last.current) {
-          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-          return
-        }
-
-        // ── Step counting: only when actually moving ──
-        // Speed check: < 0.5 m/s (~1.8 km/h) means not walking ──
-        if (pos.coords.speed !== null && pos.coords.speed !== undefined && pos.coords.speed < 0.5) return
-        // Time gate: ignore updates faster than 3s apart (GPS noise) ──
-        const now = Date.now()
-        if (gpsLastTime.current > 0 && now - gpsLastTime.current < 3000) return
-        gpsLastTime.current = now
-
-        if (last.current) {
-          const d = haversine(last.current.lat, last.current.lng, pos.coords.latitude, pos.coords.longitude)
-          // ── Min 3m displacement to act ──
-          if (d > 3) {
-            if (mode === 'walk') {
-              // Priority 1: accelerometer step count (accurate, real-time)
-              const accSteps = stepDetectRef.current.totalSteps - stepDetectRef.current.lastGpsSteps
-              stepDetectRef.current.lastGpsSteps = stepDetectRef.current.totalSteps
-              if (accSteps > 0) {
-                addSt(accSteps)
-              } else {
-                // Priority 2: GPS displacement as fallback (no accelerometer data)
-                // ~1.4 real steps per meter (avg adult stride 0.7m)
-                const ns = Math.max(1, Math.floor(d * 1.4))
-                addSt(ns)
-              }
-              last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-            } else {
-              // Vehicle mode: still update heading reference but don't count steps
-              last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-            }
-          }
-        } else {
-          last.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        // ── Route through PositionTracker (Kalman filter + anomaly gate) ──
+        const tracker = posTrackerRef.current
+        const filtered = tracker.update({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          heading: pos.coords.heading ?? undefined,
+          speed: pos.coords.speed ?? undefined,
+        })
+        if (filtered) {
+          setMapPos({ lat: filtered.lat, lng: filtered.lng, heading: filtered.heading })
         }
       },
       () => { setWalking(false); setPetAnim('idle') },
