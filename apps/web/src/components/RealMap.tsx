@@ -296,7 +296,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
               el.innerHTML = `<div style="font-size:11px;color:#22c55e;font-weight:600;margin-bottom:4px;">✅ 你擁有此地</div>
                 <button onclick="window.__pipzManageProperty(${cellRow},${cellCol})" style="padding:4px 16px;border:1px solid ${color};border-radius:6px;background:transparent;color:${color};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;">📋 管理</button>`
             } else {
-              el.innerHTML = `<div style="font-size:11px;color:#f59e0b;font-weight:600;">👤 已被佔領</div>`
+              const ownerName = data.ownerName || '未知玩家'
+              const propName = data.name ? `<div style="font-size:12px;font-weight:700;color:#e8e0d0;margin-bottom:4px;">${data.name}</div>` : ''
+              const dateStr = data.purchasedAt ? new Date(data.purchasedAt).toLocaleDateString('zh-HK', { year:'numeric', month:'2-digit', day:'2-digit' }) : ''
+              el.innerHTML = `<div style="text-align:center;">
+                <div style="font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:6px;">👤 ${ownerName}</div>
+                ${propName}
+                <div style="display:flex;justify-content:center;gap:12px;font-size:9px;color:#94a5b8;">
+                  <span>💎 ${data.price} 步</span>
+                  ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+                </div>
+              </div>`
             }
           } else {
             el.innerHTML = `<div style="font-size:9px;color:#94a5b8;margin-bottom:4px;">佔領費用</div>

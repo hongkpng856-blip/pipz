@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabase
     .from('properties')
-    .select('user_id, price')
+    .select('user_id, price, purchased_at, name')
     .eq('anchor_lat', anchorLat)
     .eq('anchor_lng', anchorLng)
     .eq('cell_row', cellRow)
@@ -31,10 +31,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ owner: false })
   }
 
+  // Fetch owner's display name (service role bypasses RLS)
+  let ownerName: string | null = null
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', data.user_id)
+    .single()
+  if (profile?.username) ownerName = profile.username
+
   return NextResponse.json({
     owner: true,
     isMine: userId ? data.user_id === userId : false,
     price: data.price,
+    ownerName,
+    name: data.name,
+    purchasedAt: data.purchased_at,
   })
 }
 
