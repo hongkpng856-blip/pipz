@@ -97,6 +97,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   userIdRef.current = userId ?? null
   const highlightCellRowRef = useRef<number | null>(null)
   const highlightCellColRef = useRef<number | null>(null)
+  const highlightCircleRef = useRef<L.CircleMarker | null>(null)
+  const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
 
   /** Zoom-based grid fade: grid gradually disappears when zoomed out */
   function getGridZoomFactor(zoom: number): number {
@@ -168,11 +170,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Skip if grid is toggled off
     if (!gridVisibleRef.current) return
 
-    // Remove old grid + flags
+    // Remove old grid + flags + highlight
     gridRectsRef.current.forEach(r => r.remove())
     gridRectsRef.current = []
     flagMarkersRef.current.forEach(m => m.remove())
     flagMarkersRef.current = []
+    if (highlightCircleRef.current) {
+      highlightCircleRef.current.remove()
+      highlightCircleRef.current = null
+    }
 
     const zoom = map.getZoom()
     const zoomFactor = getGridZoomFactor(zoom)
@@ -221,23 +227,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
 
-        // ── Highlight user's current cell ──
-        const isHighlightCell = highlightCellRowRef.current !== null &&
-          row === highlightCellRowRef.current &&
-          col === highlightCellColRef.current
-        if (isHighlightCell) {
-          rect.setStyle({
-            fillOpacity: 0.7 * zoomFactor,
-            opacity: 1,
-            weight: 6 * zoomFactor,
-            color: '#ffd700',
-          })
-          requestAnimationFrame(() => {
-            const el = rect.getElement()
-            if (el) el.classList.add('pipz-highlight-cell')
-          })
-        }
-
         // ── Flag on owned cells ──
         const isOwned = ownedCells?.has(`${row},${col}`)
         if (isOwned) {
@@ -252,6 +241,37 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           const center = rect.getBounds().getCenter()
           const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false }).addTo(map)
           flagMarkersRef.current.push(flag)
+        }
+
+        // ── Highlight user's current cell (on top of owned style) ──
+        const isHighlightCell = highlightCellRowRef.current !== null &&
+          row === highlightCellRowRef.current &&
+          col === highlightCellColRef.current
+        if (isHighlightCell) {
+          rect.setStyle({
+            fillOpacity: 0.7 * zoomFactor,
+            opacity: 1,
+            weight: 6 * zoomFactor,
+            color: '#ffd700',
+          })
+          // Add pulsing circle marker at cell center
+          const center2 = rect.getBounds().getCenter()
+          if (!highlightCircleRef.current) {
+            const circle = L.circleMarker(center2, {
+              radius: 8 * zoomFactor,
+              color: '#ffd700',
+              fillColor: '#ffd700',
+              fillOpacity: 0.4,
+              weight: 2,
+              opacity: 0.8,
+              interactive: false,
+              className: 'pipz-highlight-circle',
+            }).addTo(map)
+            highlightCircleRef.current = circle
+          } else {
+            highlightCircleRef.current.setLatLng(center2)
+            highlightCircleRef.current.setRadius(8 * zoomFactor)
+          }
         }
 
         // Tooltip on hover — Monopoly-style
@@ -824,6 +844,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       saveTrailToStorage()
     }
   }, [position?.lat, position?.lng, mode, deviceHeading])
+
+  // ── Rebuild grid when owned cells change (e.g. after buying/selling) ──
+  useEffect(() => {
+    if (mapRef.current && anchorRef.current) {
+      updateGrid(mapRef.current, anchorRef.current)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ownedCells?.size])
 
   // ── Clear trail when walking stops ──
   useEffect(() => {
