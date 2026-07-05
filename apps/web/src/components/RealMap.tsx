@@ -95,8 +95,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   gridVisibleRef.current = gridVisible
   const userIdRef = useRef(userId ?? null)
   userIdRef.current = userId ?? null
-  const highlightRegionRowRef = useRef<number | null>(null)
-  const highlightRegionColRef = useRef<number | null>(null)
+  const highlightCellRowRef = useRef<number | null>(null)
+  const highlightCellColRef = useRef<number | null>(null)
 
   /** Zoom-based grid fade: grid gradually disappears when zoomed out */
   function getGridZoomFactor(zoom: number): number {
@@ -221,17 +221,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
 
-        // ── Zone highlight: user's current 10×10 region glows ──
-        const cellRegionRow = Math.floor(row / REGION_SIZE)
-        const cellRegionCol = Math.floor(col / REGION_SIZE)
-        const isHighlightZone = highlightRegionRowRef.current !== null &&
-          cellRegionRow === highlightRegionRowRef.current &&
-          cellRegionCol === highlightRegionColRef.current
-        if (isHighlightZone) {
+        // ── Highlight user's current cell ──
+        const isHighlightCell = highlightCellRowRef.current !== null &&
+          row === highlightCellRowRef.current &&
+          col === highlightCellColRef.current
+        if (isHighlightCell) {
           rect.setStyle({
-            fillOpacity: 0.25 * zoomFactor,
-            opacity: 0.9 * zoomFactor,
-            weight: 5 * zoomFactor,
+            fillOpacity: 0.7 * zoomFactor,
+            opacity: 1,
+            weight: 6 * zoomFactor,
+            color: '#ffd700',
+          })
+          requestAnimationFrame(() => {
+            const el = rect.getElement()
+            if (el) el.classList.add('pipz-highlight-cell')
           })
         }
 
@@ -711,16 +714,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (map) updateGrid(map, anchor)
     }
 
-    // ── Compute user's current zone for highlight ──
-    const zoneAnchor = anchorRef.current
-    if (zoneAnchor) {
-      const uRow = Math.floor((lat - zoneAnchor.lat) / CELL_SIZE_DEG)
-      const uCol = Math.floor((lng - zoneAnchor.lng) / CELL_SIZE_DEG)
-      const zRow = Math.floor(uRow / REGION_SIZE)
-      const zCol = Math.floor(uCol / REGION_SIZE)
-      if (zRow !== highlightRegionRowRef.current || zCol !== highlightRegionColRef.current) {
-        highlightRegionRowRef.current = zRow
-        highlightRegionColRef.current = zCol
+    // ── Compute user's current cell highlight ──
+    const cellAnchor = anchorRef.current
+    if (cellAnchor) {
+      const uRow = Math.floor((lat - cellAnchor.lat) / CELL_SIZE_DEG)
+      const uCol = Math.floor((lng - cellAnchor.lng) / CELL_SIZE_DEG)
+      if (uRow !== highlightCellRowRef.current || uCol !== highlightCellColRef.current) {
+        highlightCellRowRef.current = uRow
+        highlightCellColRef.current = uCol
         if (mapRef.current && anchorRef.current) updateGrid(mapRef.current, anchorRef.current)
       }
     }
