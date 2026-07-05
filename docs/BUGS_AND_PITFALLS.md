@@ -478,6 +478,39 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 ---
 
 | 5.9 | **Geocode server proxy response format mismatch** | All | Client `processGeocodeQueue` parsed `data?.address` from `/api/geocode` response, but server proxy returns `{label, detail, full}` format — not raw Nominatim JSON. Caused `addr = {}` always → no district/suburb → "📍 未知地區" for every cell. **Fix:** Read `data.label` / `data.detail` / `data.full` directly from server response. |
-|---|---|---|---|
+||---|---|---|---|
 
-*Last updated: 2026-07-31. Add new entries at the top when you discover new pitfalls.*
+---
+
+## 11. Map Grid Flag & Highlight Bugs
+
+### 11.1 Flags Not Appearing After Purchase
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical |
+| **Symptom** | After buying a property, the 🚩 flag does not appear on the map. Refreshing the page shows it. |
+| **Root Cause** | Flag code was inside `updateGrid()`, which only runs on map `moveend`/`zoomend`. After buying, `ownedCells` prop updates but `updateGrid()` is not called. Also `updateGrid()` clears all flags at the start, so even existing flags get wiped. |
+| **Fix** | Extract flags into standalone `placeAllFlags(map)` function. Managed by `useEffect([ownedCells])` — fires on every owned cell change. |
+
+### 11.2 Highlight Overwritten by Owned Cell Style
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | Standing on an owned cell: golden highlight is invisible, only owned-cell dim fill shows. |
+| **Root Cause** | `isHighlightCell` `rect.setStyle()` ran BEFORE `isOwned` `rect.setStyle()`. Owned style overwrote highlight's `fillOpacity: 0.7` -> `0.2` and golden border. |
+| **Fix** | Reverse order: owned check runs first, highlight runs second. Last `setStyle()` wins. |
+
+### 11.3 Grid Not Rebuilt on `ownedCells` Change
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | After selling/unlisting a property, flag remains on map. |
+| **Root Cause** | No `useEffect` watching `ownedCells`. Grid only rebuilds on `moveend`/`zoomend`. |
+| **Fix** | Add `useEffect(() => { placeAllFlags(mapRef.current) }, [ownedCells])`. |
+
+---
+
+*Last updated: 2026-08-03. Add new entries at the top when you discover new pitfalls.*
