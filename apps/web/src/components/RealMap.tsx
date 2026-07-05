@@ -234,15 +234,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       )
       if (!res.ok) throw new Error(`Nominatim ${res.status}`)
       const data = await res.json()
-      const addr = data?.address || {}
-      const district = addr.district || addr.town || addr.city || addr.county || ''
-      const suburb = addr.suburb || addr.village || addr.neighbourhood || ''
-      const road = addr.road || addr.highway || addr.pedestrian || ''
-      const parts = [district, suburb].filter(Boolean)
-      const label = parts.length > 0 ? `📍 ${parts.join(' · ')}` : UKNOWN_AREA.label
-      const detail = road ? `📍 ${road}` : ''
-      const full = [label, detail].filter(Boolean).join('\n')
-      const entry = { label, detail, full }
+      const entry = { label: data.label, detail: data.detail, full: data.full }
       geocodeCache.current.set(item.key, entry)
       item.resolve(entry)
     } catch {
