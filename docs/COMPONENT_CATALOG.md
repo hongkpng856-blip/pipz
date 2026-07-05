@@ -85,6 +85,8 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
   - **No pet logged in**: shows 🥚 emoji with rarity tint
   - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
+- **Owned cell flags** (v0.34.0+): `ownedCells` prop (`Set<string>` with `"row,col"` keys) passed from `page.tsx` — each owned cell in the grid overlay renders a 🚩 `L.divIcon` at cell center. Non-interactive, sized 14×14px with drop-shadow.
+- **Zone-based grid coloring** (v0.34.0+): grid cells share colour in 10×10 region blocks via `getZoneIdx(row, col)` — deterministic hash `(Math.floor(row/10)*7 + Math.floor(col/10)*13) % 6`. Six named zones: 紫晶區, 翠綠區, 琥珀區, 碧藍區, 赤紅區, 湛藍區.
 |- **Path trail** (v0.18.1+): **7-day colour per-day polyline** system via `trailByDay` ref (`Map<number, LatLng[]>`):
 |  - Each day of week gets an independent `L.polyline` with its own colour from `DAY_COLORS`
 |  - Day mapping: `0(日)=#8b5cf6` `1(一)=#06b6d4` `2(二)=#22c55e` `3(三)=#f59e0b` `4(四)=#ef4444` `5(五)=#ec4899` `6(六)=#3b82f6`

@@ -643,8 +643,26 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 
 ### Cell Properties
 - Each cell = one Monopoly-style property
-- Cell size: ~60m × 60m (0.0006° × 0.0006°)
-- Cells have alternating zone colors to distinguish regions
+- Cell size: ~30m × 30m (0.0003° × 0.0003°, v0.33.0+)
+- Cells have **zone colors based on 10×10 region blocks** (v0.34.0+) to distinguish districts on the map. Every cell in the same 10×10 block (300m×300m) shares the same colour — creates visible district-sized colour regions instead of random per-cell colours.
+
+### Zone Color Formula (v0.34.0+)
+- `REGION_SIZE = 10` cells per region block
+- Zone index: `(Math.floor(row / 10) * 7 + Math.floor(col / 10) * 13) % 6`
+- Six zone colours: `#8b5cf6` (紫晶區), `#22c55e` (翠綠區), `#f59e0b` (琥珀區), `#06b6d4` (碧藍區), `#ef4444` (赤紅區), `#3b82f6` (湛藍區)
+- Same function (`getZoneIdx`) used across map grid, properties tab, community tab, and buy confirmation modal
+- Zone names displayed in Property Detail Modal prestige header and buy confirm popup
+
+### Occupied Cell Flags (v0.34.0+)
+- Owned grid cells on the map show a **🚩 flag marker** at the cell center
+- Flag is a non-interactive `L.divIcon` with emoji + drop-shadow, sized 14×14px
+- `ownedCells: Set<string>` prop computed via `useMemo` in `page.tsx`:
+  - Combines row,col keys from both `properties` and `listedProperties`
+  - `s.add(\`${p.cellRow},${p.cellCol}\`)` for each property
+  - Passed to `RealMap` component
+- RealMap's `updateGrid()` checks `ownedCells?.has(\`${row},${col}\`)` in O(1) per cell
+- Old flags cleared (`flagMarkersRef`) and rebuilt on every grid view change
+- Owned cells also get **enhanced fill** (`fillOpacity: 0.2`, `opacity: 0.8`) — more visible than unowned cells (default `fillOpacity: 0.06`, `opacity: 0.4`)
 
 ### Occupation / 地皮買賣系統
 - Click any unowned grid cell → Monopoly popup shows **💪 佔領此地** button
@@ -672,7 +690,7 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Cells are created dynamically: `updateGrid(map, anchor)` calculates visible cell range from `map.getBounds()` with `GRID_PAD` (8 cells) padding, then creates `L.Rectangle` for each cell
 - Cell identity: `row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)`, `col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)`
 - Naming: `第${row+1}區 ${col+1}號`
-- Zone colours: deterministic hash `(row * 7 + col * 13) % ZONE_COLORS.length` — same cell always gets same colour
+- Zone colours (v0.34.0+): deterministic hash by **region block** — `(Math.floor(row / 10) * 7 + Math.floor(col / 10) * 13) % ZONE_COLORS.length`. Same 10×10 block always gets same colour; neighbouring blocks get different colours.
 - Old cells are removed (`r.remove()`) and recreated on every view change — safe because L.Rectangle creation is fast (< 1ms per cell at ≤ 5000 cells)
 - Grid anchor stored in `anchorRef` on the React component
 - Grid persists on server — survives localStorage clears and browser changes

@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.34.0 (2026-08-03)
+
+### Added
+- **🚩 Owned cell flags on map** — each grid cell owned by the user now shows a 🚩 flag marker (L.divIcon with pixel-style flag emoji, drop-shadow). Flags are non-interactive overlays placed at the center of each owned cell rectangle.
+- **🗺️ Zone-based grid coloring** — cells in the same 10×10 block (300m×300m) now share the same zone colour, creating visible district-sized colour regions on the map. Replaces previous per-cell random hash.
+- **🏘️ Six named zones** — 紫晶區 (purple), 翠綠區 (green), 琥珀區 (amber), 碧藍區 (cyan), 赤紅區 (red), 湛藍區 (blue). Zone names appear in Property Detail Modal headers and buy confirmation popups.
+- **🔮 `ownedCells` Set** — new `useMemo` in `page.tsx` computes `Set<"row,col">` from both `properties` and `listedProperties`, passed as prop to `RealMap` for flag rendering.
+
+### Changed
+- **🎨 Grid zone colour formula** — from `(row * 7 + col * 13) % N` (per-cell hash) to `(Math.floor(row/10) * 7 + Math.floor(col/10) * 13) % N` (10×10 region block). Same deterministic hash but operates on region coordinates instead of individual cell coordinates.
+- **🎯 RealMap grid rendering** — `updateGrid()` now also manages `flagMarkersRef` (L.Marker[]). On each grid rebuild, old flags are removed and new ones created for owned cells. Owned cells get `fillOpacity: 0.2` and `opacity: 0.8` (up from default 0.06/0.4).
+
+### Technical
+- Created `REGION_SIZE = 10` in both `RealMap.tsx` and `page.tsx` — shared constant for 10×10 zone blocks
+- New `getZoneIdx(row, col)` function — used in 4 UI locations: map grid cells, properties tab cards, community tab cards, and buy confirmation modal
+- `flagMarkersRef` — `useRef<L.Marker[]>` in RealMap, cleared and rebuilt with each `updateGrid()` call
+- Owned cell check uses O(1) `Set.has("row,col")` lookup per cell during grid render
+- Added `ZONE_NAMES` array (`['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']`) for district display
+
 ## v0.33.0 (2026-07-31)
 
 ### Added
