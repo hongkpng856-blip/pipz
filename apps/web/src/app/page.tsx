@@ -399,9 +399,17 @@ export default function HomePage() {
     ;(window as any).__pipzManageProperty = (_row: number, _col: number) => {
       setTab('properties')
     }
+    ;(window as any).__pipzFlyToProperty = (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => {
+      setTab('map')
+      // Small delay to let the map tab mount
+      setTimeout(() => {
+        realMapRef.current?.flyToCell(anchorLat, anchorLng, cellRow, cellCol)
+      }, 100)
+    }
     return () => {
       delete (window as any).__pipzBuyCell
       delete (window as any).__pipzManageProperty
+      delete (window as any).__pipzFlyToProperty
     }
   }, [user, loadUserProperties])
 
@@ -2204,7 +2212,8 @@ export default function HomePage() {
                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                     const color = colors[zoneIdx]
                     return (
-                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', position:'relative'}}>
+                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', position:'relative', cursor:'pointer'}}
+                        onClick={() => setDetailProperty(prop)}>
                         <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
                         <div style={{fontSize:24, marginBottom:2}}>🏠</div>
                         <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
@@ -2214,7 +2223,8 @@ export default function HomePage() {
                         {prop.isListed ? (
                           <div style={{marginTop:6, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
                             <div style={{fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
-                            <button onClick={async () => {
+                            <button onClick={async (e) => {
+                              e.stopPropagation()
                               const err = await unlistProperty(prop.id)
                               if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
                               showAlert(`📭 ${name} 已下架`)
@@ -2235,23 +2245,24 @@ export default function HomePage() {
                               style={{width:80, padding:'2px 6px', borderRadius:4, border:'1px solid #334155', background:'#1e293b', color:'#f1f5f9', fontSize:9, textAlign:'center', fontFamily:'inherit'}}
                               autoFocus />
                             <div style={{display:'flex', gap:4}}>
-                              <button onClick={async () => {
-                                const price = parseInt(listingPriceStr)
-                                if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
-                                const err = await listProperty(prop.id, price)
-                                if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
-                                showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
-                                setListingPropId(null)
-                                setListingPriceStr('')
-                                loadUserProperties()
-                                loadListedProperties()
-                              }} style={{
-                                padding:'2px 10px', border:'1px solid #22c55e44',
-                                borderRadius:6, background:'rgba(34,197,94,0.1)',
-                                color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
-                                fontFamily:'inherit',
-                              }}>確認</button>
-                              <button onClick={() => { setListingPropId(null); setListingPriceStr('') }} style={{
+                              <button onClick={async (e) => {
+                                  e.stopPropagation()
+                                  const price = parseInt(listingPriceStr)
+                                  if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
+                                  const err = await listProperty(prop.id, price)
+                                  if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
+                                  showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                                  setListingPropId(null)
+                                  setListingPriceStr('')
+                                  loadUserProperties()
+                                  loadListedProperties()
+                                }} style={{
+                                  padding:'2px 10px', border:'1px solid #22c55e44',
+                                  borderRadius:6, background:'rgba(34,197,94,0.1)',
+                                  color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
+                                  fontFamily:'inherit',
+                                }}>確認</button>
+                                <button onClick={(e) => { e.stopPropagation(); setListingPropId(null); setListingPriceStr('') }} style={{
                                 padding:'2px 10px', border:'1px solid #5a6d8544',
                                 borderRadius:6, background:'transparent',
                                 color:'#5a6d85', fontSize:8, fontWeight:700, cursor:'pointer',
@@ -2261,13 +2272,14 @@ export default function HomePage() {
                           </div>
                         ) : (
                           <div style={{marginTop:6, display:'flex', gap:4}}>
-                            <button onClick={() => { setListingPropId(prop.id); setListingPriceStr('') }} style={{
+                            <button onClick={(e) => { e.stopPropagation(); setListingPropId(prop.id); setListingPriceStr('') }} style={{
                               padding:'2px 10px', border:'1px solid #22c55e44',
                               borderRadius:6, background:'rgba(34,197,94,0.1)',
                               color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
                               fontFamily:'inherit',
                             }}>上架出售</button>
-                            <button onClick={() => {
+                            <button onClick={(e) => {
+                              e.stopPropagation()
                               setConfirmModal({
                                 message: '確定放棄此地？(唔會拎返步數)',
                                 onConfirm: async () => {
@@ -2816,7 +2828,7 @@ export default function HomePage() {
                 }}>
                   ✅ 這是你嘅地皮
                 </div>
-              ) : (
+              ) : user && user.id !== p.userId ? (
                 <button onClick={() => {
                   if (!user) { showAlert('❌ 需要登入', 'error'); return }
                   if (totalSteps < sellPrice) { showAlert(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
@@ -2852,7 +2864,20 @@ export default function HomePage() {
                 }}>
                   ⚡ 購買地皮
                 </button>
-              )}
+              ) : null}
+
+              {/* Navigate to map */}
+              <button onClick={() => {
+                setDetailProperty(null)
+                ;(window as any).__pipzFlyToProperty?.(p.anchorLat, p.anchorLng, p.cellRow, p.cellCol)
+              }} style={{
+                width:'100%', marginTop:8, padding:'6px 0',
+                border:'1px solid #3b82f644', borderRadius:14,
+                background:'transparent', color:'#60a5fa',
+                fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+              }}>
+                🗺️ 在地圖上顯示
+              </button>
 
               {/* Cancel */}
               <button onClick={() => setDetailProperty(null)} style={{

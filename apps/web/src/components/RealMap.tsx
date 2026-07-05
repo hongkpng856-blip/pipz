@@ -58,6 +58,7 @@ export interface RealMapHandle {
   generateTestTrails: () => void
   clearStoredTrails: () => void
   recenterMap: () => void
+  flyToCell: (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => void
 }
 
 const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId }, ref) {
@@ -229,8 +230,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     const item = geocodeQueue.current.shift()!
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.lat}&lon=${item.lng}&accept-language=zh`,
-        { headers: { 'User-Agent': 'Pipz/1.0 (HongKong)' } }
+        `/api/geocode?lat=${item.lat}&lng=${item.lng}`
       )
       if (!res.ok) throw new Error(`Nominatim ${res.status}`)
       const data = await res.json()
@@ -431,6 +431,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (map && pos) {
         map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
       }
+    },
+    flyToCell: (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => {
+      const map = mapRef.current
+      if (!map) return
+      const cellLat = anchorLat + CELL_SIZE_DEG * cellRow + CELL_SIZE_DEG / 2
+      const cellLng = anchorLng + CELL_SIZE_DEG * cellCol + CELL_SIZE_DEG / 2
+      map.flyTo([cellLat, cellLng], 18, { animate: true, duration: 1.5 })
     },
   }), [])
 
