@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
 
 interface Props {
-  position: { lat: number; lng: number; heading?: number } | null
+  position: { lat: number; lng: number; heading?: number; accuracy?: number } | null
   walking: boolean
   mode: 'walk' | 'vehicle' | 'stationary' | null
   deviceHeading?: number | null
@@ -674,6 +674,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       userMarkerRef.current.setLatLng([lat, lng])
       accCircleRef.current?.setLatLng([lat, lng])
     }
+    // Update accuracy circle radius from GPS accuracy
+    const accuracy = position.accuracy ?? 50
+    accCircleRef.current?.setRadius(accuracy)
+    accCircleRef.current?.setStyle({
+      color: accuracy < 15 ? '#22c55e' : accuracy < 30 ? '#f59e0b' : '#ef4444',
+      fillColor: accuracy < 15 ? '#22c55e' : accuracy < 30 ? '#f59e0b' : '#ef4444',
+    })
     lastKnownPosRef.current = { lat, lng }
     if (!animStartedRef.current) {
       animStartedRef.current = true

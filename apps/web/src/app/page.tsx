@@ -78,7 +78,7 @@ export default function HomePage() {
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
-    const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number} | null>(null)
+    const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number; accuracy?: number} | null>(null)
     const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | 'stationary' | null>(null)
     const [compassHeading, setCompassHeading] = useState<number | null>(null)
     const [compassActive, setCompassActive] = useState(false)
@@ -627,16 +627,36 @@ export default function HomePage() {
     // On devices without accelerometer the events simply never fire → GPS fallback
     try { window.addEventListener('devicemotion', handleMotion) } catch (_) {}
 
+    // ── Stage 1: Quick approximate position (WiFi/cell, no GPS wait) ──
+    // Like Google Maps: show blue dot immediately, refine later
+    navigator.geolocation.getCurrentPosition(
+      quickPos => {
+        const tracker = posTrackerRef.current
+        const qp = tracker.update({
+          lat: quickPos.coords.latitude,
+          lng: quickPos.coords.longitude,
+          accuracy: quickPos.coords.accuracy,
+          heading: quickPos.coords.heading ?? undefined,
+          speed: quickPos.coords.speed ?? undefined,
+        })
+        if (qp) {
+          setMapPos({ lat: qp.lat, lng: qp.lng, heading: qp.heading, accuracy: qp.accuracy })
+        }
+      },
+      () => { /* ignore — watchPosition will get a fix */ },
+      { enableHighAccuracy: false, timeout: 3000, maximumAge: 0 }
+    )
+
+    // ── Stage 2: High-accuracy GPS watch for continuous real-time tracking ──
     wid.current = navigator.geolocation.watchPosition(
       pos => {
-        // ── GPS warmup: first 5 readings stabilise sensor ──
+        // Skip first few very-inaccurate readings while GPS warms up
+        if (pos.coords.accuracy > 100) {
+          if (gpsWarmup.current++ < 5) return
+        }
         gpsWarmup.current++
-        if (gpsWarmup.current <= 5) return
 
-        // ── Skip inaccurate readings ──
-        if (pos.coords.accuracy > 50) return
-
-        // ── GPS compass heading: fallback when DeviceOrientation unavailable ──
+        // ── GPS compass heading ──
         const rawHeading = pos.coords.heading
         if (rawHeading !== null && rawHeading !== undefined && rawHeading >= 0) {
           let diff = rawHeading - compassHeadingRef.current
@@ -649,14 +669,14 @@ export default function HomePage() {
           setCompassHeading(null)
         }
 
-        // ── Determine movement mode from speed ──
+        // ── Movement mode ──
         let mode: 'walk' | 'vehicle' | 'stationary' = 'walk'
         if (pos.coords.speed !== null && pos.coords.speed !== undefined) {
           mode = pos.coords.speed >= 2.0 ? 'vehicle' : pos.coords.speed >= 0.5 ? 'walk' : 'stationary'
         }
         setMovementMode(mode)
 
-        // ── Route through PositionTracker (Kalman filter + anomaly gate) ──
+        // ── Route through PositionTracker ──
         const tracker = posTrackerRef.current
         const filtered = tracker.update({
           lat: pos.coords.latitude,
@@ -666,11 +686,37 @@ export default function HomePage() {
           speed: pos.coords.speed ?? undefined,
         })
         if (filtered) {
-          setMapPos({ lat: filtered.lat, lng: filtered.lng, heading: filtered.heading })
+          setMapPos({ lat: filtered.lat, lng: filtered.lng, heading: filtered.heading, accuracy: filtered.accuracy })
         }
       },
-      () => { setWalking(false); setPetAnim('idle') },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      // Error → try fallback with lower accuracy
+      () => {
+        // If high-accuracy fails, fall back to lower accuracy watch
+        if (wid.current !== null) navigator.geolocation.clearWatch(wid.current)
+        wid.current = navigator.geolocation.watchPosition(
+          fallbackPos => {
+            const tracker = posTrackerRef.current
+            const f = tracker.update({
+              lat: fallbackPos.coords.latitude,
+              lng: fallbackPos.coords.longitude,
+              accuracy: fallbackPos.coords.accuracy,
+              heading: fallbackPos.coords.heading ?? undefined,
+              speed: fallbackPos.coords.speed ?? undefined,
+            })
+            if (f) {
+              setMapPos({ lat: f.lat, lng: f.lng, heading: f.heading, accuracy: f.accuracy })
+            }
+            // Still try to get heading
+            const h = fallbackPos.coords.heading
+            if (h !== null && h !== undefined && h >= 0 && compassHeadingRef.current === 0) {
+              compassHeadingRef.current = h; setCompassHeading(h)
+            }
+          },
+          () => { setWalking(false); setPetAnim('idle') },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 2000 }
+        )
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     )
   }
   const walkStop = () => {
