@@ -87,14 +87,11 @@ export default function HomePage() {
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
   // ── Buy confirmation modal (map grid) ──
   const [buyConfirm, setBuyConfirm] = useState<{row:number; col:number; anchorLat:number; anchorLng:number} | null>(null)
-  // ── Toast ──
-  const [toast, setToast] = useState<{message:string; type:'success'|'error'; id:number} | null>(null)
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const showToast = (m: string, type: 'success'|'error' = 'success') => {
-    if (toastTimer.current) clearTimeout(toastTimer.current)
-    setToast({message:m, type, id:Date.now()})
-    toastTimer.current = setTimeout(() => setToast(null), 3000)
-  }
+  // ── Alert modal (replaces toast) ──
+  const [alertModal, setAlertModal] = useState<{message:string; type:'success'|'error'|'info'} | null>(null)
+  const showAlert = (m: string, type: 'success'|'error'|'info' = 'info') => setAlertModal({message:m, type})
+  // ── Confirm modal (replaces native confirm) ──
+  const [confirmModal, setConfirmModal] = useState<{message:string; onConfirm:()=>void; onCancel?:()=>void} | null>(null)
   // ── Roguelike: pet equipment ──
   const [petEquipment, setPetEquipment] = useState<{equipmentId: string; slot: string}[]>([])
   // ── Roguelike: inventory ──
@@ -2063,7 +2060,7 @@ export default function HomePage() {
                                 opacity: isOwn ? 0.7 : 1,
                               }} onClick={() => {
                                 if (isOwn) {
-                                  showToast('🏠 這是你嘅地皮，不能購買', 'error')
+                                  showAlert('🏠 這是你嘅地皮，不能購買', 'error')
                                 } else {
                                   setDetailProperty(prop)
                                 }
@@ -2219,8 +2216,8 @@ export default function HomePage() {
                             <div style={{fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
                             <button onClick={async () => {
                               const err = await unlistProperty(prop.id)
-                              if (err) { showToast(`❌ 下架失敗: ${err}`, 'error'); return }
-                              showToast(`📭 ${name} 已下架`)
+                              if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
+                              showAlert(`📭 ${name} 已下架`)
                               loadUserProperties()
                               loadListedProperties()
                             }} style={{
@@ -2240,10 +2237,10 @@ export default function HomePage() {
                             <div style={{display:'flex', gap:4}}>
                               <button onClick={async () => {
                                 const price = parseInt(listingPriceStr)
-                                if (isNaN(price) || price <= 0) { showToast('❌ 請輸入有效價格', 'error'); return }
+                                if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
                                 const err = await listProperty(prop.id, price)
-                                if (err) { showToast(`❌ 上架失敗: ${err}`, 'error'); return }
-                                showToast(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                                if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
+                                showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
                                 setListingPropId(null)
                                 setListingPriceStr('')
                                 loadUserProperties()
@@ -2270,13 +2267,17 @@ export default function HomePage() {
                               color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
                               fontFamily:'inherit',
                             }}>上架出售</button>
-                            <button onClick={async () => {
-                              if (!confirm('確定放棄此地？(唔會拎返步數)')) return
-                              const err = await sellProperty(prop.id)
-                              if (err) { showToast(`❌ 放棄失敗: ${err}`, 'error'); return }
-                              showToast(`🏚️ 已放棄 ${name}`)
-                              loadUserProperties()
-                              loadListedProperties()
+                            <button onClick={() => {
+                              setConfirmModal({
+                                message: '確定放棄此地？(唔會拎返步數)',
+                                onConfirm: async () => {
+                                  const err = await sellProperty(prop.id)
+                                  if (err) { showAlert(`❌ 放棄失敗: ${err}`, 'error'); return }
+                                  showAlert(`🏚️ 已放棄 ${name}`)
+                                  loadUserProperties()
+                                  loadListedProperties()
+                                },
+                              })
                             }} style={{
                               padding:'2px 10px', border:'1px solid #ef444444',
                               borderRadius:6, background:'rgba(239,68,68,0.1)',
@@ -2612,24 +2613,74 @@ export default function HomePage() {
       })()}
       </ModalPortal>
 
-      {/* ════ Toast ════ */}
-      {toast && (
-        <div style={{
-          position:'fixed', bottom:80, left:16, right:16, zIndex:99999,
-          display:'flex', justifyContent:'center', pointerEvents:'none',
-        }}>
-          <div key={toast.id} style={{
-            background: toast.type === 'success' ? '#065f46cc' : '#7f1d1dcc',
-            backdropFilter:'blur(8px)', border:`1px solid ${toast.type === 'success' ? '#34d39944' : '#f8717144'}`,
-            borderRadius:14, padding:'10px 20px', maxWidth:320,
-            color:'#f0f4f8', fontSize:13, fontWeight:600, textAlign:'center',
-            animation:'fadeUp 0.25s ease-out',
-            pointerEvents:'auto',
-          }}>
-            {toast.message}
+      {/* ════ Alert Modal (replaces toast) ════ */}
+      <ModalPortal>
+      {alertModal && (
+        <div className="fixed-modal-layer" style={{
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+          padding:16,
+        }} onClick={() => setAlertModal(null)}>
+          <div style={{
+            background:'#141b2d', border:`1px solid ${
+              alertModal.type === 'success' ? '#22c55e44' : alertModal.type === 'error' ? '#ef444444' : '#8b5cf644'
+            }`,
+            borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:40, marginBottom:8}}>
+              {alertModal.type === 'success' ? '✅' : alertModal.type === 'error' ? '❌' : 'ℹ️'}
+            </div>
+            <div style={{fontSize:13, color:'#f0f4f8', fontWeight:600, lineHeight:1.5, whiteSpace:'pre-wrap'}}>
+              {alertModal.message}
+            </div>
+            <button onClick={() => setAlertModal(null)} style={{
+              marginTop:16, padding:'8px 28px', border:'1px solid #2a3a5a',
+              borderRadius:14, background:'transparent', color:'#94a5b8',
+              fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+            }}>
+              關閉
+            </button>
           </div>
         </div>
       )}
+      </ModalPortal>
+
+      {/* ════ Confirm Modal (replaces native confirm) ════ */}
+      <ModalPortal>
+      {confirmModal && (
+        <div className="fixed-modal-layer" style={{
+          display:'flex', alignItems:'center', justifyContent:'center',
+          background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+          padding:16,
+        }} onClick={() => { setConfirmModal(null); confirmModal.onCancel?.() }}>
+          <div style={{
+            background:'#141b2d', border:'1px solid #8b5cf644',
+            borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{fontSize:40, marginBottom:8}}>⚠️</div>
+            <div style={{fontSize:13, color:'#f0f4f8', fontWeight:600, marginBottom:16, whiteSpace:'pre-wrap'}}>
+              {confirmModal.message}
+            </div>
+            <div style={{display:'flex', gap:8}}>
+              <button onClick={() => { setConfirmModal(null); confirmModal.onCancel?.() }} style={{
+                flex:1, padding:'8px 0', border:'1px solid #2a3a5a', borderRadius:14,
+                background:'transparent', color:'#5a6d85',
+                fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+              }}>
+                取消
+              </button>
+              <button onClick={() => { setConfirmModal(null); confirmModal.onConfirm() }} style={{
+                flex:1, padding:'8px 0', border:'none', borderRadius:14,
+                background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+                color:'white', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+              }}>
+                確定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </ModalPortal>
 
       {/* ════ Buy Confirmation Modal (from map grid) ════ */}
       {buyConfirm && (() => {
@@ -2672,7 +2723,7 @@ export default function HomePage() {
                   取消
                 </button>
                 <button onClick={async () => {
-                  if (!user) { showToast('❌ 需要登入', 'error'); setBuyConfirm(null); return }
+                  if (!user) { showAlert('❌ 需要登入', 'error'); setBuyConfirm(null); return }
                   try {
                     const res = await fetch('/api/properties', {
                       method: 'POST',
@@ -2684,12 +2735,12 @@ export default function HomePage() {
                       const newSteps = totalSteps - 100
                       setTotalSteps(newSteps)
                       await updateTotalSteps(user.id, newSteps)
-                      showToast(`🏠 佔領地皮成功！ ${name}`)
+                      showAlert(`🏠 佔領地皮成功！ ${name}`)
                       loadUserProperties()
                     } else {
-                      showToast(`❌ ${data.error || '佔領失敗'}`, 'error')
+                      showAlert(`❌ ${data.error || '佔領失敗'}`, 'error')
                     }
-                  } catch { showToast('❌ 網絡錯誤', 'error') }
+                  } catch { showAlert('❌ 網絡錯誤', 'error') }
                   setBuyConfirm(null)
                 }} style={{
                   flex:1, padding:'10px 0', border:'none', borderRadius:14,
@@ -2766,29 +2817,33 @@ export default function HomePage() {
                   ✅ 這是你嘅地皮
                 </div>
               ) : (
-                <button onClick={async () => {
-                  if (!user) { showToast('❌ 需要登入', 'error'); return }
-                  if (totalSteps < sellPrice) { showToast(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
-                  if (!confirm(`確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`)) return
-                  try {
-                    const res = await fetch('/api/properties/transfer', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ propertyId: p.id, buyerId: user.id }),
-                    })
-                    const data = await res.json()
-                    if (data.success) {
-                      const newSteps = totalSteps - sellPrice
-                      setTotalSteps(newSteps)
-                      await updateTotalSteps(user.id, newSteps)
-                      showToast(`🏠 成功購買 ${name}！`)
-                      loadListedProperties()
-                      loadUserProperties()
-                      setDetailProperty(null)
-                    } else {
-                      showToast(`❌ ${data.error || '購買失敗'}`, 'error')
-                    }
-                  } catch { showToast('❌ 網絡錯誤', 'error') }
+                <button onClick={() => {
+                  if (!user) { showAlert('❌ 需要登入', 'error'); return }
+                  if (totalSteps < sellPrice) { showAlert(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
+                  setConfirmModal({
+                    message: `確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`,
+                    onConfirm: async () => {
+                      try {
+                        const res = await fetch('/api/properties/transfer', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ propertyId: p.id, buyerId: user!.id }),
+                        })
+                        const data = await res.json()
+                        if (data.success) {
+                          const newSteps = totalSteps - sellPrice
+                          setTotalSteps(newSteps)
+                          await updateTotalSteps(user.id, newSteps)
+                          showAlert(`🏠 成功購買 ${name}！`)
+                          loadListedProperties()
+                          loadUserProperties()
+                          setDetailProperty(null)
+                        } else {
+                          showAlert(`❌ ${data.error || '購買失敗'}`, 'error')
+                        }
+                      } catch { showAlert('❌ 網絡錯誤', 'error') }
+                    },
+                  })
                 }} style={{
                   width:'100%', padding:'10px 0',
                   border:'1px solid #a855f744', borderRadius:14,
