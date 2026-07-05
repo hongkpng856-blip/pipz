@@ -8,6 +8,7 @@
 - **🖱️ Properties tab card click** — clicking any property card in the Properties tab now opens the Property Detail Modal (with manage options). Action buttons use `stopPropagation` to prevent interference.
 - **🏪 Community tab own property** — clicking own property in Community tab now opens Property Detail Modal (with map link) instead of an error alert.
 - **🏡 Real-world district display** — Property Detail Modal now shows the actual district name (e.g. `📍 屯門區 · 蝴蝶邨`) with gradient text on a "地段" header, giving a luxury/prestige feel. Fetched lazily from `/api/geocode` when modal opens, cached per coordinate.
+- **🏡 District name on all property cards** — Properties tab (🏠 地產) and Community tab (🏪 地皮市集) now show district name directly on each card. Batch-fetched via `enrichWithLocation()` when properties load, with module-level cache.
 
 ### Changed
 - **Property Detail Modal redesign**: now features a top gradient accent bar, "地段" prestige header with gradient district name, and a serif property-name badge. Full Monopoly-deed style layout.
