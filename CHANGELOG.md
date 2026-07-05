@@ -18,6 +18,7 @@
 - Address geocode now uses server proxy, avoiding mobile network CORS issues with Nominatim
 - RealMap API call now includes `user_id` parameter for correct `isMine` detection
 - Own property popup now shows purchase price and date alongside "你擁有此地"
+- **🐛 All cells showing 「未知地區」** — `processGeocodeQueue` parsed `data?.address` from server proxy response, but server returns `{label, detail, full}` format (not raw Nominatim). Caused `addr = {}` always → no district/suburb → "📍 未知地區" for every cell. Fixed by reading `data.label` / `data.detail` / `data.full` directly.
 
 ## v0.31.0 (2026-07-05)
 

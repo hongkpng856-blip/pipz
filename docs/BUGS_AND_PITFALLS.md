@@ -477,4 +477,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 
 ---
 
-*Last updated: 2026-08-01. Add new entries at the top when you discover new pitfalls.*
+| 5.9 | **Geocode server proxy response format mismatch** | All | Client `processGeocodeQueue` parsed `data?.address` from `/api/geocode` response, but server proxy returns `{label, detail, full}` format — not raw Nominatim JSON. Caused `addr = {}` always → no district/suburb → "📍 未知地區" for every cell. **Fix:** Read `data.label` / `data.detail` / `data.full` directly from server response. |
+|---|---|---|---|
+
+*Last updated: 2026-07-31. Add new entries at the top when you discover new pitfalls.*
