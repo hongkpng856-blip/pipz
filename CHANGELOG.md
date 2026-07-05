@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.33.0 (2026-07-31)
+
+### Changed
+- **🗺️ Grid cells 4x smaller** — `CELL_SIZE_DEG` reduced from `0.0006°` → `0.0003°` (~60m → ~30m per cell). Each old cell now splits into 4 smaller cells (2×2 grid). More granular property ownership.
+- **💎 Buy price reduced** — from ⚡100 → ⚡25 per cell (proportional to 1/4 area).
+- **📦 DB migration** — existing 12 properties automatically converted to 48 smaller cells (row/col ×2, price ÷4, all listings cleared).
+
+### Technical
+- `MAX_GRID_CELLS` increased 5000 → 8000, `GRID_PAD` 8 → 10 (accommodate 4× more visible cells)
+
 ## v0.32.0 (2026-07-05)
 
 ### Added
