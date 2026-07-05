@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.32.0 (2026-07-05)
+
+### Added
+- **🗺️ Server-side geocode proxy** (`/api/geocode`) — replaces client-side Nominatim API with server proxy, fixes address loading issues on mobile networks (CORS/blocking). Returns `{label, detail, full}` format.
+- **📍 Map-to-property navigation** — Property Detail Modal now has a "🗺️ 在地圖上顯示" button that switches to Map tab and flies to the cell location (zoom 18).
+- **🖱️ Properties tab card click** — clicking any property card in the Properties tab now opens the Property Detail Modal (with manage options). Action buttons use `stopPropagation` to prevent interference.
+- **🏪 Community tab own property** — clicking own property in Community tab now opens Property Detail Modal (with map link) instead of an error alert.
+
+### Changed
+- **RealMap**: client-side Nominatim fetch replaced with server-side `/api/geocode` call
+- **RealMapHandle**: added `flyToCell(anchorLat, anchorLng, cellRow, cellCol)` method
+- **Property Detail Modal**: buy button hidden for own properties; own properties show "✅ 這是你嘅地皮" + map link; other properties show buy button + map link
+- **Community tab**: own property cards now open the unified Property Detail Modal
+
+### Fixed
+- Address geocode now uses server proxy, avoiding mobile network CORS issues with Nominatim
+- RealMap API call now includes `user_id` parameter for correct `isMine` detection
+- Own property popup now shows purchase price and date alongside "你擁有此地"
+
 ## v0.31.0 (2026-07-05)
 
 ### Added
