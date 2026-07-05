@@ -660,9 +660,12 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
   - Combines row,col keys from both `properties` and `listedProperties`
   - `s.add(\`${p.cellRow},${p.cellCol}\`)` for each property
   - Passed to `RealMap` component
-- RealMap's `updateGrid()` checks `ownedCells?.has(\`${row},${col}\`)` in O(1) per cell
-- Old flags cleared (`flagMarkersRef`) and rebuilt on every grid view change
-- Owned cells also get **enhanced fill** (`fillOpacity: 0.2`, `opacity: 0.8`) — more visible than unowned cells (default `fillOpacity: 0.06`, `opacity: 0.4`)
+- Flags managed by standalone **`placeAllFlags(map)`** function:
+  - Iterates `ownedCells` Set (O(n)), places `L.marker` with 🚩 icon at each cell center
+  - Called from `useEffect([ownedCells])` — triggers on every property change (buy/sell/list/unlist)
+  - Also called on grid anchor load and first GPS fix for initial render
+  - **Independent of `updateGrid()`** — flags remain visible during pan/zoom/grid toggle
+- Old flags cleared and rebuilt only when `ownedCells` changes (via `useEffect`), not on grid rebuild
 
 ### Occupation / 地皮買賣系統
 - Click any unowned grid cell → Monopoly popup shows **💪 佔領此地** button
