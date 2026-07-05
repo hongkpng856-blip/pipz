@@ -95,6 +95,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   gridVisibleRef.current = gridVisible
   const userIdRef = useRef(userId ?? null)
   userIdRef.current = userId ?? null
+  const highlightRegionRowRef = useRef<number | null>(null)
+  const highlightRegionColRef = useRef<number | null>(null)
 
   /** Zoom-based grid fade: grid gradually disappears when zoomed out */
   function getGridZoomFactor(zoom: number): number {
@@ -218,6 +220,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           fillOpacity: 0.08 * zoomFactor,
           interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
+
+        // ── Zone highlight: user's current 10×10 region glows ──
+        const cellRegionRow = Math.floor(row / REGION_SIZE)
+        const cellRegionCol = Math.floor(col / REGION_SIZE)
+        const isHighlightZone = highlightRegionRowRef.current !== null &&
+          cellRegionRow === highlightRegionRowRef.current &&
+          cellRegionCol === highlightRegionColRef.current
+        if (isHighlightZone) {
+          rect.setStyle({
+            fillOpacity: 0.25 * zoomFactor,
+            opacity: 0.9 * zoomFactor,
+            weight: 5 * zoomFactor,
+          })
+        }
 
         // ── Flag on owned cells ──
         const isOwned = ownedCells?.has(`${row},${col}`)
@@ -693,6 +709,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       setGridAnchor(anchor.lat, anchor.lng)
       // Draw grid immediately
       if (map) updateGrid(map, anchor)
+    }
+
+    // ── Compute user's current zone for highlight ──
+    const zoneAnchor = anchorRef.current
+    if (zoneAnchor) {
+      const uRow = Math.floor((lat - zoneAnchor.lat) / CELL_SIZE_DEG)
+      const uCol = Math.floor((lng - zoneAnchor.lng) / CELL_SIZE_DEG)
+      const zRow = Math.floor(uRow / REGION_SIZE)
+      const zCol = Math.floor(uCol / REGION_SIZE)
+      if (zRow !== highlightRegionRowRef.current || zCol !== highlightRegionColRef.current) {
+        highlightRegionRowRef.current = zRow
+        highlightRegionColRef.current = zCol
+        if (mapRef.current && anchorRef.current) updateGrid(mapRef.current, anchorRef.current)
+      }
     }
 
     // ── Smooth position animation target ──
