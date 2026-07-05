@@ -13,6 +13,23 @@ import InventoryModal from '../components/InventoryModal'
 import ProfileModal from '../components/ProfileModal'
 import NotificationModal from '../components/NotificationModal'
 import LoginModal from './auth-modal'
+
+// ── Geocode cache (module-level, persists across renders) ──
+const geocodeCache = new Map<string, string>()
+async function fetchLocationName(lat: number, lng: number): Promise<string> {
+  const key = `${lat.toFixed(5)},${lng.toFixed(5)}`
+  if (geocodeCache.has(key)) return geocodeCache.get(key)!
+  try {
+    const res = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`)
+    if (!res.ok) return '📍 未知地區'
+    const data = await res.json()
+    const name = data.label || '📍 未知地區'
+    geocodeCache.set(key, name)
+    return name
+  } catch {
+    return '📍 未知地區'
+  }
+}
 import { useAuth } from '../lib/auth-context'
 import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty, loadAllListedProperties, listProperty, unlistProperty } from '../lib/supabase-db'
 
@@ -85,6 +102,21 @@ export default function HomePage() {
   const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
+  const [detailLocName, setDetailLocName] = useState('')
+  // When detailProperty changes, fetch its location name
+  useEffect(() => {
+    if (detailProperty) {
+      if (detailProperty.locationName) {
+        setDetailLocName(detailProperty.locationName)
+      } else {
+        setDetailLocName('')
+        fetchLocationName(detailProperty.anchorLat, detailProperty.anchorLng).then(n => {
+          setDetailLocName(n)
+          detailProperty.locationName = n
+        })
+      }
+    }
+  }, [detailProperty?.id])
   // ── Buy confirmation modal (map grid) ──
   const [buyConfirm, setBuyConfirm] = useState<{row:number; col:number; anchorLat:number; anchorLng:number} | null>(null)
   // ── Alert modal (replaces toast) ──
@@ -2771,9 +2803,11 @@ export default function HomePage() {
         const zoneIdx = ((p.cellRow * 7 + p.cellCol * 13) % 6 + 6) % 6
         const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
         const color = colors[zoneIdx]
+        const lighter = color + '66'
         const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
         const sellPrice = p.listPrice ?? p.price
         const isOwn = user && p.userId === user.id
+
         return (
           <div className="fixed-modal-layer" style={{
             display:'flex', alignItems:'center', justifyContent:'center',
@@ -2781,20 +2815,65 @@ export default function HomePage() {
             padding:16,
           }} onClick={() => setDetailProperty(null)}>
             <div style={{
-              background:'#141b2d', border:`2px solid ${color}66`,
+              background:'#141b2d', border:`2px solid ${lighter}`,
               borderRadius:24, padding:24, maxWidth:320, width:'100%',
+              position:'relative', overflow:'hidden',
             }} onClick={e => e.stopPropagation()}>
-              {/* Zone colour bar */}
-              <div style={{height:4, background:color, borderRadius:'14px 14px 0 0', margin:'-24px -24px 16px'}} />
+              {/* Top gradient accent bar */}
+              <div style={{
+                position:'absolute', top:0, left:0, right:0, height:4,
+                background:`linear-gradient(90deg, ${color}, ${lighter}, ${color})`,
+              }} />
 
-              {/* Header */}
-              <div style={{textAlign:'center', marginBottom:16}}>
-                <div style={{fontSize:32, marginBottom:4}}>🏠</div>
-                <div style={{fontSize:14, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
-                <div style={{fontSize:9, color:'#5a6d85', marginTop:2}}>{zoneNames[zoneIdx]}</div>
+              {/* Location name — the VANITY / prestige line */}
+              <div style={{
+                textAlign:'center', marginTop:20, marginBottom:8,
+                minHeight: detailLocName ? 'auto' : 48,
+              }}>
+                <div style={{
+                  fontSize:11, color:'#5a6d85', fontWeight:600,
+                  textTransform:'uppercase', letterSpacing:1.5, marginBottom:4,
+                }}>
+                  地 段
+                </div>
+                {detailLocName ? (
+                  <div style={{
+                    fontSize:18, fontWeight:800,
+                    background: `linear-gradient(135deg, ${color}, #fff)`,
+                    WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+                    backgroundClip:'text',
+                    lineHeight:1.3,
+                  }}>
+                    {detailLocName}
+                  </div>
+                ) : (
+                  <div style={{fontSize:11, color:'#3a4d65'}}>🔍 載入地段…</div>
+                )}
+                <div style={{
+                  marginTop:6, height:1,
+                  background:`linear-gradient(90deg, transparent, ${lighter}, transparent)`,
+                }} />
               </div>
 
-              {/* Details */}
+              {/* Property name badge */}
+              <div style={{
+                textAlign:'center', marginBottom:14,
+              }}>
+                <div style={{
+                  display:'inline-block',
+                  background:`${color}15`, border:`1px solid ${lighter}`,
+                  borderRadius:20, padding:'4px 16px',
+                  fontSize:13, fontWeight:700, color,
+                  fontFamily:'Georgia, serif',
+                }}>
+                  {name}
+                </div>
+                <div style={{fontSize:9, color:'#5a6d85', marginTop:4}}>
+                  {zoneNames[zoneIdx]} · 第{p.cellRow+1}行 第{p.cellCol+1}列
+                </div>
+              </div>
+
+              {/* Details card */}
               <div style={{background:'#0f1729', borderRadius:12, padding:12, marginBottom:16}}>
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>賣家</span>

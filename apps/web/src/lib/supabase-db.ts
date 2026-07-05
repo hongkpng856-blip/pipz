@@ -554,6 +554,7 @@ export interface Property {
   isListed: boolean
   listPrice: number | null
   sellerName?: string | null
+  locationName?: string
 }
 
 function mapDbProp(d: any): Property {
