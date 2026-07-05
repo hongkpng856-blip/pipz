@@ -110,7 +110,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const geocodeCache = useRef<Map<string, { label: string; detail: string; full: string }>>(new Map())
   const geocodeQueue = useRef<Array<{ key: string; lat: number; lng: number; resolve: (v: { label: string; detail: string; full: string }) => void }>>([])
   const geocodeBusy = useRef(false)
-  const flagMarkersRef = useRef<L.Marker[]>([])  // flags on owned cells
+  const flagGroupRef = useRef<L.LayerGroup | null>(null)
+  const flagZoomHandlerRef = useRef<(() => void) | null>(null)
   // ── Smooth marker animation ──
   const animTargetRef = useRef({ lat: 22.3193, lng: 114.1694 })
   const animDisplayRef = useRef({ lat: 22.3193, lng: 114.1694 })
@@ -278,14 +279,24 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Place flags on top of grid
   }
 
-  /** Place or update flag markers on all owned cells */
+  /** Place or update flag markers on all owned cells — zoom-aware (hide < zoom 15) */
   function placeAllFlags(map: L.Map) {
-    // Remove old flags
-    flagMarkersRef.current.forEach(m => m.remove())
-    flagMarkersRef.current = []
+    // Remove old handler + group
+    if (flagZoomHandlerRef.current) {
+      map.off('zoomend', flagZoomHandlerRef.current)
+      flagZoomHandlerRef.current = null
+    }
+    if (flagGroupRef.current) {
+      map.removeLayer(flagGroupRef.current)
+      flagGroupRef.current = null
+    }
+
     const cells = ownedCellsRef.current
     if (!cells || !anchorRef.current || cells.size === 0) return
     const anchor = anchorRef.current
+
+    const group = L.layerGroup([])
+
     cells.forEach(key => {
       const parts = key.split(',')
       const row = parseInt(parts[0])
@@ -299,9 +310,29 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         iconSize: [14, 14],
         iconAnchor: [7, 14],
       })
-      const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false }).addTo(map)
-      flagMarkersRef.current.push(flag)
+      const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false })
+      group.addLayer(flag)
     })
+
+    // Zoom-based visibility: show only at zoom 15+
+    const zoomHandler = () => {
+      const z = map.getZoom()
+      if (!group || !flagGroupRef.current) return
+      if (z >= 15 && !map.hasLayer(group)) {
+        group.addTo(map)
+      } else if (z < 15 && map.hasLayer(group)) {
+        map.removeLayer(group)
+      }
+    }
+    map.on('zoomend', zoomHandler)
+    flagZoomHandlerRef.current = zoomHandler
+
+    // Initial visibility
+    if (map.getZoom() >= 15) {
+      group.addTo(map)
+    }
+
+    flagGroupRef.current = group
   }
 
   /** Get grid cell name from lat/lng */
@@ -693,6 +724,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       map.off('moveend zoomend', onViewChange)
       gridRectsRef.current.forEach(r => r.remove())
       gridRectsRef.current = []
+      // Cleanup flag zoom handler
+      if (flagZoomHandlerRef.current) {
+        map.off('zoomend', flagZoomHandlerRef.current)
+        flagZoomHandlerRef.current = null
+      }
+      if (flagGroupRef.current) {
+        map.removeLayer(flagGroupRef.current)
+        flagGroupRef.current = null
+      }
       map.remove()
       initialised.current = false
     }
@@ -779,6 +819,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (!animStartedRef.current) {
       animStartedRef.current = true
       animateMarker()
+    }
+
+    // ── GPS auto-follow: pan map when user walks/rides ──
+    if (walking && (mode === 'walk' || mode === 'vehicle')) {
+      // Skip auto-follow during initial animation
+      if (!initialAnimBusyRef.current) {
+        map.panTo([lat, lng], { animate: true, duration: 0.3 })
+      }
     }
 
     // ── Initial zoom: show all trails first, then fly to current (one-time) ──
