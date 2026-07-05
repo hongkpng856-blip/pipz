@@ -2,12 +2,20 @@
 
 ## v0.33.0 (2026-07-31)
 
+### Added
+- **📍 Google Maps–style real-time position tracking** — new `PositionTracker` (Kalman filter + speed anomaly gate + velocity prediction) smooths raw GPS noise for stable, accurate marker position. Marker moves at 60fps with ease interpolation instead of jumping every GPS tick.
+- **🧠 Kalman filter** — 1D per-axis filter using GPS accuracy as measurement noise (R) and small process noise (Q=0.01). Rejects anomalous jumps > 108 km/h.
+
 ### Changed
 - **🗺️ Grid cells 4x smaller** — `CELL_SIZE_DEG` reduced from `0.0006°` → `0.0003°` (~60m → ~30m per cell). Each old cell now splits into 4 smaller cells (2×2 grid). More granular property ownership.
 - **💎 Buy price reduced** — from ⚡100 → ⚡25 per cell (proportional to 1/4 area).
 - **📦 DB migration** — existing 12 properties automatically converted to 48 smaller cells (row/col ×2, price ÷4, all listings cleared).
+- **🚶 Step counting removed from GPS handler** — GPS no longer counts steps by displacement. Accelerometer-based step detection still present but inactive. (Steps will be re-enabled later with a dedicated algorithm.)
 
 ### Technical
+- Created `src/lib/position-tracker.ts` — reusable `PositionTracker` class with Kalman1D, speed anomaly gate, velocity estimation, and position prediction
+- `RealMap.tsx` — added RAF-based smooth marker animation loop (25% ease per frame, 60fps)
+- Removed ~50 lines of GPS step-counting code from `page.tsx`
 - `MAX_GRID_CELLS` increased 5000 → 8000, `GRID_PAD` 8 → 10 (accommodate 4× more visible cells)
 
 ## v0.32.0 (2026-07-05)
