@@ -88,6 +88,8 @@ export default function HomePage() {
     const [showDevTools, setShowDevTools] = useState(false)
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
+    const [simGpsWalking, setSimGpsWalking] = useState(false)
+    const simGpsPosRef = useRef({ lat: 22.3194, lng: 114.1694, heading: 0, step: 0 })
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number; accuracy?: number} | null>(null)
     const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | 'stationary' | null>(null)
     const [compassHeading, setCompassHeading] = useState<number | null>(null)
@@ -1017,6 +1019,36 @@ export default function HomePage() {
     return () => { if (simRef.current) { clearInterval(simRef.current); simRef.current = null } }
   }, [simulating, simSpeed])
 
+  // ── GPS Walk Simulation: fake GPS movement for testing auto-follow + flags ──
+  const simGpsRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => {
+    if (simGpsWalking) {
+      setWalking(true)
+      setMovementMode('walk')
+      // Start at a known HK location
+      const pos = simGpsPosRef.current
+      pos.lat = 22.3194
+      pos.lng = 114.1694
+      pos.heading = 0
+      pos.step = 0
+      // Walk in a zigzag pattern — ~30m per tick, every 2s
+      simGpsRef.current = setInterval(() => {
+        pos.step++
+        // Zigzag: go south-east, then north-east, repeat
+        const latOffset = (pos.step % 10 < 5 ? -1 : 1) * 0.0003  // ~30m per step
+        const lngOffset = 0.0003  // ~30m east each step
+        pos.lat += latOffset * 0.0003
+        pos.lng += lngOffset
+        pos.heading = (pos.heading + 5) % 360
+        setMapPos({ lat: pos.lat, lng: pos.lng, heading: pos.heading, accuracy: 8 })
+        logMsg(`📍 模擬 GPS: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`)
+      }, 2000)
+    } else {
+      if (simGpsRef.current) { clearInterval(simGpsRef.current); simGpsRef.current = null }
+    }
+    return () => { if (simGpsRef.current) { clearInterval(simGpsRef.current); simGpsRef.current = null } }
+  }, [simGpsWalking])
+
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
     setEggHatchingId(egg.id)
@@ -1522,6 +1554,16 @@ export default function HomePage() {
                       <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
                         {simulating ? `🟢 ${simSpeed}x` : '🛰️ GPS'}
                       </span>
+                    </div>
+
+                    {/* ── GPS Walk Simulation (auto-follow + flag test) ── */}
+                    <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
+                      <button className={`btn ${simGpsWalking ? 'btn-danger' : 'btn-ghost'}`}
+                        onClick={() => setSimGpsWalking(v => !v)}
+                        style={{fontSize:10, padding:'4px 10px', color: simGpsWalking ? '#f59e0b' : '#22d3ee'}}>
+                        {simGpsWalking ? '⏹ 停GPS模擬' : '🗺️ GPS步行模擬'}
+                      </button>
+                      {simGpsWalking && <span style={{fontSize:9, color:'#22c55e'}}>🟢 模擬步行中</span>}
                     </div>
 
                     {/* ── Test Pet ── */}
