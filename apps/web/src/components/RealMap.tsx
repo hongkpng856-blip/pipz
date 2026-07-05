@@ -300,10 +300,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     cells.forEach(key => {
       const parts = key.split(',')
-      const row = parseInt(parts[0])
-      const col = parseInt(parts[1])
-      const north = anchor.lat + row * CELL_SIZE_DEG
-      const west = anchor.lng + col * CELL_SIZE_DEG
+      const cellAnchorLat = parseFloat(parts[0])
+      const cellAnchorLng = parseFloat(parts[1])
+      const row = parseInt(parts[2])
+      const col = parseInt(parts[3])
+      const north = cellAnchorLat + row * CELL_SIZE_DEG
+      const west = cellAnchorLng + col * CELL_SIZE_DEG
       const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
       const flagIcon = L.divIcon({
         className: 'pipz-flag-marker',

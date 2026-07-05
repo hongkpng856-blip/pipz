@@ -112,12 +112,12 @@ export default function HomePage() {
   const [properties, setProperties] = useState<Property[]>([])
   const [showProperties, setShowProperties] = useState(false)
   const [listingPropId, setListingPropId] = useState<number | null>(null)
-  const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
-  // Owned cells set for map flags
+
+  // Build owned cells map: "anchorLat,anchorLng,row,col" — each cell with its own anchor
   const ownedCells = useMemo(() => {
     const s = new Set<string>()
-    properties.forEach(p => s.add(`${p.cellRow},${p.cellCol}`))
+    properties.forEach(p => s.add(`${p.anchorLat},${p.anchorLng},${p.cellRow},${p.cellCol}`))
     return s
   }, [properties])
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
