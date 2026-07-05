@@ -402,15 +402,18 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 - Loaded on mount when user is logged in, and after buy/sell/list/unlist/transfer actions
 
 ### API
-- **GET** `/api/properties?anchor_lat=X&anchor_lng=Y&cell_row=R&cell_col=C` — check ownership (used by RealMap popup)
+- **GET** `/api/properties?anchor_lat=X&anchor_lng=Y&cell_row=R&cell_col=C` — check ownership + get owner details (used by RealMap popup). Returns `{owner, isMine, price, ownerName, name, purchasedAt}`. Owner's display name is fetched from `profiles` table using service role key (bypasses RLS).
 - **POST** `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price}` — buy cell (deducts steps)
 - **PATCH** `/api/properties` with `{id, is_listed: bool, list_price?: number}` — list/unlist property on marketplace
 - **DELETE** `/api/properties?id=X&user_id=Y` — delete property (permanent, no refund)
 - **POST** `/api/properties/transfer` with `{propertyId, buyerId, sellerId, price}` — atomic transfer: deduct steps from buyer → credit seller → transfer ownership
 
 ### Global Callbacks (on window)
-- `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup button → opens **Buy Confirmation Modal** (shows cell name, price, steps balance + 確認/取消 buttons). No longer has client-side steps check (server validates).
-- `window.__pipzManageProperty(row, col)` — called from Leaflet popup "管理" button → switches to `tab='properties'`
+- `window.__pipzBuyCell(row, col, anchorLat, anchorLng)` — called from Leaflet popup "💪 佔領此地" button → opens **Buy Confirmation Modal** (shows cell name, price, steps balance + 確認/取消 buttons). No longer has client-side steps check (server validates).
+- `window.__pipzManageProperty(row, col)` — called from Leaflet popup "📋 管理" button → switches to `tab='properties'`
+- **Popup owner info** (v0.31.0): when clicking an owned cell, the leaflet popup dynamically fetches `GET /api/properties?anchor_lat=...` and displays:
+  - Self-owned: "✅ 你擁有此地" + 📋 管理 button
+  - Other-owned: 👤 owner username (amber), property name (if set), 💎 price paid, 📅 purchase date
 
 ### Supabase Table
 - `properties`: see DATA_MODEL.md for full schema. Additional marketplace columns: `is_listed` (boolean), `list_price` (integer). Migration: `20260803_property_market.sql`.

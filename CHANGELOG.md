@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.31.0 (2026-07-05)
+
+### Added
+- **🗺️ Map cell popup: owner details** — clicking an owned cell on the map now shows the owner's name (from profiles), property name (if set), purchase price, and purchase date. Uses service role key to bypass RLS on profiles table.
+- **👤 Owner info in map popup** — the Leaflet popup for other-owned cells shows: owner name (amber), property name, price paid 💎, date purchased 📅. Self-owned cells still show "✅ 你擁有此地" + Manage button.
+
+### Changed
+- `GET /api/properties` now returns additional fields: `ownerName` (from profiles query), `name` (property name), `purchasedAt` (ISO date string).
+
 ## v0.30.0 (2026-07-05)
 
 ### Added
