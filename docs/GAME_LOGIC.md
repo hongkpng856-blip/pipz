@@ -609,7 +609,7 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 
 ### World Anchor
 - Grid is defined by a **fixed geographic anchor** stored on the server (`grid_config` table in Supabase)
-- Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0006° ≈ 60m)
+- Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0003° ≈ 30m)
 - Once set, the anchor **cannot be changed** — all players see the same grid cells
 
 ### Grid Layout (v0.24.0 – v0.25.0)
@@ -622,11 +622,13 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 
 ### Grid Layout (v0.28.0+ — `L.Rectangle` Vector Grid, stable)
 - **Reverted to `L.Rectangle`** — each cell is a native Leaflet vector layer. Grid moves with map naturally during pan/zoom/fly. No canvas, no per-frame redraw.
-- **Cell cap**: 5,000 cells (MAX_GRID_CELLS), past viewport padding: 8 cells (GRID_PAD) — covers zoom 16–20 fully
+- **Cell cap**: 8,000 cells (MAX_GRID_CELLS, increased from 5,000 for 4× smaller cells), past viewport padding: 10 cells (GRID_PAD) — covers zoom 16–20 fully
+- **Cell size**: 0.0003° × 0.0003° ≈ 30m × 30m (v0.33.0+, was 60m in v0.28.0–v0.32.0)
+- **Price**: ⚡25 per cell (v0.33.0+, was ⚡100 in v0.28.0–v0.32.0)
+- **Existing property migration** (v0.33.0): each old cell was split into 4 smaller cells (2×2), row/col ×2, price ÷4
 - **Cell interaction**: each rectangle has hover tooltip (Monopoly-style, Georgia serif + uppercase cell name in zone colour) + click highlight animation (opacity 0.2, 1.5s) + Monopoly property card popup
-- **Click on map** → `getCellInfo()` detects cell, then **Nominatim reverse geocoding** fetches real address (area/road name) — popup shows "🔍 載入地區資訊…" while loading, then updates to real address like 「屯門區 · 蝴蝶邨 · 湖景路」
-- **Geocode cache**: results cached per cell via `geocodeCache` ref — repeated clicks are instant
-- **Rate limit**: 1 req/s queue (respects Nominatim policy)
+- **Click on map** → `getCellInfo()` detects cell, then **server-side geocode proxy** (`/api/geocode`) fetches real address — popup shows "🔍 載入地區資訊…" while loading, then updates to real address like 「屯門區 · 蝴蝶邨」
+- **Geocode cache**: results cached per cell via module-level `geocodeCache` Map — repeated clicks are instant
 - **Redraw**: on `moveend` / `zoomend` events — old rectangles removed, new ones created for visible viewport
 
 ### Grid Toggle & Zoom Fade (v0.28.0+)

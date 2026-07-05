@@ -482,10 +482,10 @@ Three reusable modals defined directly in `page.tsx`, rendered near the bottom o
 - **Trigger:** Clicking "💪 佔領此地" in the Leaflet grid cell popup
 - **UI:**
   - Zone colour header + cell name
-  - Price: ⚡100
+  - Price: ⚡25 (v0.33.0+, reduced from ⚡100 with 4× smaller cells)
   - Current steps: 👣 {steps}
   - 取消 / ✅ 確認佔領 buttons
-- **On confirm:** POST to `/api/properties`, deducts steps, refreshes property list
+- **On confirm:** POST to `/api/properties`, deducts 25 steps, refreshes property list
 
 ### 7.4 Property Detail Modal (v0.32.0+ redesign)
 - **State:** `detailProperty: Property | null`, `detailLocName: string`
