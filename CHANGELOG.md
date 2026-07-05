@@ -7,7 +7,7 @@
 - **🗺️ Zone-based grid coloring** — cells in the same 10×10 block (300m×300m) now share the same zone colour, creating visible district-sized colour regions on the map. Replaces previous per-cell random hash.
 - **🏘️ Six named zones** — 紫晶區 (purple), 翠綠區 (green), 琥珀區 (amber), 碧藍區 (cyan), 赤紅區 (red), 湛藍區 (blue). Zone names appear in Property Detail Modal headers and buy confirmation popups.
 - **🔮 `ownedCells` Set** — new `useMemo` in `page.tsx` computes `Set<"row,col">` from both `properties` and `listedProperties`, passed as prop to `RealMap` for flag rendering.
-- **🌟 Zone highlight on player entry** — when GPS position enters a 10×10 region block, all cells in that zone light up with brighter fill (0.25→0.08), stronger border (weight 5→3), and higher opacity (0.9). Creates a visual "active territory" feel.
+- **🌟 Current cell highlight** — the exact grid cell the player is standing on lights up with golden border (`#ffd700`, weight 6), high fill opacity (0.7), and a pulsing CSS animation (1.2s cycle). Very obvious on map — instantly shows which 30m cell you're inside.
 
 ### Changed
 - **🎨 Grid zone colour formula** — from `(row * 7 + col * 13) % N` (per-cell hash) to `(Math.floor(row/10) * 7 + Math.floor(col/10) * 13) % N` (10×10 region block). Same deterministic hash but operates on region coordinates instead of individual cell coordinates.
