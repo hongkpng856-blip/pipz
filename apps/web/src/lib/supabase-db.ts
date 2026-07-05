@@ -631,9 +631,10 @@ export async function sellProperty(propertyId: number): Promise<string | null> {
 
 export async function loadAllListedProperties(): Promise<Property[]> {
   const supabase = db()
+  // Load properties without profiles join (profiles RLS blocks cross-user reads)
   const { data } = await supabase
     .from('properties')
-    .select('*, profiles(username)')
+    .select('*')
     .eq('is_listed', true)
     .order('list_price', { ascending: true })
   return ((data as any[]) ?? []).map(mapDbProp)

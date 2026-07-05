@@ -396,8 +396,7 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return
     ;(window as any).__pipzBuyCell = async (row: number, col: number, anchorLat: number, anchorLng: number) => {
-      if (totalSteps < 100) { showToast('❌ 步驟不足！需要 100 步', 'error'); return }
-      // Show confirmation popup instead of buying directly
+      // Show confirmation popup immediately — server handles steps validation
       setBuyConfirm({row, col, anchorLat, anchorLng})
     }
     ;(window as any).__pipzManageProperty = (_row: number, _col: number) => {
@@ -407,7 +406,7 @@ export default function HomePage() {
       delete (window as any).__pipzBuyCell
       delete (window as any).__pipzManageProperty
     }
-  }, [user, totalSteps, loadUserProperties])
+  }, [user, loadUserProperties])
 
   // ── Reload market + notifs + properties when switching to community tab ──
   useEffect(() => {
@@ -2220,9 +2219,10 @@ export default function HomePage() {
                             <div style={{fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
                             <button onClick={async () => {
                               const err = await unlistProperty(prop.id)
-                              if (err) { logMsg(`❌ 下架失敗: ${err}`); return }
-                              logMsg(`📭 ${name} 已下架`)
+                              if (err) { showToast(`❌ 下架失敗: ${err}`, 'error'); return }
+                              showToast(`📭 ${name} 已下架`)
                               loadUserProperties()
+                              loadListedProperties()
                             }} style={{
                               padding:'2px 10px', border:'1px solid #f59e0b44',
                               borderRadius:6, background:'rgba(245,158,11,0.1)',
@@ -2240,13 +2240,14 @@ export default function HomePage() {
                             <div style={{display:'flex', gap:4}}>
                               <button onClick={async () => {
                                 const price = parseInt(listingPriceStr)
-                                if (isNaN(price) || price <= 0) { logMsg('❌ 請輸入有效價格'); return }
+                                if (isNaN(price) || price <= 0) { showToast('❌ 請輸入有效價格', 'error'); return }
                                 const err = await listProperty(prop.id, price)
-                                if (err) { logMsg(`❌ 上架失敗: ${err}`); return }
-                                logMsg(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                                if (err) { showToast(`❌ 上架失敗: ${err}`, 'error'); return }
+                                showToast(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
                                 setListingPropId(null)
                                 setListingPriceStr('')
                                 loadUserProperties()
+                                loadListedProperties()
                               }} style={{
                                 padding:'2px 10px', border:'1px solid #22c55e44',
                                 borderRadius:6, background:'rgba(34,197,94,0.1)',
@@ -2272,9 +2273,10 @@ export default function HomePage() {
                             <button onClick={async () => {
                               if (!confirm('確定放棄此地？(唔會拎返步數)')) return
                               const err = await sellProperty(prop.id)
-                              if (err) { logMsg(`❌ 放棄失敗: ${err}`); return }
-                              logMsg(`🏚️ 已放棄 ${name}`)
+                              if (err) { showToast(`❌ 放棄失敗: ${err}`, 'error'); return }
+                              showToast(`🏚️ 已放棄 ${name}`)
                               loadUserProperties()
+                              loadListedProperties()
                             }} style={{
                               padding:'2px 10px', border:'1px solid #ef444444',
                               borderRadius:6, background:'rgba(239,68,68,0.1)',
