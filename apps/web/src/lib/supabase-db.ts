@@ -633,7 +633,7 @@ export async function loadAllListedProperties(): Promise<Property[]> {
   const supabase = db()
   const { data } = await supabase
     .from('properties')
-    .select('*, profiles!inner(username)')
+    .select('*, profiles(username)')
     .eq('is_listed', true)
     .order('list_price', { ascending: true })
   return ((data as any[]) ?? []).map(mapDbProp)

@@ -409,10 +409,11 @@ export default function HomePage() {
     }
   }, [user, totalSteps, loadUserProperties])
 
-  // ── Reload market + notifs when switching to community tab ──
+  // ── Reload market + notifs + properties when switching to community tab ──
   useEffect(() => {
     if (tab === 'community' && user) {
       loadMarketData()
+      loadListedProperties()
       // Fetch unread notifications count
       fetch(`/api/notifications?userId=${user.id}`)
         .then(r => r.json())
