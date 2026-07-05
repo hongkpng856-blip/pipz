@@ -314,13 +314,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       group.addLayer(flag)
     })
 
-    // Zoom-based visibility: show only at zoom 15+
+    // Zoom-based visibility: show only at zoom 17+ (close-up only)
     const zoomHandler = () => {
       const z = map.getZoom()
       if (!group || !flagGroupRef.current) return
-      if (z >= 15 && !map.hasLayer(group)) {
+      if (z >= 17 && !map.hasLayer(group)) {
         group.addTo(map)
-      } else if (z < 15 && map.hasLayer(group)) {
+      } else if (z < 17 && map.hasLayer(group)) {
         map.removeLayer(group)
       }
     }
@@ -328,7 +328,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     flagZoomHandlerRef.current = zoomHandler
 
     // Initial visibility
-    if (map.getZoom() >= 15) {
+    if (map.getZoom() >= 17) {
       group.addTo(map)
     }
 
