@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
@@ -112,6 +112,13 @@ export default function HomePage() {
   const [listingPropId, setListingPropId] = useState<number | null>(null)
   const [listingPriceStr, setListingPriceStr] = useState('')
   const [listedProperties, setListedProperties] = useState<Property[]>([])
+  // Owned cells set for map flags
+  const ownedCells = useMemo(() => {
+    const s = new Set<string>()
+    properties.forEach(p => s.add(`${p.cellRow},${p.cellCol}`))
+    listedProperties.forEach(p => s.add(`${p.cellRow},${p.cellCol}`))
+    return s
+  }, [properties, listedProperties])
   const [detailProperty, setDetailProperty] = useState<Property | null>(null)
   const [detailLocName, setDetailLocName] = useState('')
   // When detailProperty changes, fetch its location name
@@ -1701,9 +1708,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>

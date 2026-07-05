@@ -13,6 +13,7 @@ interface Props {
   compassActive?: boolean
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
   userId?: string | null
+  ownedCells?: Set<string>  // "row,col" keys — show flag on these cells
 }
 
 const RC: Record<string, string> = {
@@ -70,7 +71,7 @@ export interface RealMapHandle {
   flyToCell: (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -105,6 +106,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const geocodeCache = useRef<Map<string, { label: string; detail: string; full: string }>>(new Map())
   const geocodeQueue = useRef<Array<{ key: string; lat: number; lng: number; resolve: (v: { label: string; detail: string; full: string }) => void }>>([])
   const geocodeBusy = useRef(false)
+  const flagMarkersRef = useRef<L.Marker[]>([])  // flags on owned cells
   // ── Smooth marker animation ──
   const animTargetRef = useRef({ lat: 22.3193, lng: 114.1694 })
   const animDisplayRef = useRef({ lat: 22.3193, lng: 114.1694 })
@@ -164,9 +166,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Skip if grid is toggled off
     if (!gridVisibleRef.current) return
 
-    // Remove old grid
+    // Remove old grid + flags
     gridRectsRef.current.forEach(r => r.remove())
     gridRectsRef.current = []
+    flagMarkersRef.current.forEach(m => m.remove())
+    flagMarkersRef.current = []
 
     const zoom = map.getZoom()
     const zoomFactor = getGridZoomFactor(zoom)
@@ -214,6 +218,22 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           fillOpacity: 0.08 * zoomFactor,
           interactive: zoomFactor > 0.3, // only interactive when somewhat visible
         }).addTo(map)
+
+        // ── Flag on owned cells ──
+        const isOwned = ownedCells?.has(`${row},${col}`)
+        if (isOwned) {
+          // Make owned cell more visible
+          rect.setStyle({ fillOpacity: 0.2 * zoomFactor, opacity: 0.8 * zoomFactor })
+          const flagIcon = L.divIcon({
+            className: 'pipz-flag-marker',
+            html: '<div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">🚩</div>',
+            iconSize: [14, 14],
+            iconAnchor: [7, 14],
+          })
+          const center = rect.getBounds().getCenter()
+          const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false }).addTo(map)
+          flagMarkersRef.current.push(flag)
+        }
 
         // Tooltip on hover — Monopoly-style
         rect.bindTooltip(`<div style="font-family:Georgia,serif;font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.5px;text-align:center;">${name}</div>`, {
