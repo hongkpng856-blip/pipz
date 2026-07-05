@@ -283,9 +283,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Remove old flags
     flagMarkersRef.current.forEach(m => m.remove())
     flagMarkersRef.current = []
-    if (!ownedCells || !anchorRef.current || ownedCells.size === 0) return
+    const cells = ownedCellsRef.current
+    if (!cells || !anchorRef.current || cells.size === 0) return
     const anchor = anchorRef.current
-    ownedCells.forEach(key => {
+    cells.forEach(key => {
       const parts = key.split(',')
       const row = parseInt(parts[0])
       const col = parseInt(parts[1])
@@ -857,6 +858,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       saveTrailToStorage()
     }
   }, [position?.lat, position?.lng, mode, deviceHeading])
+
+  // ── Sync ownedCellsRef with latest prop ──
+  useEffect(() => {
+    ownedCellsRef.current = ownedCells
+  }, [ownedCells])
 
   // ── Refresh flags when owned cells change (e.g. after buying/selling) ──
   useEffect(() => {
