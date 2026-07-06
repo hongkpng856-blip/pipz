@@ -37,6 +37,7 @@ const NEXT_STEP_REQ: Record<number, number> = { 1: 10000, 2: 30000, 3: 60000, 4:
 export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onDelete, onList, onUnlist, onBuy, isMarket, sellerId, currentUserId, equipment, onUnequip, onEquipToSlot, availableEquipment, hasInventory, onOpenInventory }: Props) {
   const [showDelete, setShowDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isBuying, setIsBuying] = useState(false)
   const [listPrice, setListPrice] = useState('500')
 
   // Reset list price when pet changes
@@ -460,14 +461,22 @@ export default function PetDetailModal({ pet, totalSteps, onClose, onEvolve, onD
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b', marginBottom: 12 }}>
                   ⚡ {formatSteps(pet.price)}
                 </div>
-                <button onClick={() => onBuy(pet.id, sellerId, pet.price)}
+                <button onClick={async () => {
+                  if (isBuying || !onBuy || !sellerId) return
+                  setIsBuying(true)
+                  await onBuy(pet.id, sellerId, pet.price)
+                  setIsBuying(false)
+                }}
+                  disabled={isBuying}
                   style={{
                     width: '100%', padding: '12px 0', borderRadius: 16, border: 'none',
-                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                    color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                    background: isBuying ? '#6b4f0a' : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white', fontSize: 14, fontWeight: 700,
+                    cursor: isBuying ? 'not-allowed' : 'pointer',
+                    opacity: isBuying ? 0.5 : 1,
                     fontFamily: 'inherit',
                   }}>
-                  ⚡ 購買
+                  {isBuying ? '⏳ 購買中...' : '⚡ 購買'}
                 </button>
               </div>
             )

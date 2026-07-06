@@ -522,4 +522,54 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 
 ---
 
-*Last updated: 2026-08-03. Add new entries at the top when you discover new pitfalls.*
+## 12. Trail Day Filter Pitfalls
+
+### 12.1 `useEffect` Comparison Preventing Regeneration
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | Clicking a day in the weekly chart doesn't change the heatmap/trails visible — all days still show. |
+| **Root Cause** | The `useEffect` syncing `trailDayFilter` prop had a `next !== prev` guard. On initial render, both `trailDayFilter` prop and `trailDayFilterRef.current` were `null`, so first effect run skipped. When prop changed to a day index, `prev` (from ref) was also `null`... but edge cases with SSR hydration caused stale comparisons. |
+| **Fix** | Remove the `next !== prev` guard entirely. Always regenerate heatmap and show/hide polylines when the effect fires. |
+
+### 12.2 Polyline Filter Without Heatmap
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | Clicking a day filters the heatmap overlay but the dashed trail polylines still show all days. |
+| **Root Cause** | `generateTrailHeatmap(filterDay)` correctly aggregated only the filtered day's grid cells, but `polylineByDay` / `vehiclePolylineByDay` layers were not hidden. The polylines remained visible regardless of the filter. |
+| **Fix** | Add `map.addLayer`/`map.removeLayer` logic for each polyline in the `trailDayFilter` useEffect. Use `map.hasLayer(poly)` guard to avoid redundant operations. |
+
+### 12.3 Overview Toggle Resetting Day Filter
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | When trail overview (👣) toggles OFF, all polylines were restored, losing the day filter state. |
+| **Root Cause** | `toggleTrailOverview` in OFF path called `polylineByDay.current.forEach(poly => map.addLayer(poly))` which restored ALL polylines regardless of filter. Also reset `trailDayFilterRef.current = null`. |
+| **Fix** | Remove the restore-all-polylines code. Don't reset `trailDayFilterRef.current` in the OFF path. Day filter should persist in normal map mode too. |
+
+### 12.4 Default Day Filter = Today
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (enhancement) |
+| **Symptom** | On page load, all 7 days' trails were visible. User wanted only today's trails by default. |
+| **Root Cause** | `useState<number \| null>(null)` — no default filter. |
+| **Fix** | Change to `useState<number \| null>(new Date().getDay())`. On page load, only today's trail polylines are visible. Clicking today's bar again sets `null` to show all. |
+
+### 12.5 Property Flags Tied to Grid Toggle (Not Day Filter)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | Clicking a day filter hides non-matching trail polylines, but 🏠 property flags remain visible on all owned cells regardless of filter. |
+| **Root Cause** | `placeAllFlags()` creates all flags unconditionally on init — no coupling to grid visibility state. |
+| **Fix (v0.35.3)** | Flags are now **exclusively tied to the grid toggle** (`gridVisible`), NOT day filter. `placeAllFlags()` is only called when grid toggle is ON. Day filter only affects trail polylines — flags show on ALL days (or none, depending on grid state). |
+| **Key Insight** | Flags display owned cells, not visited cells. Day filter is for walking trails only. Mixing them was architecturally wrong. Store `flagMarkerByCell` for individual marker access, but control visibility through `gridVisibleRef.current` + grid toggle button handler. |
+
+---
+
+*Last updated: 2026-07-06. Add new entries at the top when you discover new pitfalls.*

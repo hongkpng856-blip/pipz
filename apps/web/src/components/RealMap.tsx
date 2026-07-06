@@ -14,6 +14,7 @@ interface Props {
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
   userId?: string | null
   ownedCells?: Set<string>  // "row,col" keys — show flag on these cells
+  trailDayFilter?: number | null  // null = all days, 0-6 = specific day for trail heatmap
 }
 
 const RC: Record<string, string> = {
@@ -22,6 +23,7 @@ const RC: Record<string, string> = {
 }
 
 const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4899', '#3b82f6']
+const DAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
 // ── Monopoly grid config ──
 const CELL_SIZE_DEG = 0.0003  // ~30m per cell (at HK latitude) — 4x smaller than original 0.0006
@@ -70,9 +72,10 @@ export interface RealMapHandle {
   clearStoredTrails: () => void
   recenterMap: () => void
   flyToCell: (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => void
+  toggleOverview: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, trailDayFilter }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -91,9 +94,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const gridInitializedRef = useRef(false)
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
-  const [gridVisible, setGridVisible] = useState(true)
+  const [gridVisible, setGridVisible] = useState(false)
   const [gpsToggleState, setGpsToggleState] = useState(true)  // force re-render for GPS toggle visual
-  const gridVisibleRef = useRef(true)
+  const gridVisibleRef = useRef(false)
   gridVisibleRef.current = gridVisible
   const userIdRef = useRef(userId ?? null)
   userIdRef.current = userId ?? null
@@ -101,6 +104,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const highlightCellColRef = useRef<number | null>(null)
   const highlightCircleRef = useRef<L.CircleMarker | null>(null)
   const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
+  const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
+  const [trailOverview, setTrailOverview] = useState(false)
+  const trailOverviewRef = useRef(false)
+  const trailDayFilterRef = useRef<number | null>(null)
+  const flagMarkerByCell = useRef<Map<string, L.Marker>>(new Map())
 
   /** Zoom-based grid fade: grid gradually disappears when zoomed out */
   function getGridZoomFactor(zoom: number): number {
@@ -265,6 +273,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       flagGroupRef.current = null
     }
 
+    flagMarkerByCell.current.clear()
+
     const cells = ownedCellsRef.current
     if (!cells || cells.size === 0) return
 
@@ -296,6 +306,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         iconAnchor: [10, 10],
       })
       const flag = L.marker(center, { icon: flagIcon, interactive: true, keyboard: false })
+      flagMarkerByCell.current.set(`${row},${col}`, flag)
       // Click flag → show cell popup (same as grid-cell click)
       flag.on('click', () => {
         const anchor = anchorRef.current
@@ -499,6 +510,111 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     } catch {}
   }
 
+  // ── Trail heatmap: aggregate GPS points into grid cells, colored by zone + visit frequency ──
+  function generateTrailHeatmap(filterDay: number | null = null): Map<string, number> {
+    const cellVisits = new Map<string, number>()
+    const anchor = anchorRef.current
+    if (!anchor) return cellVisits
+    const process = (pts: [number, number][]) => {
+      pts.forEach(([lat, lng]) => {
+        const row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)
+        const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
+        const key = `${row},${col}`
+        cellVisits.set(key, (cellVisits.get(key) || 0) + 1)
+      })
+    }
+    if (filterDay !== null) {
+      const pts = trailByDay.current.get(filterDay)
+      if (pts) process(pts)
+      const vPts = vehicleTrailByDay.current.get(filterDay)
+      if (vPts) process(vPts)
+    } else {
+      trailByDay.current.forEach(pts => process(pts))
+      vehicleTrailByDay.current.forEach(pts => process(pts))
+    }
+    return cellVisits
+  }
+
+  function renderTrailHeatmap(map: L.Map, cells: Map<string, number>) {
+    if (trailHeatmapGroupRef.current) {
+      map.removeLayer(trailHeatmapGroupRef.current)
+      trailHeatmapGroupRef.current = null
+    }
+    if (cells.size === 0) return
+    const anchor = anchorRef.current
+    if (!anchor) return
+    const group = L.layerGroup([])
+    let maxVisits = 0
+    cells.forEach(v => { if (v > maxVisits) maxVisits = v })
+    if (maxVisits === 0) maxVisits = 1
+    cells.forEach((count, key) => {
+      const parts = key.split(',')
+      const row = parseInt(parts[0]), col = parseInt(parts[1])
+      const north = anchor.lat + row * CELL_SIZE_DEG
+      const west = anchor.lng + col * CELL_SIZE_DEG
+      const intensity = Math.min(1, count / Math.max(maxVisits * 0.3, 1))
+      // Use zone colour with opacity based on visit intensity
+      const zoneIdx = getZoneIdx(row, col)
+      const color = ZONE_COLORS[zoneIdx]
+      const rect = L.rectangle(
+        [[north, west], [north + CELL_SIZE_DEG, west + CELL_SIZE_DEG]],
+        {
+          color,
+          weight: 1, opacity: 0.3 + 0.5 * intensity,
+          fillColor: color,
+          fillOpacity: 0.1 + 0.55 * intensity,
+          interactive: true,
+        }
+      )
+      rect.bindTooltip(`🚶 ${count} 次經過`, {
+        permanent: false, direction: 'center',
+        className: 'trail-heatmap-tooltip',
+      })
+      group.addLayer(rect)
+    })
+    group.addTo(map)
+    trailHeatmapGroupRef.current = group
+  }
+
+  /** Toggle trail overview: fitBounds to show trail polylines, recenter on off */
+  const toggleTrailOverview = useCallback(() => {
+    const map = mapRef.current
+    if (!map) return
+    if (trailOverviewRef.current) {
+      // OFF: remove heatmap (if any leftover)
+      if (trailHeatmapGroupRef.current) {
+        map.removeLayer(trailHeatmapGroupRef.current)
+        trailHeatmapGroupRef.current = null
+      }
+      trailOverviewRef.current = false
+      setTrailOverview(false)
+      // Recenter to GPS
+      const pos = lastKnownPosRef.current
+      if (pos) {
+        map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
+      }
+    } else {
+      // ON: zoom out to show trail polylines (respecting day filter)
+      const allPoints: [number, number][] = []
+      const filter = trailDayFilterRef.current
+      const pd = (d: number) => {
+        const pts = trailByDay.current.get(d)
+        if (pts) allPoints.push(...pts)
+        const vPts = vehicleTrailByDay.current.get(d)
+        if (vPts) allPoints.push(...vPts)
+      }
+      if (filter !== null) {
+        pd(filter)
+      } else {
+        trailByDay.current.forEach((_, d) => pd(d))
+      }
+      if (allPoints.length === 0) return
+      trailOverviewRef.current = true
+      setTrailOverview(true)
+      map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50], animate: true, maxZoom: 15 })
+    }
+  }, [])
+
   useImperativeHandle(ref, () => ({
     generateTestTrails: () => {
       const map = mapRef.current
@@ -554,6 +670,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       const cellLng = anchorLng + CELL_SIZE_DEG * cellCol + CELL_SIZE_DEG / 2
       map.flyTo([cellLat, cellLng], 19, { animate: true, duration: 1.5 })
     },
+    toggleOverview: toggleTrailOverview,
   }), [])
 
   const buildPetIcon = useCallback(() => {
@@ -702,7 +819,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     anchorRef.current = GRID_ANCHOR
     gridInitializedRef.current = true
     updateGrid(map, GRID_ANCHOR)
-    placeAllFlags(map)
+    if (gridVisibleRef.current) placeAllFlags(map)
 
     // Dynamic grid: redraw on every pan/zoom
     const onViewChange = () => {
@@ -735,6 +852,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (flagGroupRef.current) {
         map.removeLayer(flagGroupRef.current)
         flagGroupRef.current = null
+      }
+      if (trailHeatmapGroupRef.current) {
+        map.removeLayer(trailHeatmapGroupRef.current)
+        trailHeatmapGroupRef.current = null
       }
       map.remove()
       delete (window as any).__pipzMap
@@ -905,9 +1026,52 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     ownedCellsRef.current = ownedCells
   }, [ownedCells])
 
+  // ── Sync trailDayFilter prop — show/hide trail polylines by day ──
+  useEffect(() => {
+    const currentFilter = trailDayFilter ?? null
+    trailDayFilterRef.current = currentFilter
+    const map = mapRef.current
+    if (!map) return
+
+    // Walk polylines
+    polylineByDay.current.forEach((poly, day) => {
+      if (currentFilter === null || currentFilter === day) {
+        if (!map.hasLayer(poly)) map.addLayer(poly)
+      } else {
+        if (map.hasLayer(poly)) map.removeLayer(poly)
+      }
+    })
+    // Vehicle polylines
+    vehiclePolylineByDay.current.forEach((poly, day) => {
+      if (currentFilter === null || currentFilter === day) {
+        if (!map.hasLayer(poly)) map.addLayer(poly)
+      } else {
+        if (map.hasLayer(poly)) map.removeLayer(poly)
+      }
+    })
+    // Also fit bounds if overview is active
+    if (trailOverviewRef.current) {
+      const allPoints: [number, number][] = []
+      const pd = (d: number) => {
+        const pts = trailByDay.current.get(d)
+        if (pts) allPoints.push(...pts)
+        const vPts = vehicleTrailByDay.current.get(d)
+        if (vPts) allPoints.push(...vPts)
+      }
+      if (currentFilter !== null) {
+        pd(currentFilter)
+      } else {
+        trailByDay.current.forEach((_, d) => pd(d))
+      }
+      if (allPoints.length > 0) {
+        map.fitBounds(L.latLngBounds(allPoints), { padding: [50, 50], animate: true, maxZoom: 15 })
+      }
+    }
+  }, [trailDayFilter])
+
   // ── Refresh flags when owned cells change (e.g. after buying/selling) ──
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapRef.current && gridVisibleRef.current) {
       placeAllFlags(mapRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -984,17 +1148,35 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           gridVisibleRef.current = newVal // Sync ref immediately (before next render)
           setGridVisible(newVal)
           if (!newVal) {
-            // Hide: remove all grid rects
+            // Hide: remove all grid rects + property flags
             gridRectsRef.current.forEach(r => r.remove())
             gridRectsRef.current = []
+            // Clean up flag zoom handler so flags don't reappear on zoom change
+            if (flagZoomHandlerRef.current) {
+              map?.off('zoomend', flagZoomHandlerRef.current)
+              flagZoomHandlerRef.current = null
+            }
+            if (flagGroupRef.current && map) {
+              map.removeLayer(flagGroupRef.current)
+            }
           } else if (map && anchorRef.current) {
-            // Show: redraw grid — fromToggle=true prevents zoom auto-off
+            // Show: redraw grid + restore flags
             updateGrid(map, anchorRef.current, true)
+            placeAllFlags(map)
           }
         }}
         aria-label={gridVisible ? '隱藏網格' : '顯示網格'}
       >
         {gridVisible ? '▦' : '▢'}
+      </button>
+      {/* ── Trail overview button ── */}
+      <button
+        className={`real-map-trail-overview ${trailOverview ? 'active' : ''}`}
+        onClick={toggleTrailOverview}
+        aria-label={trailOverview ? '關閉足跡總覽' : '足跡總覽'}
+        title={trailOverview ? '足跡總覽' : '足跡總覽'}
+      >
+        {trailOverview ? '🗺️' : '👣'}
       </button>
     </div>
   )

@@ -9,6 +9,10 @@ import { createPortal } from 'react-dom'
  * Falls back to inline rendering on server-side.
  *
  * Entrance animation via inline style + single rAF delay, reliable on iOS.
+ *
+ * CRITICAL: When !open, the wrapper MUST block pointer events on ALL children
+ * to prevent invisible overlay click traps. The extra inner wrapper ensures
+ * inline pointer-events:none overrides the CSS .modal-portal-wrapper > * rule.
  */
 export default function ModalPortal({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
@@ -37,6 +41,8 @@ export default function ModalPortal({ children }: { children: ReactNode }) {
 
   if (!mounted) return null
 
+  // When not open, an inner wrapper blocks pointer events on ALL children,
+  // overriding the CSS .modal-portal-wrapper > * { pointer-events: auto } rule.
   const animated = children ? (
     <div className="modal-portal-wrapper"
       style={{
@@ -48,7 +54,10 @@ export default function ModalPortal({ children }: { children: ReactNode }) {
         WebkitTransition: 'opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
-      {children}
+      {/* Inner wrapper blocks clicks when overlay is invisible / animating */}
+      <div style={{ pointerEvents: open ? undefined : 'none' }}>
+        {children}
+      </div>
     </div>
   ) : null
 

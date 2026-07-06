@@ -405,6 +405,31 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: transform 0.15s, opacity 0.15s;
+  position: relative;
+  border-radius: 8px;
+  padding: 2px 0;
+}
+.weekly-bar-col-active {
+  background: rgba(251,191,36,0.1);
+  box-shadow: inset 0 0 0 2px rgba(251,191,36,0.5), 0 0 12px rgba(251,191,36,0.2);
+  border-radius: 8px;
+}
+.weekly-bar-col-active .weekly-bar {
+  opacity: 1 !important;
+  box-shadow: 0 0 10px currentColor !important;
+}
+.weekly-bar-col-active .weekly-bar-label {
+  color: #fbbf24 !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 6px rgba(251,191,36,0.4);
+}
+.weekly-bar-col-active .weekly-bar-steps {
+  color: #fbbf24 !important;
+  font-weight: 700 !important;
+}
+.weekly-bar-col:active {
+  transform: scale(0.95);
 }
 .weekly-bar-wrap {
   width: 100%;
@@ -940,6 +965,39 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 .real-map-grid-toggle-btn:active {
   background: rgba(139,92,246,0.3);
   border-color: #8b5cf6;
+  transform: scale(0.92);
+}
+
+/* Trail overview button — above grid toggle */
+.real-map-trail-overview {
+  position: absolute;
+  bottom: 122px;
+  right: 10px;
+  z-index: 1000;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(11,17,32,0.8);
+  border: 1.5px solid rgba(251,191,36,0.4);
+  color: #fbbf24;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, border-color 0.15s, transform 0.15s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.real-map-trail-overview.active {
+  border-color: rgba(251,191,36,0.8);
+  box-shadow: 0 0 14px rgba(251,191,36,0.3);
+  background: rgba(251,191,36,0.15);
+}
+.real-map-trail-overview:active {
+  background: rgba(251,191,36,0.3);
   transform: scale(0.92);
 }
 

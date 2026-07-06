@@ -86,6 +86,7 @@ export default function HomePage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [notifUnread, setNotifUnread] = useState(0)
     const [showDevTools, setShowDevTools] = useState(false)
+    const [trailDayFilter, setTrailDayFilter] = useState<number | null>(new Date().getDay())
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [simGpsWalking, setSimGpsWalking] = useState(false)
@@ -126,6 +127,8 @@ export default function HomePage() {
   // When detailProperty changes, fetch its location name
   useEffect(() => {
     if (detailProperty) {
+      // Lock body scroll when modal opens
+      document.body.style.overflow = 'hidden'
       if (detailProperty.locationName) {
         setDetailLocName(detailProperty.locationName)
       } else {
@@ -138,6 +141,9 @@ export default function HomePage() {
           detailProperty.locationName = n
         })
       }
+    } else {
+      // Restore body scroll when modal closes
+      document.body.style.overflow = ''
     }
   }, [detailProperty?.id])
   
@@ -160,6 +166,7 @@ export default function HomePage() {
   }, [])
   // ── Buy confirmation modal (map grid) ──
   const [buyConfirm, setBuyConfirm] = useState<{row:number; col:number; anchorLat:number; anchorLng:number} | null>(null)
+  const [buyingCell, setBuyingCell] = useState(false)
   // ── Alert modal (replaces toast) ──
   const [alertModal, setAlertModal] = useState<{message:string; type:'success'|'error'|'info'} | null>(null)
   const showAlert = (m: string, type: 'success'|'error'|'info' = 'info') => setAlertModal({message:m, type})
@@ -1777,9 +1784,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} trailDayFilter={trailDayFilter} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} trailDayFilter={trailDayFilter} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
@@ -1843,8 +1850,13 @@ export default function HomePage() {
                           const maxSt = Math.max(...weeklySteps.map(d => d.steps), 1)
                           return weeklySteps.map((day, i) => {
                             const dayIdx = new Date(day.date).getDay()
+                            const isFiltered = trailDayFilter === dayIdx
                             return (
-                            <div key={day.date} className="weekly-bar-col">
+                            <div key={day.date}
+                              className={`weekly-bar-col ${isFiltered ? 'weekly-bar-col-active' : ''}`}
+                              onClick={() => setTrailDayFilter(isFiltered ? null : dayIdx)}
+                              style={{cursor:'pointer'}}
+                            >
                               <div className="weekly-bar-wrap">
                                 <div
                                   className={`weekly-bar ${day.isToday ? 'weekly-bar-today' : ''}`}
@@ -2355,99 +2367,33 @@ export default function HomePage() {
                     const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                     const color = colors[zoneIdx]
+                    const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
                     return (
-                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 4px 8px', position:'relative', cursor:'pointer'}}
+                      <div key={prop.id} className="pet-card" style={{borderColor:`${color}44`, padding:'10px 8px 8px', position:'relative', cursor:'pointer', touchAction:'manipulation'}}
                         onClick={() => setDetailProperty(prop)}>
                         <div style={{position:'absolute', top:0, left:0, right:0, height:2, background:color, borderRadius:'14px 14px 0 0'}} />
-                        <div style={{fontSize:24, marginBottom:2}}>🏠</div>
-                        <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
-                        <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
-                          {prop.locationName ? (
-                            <span style={{fontSize:6, color:'#94a5b8'}}>{prop.locationName.replace('📍 ','')}</span>
-                          ) : (
-                            <span style={{fontSize:6, color:'#3a4d65'}}>🔍 載入地段…</span>
-                          )}
-                        </div>
-                        <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>
-                          ⚡ {formatSteps(prop.price)}
-                        </div>
-                        {prop.isListed ? (
-                          <div style={{marginTop:6, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
-                            <div style={{fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
-                            <button onClick={async (e) => {
-                              e.stopPropagation()
-                              const err = await unlistProperty(prop.id)
-                              if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
-                              showAlert(`📭 ${name} 已下架`)
-                              loadUserProperties()
-                              loadListedProperties()
-                            }} style={{
-                              padding:'2px 10px', border:'1px solid #f59e0b44',
-                              borderRadius:6, background:'rgba(245,158,11,0.1)',
-                              color:'#f59e0b', fontSize:8, fontWeight:700, cursor:'pointer',
-                              fontFamily:'inherit',
-                            }}>下架</button>
-                          </div>
-                        ) : listingPropId === prop.id ? (
-                          <div style={{marginTop:6, display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
-                            <input type="number" min={1} placeholder="售價（步）"
-                              onChange={e => setListingPriceStr(e.target.value)}
-                              value={listingPriceStr}
-                              style={{width:80, padding:'2px 6px', borderRadius:4, border:'1px solid #334155', background:'#1e293b', color:'#f1f5f9', fontSize:9, textAlign:'center', fontFamily:'inherit'}}
-                              autoFocus />
-                            <div style={{display:'flex', gap:4}}>
-                              <button onClick={async (e) => {
-                                  e.stopPropagation()
-                                  const price = parseInt(listingPriceStr)
-                                  if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
-                                  const err = await listProperty(prop.id, price)
-                                  if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
-                                  showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
-                                  setListingPropId(null)
-                                  setListingPriceStr('')
-                                  loadUserProperties()
-                                  loadListedProperties()
-                                }} style={{
-                                  padding:'2px 10px', border:'1px solid #22c55e44',
-                                  borderRadius:6, background:'rgba(34,197,94,0.1)',
-                                  color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
-                                  fontFamily:'inherit',
-                                }}>確認</button>
-                                <button onClick={(e) => { e.stopPropagation(); setListingPropId(null); setListingPriceStr('') }} style={{
-                                padding:'2px 10px', border:'1px solid #5a6d8544',
-                                borderRadius:6, background:'transparent',
-                                color:'#5a6d85', fontSize:8, fontWeight:700, cursor:'pointer',
-                                fontFamily:'inherit',
-                              }}>取消</button>
+                        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4}}>
+                          <div style={{fontSize:22, lineHeight:1}}>🏠</div>
+                          <div style={{flex:1, minWidth:0}}>
+                            <div style={{fontSize:9, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.3px'}}>{name}</div>
+                            <div style={{fontSize:7, color:'#94a5b8', display:'flex', gap:4, alignItems:'center', marginTop:1}}>
+                              <span style={{background:`${color}22`, borderRadius:3, padding:'0 4px', fontWeight:600, color}}>{zoneNames[zoneIdx]}</span>
+                              <span>⚡{formatSteps(prop.price)}</span>
                             </div>
                           </div>
-                        ) : (
-                          <div style={{marginTop:6, display:'flex', gap:4}}>
-                            <button onClick={(e) => { e.stopPropagation(); setListingPropId(prop.id); setListingPriceStr('') }} style={{
-                              padding:'2px 10px', border:'1px solid #22c55e44',
-                              borderRadius:6, background:'rgba(34,197,94,0.1)',
-                              color:'#22c55e', fontSize:8, fontWeight:700, cursor:'pointer',
-                              fontFamily:'inherit',
-                            }}>上架出售</button>
-                            <button onClick={(e) => {
-                              e.stopPropagation()
-                              setConfirmModal({
-                                message: '確定放棄此地？(唔會拎返步數)',
-                                onConfirm: async () => {
-                                  const err = await sellProperty(prop.id)
-                                  if (err) { showAlert(`❌ 放棄失敗: ${err}`, 'error'); return }
-                                  showAlert(`🏚️ 已放棄 ${name}`)
-                                  loadUserProperties()
-                                  loadListedProperties()
-                                },
-                              })
-                            }} style={{
-                              padding:'2px 10px', border:'1px solid #ef444444',
-                              borderRadius:6, background:'rgba(239,68,68,0.1)',
-                              color:'#ef4444', fontSize:8, fontWeight:700, cursor:'pointer',
-                              fontFamily:'inherit',
-                            }}>放棄</button>
+                          <div style={{fontSize:7, color:'#5a6d85', textAlign:'right', lineHeight:1.2}}>
+                            <div>{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</div>
                           </div>
+                        </div>
+                        {prop.locationName ? (
+                          <div style={{fontSize:6, color:'#6a7d99', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                            📍 {prop.locationName.replace('📍 ','')}
+                          </div>
+                        ) : (
+                          <div style={{fontSize:6, color:'#3a4d65'}}>🔍 載入地段…</div>
+                        )}
+                        {prop.isListed && (
+                          <div style={{marginTop:4, fontSize:7, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
                         )}
                       </div>
                     )
@@ -2832,12 +2778,20 @@ export default function HomePage() {
               }}>
                 取消
               </button>
-              <button onClick={() => { setConfirmModal(null); confirmModal.onConfirm() }} style={{
+              <button onClick={async () => {
+                if ((window as any).__processingConfirm) return
+                ;(window as any).__processingConfirm = true
+                setConfirmModal(null)
+                await confirmModal.onConfirm()
+                ;(window as any).__processingConfirm = false
+              }} style={{
                 flex:1, padding:'8px 0', border:'none', borderRadius:14,
-                background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',
-                color:'white', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: (window as any).__processingConfirm ? '#4a3a6d' : 'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+                color:'white', fontSize:12, fontWeight:700,
+                cursor:'pointer', fontFamily:'inherit',
+                opacity: (window as any).__processingConfirm ? 0.5 : 1,
               }}>
-                確定
+                {(window as any).__processingConfirm ? '⏳ 處理中...' : '確定'}
               </button>
             </div>
           </div>
@@ -2886,7 +2840,9 @@ export default function HomePage() {
                   取消
                 </button>
                 <button onClick={async () => {
+                  if (buyingCell) return
                   if (!user) { showAlert('❌ 需要登入', 'error'); setBuyConfirm(null); return }
+                  setBuyingCell(true)
                   try {
                     const res = await fetch('/api/properties', {
                       method: 'POST',
@@ -2904,13 +2860,16 @@ export default function HomePage() {
                       showAlert(`❌ ${data.error || '佔領失敗'}`, 'error')
                     }
                   } catch { showAlert('❌ 網絡錯誤', 'error') }
+                  setBuyingCell(false)
                   setBuyConfirm(null)
                 }} style={{
                   flex:1, padding:'10px 0', border:'none', borderRadius:14,
-                  background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',
-                  color:'white', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background: buyingCell ? '#4a3a6d' : 'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+                  color:'white', fontSize:12, fontWeight:700,
+                  cursor: buyingCell ? 'not-allowed' : 'pointer', fontFamily:'inherit',
+                  opacity: buyingCell ? 0.5 : 1,
                 }}>
-                  ✅ 確認佔領
+                  {buyingCell ? '⏳ 處理中...' : '✅ 確認佔領'}
                 </button>
               </div>
             </div>
@@ -2919,7 +2878,7 @@ export default function HomePage() {
       })()}
 
       {/* ════ Property Detail Modal ════ */}
-      <ModalPortal>
+      <ModalPortal key={detailProperty?.id ?? '__closed__'}>
       {detailProperty && (() => {
         const p = detailProperty
         const name = `第${p.cellRow+1}區 ${p.cellCol+1}號`
@@ -2932,7 +2891,7 @@ export default function HomePage() {
         const isOwn = user && p.userId === user.id
 
         return (
-          <div className="fixed-modal-layer" style={{
+          <div key={p.id} className="fixed-modal-layer" style={{
             display:'flex', alignItems:'center', justifyContent:'center',
             background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
             padding:16,
@@ -3016,15 +2975,75 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Buy button or own-property notice */}
+              {/* Own property — actions */}
               {isOwn ? (
-                <div style={{
-                  textAlign:'center', padding:'10px 0',
-                  background:'rgba(34,197,94,0.08)', borderRadius:14,
-                  border:'1px solid #22c55e33',
-                  color:'#22c55e', fontSize:12, fontWeight:700,
-                }}>
-                  ✅ 這是你嘅地皮
+                <div>
+                  <div style={{
+                    textAlign:'center', padding:'8px 0', marginBottom:8,
+                    background:'rgba(34,197,94,0.08)', borderRadius:14,
+                    border:'1px solid #22c55e33',
+                    color:'#22c55e', fontSize:12, fontWeight:700,
+                  }}>
+                    ✅ 這是你嘅地皮
+                  </div>
+                  <div style={{display:'flex', gap:6}}>
+                    {!p.isListed ? (
+                      <button onClick={() => {
+                        const priceStr = window.prompt('設定售價（步）：', '500')
+                        if (!priceStr) return
+                        const price = parseInt(priceStr)
+                        if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
+                        // Close modal first so user sees alert if needed
+                        setDetailProperty(null)
+                        listProperty(p.id, price).then(err => {
+                          if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
+                          showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                          loadUserProperties()
+                          loadListedProperties()
+                        })
+                      }} style={{
+                        flex:1, padding:'7px 0', border:'1px solid #22c55e44',
+                        borderRadius:14, background:'rgba(34,197,94,0.1)',
+                        color:'#22c55e', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                      }}>
+                        📌 上架出售
+                      </button>
+                    ) : (
+                      <button onClick={async () => {
+                        const err = await unlistProperty(p.id)
+                        if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
+                        showAlert(`📭 ${name} 已下架`)
+                        loadUserProperties()
+                        loadListedProperties()
+                        setDetailProperty(null)
+                      }} style={{
+                        flex:1, padding:'7px 0', border:'1px solid #f59e0b44',
+                        borderRadius:14, background:'rgba(245,158,11,0.1)',
+                        color:'#f59e0b', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                      }}>
+                        📭 下架
+                      </button>
+                    )}
+                    <button onClick={() => {
+                      setConfirmModal({
+                        message: '確定放棄此地？(唔會拎返步數)',
+                        onConfirm: async () => {
+                          const err = await sellProperty(p.id)
+                          if (err) { showAlert(`❌ 放棄失敗: ${err}`, 'error'); return }
+                          showAlert(`🏚️ 已放棄 ${name}`)
+                          loadUserProperties()
+                          loadListedProperties()
+                          setDetailProperty(null)
+                        },
+                      })
+                    }} style={{
+                      flex:1, padding:'7px 0', border:'1px solid #ef444444',
+                      borderRadius:14, background:'rgba(239,68,68,0.1)',
+                      color:'#ef4444', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                    }}>
+                      🗑️ 放棄
+                    </button>
+                  </div>
                 </div>
               ) : user && user.id !== p.userId ? (
                 <button onClick={() => {

@@ -674,7 +674,14 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - **When ON**: map auto-pans to your position as you walk/ride (`map.panTo([lat, lng])` at 0.3s duration)
 - **When OFF**: map stays where you left it — useful after clicking "在地圖上顯示" on a property
 - **"在地圖上顯示"** calls `__pipzSetGpsFollow(false)` to auto-disable follow
-- **State indicator**: button shows green border when ON, red pulsing when OFF, with `title` tooltip
+|- **State indicator**: button shows green border when ON, red pulsing when OFF, with `title` tooltip
+
+### Trail Overview / 足跡總覽 (v0.35.2+)
+- **👣 Button** on map (right side, above the grid toggle, amber-coloured circle)
+- Click **👣** once → **ON**: map `fitBounds()` to show all (or filtered) trail polylines at once (`maxZoom: 15`)
+- Click **👣** again → **OFF**: map recenters to current GPS position (if available)
+- **📅 Per-day filter** — Click a **day column in the Stats Card weekly bar chart** (below the map) to filter which trail polylines are shown. Click same day again → show all days. Active day shows amber glow border + highlighted bar. **Filter persists in both normal map mode and trail overview. Default = today's day.**
+- **Technical**: `trailDayFilter` state in `page.tsx`: `useState<number | null>(new Date().getDay())` → passed as prop to RealMap → `useEffect` syncs `trailDayFilterRef` → shows/hides `polylineByDay` / `vehiclePolylineByDay` layers via `map.addLayer`/`map.removeLayer`.
 
 ### Occupation / 地皮買賣系統
 - Click any unowned grid cell → Monopoly popup shows **💪 佔領此地** button
