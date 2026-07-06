@@ -478,7 +478,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | Silent item acquisition (no popup) | All | Always show visible confirmation for acquired items |
 | Multiple independent modal triggers | All | Use ref-based queue system with pending refs |
 || Map compass arrow direction/wrong pivot | All | SVG path + GPS trajectory heading (`atan2`) + same-container rotate |
-|| **ModalPortal always-mounted modals block all clicks** | All | When `ModalPortal` is used with always-mounted modals (like `<ModalPortal><LoginModal open={bool}/></ModalPortal>`), the portal wrapper is always in the DOM with `z-index: 9999`. Setting `pointer-events` inline via `open ? 'auto' : 'none'` caused even "closed" modals to capture clicks after mounting animation. **Fix:** Keep `.modal-portal-wrapper` at `pointer-events: none` in CSS permanently. Children get `pointer-events: auto` via `.modal-portal-wrapper > *`. Never set `pointer-events` inline on the wrapper. |
+||| **ModalPortal animation creates click trap on grandchildren** | All | Fade-in/out animation (`opacity: 0` + rAF state machine) created a transparent overlay that trapped clicks. `pointer-events: none` does NOT cascade to grandchildren — `.fixed-modal-layer` had default `pointer-events: auto` and intercepted all clicks during the animation window. Repeated cycles accumulated timing race conditions causing cards to become permanently unresponsive after 4-5 opens. **Fix:** Remove all animation from ModalPortal. Render children instantly with no transition or state machine. Verified: 30-cycle stress test at 50ms intervals. (`src/components/ModalPortal.tsx` v0.35.4) |
 || **Map auto-centers on every GPS update, ignores user pan** | All | `else if (!initialAnimBusyRef.current) { map.setView([lat, lng], ...) }` in position sync runs on EVERY position fix, overriding user's manual pan. **Fix:** Remove the else-if block entirely. Only center on initial zoom. Add a 🎯 recenter button instead. |
 || **Map remounts every tab switch** | All | `{tab === 'map' && (<RealMap />)}` causes React to unmount/remount the entire Leaflet map when switching away and back. **Fix:** Always render the map tab div, toggle visibility via `style={{ display: tab === 'map' ? '' : 'none' }}`. |
 || **GPS position drift bearing causes random arrow direction** | All | Computing `atan2(dLng, dLat)` from consecutive GPS positions at walking speed gives unreliable bearing (GPS noise ~5-10m). Arrow points in random direction when user stands or walks slowly. **Fix:** Remove bearing computation entirely. Arrow only updates from compass (`deviceHeading`) or Geolocation API `coords.heading`. Defaults to north (0°) when no source available. |
@@ -571,5 +571,20 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Key Insight** | Flags display owned cells, not visited cells. Day filter is for walking trails only. Mixing them was architecturally wrong. Store `flagMarkerByCell` for individual marker access, but control visibility through `gridVisibleRef.current` + grid toggle button handler. |
 
 ---
+
+---
+
+## 13. ModalPortal Animation Click Trap (Fixed v0.35.4)
+
+### 13.1 Transparent Overlay Intercepts Clicks During Animation
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (cards unresponsive after 4-5 cycles) |
+| **Symptom** | Opening/closing property cards 4-5 times causes all pet-grid cards to stop responding to clicks. Reloading the page fixes it temporarily. |
+| **Root Cause** | Three interacting problems: (1) ModalPortal fade-in used `opacity: 0` → rAF → `opacity: 1`, creating a 16ms+ window where the overlay is transparent but present in the DOM. (2) CSS `.modal-portal-wrapper > * { pointer-events: auto }` gives grandchildren like `.fixed-modal-layer` `pointer-events: auto` — `pointer-events: none` does NOT cascade to descendants. (3) The rAF-based state machine accumulated timing race conditions over multiple cycles, eventually leaving the overlay in a state where it permanently blocked clicks to cards behind it. |
+| **Fix** | Remove ALL animation logic from ModalPortal. Children render instantly via simple conditional: `children ? <div>{children}</div> : null`. No transition, no opacity animation, no rAF state machine. The 16ms invisible overlay window is eliminated entirely. |
+| **Why no animation?** | The fade-in was purely cosmetic (< 300ms). Eliminating it removes an entire class of race-condition bugs at negligible UX cost. Verified with 30-cycle stress test at 50ms intervals — 100% pass rate. |
+| **Prevention** | Any portal-based overlay system must guarantee ZERO invisible DOM elements that can intercept events. If animation is needed, use `display: none` + CSS `transition-delay` (not setTimeout/rAF) with proper `visibility` coordination. |
 
 *Last updated: 2026-07-06. Add new entries at the top when you discover new pitfalls.*

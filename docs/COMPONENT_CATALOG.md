@@ -844,11 +844,21 @@ Each notification card shows:
 
 ### Notification Generation (Server-side) (above)
 
-### Modal Positioning (Critical — iOS stacking context fix)
+### ModalPortal Component (`src/components/ModalPortal.tsx`)
 
-- Renders via **ModalPortal** (`createPortal` → `document.body`) to escape Leaflet's GPU compositing stacking context
-- Uses `.fixed-modal-layer` CSS class: `position: fixed; z-index: 9999; isolation: isolate`
-- **Bottom nav guard**: inline `bottom: 85px` overrides CSS `inset: 0` — modal stops 85px above viewport bottom, leaving room for the 5 bottom nav buttons
+- Renders children into `document.body` via React `createPortal` to escape Leaflet's GPU compositing stacking context
+- **No animation** — children appear/disappear instantly. Previous fade-in/out animation created a transparent overlay (`opacity: 0`) that trapped clicks because `pointer-events` does NOT cascade to grandchildren, and the rAF-based state machine accumulated timing race conditions over repeated open/close cycles
+- Returns `null` when not mounted (SSR safety via `useState(false) → true`)
+- Modal instances (3 total, independently rendered):
+  1. **Property detail modal** — `key={detailProperty?.id ?? '__closed__'}` forces remount on every open/close for clean state
+  2. **Alert modal** — replaces toast (shown/hidden via `alertModal` state)
+  3. **Confirm modal** — replaces native confirm (shown/hidden via `confirmModal` state)
+- CSS: `.modal-portal-wrapper` has `pointer-events: none` (z-index: 9999). Children get `pointer-events: auto` via `.modal-portal-wrapper > *`
+
+### Modal Content: `.fixed-modal-layer`
+
+- CSS class: `position: fixed; z-index: 9999; isolation: isolate`
+- **Bottom nav guard**: inline `bottom: 85px` can override CSS `inset: 0` — modal stops 85px above viewport bottom, leaving room for the 5 bottom nav buttons
 - `.fixed-modal-layer` does NOT use `!important` on `inset`/`top`/`bottom`/`left`/`right` — only `position: fixed` and `z-index: 9999` are `!important`. This allows individual modals to override positioning (e.g., notification modal sets `bottom: 85px`).
 
 ### Unread Count
