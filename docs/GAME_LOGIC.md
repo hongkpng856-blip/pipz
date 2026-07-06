@@ -666,7 +666,15 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
   - Called from `useEffect([ownedCells])` — triggers on every property change (buy/sell/list/unlist)
   - Also called on grid anchor init and on `ownedCells` change for flag refresh
   - **Independent of `updateGrid()`** — flags remain visible during pan/zoom/grid toggle
+- **Zoom gate**: flags visible when zoom ≥ 14 (v0.35.1+) — matches grid cell fade-in range
 - Old flags cleared and rebuilt only when `ownedCells` changes (via `useEffect`), not on grid rebuild
+
+### GPS Auto-Follow (v0.35.1+)
+- **Toggle button** on map (bottom-right): click to switch GPS follow ON (🎯 green glow) / OFF (📍 red pulsing)
+- **When ON**: map auto-pans to your position as you walk/ride (`map.panTo([lat, lng])` at 0.3s duration)
+- **When OFF**: map stays where you left it — useful after clicking "在地圖上顯示" on a property
+- **"在地圖上顯示"** calls `__pipzSetGpsFollow(false)` to auto-disable follow
+- **State indicator**: button shows green border when ON, red pulsing when OFF, with `title` tooltip
 
 ### Occupation / 地皮買賣系統
 - Click any unowned grid cell → Monopoly popup shows **💪 佔領此地** button

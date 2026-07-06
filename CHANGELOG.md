@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.35.1 (2026-07-06)
+
+### Added
+- **🎯 GPS auto-follow toggle** — Bottom-right button on map: click to toggle GPS follow ON (🎯 green) / OFF (📍 red pulsing). Turning ON also flies to your current location. Title tooltip shows current state.
+- **👁️ Property flags visible from zoom 14** — Previously only showed at zoom 17+. Lowered threshold so you can see occupied cells even when zoomed out. Grid cells start fading in at zoom 14 (33% opacity), flags now match.
+
 ## v0.35.0 (2026-07-06)
 
 ### Fixed
