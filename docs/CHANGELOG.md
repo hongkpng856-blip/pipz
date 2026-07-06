@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.35.4 — ModalPortal Click Trap Fix (2026-07-06)
+
+**Fix:** Property cards becoming unclickable after 4-5 modal open/close cycles.
+
+**Root cause:** ModalPortal's fade-in/fade-out animation created a transparent overlay
+(opacity 0) that still caught clicks due to CSS `pointer-events` not cascading to
+grandchildren. Repeated cycles accumulated timing race conditions in the rAF-based
+state machine.
+
+**Fix:** Stripped all animation from ModalPortal. Children are rendered instantly
+with no transition — no timing window exists for overlay click traps. Verified with
+30-cycle stress tests at 50ms intervals (both overlay click and button click close).
+
+**Changed files:**
+- `src/components/ModalPortal.tsx` — removed animated/phase state machine
+
 ## v0.35.3 — Flag–Grid Toggle Sync (2026-07-07)
 
 **Fix:** Property flags now follow the grid toggle strictly:
