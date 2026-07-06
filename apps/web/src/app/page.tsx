@@ -2377,13 +2377,15 @@ export default function HomePage() {
                         <div className="prop-body">
                           <div className="prop-icon">🏠</div>
                           <div className="prop-info">
-                            <div className="prop-title" style={{color}}>{name}</div>
+                            <div className="prop-title">
+                              <span className="prop-name" style={{color}}>{name}</span>
+                              <span className="prop-date">{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</span>
+                            </div>
                             <div className="prop-meta">
                               <span className="prop-badge" style={{background:`${color}22`, color}}>{zoneNames[zoneIdx]}</span>
                               <span className="prop-price">⚡{formatSteps(prop.price)}</span>
                             </div>
                           </div>
-                          <div className="prop-date">{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</div>
                         </div>
                         {prop.locationName ? (
                           <div className="prop-location">📍 {prop.locationName.replace('📍 ','')}</div>
