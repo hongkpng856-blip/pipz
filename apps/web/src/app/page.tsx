@@ -2348,7 +2348,7 @@ export default function HomePage() {
                 <span className="section-title">🏠 地產</span>
                 <span className="section-count">{properties.length}塊</span>
                 <button className="view-toggle" onClick={() => setCompactProps(v => !v)}
-                  style={{marginLeft:'auto', fontSize:10, padding:'2px 6px', background:'var(--card-2)', border:'1px solid var(--border)', borderRadius:6, color:'var(--text-2)', cursor:'pointer'}}>
+                  style={{marginLeft:'auto', fontSize:12, padding:'4px 10px', background:'var(--card-2)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-2)', cursor:'pointer', whiteSpace:'nowrap'}}>
                   {compactProps ? '📜 大卡' : '📜 細卡'}
                 </button>
               </div>

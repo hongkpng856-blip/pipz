@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.36.0 — Property Card Expand-on-Click (2026-07-07)
+
+**Redesign:** Property grid cards now match pet card size (3-column `.pet-grid`). Click any card to open a full Monopoly-deed style modal with all details.
+
+**Changes:**
+- **Grid cards** — Property and Market grid now use `pet-card` class (pet-card size, 3-column grid), matching the pet gallery layout. Each card shows a zone colour top accent bar, emoji icon, cell name, district location, seller/owner, and ⚡ price.
+- **Market grid** — Also changed to 3-column `pet-grid` (was 2-column `.prop-grid`) for visual consistency.
+- **Expand-on-click** — Clicking any property card calls `setDetailProperty(prop)`, opening the Property Detail Modal.
+- **Property Detail Modal** — Full Monopoly-deed modal design:
+  - Zone-coloured header (name + district badge)
+  - Body rows: 📍地段, ⚡價格, 📅購入, 🌐座標, 👤賣家
+  - 📌 上架中 status badge (when listed)
+  - Actions: 上架出售 / 下架 / 🗑️放棄 (own), ⚡購買 (other's), 🗺️在地圖上顯示
+  - Modal uses inline `<div>` (no separate component) with `onClick` backdrop close + `e.stopPropagation()` on card
+- **Toggle vestigial** — The 「📜 大卡/📜 細卡」toggle button remains but both states use the same 3-column grid (no visual difference in this version).
+
+**Changed files:**
+- `apps/web/src/app/page.tsx` — property grid (inline cards) → `pet-card` size, detail modal → Monopoly-deed inline modal
+- `apps/web/src/app/globals.css` — added `.prop-modal-row`, `.prop-modal-label`, `.prop-modal-value` CSS classes for modal body
+
 ## v0.35.4 — ModalPortal Click Trap Fix (2026-07-06)
 
 **Fix:** Property cards becoming unclickable after 4-5 modal open/close cycles.

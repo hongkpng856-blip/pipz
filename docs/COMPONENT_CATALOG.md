@@ -388,16 +388,15 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 
 ### Layout
 - Title: 🏠 地產 (large, top-left)
-- Scrollable list of property cards (pet-grid, gap:8), each showing:
-  - Zone colour header bar
-  - Cell name: `第${row+1}區 ${col+1}號` (Georgia serif, uppercase)
-  - **📍 District name** (v0.32.0+): real-world district (e.g. "屯門區 · 蝴蝶邨") in small grey text. Batch-fetched from `/api/geocode` via `enrichWithLocation()` after properties load, cached module-level.
-  - Price: ⚡ {price} 步
-  - **Three states per card:**
-    - **Unlisted (default):** 🟢 上架出售 (opens price input) + 🔴 放棄 (permanent deletion, no refund)
-    - **Listing (price input):** 💰 `{price}` input + ✅ 確認 / ❌ 取消
-    - **Listed (on market):** 🟡 已上架 @ ⚡{price} + 🔴 下架 (removes from marketplace) + 🔴 放棄
-  - Clicking card → **Property Detail Modal**
+- **📜 細卡/📜 大卡** toggle button (right of section count) — default state uses pet-card size (3-column `.pet-grid`). Toggle has no visual effect in current version (both states render 3-column grid).
+- Scrollable grid of property cards (`.pet-grid`, 3-column, gap:6), each showing:
+  - **Zone colour top accent bar** (2px, zone colour, rounded top corners)
+  - **Emoji icon**: ✅ (own) or 🏠 (unlisted/other's)
+  - **Cell name**: `第${row+1}區 ${col+1}號` (zone colour, uppercase, 9px)
+  - **📍 District name** (v0.32.0+): real-world district (e.g. "屯門區 · 蝴蝶邨") in small grey text (6px). Batch-fetched from `/api/geocode` via `enrichWithLocation()` after properties load, cached module-level.
+  - **👤 seller label** (7px): "👤 你擁有" (own), "👤 {sellerName}" (other's listed), or "由賣家出售" (anonymous)
+  - **Price**: ⚡ {price} 步 (amber, 8px bold)
+- Clicking any card → **Property Detail Modal** (see §7.4)
 - Empty state: "未有地產 — 點擊地圖購買地皮！"
 
 ### Data
@@ -445,14 +444,16 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 ### Property Marketplace Section (v0.29.0+)
 - Section title: "🏠 地皮市集" + count
 - Shows **all listed properties from all players** (including the current user's own)
+- 3-column grid (`.pet-grid`, gap:8, same as pet gallery) — changed from 2-column in v0.36.0
 - Each card shows:
-  - Zone colour header
-  - Cell name: `第${row+1}區 ${col+1}號`
-  - **📍 District name** (v0.32.0+): real-world district (e.g. "屯門區 · 蝴蝶邨") in small grey text. Batch-fetched from `/api/geocode` via `enrichWithLocation()`.
-  - List price: ⚡{list_price} 步
-  - Seller name (if available) or "由賣家出售"
+  - **Zone colour top accent bar** (2px, zone colour)
+  - **Emoji icon**: ✅ (own) or 🏠 (other's)
+  - **Cell name**: `第${row+1}區 ${col+1}號`
+  - **📍 District name** (v0.32.0+): real-world district in small grey text
+  - **List price**: ⚡{list_price} 步
+  - **Seller name** (if available) or "由賣家出售"
   - **Own property styling**: ✅ icon, green border, semi-transparent (opacity 0.7), "👤 你擁有" label
-  - Clicking **any** card → **Property Detail Modal** (v0.32.0+: own properties open modal with map link + "✅ 這是你嘅地皮", instead of previous error alert)
+  - Clicking **any** card → **Property Detail Modal**
 - Empty state: "地皮市集暫時未有地皮出售 — 等玩家上架更多地皮！"
 - Loaded on tab switch via `loadAllListedProperties()` from `supabase-db.ts` (client-side, uses RLS-read)
 
@@ -490,18 +491,36 @@ Three reusable modals defined directly in `page.tsx`, rendered near the bottom o
   - 取消 / ✅ 確認佔領 buttons
 - **On confirm:** POST to `/api/properties`, deducts 25 steps, refreshes property list
 
-### 7.4 Property Detail Modal (v0.32.0+ redesign)
+### 7.4 Property Detail Modal (v0.32.0+ — redesign v0.36.0)
+
+**Note:** This modal is now rendered **inline** in `page.tsx` (not a separate component file). The modal renders via the `detailProperty` state — when non-null, a `fixed-modal-layer` div appears as an overlay.
+
 - **State:** `detailProperty: Property | null`, `detailLocName: string`
-- **Trigger:** Clicking any property card in **Properties** or **Community** tab
-- **UI — Monopoly-deed style:**
-  - **Top gradient accent bar** (zone colour gradient)
-  - **"地段" prestige header** with **district name** in gradient text (zone colour → white). Lazy-fetched from `/api/geocode` on modal open, cached per coordinate via module-level `geocodeCache` Map.
-  - **Property name badge**: serif font, zone colour, pill-shaped (border-radius:20)
-  - **Details card**: seller, price (⚡), coordinates, listing date
-  - **Own property**: "✅ 這是你嘅地皮" badge (green, no buy button)
-  - **Other's property**: "⚡ 購買地皮" button → Confirm Modal → `POST /api/properties/transfer`
-  - **"🗺️ 在地圖上顯示"** button (v0.32.0+) → closes modal + calls `__pipzFlyToProperty()` (switches to Map tab, flies to cell at zoom 18)
-- **Location name fetch:** `useEffect` on `detailProperty?.id` → checks `p.locationName` first → falls back to `fetchLocationName()` → caches both on `geocodeCache` and `p.locationName`
+- **Trigger:** Clicking any property card in **Properties** or **Community/Property Marketplace** tab (`onClick={() => setDetailProperty(prop)}`)
+- **Close:** Click backdrop (`.fixed-modal-layer`) or the "關閉" button → `setDetailProperty(null)`
+- **UI — Monopoly-deed style (full redesign v0.36.0):**
+  - **Overlay:** Full-screen fixed, `background: rgba(0,0,0,0.7)`, `backdrop-filter: blur(6px)`, flex center
+  - **Card:** `width: 300px`, `max-width: 100%`, `background: #0f1729`, zone-colour border (`2px solid ${color}66`), `border-radius: 12px`, overflow hidden
+  - **Header section** (zone colour background):
+    - 🏠 emoji (28px)
+    - Property name (16px, white, 800 weight)
+    - District badge: `{zoneName} · 地段` (10px, white 70% opacity, uppercase, letter-spacing 2px)
+  - **Body section** (padding 14px 16px):
+    - ✕ close button (top-right, absolute)
+    - `.prop-modal-row` rows (flex space-between, border-bottom, 10px font):
+      - 📍 地段 | detailLocName (lazy-fetched from `/api/geocode`)
+      - ⚡ 價格 | price in amber (bold)
+      - 📅 購入 | purchase date (zh-HK locale)
+      - 🌐 座標 | anchorLat, anchorLng (4 decimal places)
+      - 👤 賣家 | sellerName or "匿名賣家" (no border-bottom)
+    - Listed status badge (when `p.isListed`): 📌 上架中 · ⚡{price} 步 (green, border-top separator)
+  - **Actions section** (flex column, gap 6px):
+    - **Own property (unlisted):** 📌 上架出售 (green) + 🗑️ 放棄 (red, opens Confirm Modal)
+    - **Own property (listed):** 📭 下架 (amber) + 🗑️ 放棄 (red)
+    - **Other's property:** ⚡ 購買地皮 (purple gradient, opens Confirm Modal → transfer)
+    - **Navigate to map:** 🗺️ 在地圖上顯示 (blue, calls `__pipzFlyToProperty`)
+    - **Cancel:** 關閉 (grey, dismisses modal)
+- **Location name fetch:** `useEffect` on `detailProperty?.id` → checks `p.locationName` first → falls back to `fetchLocationName()` → caches on both `geocodeCache` and `p.locationName`
 
 ### PetDetailModal Market Mode
 - **isMarket={isMarketView && !isOwnPet}**: Shows seller asking price + ⚡ **購買** button
