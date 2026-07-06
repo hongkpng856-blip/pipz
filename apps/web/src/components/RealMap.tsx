@@ -113,6 +113,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const flagGroupRef = useRef<L.LayerGroup | null>(null)
   const flagZoomHandlerRef = useRef<(() => void) | null>(null)
   const walkingRef = useRef(false)
+  const gpsFollowRef = useRef(true)  // when false, GPS auto-follow is disabled (e.g. after "show on map")
   // ── Smooth marker animation ──
   const animTargetRef = useRef({ lat: 22.3193, lng: 114.1694 })
   const animDisplayRef = useRef({ lat: 22.3193, lng: 114.1694 })
@@ -280,7 +281,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Place flags on top of grid
   }
 
-  /** Place or update flag markers on all owned cells — zoom-aware (hide < zoom 15) */
+  /** Place or update flag markers on all owned cells — coloured, clickable, zoom-gated only (no walking gate) */
   function placeAllFlags(map: L.Map) {
     // Remove old handler + group
     if (flagZoomHandlerRef.current) {
@@ -296,7 +297,6 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (!cells || cells.size === 0) return
 
     const group = L.layerGroup([])
-    const positions: {lat: number; lng: number; key: string}[] = []
 
     cells.forEach(key => {
       const parts = key.split(',')
@@ -307,25 +307,37 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       const north = cellAnchorLat + row * CELL_SIZE_DEG
       const west = cellAnchorLng + col * CELL_SIZE_DEG
       const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
-      positions.push({lat: center.lat, lng: center.lng, key})
+      const zoneIdx = getZoneIdx(row, col)
+      const color = ZONE_COLORS[zoneIdx]
+      const name = `第${row+1}區 ${col+1}號`
+
       const flagIcon = L.divIcon({
         className: 'pipz-flag-marker',
-        html: '<div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">🚩</div>',
-        iconSize: [14, 14],
-        iconAnchor: [7, 14],
+        html: `<div style="
+          width:20px;height:20px;border-radius:4px;
+          background:${color};border:2px solid ${color}cc;
+          display:flex;align-items:center;justify-content:center;
+          font-size:10px;line-height:1;cursor:pointer;
+          box-shadow:0 1px 4px rgba(0,0,0,0.4);
+        ">🏠</div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
       })
-      const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false })
+      const flag = L.marker(center, { icon: flagIcon, interactive: true, keyboard: false })
+      // Click flag → show cell popup (same as grid-cell click)
+      flag.on('click', () => {
+        const anchor = anchorRef.current
+        if (!anchor) return
+        showCellPopup(map, center, name, color, center.lat, center.lng, row, col)
+      })
       group.addLayer(flag)
     })
-    if (positions.length > 0) {
-      console.log('[pipz] placeAllFlags:', positions.length, 'flags', positions.map(p => `${p.key}=>(${p.lat.toFixed(5)},${p.lng.toFixed(5)})`).join(' | '))
-    }
 
-    // Zoom-based visibility: show only when walking AND zoom 17+
+    // Zoom-based visibility: show when zoom 17+ (no walking gate)
     const zoomHandler = () => {
       const z = map.getZoom()
       if (!group || !flagGroupRef.current) return
-      const shouldShow = z >= 17 && walkingRef.current
+      const shouldShow = z >= 17
       if (shouldShow && !map.hasLayer(group)) {
         group.addTo(map)
       } else if (!shouldShow && map.hasLayer(group)) {
@@ -335,8 +347,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     map.on('zoomend', zoomHandler)
     flagZoomHandlerRef.current = zoomHandler
 
-    // Initial visibility — only add if walking AND zoom 17+
-    if (map.getZoom() >= 17 && walkingRef.current) {
+    // Initial visibility — add if zoom 17+
+    if (map.getZoom() >= 17) {
       group.addTo(map)
     }
 
@@ -564,9 +576,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     flyToCell: (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => {
       const map = mapRef.current
       if (!map) return
+      // Fix: invalidateSize first — map container may have been hidden (display:none tab)
+      map.invalidateSize()
       const cellLat = anchorLat + CELL_SIZE_DEG * cellRow + CELL_SIZE_DEG / 2
       const cellLng = anchorLng + CELL_SIZE_DEG * cellCol + CELL_SIZE_DEG / 2
-      map.flyTo([cellLat, cellLng], 18, { animate: true, duration: 1.5 })
+      map.flyTo([cellLat, cellLng], 19, { animate: true, duration: 1.5 })
     },
   }), [])
 
@@ -646,6 +660,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }).addTo(map)
 
     mapRef.current = map
+    ;(window as any).__pipzMap = map
+    ;(window as any).__pipzSetGpsFollow = (enabled: boolean) => { gpsFollowRef.current = enabled }
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize()
+    })
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
+    ;(map as any).__pipzResizeObserver = resizeObserver
 
     // ── Track manual zoom (for auto-zoom override) ──
     map.on('zoomend', () => {
@@ -730,6 +753,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     return () => {
       map.off('click', onMapClick)
       map.off('moveend zoomend', onViewChange)
+      // Cleanup resize observer
+      if ((map as any).__pipzResizeObserver) {
+        ;(map as any).__pipzResizeObserver.disconnect()
+      }
       gridRectsRef.current.forEach(r => r.remove())
       gridRectsRef.current = []
       // Cleanup flag zoom handler
@@ -742,6 +769,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         flagGroupRef.current = null
       }
       map.remove()
+      delete (window as any).__pipzMap
+      delete (window as any).__pipzSetGpsFollow
       initialised.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -829,13 +858,13 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       animateMarker()
     }
 
-    // ── GPS auto-follow: pan map when user walks/rides ──
-    if (walking && (mode === 'walk' || mode === 'vehicle')) {
-      // Skip auto-follow during initial animation
-      if (!initialAnimBusyRef.current) {
-        map.panTo([lat, lng], { animate: true, duration: 0.3 })
+      // ── GPS auto-follow: pan map when user walks/rides ──
+      if (walking && (mode === 'walk' || mode === 'vehicle')) {
+        // Skip auto-follow if user has clicked "show on map" (disabled via flyTo) or initial animation
+        if (!initialAnimBusyRef.current && gpsFollowRef.current) {
+          map.panTo([lat, lng], { animate: true, duration: 0.3 })
+        }
       }
-    }
 
     // ── Initial zoom: show all trails first, then fly to current (one-time) ──
     if (!initialZoomDoneRef.current) {
@@ -928,17 +957,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ownedCells])
 
-  // ── Sync walkingRef and toggle flags when walking starts/stops ──
+  // ── Sync walkingRef ──
   useEffect(() => {
     walkingRef.current = walking
-    if (mapRef.current && flagGroupRef.current) {
-      const map = mapRef.current
-      if (walking && map.getZoom() >= 17 && !map.hasLayer(flagGroupRef.current)) {
-        flagGroupRef.current.addTo(map)
-      } else if (!walking && map.hasLayer(flagGroupRef.current)) {
-        map.removeLayer(flagGroupRef.current)
-      }
-    }
   }, [walking])
 
   // ── Clear trail when walking stops ──
@@ -976,11 +997,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       )}
       {/* ── Recenter button ── */}
       <button
-        className="real-map-recenter-btn"
+        className={`real-map-recenter-btn ${!gpsFollowRef.current ? 'gps-follow-off' : ''}`}
         onClick={() => {
           const map = mapRef.current
           const pos = lastKnownPosRef.current
           if (map && pos) {
+            gpsFollowRef.current = true
             map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
           }
         }}

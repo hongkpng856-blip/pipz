@@ -896,6 +896,17 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   border-color: #8b5cf6;
   transform: scale(0.92);
 }
+/* ── GPS follow disabled indicator ── */
+.real-map-recenter-btn.gps-follow-off {
+  border-color: #ef4444;
+  color: #ef4444;
+  box-shadow: 0 0 12px rgba(239,68,68,0.5);
+  animation: gps-off-pulse 2s ease-in-out infinite;
+}
+@keyframes gps-off-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 18px rgba(239,68,68,0.7); }
+}
 
 /* Grid toggle button — above recenter */
 .real-map-grid-toggle-btn {

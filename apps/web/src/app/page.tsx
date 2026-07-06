@@ -178,7 +178,16 @@ export default function HomePage() {
   const [stepFlashType, setStepFlashType] = useState<'normal'|'skill'|'none'>('none')
   const [stepArrows, setStepArrows] = useState<{id:number;type:'normal'|'skill'}[]>([])
   const stepArrowId = useRef(0)
-  const { user, signOut } = useAuth()
+  const { user, signOut, signInWithPassword } = useAuth()
+
+  // ── Auto-login for testing (remove before production) ──
+  useEffect(() => {
+    if (user || typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('autotest') === '1') {
+      signInWithPassword('pipztest@gmail.com', 'test1234')
+    }
+  }, [user, signInWithPassword])
 
   // ── Load pet equipment when detail modal opens ──
   useEffect(() => {
@@ -470,11 +479,23 @@ export default function HomePage() {
       setTab('properties')
     }
     ;(window as any).__pipzFlyToProperty = (anchorLat: number, anchorLng: number, cellRow: number, cellCol: number) => {
+      // Disable GPS auto-follow so flyTo stays at the target location
+      if ((window as any).__pipzSetGpsFollow) {
+        (window as any).__pipzSetGpsFollow(false)
+      }
+      console.log('[flyTo] called', {anchorLat, anchorLng, cellRow, cellCol})
       setTab('map')
-      // Small delay to let the map tab mount
       setTimeout(() => {
-        realMapRef.current?.flyToCell(anchorLat, anchorLng, cellRow, cellCol)
-      }, 100)
+        const map = (window as any).__pipzMap
+        console.log('[flyTo] __pipzMap:', !!map, map?.getCenter?.())
+        if (!map) return
+        map.invalidateSize()
+        const CELL_SIZE_DEG = 0.0003
+        const cellLat = anchorLat + CELL_SIZE_DEG * cellRow + CELL_SIZE_DEG / 2
+        const cellLng = anchorLng + CELL_SIZE_DEG * cellCol + CELL_SIZE_DEG / 2
+        console.log('[flyTo] flying to', cellLat, cellLng)
+        map.flyTo([cellLat, cellLng], 19, { animate: true, duration: 1.5 })
+      }, 200)
     }
     return () => {
       delete (window as any).__pipzBuyCell

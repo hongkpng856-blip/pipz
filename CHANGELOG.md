@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.34.1 (2026-07-06)
+
+### Fixed
+- **👁️ One-click test login** — `pipztest@gmail.com` was created via Magic Link (no password
+hash), causing "Invalid login credentials". Set password via Supabase admin SQL.
+- **🔍 FlyTo zoom level** — increased from 18 → 19 so property fly-to lands clearly on the
+target cell. Updated both `RealMap.tsx` and `page.tsx` `__pipzFlyToProperty`.
+- **🎯 FlyTo being overridden by GPS auto-follow** — Root cause: clicking "在地圖上顯示" → 
+`setTab('map')` → `walkStart()` starts GPS → 200ms later `map.flyTo()` runs → 1s later GPS
+fix triggers `map.panTo(gpsPos)` which overwrites flyTo. Fix: added `__pipzFlyToOverride`
+timestamp flag (6s), checked in RealMap GPS sync useEffect to skip auto-follow during flyTo.
+
 ## v0.34.0 (2026-08-03)
 
 ### Added
