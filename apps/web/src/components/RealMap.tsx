@@ -293,10 +293,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
 
     const cells = ownedCellsRef.current
-    if (!cells || !anchorRef.current || cells.size === 0) return
-    const anchor = anchorRef.current
+    if (!cells || cells.size === 0) return
 
     const group = L.layerGroup([])
+    const positions: {lat: number; lng: number; key: string}[] = []
 
     cells.forEach(key => {
       const parts = key.split(',')
@@ -307,6 +307,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       const north = cellAnchorLat + row * CELL_SIZE_DEG
       const west = cellAnchorLng + col * CELL_SIZE_DEG
       const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
+      positions.push({lat: center.lat, lng: center.lng, key})
       const flagIcon = L.divIcon({
         className: 'pipz-flag-marker',
         html: '<div style="font-size:14px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">🚩</div>',
@@ -316,6 +317,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       const flag = L.marker(center, { icon: flagIcon, interactive: false, keyboard: false })
       group.addLayer(flag)
     })
+    if (positions.length > 0) {
+      console.log('[pipz] placeAllFlags:', positions.length, 'flags', positions.map(p => `${p.key}=>(${p.lat.toFixed(5)},${p.lng.toFixed(5)})`).join(' | '))
+    }
 
     // Zoom-based visibility: show only when walking AND zoom 17+
     const zoomHandler = () => {
