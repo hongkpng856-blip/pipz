@@ -2212,7 +2212,7 @@ export default function HomePage() {
                       <div className="pet-grid" style={{gap:8}}>
                         {listedProperties
                           .map(prop => {
-                            const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
+                            const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
                             const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                             const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                             const color = colors[zoneIdx]
@@ -2363,7 +2363,7 @@ export default function HomePage() {
               ) : (
                 <div className="pet-grid" style={{gap:8}}>
                   {properties.map(prop => {
-                    const name = `第${prop.cellRow+1}區 ${prop.cellCol+1}號`
+                    const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
                     const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                     const color = colors[zoneIdx]
@@ -2377,10 +2377,7 @@ export default function HomePage() {
                         <div className="prop-body">
                           <div className="prop-icon">🏠</div>
                           <div className="prop-info">
-                            <div className="prop-title">
-                              <span className="prop-name" style={{color}}>{name}</span>
-                              <span className="prop-date">{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</span>
-                            </div>
+                            <div className="prop-name" style={{color}}>{name}</div>
                             <div className="prop-meta">
                               <span className="prop-badge" style={{background:`${color}22`, color}}>{zoneNames[zoneIdx]}</span>
                               <span className="prop-price">⚡{formatSteps(prop.price)}</span>
