@@ -2369,31 +2369,29 @@ export default function HomePage() {
                     const color = colors[zoneIdx]
                     const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
                     return (
-                      <div key={prop.id} className="pet-card pet-card-prop" style={{borderColor:`${color}44`, padding:'12px 10px 10px', position:'relative', cursor:'pointer', touchAction:'manipulation'}}
-                        onClick={() => setDetailProperty(prop)}>
-                        <div style={{position:'absolute', top:0, left:0, right:0, height:3, background:color, borderRadius:'14px 14px 0 0'}} />
-                        <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:4}}>
-                          <div style={{fontSize:20, lineHeight:1, width:24, textAlign:'center', flexShrink:0}}>🏠</div>
-                          <div style={{flex:1, minWidth:0}}>
-                            <div style={{fontSize:10, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.3px'}}>{name}</div>
-                            <div style={{fontSize:8, color:'#94a5b8', display:'flex', gap:4, alignItems:'center', marginTop:2}}>
-                              <span style={{background:`${color}22`, borderRadius:3, padding:'0 5px', fontWeight:600, color}}>{zoneNames[zoneIdx]}</span>
-                              <span>⚡{formatSteps(prop.price)}</span>
+                      <div key={prop.id}
+                        className="pet-card pet-card-prop"
+                        onClick={() => setDetailProperty(prop)}
+                        style={{borderColor:`${color}44`}}>
+                        <div className="prop-accent" style={{background:color}} />
+                        <div className="prop-body">
+                          <div className="prop-icon">🏠</div>
+                          <div className="prop-info">
+                            <div className="prop-title" style={{color}}>{name}</div>
+                            <div className="prop-meta">
+                              <span className="prop-badge" style={{background:`${color}22`, color}}>{zoneNames[zoneIdx]}</span>
+                              <span className="prop-price">⚡{formatSteps(prop.price)}</span>
                             </div>
                           </div>
-                          <div style={{fontSize:7, color:'#5a6d85', textAlign:'right', lineHeight:1.2, flexShrink:0}}>
-                            <div>{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</div>
-                          </div>
+                          <div className="prop-date">{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</div>
                         </div>
                         {prop.locationName ? (
-                          <div style={{fontSize:7, color:'#6a7d99', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', marginTop:2}}>
-                            📍 {prop.locationName.replace('📍 ','')}
-                          </div>
+                          <div className="prop-location">📍 {prop.locationName.replace('📍 ','')}</div>
                         ) : (
-                          <div style={{fontSize:7, color:'#3a4d65', marginTop:2}}>🔍 載入地段…</div>
+                          <div className="prop-location" style={{color:'#3a4d65'}}>🔍 載入地段…</div>
                         )}
                         {prop.isListed && (
-                          <div style={{marginTop:4, fontSize:8, color:'#22c55e', fontWeight:700}}>📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
+                          <div className="prop-listed">📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
                         )}
                       </div>
                     )
