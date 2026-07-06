@@ -2347,28 +2347,16 @@ export default function HomePage() {
               <div className="section-header">
                 <span className="section-title">🏠 地產</span>
                 <span className="section-count">{properties.length}塊</span>
-                <div style={{marginLeft:'auto', display:'flex', background:'var(--card-2)', borderRadius:8, padding:2, gap:2}}>
-                  <button onClick={() => setCompactProps(false)}
-                    style={{
-                      fontSize:11, fontWeight:700, padding:'3px 8px', border:'none', borderRadius:6,
-                      background: !compactProps ? '#8b5cf6' : 'transparent',
-                      color: !compactProps ? '#fff' : 'var(--text-3)',
-                      cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap',
-                      transition:'all 0.15s',
-                    }}>
-                    📜 細卡
-                  </button>
-                  <button onClick={() => setCompactProps(true)}
-                    style={{
-                      fontSize:11, fontWeight:700, padding:'3px 8px', border:'none', borderRadius:6,
-                      background: compactProps ? '#8b5cf6' : 'transparent',
-                      color: compactProps ? '#fff' : 'var(--text-3)',
-                      cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap',
-                      transition:'all 0.15s',
-                    }}>
-                    📜 大卡
-                  </button>
-                </div>
+                <button onClick={() => setCompactProps(v => !v)}
+                  style={{
+                    marginLeft:'auto', fontSize:10, fontWeight:600,
+                    padding:'3px 10px', border:'1px solid #8b5cf644',
+                    borderRadius:20, background:'rgba(139,92,246,0.08)',
+                    color:'#a78bfa', cursor:'pointer', fontFamily:'inherit',
+                    whiteSpace:'nowrap', lineHeight:1.3,
+                  }}>
+                  {compactProps ? '📜 細卡' : '📜 大卡'}
+                </button>
               </div>
               {!user ? (
                 <div className="card empty-state">
