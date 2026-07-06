@@ -2209,7 +2209,7 @@ export default function HomePage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="pet-grid" style={{gap:8}}>
+                      <div className="prop-grid" style={{gap:8}}>
                         {listedProperties
                           .map(prop => {
                             const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
@@ -2361,7 +2361,7 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <div className="pet-grid" style={{gap:8}}>
+                <div className="prop-grid" style={{gap:8}}>
                   {properties.map(prop => {
                     const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
                     const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
