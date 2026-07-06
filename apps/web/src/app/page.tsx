@@ -2347,10 +2347,28 @@ export default function HomePage() {
               <div className="section-header">
                 <span className="section-title">🏠 地產</span>
                 <span className="section-count">{properties.length}塊</span>
-                <button className="view-toggle" onClick={() => setCompactProps(v => !v)}
-                  style={{marginLeft:'auto', fontSize:12, padding:'4px 10px', background:'var(--card-2)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-2)', cursor:'pointer', whiteSpace:'nowrap'}}>
-                  {compactProps ? '📜 大卡' : '📜 細卡'}
-                </button>
+                <div style={{marginLeft:'auto', display:'flex', background:'var(--card-2)', borderRadius:8, padding:2, gap:2}}>
+                  <button onClick={() => setCompactProps(false)}
+                    style={{
+                      fontSize:11, fontWeight:700, padding:'3px 8px', border:'none', borderRadius:6,
+                      background: !compactProps ? '#8b5cf6' : 'transparent',
+                      color: !compactProps ? '#fff' : 'var(--text-3)',
+                      cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap',
+                      transition:'all 0.15s',
+                    }}>
+                    📜 細卡
+                  </button>
+                  <button onClick={() => setCompactProps(true)}
+                    style={{
+                      fontSize:11, fontWeight:700, padding:'3px 8px', border:'none', borderRadius:6,
+                      background: compactProps ? '#8b5cf6' : 'transparent',
+                      color: compactProps ? '#fff' : 'var(--text-3)',
+                      cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap',
+                      transition:'all 0.15s',
+                    }}>
+                    📜 大卡
+                  </button>
+                </div>
               </div>
               {!user ? (
                 <div className="card empty-state">
@@ -2366,7 +2384,7 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <div className={`pet-grid${compactProps ? ' prop-compact' : ''}`} style={{gap:6}}>
+                <div className={`${compactProps ? 'prop-grid' : 'pet-grid'}`} style={{gap: compactProps ? 8 : 6}}>
                   {properties.map(prop => {
                     const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
                     const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
