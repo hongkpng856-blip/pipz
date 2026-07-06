@@ -159,7 +159,7 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
               </button>
             </div>
 
-            {/* ── One-click test login ── */}
+            {/* ── One-click test logins ── */}
             <button onClick={async () => {
               setSending(true); setError('')
               const err = await signInWithPassword('pipztest@gmail.com', 'Test123456!')
@@ -168,10 +168,23 @@ export default function LoginModal({ open, onClose }: { open: boolean; onClose: 
             }} style={{
               width:'100%', padding:'8px 0', borderRadius:10, border:'1px solid rgba(34,197,94,0.3)',
               background:'rgba(34,197,94,0.1)', color:'#22c55e', fontSize:11, fontWeight:600,
+              cursor:'pointer', fontFamily:'inherit', marginBottom:6, display:'flex',
+              alignItems:'center', justifyContent:'center', gap:4,
+            }}>
+              <span>🔑 pipztest</span>
+            </button>
+            <button onClick={async () => {
+              setSending(true); setError('')
+              const err = await signInWithPassword('pipztest2@gmail.com', 'Test123456!')
+              if (err) { setError(err); setSending(false) }
+              else { onClose() }
+            }} style={{
+              width:'100%', padding:'8px 0', borderRadius:10, border:'1px solid rgba(59,130,246,0.3)',
+              background:'rgba(59,130,246,0.1)', color:'#60a5fa', fontSize:11, fontWeight:600,
               cursor:'pointer', fontFamily:'inherit', marginBottom:10, display:'flex',
               alignItems:'center', justifyContent:'center', gap:4,
             }}>
-              <span>🔑 一鍵登入測試帳號</span>
+              <span>🔑 pipztest2</span>
             </button>
 
             {/* Email */}
