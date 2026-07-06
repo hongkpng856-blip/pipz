@@ -277,52 +277,63 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   display: flex;
   flex-direction: column;
   background: var(--card);
+  min-height: 220px;
 }
 .pet-card-prop::before { display: none; }
 .pet-card-prop .prop-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  min-height: 40px;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 10px 10px;
+  min-height: 72px;
   border-radius: 7px 7px 0 0;
 }
 .pet-card-prop .prop-icon {
-  font-size: 14px;
+  font-size: 20px;
   line-height: 1;
   flex-shrink: 0;
 }
 .pet-card-prop .prop-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   color: #fff;
   letter-spacing: 0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
+  max-width: 100%;
 }
 .pet-card-prop .prop-body {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 6px 10px 8px;
+  gap: 6px;
+  padding: 10px 12px 12px;
   flex: 1;
   background: #0f1729;
   border-radius: 0 0 7px 7px;
 }
 .pet-card-prop .prop-zone {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
+  text-align: center;
 }
 .pet-card-prop .prop-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 8px;
-  line-height: 1.4;
+  font-size: 9px;
+  line-height: 1.5;
+  padding: 2px 0;
+  border-bottom: 1px solid #1a2a3a;
+}
+.pet-card-prop .prop-row:last-of-type {
+  border-bottom: none;
 }
 .pet-card-prop .prop-label {
   color: #5a6d85;
@@ -335,15 +346,15 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 65%;
+  max-width: 60%;
 }
 .pet-card-prop .prop-listed {
-  margin-top: 3px;
+  margin-top: auto;
   font-size: 8px;
   color: #22c55e;
   font-weight: 700;
   text-align: center;
-  padding: 2px 0 0;
+  padding: 4px 0 0;
   border-top: 1px solid #1a2a3a;
 }
 .pet-card-icon {
