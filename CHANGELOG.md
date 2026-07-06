@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.34.2 (2026-07-06)
+
+### Fixed
+- **📍 "Show on map" flyTo permanently disables GPS auto-follow** — Previous 6s override was
+insufficient; GPS fix would still arrive and `map.panTo(gpsPos)` would overwrite flyTo. Now
+`__pipzFlyToProperty` calls `__pipzSetGpsFollow(false)` which fully disables GPS tracking.
+- **🎯 Recenter button re-enables GPS follow** — clicking 🎯 button now also sets
+`gpsFollowRef.current = true` before flying to current location.
+- **👁️ Visual indicator for GPS follow state** — button turns red with pulsing glow when
+GPS follow is off, purple/normal when active.
+
 ## v0.34.1 (2026-07-06)
 
 ### Fixed
