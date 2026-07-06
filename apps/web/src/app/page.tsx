@@ -75,6 +75,7 @@ export default function HomePage() {
   const [petAnim, setPetAnim] = useState<'idle'|'walk'|'happy'>('idle')
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
+  const [compactProps, setCompactProps] = useState(false)
   const [ready, setReady] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -2346,6 +2347,10 @@ export default function HomePage() {
               <div className="section-header">
                 <span className="section-title">🏠 地產</span>
                 <span className="section-count">{properties.length}塊</span>
+                <button className="view-toggle" onClick={() => setCompactProps(v => !v)}
+                  style={{marginLeft:'auto', fontSize:10, padding:'2px 6px', background:'var(--card-2)', border:'1px solid var(--border)', borderRadius:6, color:'var(--text-2)', cursor:'pointer'}}>
+                  {compactProps ? '📜 大卡' : '📜 細卡'}
+                </button>
               </div>
               {!user ? (
                 <div className="card empty-state">
@@ -2361,7 +2366,7 @@ export default function HomePage() {
                   </div>
                 </div>
               ) : (
-                <div className="prop-grid" style={{gap:8}}>
+                <div className={`prop-grid${compactProps ? ' prop-compact' : ''}`} style={{gap:8}}>
                   {properties.map(prop => {
                     const name = `${prop.cellRow+1}區 ${prop.cellCol+1}號`
                     const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
