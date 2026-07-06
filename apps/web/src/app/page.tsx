@@ -130,7 +130,10 @@ export default function HomePage() {
         setDetailLocName(detailProperty.locationName)
       } else {
         setDetailLocName('')
-        fetchLocationName(detailProperty.anchorLat, detailProperty.anchorLng).then(n => {
+        fetchLocationName(
+          detailProperty.anchorLat + detailProperty.cellRow * 0.0003 + 0.00015,
+          detailProperty.anchorLng + detailProperty.cellCol * 0.0003 + 0.00015
+        ).then(n => {
           setDetailLocName(n)
           detailProperty.locationName = n
         })
@@ -145,7 +148,10 @@ export default function HomePage() {
     // Fetch in parallel with a small concurrency limit (Nominatim rate)
     const results = await Promise.all(
       needsFetch.map(async (p) => {
-        const name = await fetchLocationName(p.anchorLat, p.anchorLng)
+        const name = await fetchLocationName(
+          p.anchorLat + p.cellRow * 0.0003 + 0.00015,
+          p.anchorLng + p.cellCol * 0.0003 + 0.00015
+        )
         p.locationName = name
         return p
       })

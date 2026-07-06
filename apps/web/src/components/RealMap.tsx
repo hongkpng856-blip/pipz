@@ -30,6 +30,7 @@ const GRID_PAD = 10            // extra cells beyond viewport for smooth panning
 const ZONE_COLORS = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
 const ZONE_NAMES = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
 const REGION_SIZE = 10  // cells per region — 10×10 blocks share the same zone colour
+const GRID_ANCHOR = { lat: 22.3752, lng: 114.1134 }  // fixed world anchor — NEVER changes (multi-player stability)
 
 /** Get zone index from grid position — cells in same 10×10 block get same colour */
 function getZoneIdx(row: number, col: number): number {
@@ -137,37 +138,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const TRAIL_STORAGE_KEY = 'pipz_trail_data'
   const VEHICLE_TRAIL_KEY = 'pipz_vehicle_trail'
 
-  /** Fetch grid anchor from server (shared across all players) */
-  async function fetchGridAnchor(): Promise<{ lat: number; lng: number } | null> {
-    try {
-      const res = await fetch('/api/grid-config')
-      if (!res.ok) return null
-      const json = await res.json()
-      if (!json.anchor) return null
-      return { lat: json.anchor.anchor_lat, lng: json.anchor.anchor_lng }
-    } catch { return null }
-  }
-
-  /** Set grid anchor on server (only works if none exists yet) */
-  async function setGridAnchor(lat: number, lng: number): Promise<boolean> {
-    try {
-      const res = await fetch('/api/grid-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat, lng }),
-      })
-      return res.ok
-    } catch { return false }
-  }
-
-  function roundToGrid(lat: number, lng: number) {
-    return {
-      lat: Math.round(lat / CELL_SIZE_DEG) * CELL_SIZE_DEG,
-      lng: Math.round(lng / CELL_SIZE_DEG) * CELL_SIZE_DEG,
-    }
-  }
-
-  // ── Dynamic full-map grid: renders visible L.Rectangle cells based on viewport ──
+  // ── Dynamic full-map grid
   //    Leaflet vector layers move with map automatically (no per-frame redraw).
   function updateGrid(map: L.Map, anchor: { lat: number; lng: number }, fromToggle = false) {
     // Skip if grid is toggled off
@@ -726,15 +697,11 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     // ── Per-day trails (created lazily) ──
 
-    // Fetch grid anchor from server (shared world anchor for all players)
-    fetchGridAnchor().then(anchor => {
-      if (anchor && !gridInitializedRef.current) {
-        anchorRef.current = anchor
-        gridInitializedRef.current = true
-        updateGrid(map, anchor)
-        placeAllFlags(map)
-      }
-    })
+    // Set fixed grid anchor (constant — same for all players)
+    anchorRef.current = GRID_ANCHOR
+    gridInitializedRef.current = true
+    updateGrid(map, GRID_ANCHOR)
+    placeAllFlags(map)
 
     // Dynamic grid: redraw on every pan/zoom
     const onViewChange = () => {
@@ -811,19 +778,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     const { lat, lng, heading } = position
     const map = mapRef.current
 
-    // ── Create fixed grid on first GPS fix (saved to server for all players) ──
-    if (!gridInitializedRef.current) {
-      gridInitializedRef.current = true
-      const anchor = roundToGrid(lat, lng)
-      anchorRef.current = anchor
-      // Save to server (silent if already set by another player)
-      setGridAnchor(anchor.lat, anchor.lng)
-      // Draw grid immediately
-      if (map) {
-        updateGrid(map, anchor)
-        placeAllFlags(map)
-      }
-    }
+    // ── Grid anchor is already set as constant on map init ──
 
     // ── Compute user's current cell highlight ──
     const cellAnchor = anchorRef.current
