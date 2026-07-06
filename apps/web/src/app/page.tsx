@@ -2889,221 +2889,258 @@ export default function HomePage() {
       })()}
 
       {/* ════ Property Detail Modal ════ */}
-      <ModalPortal key={detailProperty?.id ?? '__closed__'}>
-      {detailProperty && (() => {
-        const p = detailProperty
-        const name = `第${p.cellRow+1}區 ${p.cellCol+1}號`
-        const zoneIdx = getZoneIdx(p.cellRow, p.cellCol)
-        const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
-        const color = colors[zoneIdx]
-        const lighter = color + '66'
-        const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
-        const sellPrice = p.listPrice ?? p.price
-        const isOwn = user && p.userId === user.id
+      {detailProperty && (
+        <ModalPortal key={detailProperty.id}>
+          <PropertyModalContent
+            p={detailProperty}
+            user={user}
+            totalSteps={totalSteps}
+            setDetailProperty={setDetailProperty}
+            setConfirmModal={setConfirmModal}
+            showAlert={showAlert}
+            loadUserProperties={loadUserProperties}
+            loadListedProperties={loadListedProperties}
+            formatSteps={formatSteps}
+            getZoneIdx={getZoneIdx}
+            detailLocName={detailLocName}
+            listProperty={listProperty}
+            unlistProperty={unlistProperty}
+            sellProperty={sellProperty}
+            updateTotalSteps={updateTotalSteps}
+            setTotalSteps={setTotalSteps}
+          />
+        </ModalPortal>
+      )}
 
-        return (
-          <div key={p.id} className="fixed-modal-layer" style={{
-            display:'flex', alignItems:'center', justifyContent:'center',
-            background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
-            padding:16,
-          }} onClick={() => setDetailProperty(null)}>
+    </div>
+  )
+}
+
+/* ── Property Detail Modal Content (Monopoly deed) ── */
+function PropertyModalContent({
+  p, user, totalSteps, setDetailProperty, setConfirmModal, showAlert,
+  loadUserProperties, loadListedProperties, formatSteps, getZoneIdx,
+  detailLocName, listProperty, unlistProperty, sellProperty, updateTotalSteps, setTotalSteps,
+}: {
+  p: any; user: any; totalSteps: number;
+  setDetailProperty: (v: any) => void; setConfirmModal: (v: any) => void;
+  showAlert: (m: string, t?: 'success' | 'error' | 'info') => void;
+  loadUserProperties: () => void; loadListedProperties: () => void;
+  formatSteps: (n: number) => string; getZoneIdx: (r: number, c: number) => number;
+  detailLocName: string | null;
+  listProperty: Function;
+  unlistProperty: Function;
+  sellProperty: Function;
+  updateTotalSteps: Function;
+  setTotalSteps: (n: number) => void;
+}) {
+  const name = `第${p.cellRow+1}區 ${p.cellCol+1}號`
+  const zoneIdx = getZoneIdx(p.cellRow, p.cellCol)
+  const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+  const color = colors[zoneIdx]
+  const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+  const sellPrice = p.listPrice ?? p.price
+  const isOwn = user && p.userId === user.id
+  return (
+    <div className="fixed-modal-layer" style={{
+      display:'flex', alignItems:'center', justifyContent:'center',
+      background:'rgba(0,0,0,0.7)', backdropFilter:'blur(6px)',
+      padding:16,
+    }} onClick={() => setDetailProperty(null)}>
+      <div style={{
+        background:'#0f1729', border:`2px solid ${color}66`,
+        borderRadius:12, width:300, maxWidth:'100%',
+        position:'relative', overflow:'hidden',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* ── Monopoly deed header ── */}
+        <div style={{
+          background: color,
+          padding: '20px 16px 14px',
+          textAlign: 'center',
+        }}>
+          <div style={{fontSize:28, lineHeight:1, marginBottom:6}}>🏠</div>
+          <div style={{
+            fontSize:16, fontWeight:800, color:'#fff',
+            letterSpacing:1,
+          }}>{name}</div>
+          <div style={{
+            fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.7)',
+            textTransform:'uppercase', letterSpacing:2, marginTop:4,
+          }}>{zoneNames[zoneIdx]} · 地段</div>
+        </div>
+
+        {/* ── Deed body ── */}
+        <div style={{padding:'14px 16px 16px'}}>
+
+          {/* Location */}
+          <div className="prop-modal-row">
+            <span className="prop-modal-label">📍 地段</span>
+            <span className="prop-modal-value">
+              {detailLocName ? detailLocName.replace('📍 ','') : '🔍 載入中…'}
+            </span>
+          </div>
+
+          {/* Price */}
+          <div className="prop-modal-row">
+            <span className="prop-modal-label">⚡ 價格</span>
+            <span className="prop-modal-value" style={{color:'#f59e0b', fontWeight:800}}>
+              {formatSteps(sellPrice)} 步
+            </span>
+          </div>
+
+          {/* Purchase date */}
+          <div className="prop-modal-row">
+            <span className="prop-modal-label">📅 購入</span>
+            <span className="prop-modal-value">{new Date(p.purchasedAt).toLocaleDateString('zh-HK')}</span>
+          </div>
+
+          {/* Coordinates */}
+          <div className="prop-modal-row">
+            <span className="prop-modal-label">🌐 座標</span>
+            <span className="prop-modal-value">{p.anchorLat.toFixed(4)}, {p.anchorLng.toFixed(4)}</span>
+          </div>
+
+          {/* Seller */}
+          <div className="prop-modal-row" style={{borderBottom:'none'}}>
+            <span className="prop-modal-label">👤 賣家</span>
+            <span className="prop-modal-value">{p.sellerName ? p.sellerName : '匿名賣家'}</span>
+          </div>
+
+          {/* Listed status badge */}
+          {p.isListed && (
             <div style={{
-              background:'#0f1729', border:`2px solid ${color}66`,
-              borderRadius:12, width:300, maxWidth:'100%',
-              position:'relative', overflow:'hidden',
-            }} onClick={e => e.stopPropagation()}>
+              textAlign:'center', marginTop:10,
+              fontSize:9, color:'#22c55e', fontWeight:700,
+              padding:'4px 0', borderTop:'1px solid #1a2a3a',
+            }}>
+              📌 上架中 · ⚡{formatSteps(p.listPrice ?? 0)} 步
+            </div>
+          )}
 
-              {/* ── Monopoly deed header ── */}
-              <div style={{
-                background: color,
-                padding: '20px 16px 14px',
-                textAlign: 'center',
-              }}>
-                <div style={{fontSize:28, lineHeight:1, marginBottom:6}}>🏠</div>
-                <div style={{
-                  fontSize:16, fontWeight:800, color:'#fff',
-                  letterSpacing:1,
-                }}>{name}</div>
-                <div style={{
-                  fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.7)',
-                  textTransform:'uppercase', letterSpacing:2, marginTop:4,
-                }}>{zoneNames[zoneIdx]} · 地段</div>
-              </div>
-
-              {/* ── Deed body ── */}
-              <div style={{padding:'14px 16px 16px'}}>
-
-                {/* Location */}
-                <div className="prop-modal-row">
-                  <span className="prop-modal-label">📍 地段</span>
-                  <span className="prop-modal-value">
-                    {detailLocName ? detailLocName.replace('📍 ','') : '🔍 載入中…'}
-                  </span>
-                </div>
-
-                {/* Price */}
-                <div className="prop-modal-row">
-                  <span className="prop-modal-label">⚡ 價格</span>
-                  <span className="prop-modal-value" style={{color:'#f59e0b', fontWeight:800}}>
-                    {formatSteps(sellPrice)} 步
-                  </span>
-                </div>
-
-                {/* Purchase date */}
-                <div className="prop-modal-row">
-                  <span className="prop-modal-label">📅 購入</span>
-                  <span className="prop-modal-value">{new Date(p.purchasedAt).toLocaleDateString('zh-HK')}</span>
-                </div>
-
-                {/* Coordinates */}
-                <div className="prop-modal-row">
-                  <span className="prop-modal-label">🌐 座標</span>
-                  <span className="prop-modal-value">{p.anchorLat.toFixed(4)}, {p.anchorLng.toFixed(4)}</span>
-                </div>
-
-                {/* Seller */}
-                <div className="prop-modal-row" style={{borderBottom:'none'}}>
-                  <span className="prop-modal-label">👤 賣家</span>
-                  <span className="prop-modal-value">{p.sellerName ? p.sellerName : '匿名賣家'}</span>
-                </div>
-
-                {/* Listed status badge */}
-                {p.isListed && (
-                  <div style={{
-                    textAlign:'center', marginTop:10,
-                    fontSize:9, color:'#22c55e', fontWeight:700,
-                    padding:'4px 0', borderTop:'1px solid #1a2a3a',
+          {/* ── Actions ── */}
+          <div style={{marginTop:14, display:'flex', gap:6}}>
+            {isOwn ? (
+              <>
+                {!p.isListed ? (
+                  <button onClick={() => {
+                    const priceStr = window.prompt('設定售價（步）：', '500')
+                    if (!priceStr) return
+                    const price = parseInt(priceStr)
+                    if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
+                    setDetailProperty(null)
+                    listProperty(p.id, price).then((err: any) => {
+                      if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
+                      showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
+                      loadUserProperties()
+                      loadListedProperties()
+                    })
+                  }} style={{
+                    flex:1, padding:'8px 0', border:'1px solid #22c55e44',
+                    borderRadius:10, background:'rgba(34,197,94,0.1)',
+                    color:'#22c55e', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   }}>
-                    📌 上架中 · ⚡{formatSteps(p.listPrice ?? 0)} 步
-                  </div>
+                    📌 上架出售
+                  </button>
+                ) : (
+                  <button onClick={async () => {
+                    const err = await unlistProperty(p.id)
+                    if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
+                    showAlert(`📭 ${name} 已下架`)
+                    loadUserProperties()
+                    loadListedProperties()
+                    setDetailProperty(null)
+                  }} style={{
+                    flex:1, padding:'8px 0', border:'1px solid #f59e0b44',
+                    borderRadius:10, background:'rgba(245,158,11,0.1)',
+                    color:'#f59e0b', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  }}>
+                    📭 下架
+                  </button>
                 )}
-
-                {/* ── Actions ── */}
-                <div style={{marginTop:14, display:'flex', gap:6}}>
-                  {isOwn ? (
-                    <>
-                      {!p.isListed ? (
-                        <button onClick={() => {
-                          const priceStr = window.prompt('設定售價（步）：', '500')
-                          if (!priceStr) return
-                          const price = parseInt(priceStr)
-                          if (isNaN(price) || price <= 0) { showAlert('❌ 請輸入有效價格', 'error'); return }
-                          setDetailProperty(null)
-                          listProperty(p.id, price).then(err => {
-                            if (err) { showAlert(`❌ 上架失敗: ${err}`, 'error'); return }
-                            showAlert(`📌 ${name} 已上架，售價 ⚡${formatSteps(price)}`)
-                            loadUserProperties()
-                            loadListedProperties()
-                          })
-                        }} style={{
-                          flex:1, padding:'8px 0', border:'1px solid #22c55e44',
-                          borderRadius:10, background:'rgba(34,197,94,0.1)',
-                          color:'#22c55e', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                        }}>
-                          📌 上架出售
-                        </button>
-                      ) : (
-                        <button onClick={async () => {
-                          const err = await unlistProperty(p.id)
-                          if (err) { showAlert(`❌ 下架失敗: ${err}`, 'error'); return }
-                          showAlert(`📭 ${name} 已下架`)
-                          loadUserProperties()
-                          loadListedProperties()
-                          setDetailProperty(null)
-                        }} style={{
-                          flex:1, padding:'8px 0', border:'1px solid #f59e0b44',
-                          borderRadius:10, background:'rgba(245,158,11,0.1)',
-                          color:'#f59e0b', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                        }}>
-                          📭 下架
-                        </button>
-                      )}
-                      <button onClick={() => {
-                        setConfirmModal({
-                          message: '確定放棄此地？(唔會拎返步數)',
-                          onConfirm: async () => {
-                            const err = await sellProperty(p.id)
-                            if (err) { showAlert(`❌ 放棄失敗: ${err}`, 'error'); return }
-                            showAlert(`🏚️ 已放棄 ${name}`)
-                            loadUserProperties()
-                            loadListedProperties()
-                            setDetailProperty(null)
-                          },
-                        })
-                      }} style={{
-                        flex:1, padding:'8px 0', border:'1px solid #ef444444',
-                        borderRadius:10, background:'rgba(239,68,68,0.1)',
-                        color:'#ef4444', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                      }}>
-                        🗑️ 放棄
-                      </button>
-                    </>
-                  ) : user && user.id !== p.userId ? (
-                    <button onClick={() => {
-                      if (!user) { showAlert('❌ 需要登入', 'error'); return }
-                      if (totalSteps < sellPrice) { showAlert(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
-                      setConfirmModal({
-                        message: `確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`,
-                        onConfirm: async () => {
-                          try {
-                            const res = await fetch('/api/properties/transfer', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ propertyId: p.id, buyerId: user!.id }),
-                            })
-                            const data = await res.json()
-                            if (data.success) {
-                              const newSteps = totalSteps - sellPrice
-                              setTotalSteps(newSteps)
-                              await updateTotalSteps(user.id, newSteps)
-                              showAlert(`🏠 成功購買 ${name}！`)
-                              loadListedProperties()
-                              loadUserProperties()
-                              setDetailProperty(null)
-                        } else {
-                          showAlert(`❌ ${data.error || '購買失敗'}`, 'error')
-                        }
-                      } catch { showAlert('❌ 網絡錯誤', 'error') }
+                <button onClick={() => {
+                  setConfirmModal({
+                    message: '確定放棄此地？(唔會拎返步數)',
+                    onConfirm: async () => {
+                      const err = await sellProperty(p.id)
+                      if (err) { showAlert(`❌ 放棄失敗: ${err}`, 'error'); return }
+                      showAlert(`🏚️ 已放棄 ${name}`)
+                      loadUserProperties()
+                      loadListedProperties()
+                      setDetailProperty(null)
                     },
                   })
                 }} style={{
-                  width:'100%', padding:'10px 0',
-                  border:'1px solid #a855f744', borderRadius:14,
-                  background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
-                  color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  flex:1, padding:'8px 0', border:'1px solid #ef444444',
+                  borderRadius:10, background:'rgba(239,68,68,0.1)',
+                  color:'#ef4444', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 }}>
-                  ⚡ 購買地皮
+                  🗑️ 放棄
                 </button>
-              ) : null}
-
-              {/* Navigate to map */}
+              </>
+            ) : user && user.id !== p.userId ? (
               <button onClick={() => {
-                setDetailProperty(null)
-                ;(window as any).__pipzFlyToProperty?.(p.anchorLat, p.anchorLng, p.cellRow, p.cellCol)
+                if (!user) { showAlert('❌ 需要登入', 'error'); return }
+                if (totalSteps < sellPrice) { showAlert(`❌ 步驟不足！需要 ${sellPrice} 步`, 'error'); return }
+                setConfirmModal({
+                  message: `確定用 ⚡${formatSteps(sellPrice)} 購買 ${name}？`,
+                  onConfirm: async () => {
+                    try {
+                      const res = await fetch('/api/properties/transfer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ propertyId: p.id, buyerId: user!.id }),
+                      })
+                      const data = await res.json()
+                      if (data.success) {
+                        const newSteps = totalSteps - sellPrice
+                        setTotalSteps(newSteps)
+                        await updateTotalSteps(user.id, newSteps)
+                        showAlert(`🏠 成功購買 ${name}！`)
+                        loadListedProperties()
+                        loadUserProperties()
+                        setDetailProperty(null)
+                      } else {
+                        showAlert(`❌ ${data.error || '購買失敗'}`, 'error')
+                      }
+                    } catch { showAlert('❌ 網絡錯誤', 'error') }
+                  },
+                })
               }} style={{
-                width:'100%', marginTop:8, padding:'6px 0',
-                border:'1px solid #3b82f644', borderRadius:14,
-                background:'transparent', color:'#60a5fa',
-                fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                width:'100%', padding:'10px 0',
+                border:'1px solid #a855f744', borderRadius:14,
+                background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
+                color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
               }}>
-                🗺️ 在地圖上顯示
+                ⚡ 購買地皮
               </button>
+            ) : null}
 
-              {/* Cancel */}
-              <button onClick={() => setDetailProperty(null)} style={{
-                width:'100%', marginTop:8, padding:'6px 0',
-                border:'1px solid #2a3a5a', borderRadius:14,
-                background:'transparent', color:'#5a6d85',
-                fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-              }}>
-                關閉
-              </button>
-            </div>
+            {/* Navigate to map */}
+            <button onClick={() => {
+              setDetailProperty(null)
+              ;(window as any).__pipzFlyToProperty?.(p.anchorLat, p.anchorLng, p.cellRow, p.cellCol)
+            }} style={{
+              width:'100%', marginTop:8, padding:'6px 0',
+              border:'1px solid #3b82f644', borderRadius:14,
+              background:'transparent', color:'#60a5fa',
+              fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+            }}>
+              🗺️ 在地圖上顯示
+            </button>
+
+            {/* Cancel */}
+            <button onClick={() => setDetailProperty(null)} style={{
+              width:'100%', marginTop:8, padding:'6px 0',
+              border:'1px solid #2a3a5a', borderRadius:14,
+              background:'transparent', color:'#5a6d85',
+              fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+            }}>
+              關閉
+            </button>
           </div>
-        )
-      })()}
-      </ModalPortal>
-
+        </div>
+      </div>
     </div>
   )
 }
