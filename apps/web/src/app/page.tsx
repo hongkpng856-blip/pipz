@@ -3024,8 +3024,8 @@ function PropertyModalContent({
             </div>
           )}
 
-          {/* ── Actions ── */}
-          <div style={{marginTop:14, display:'flex', gap:6}}>
+          {/* ── Actions (all uniform full-width) ── */}
+          <div style={{marginTop:14, display:'flex', flexDirection:'column', gap:6}}>
             {isOwn ? (
               <>
                 {!p.isListed ? (
@@ -3042,9 +3042,10 @@ function PropertyModalContent({
                       loadListedProperties()
                     })
                   }} style={{
-                    flex:1, padding:'8px 0', border:'1px solid #22c55e44',
-                    borderRadius:10, background:'rgba(34,197,94,0.1)',
-                    color:'#22c55e', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                    width:'100%', padding:'7px 0',
+                    border:'1px solid #22c55e44', borderRadius:10,
+                    background:'rgba(34,197,94,0.1)',
+                    color:'#22c55e', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   }}>
                     📌 上架出售
                   </button>
@@ -3057,9 +3058,10 @@ function PropertyModalContent({
                     loadListedProperties()
                     setDetailProperty(null)
                   }} style={{
-                    flex:1, padding:'8px 0', border:'1px solid #f59e0b44',
-                    borderRadius:10, background:'rgba(245,158,11,0.1)',
-                    color:'#f59e0b', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                    width:'100%', padding:'7px 0',
+                    border:'1px solid #f59e0b44', borderRadius:10,
+                    background:'rgba(245,158,11,0.1)',
+                    color:'#f59e0b', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   }}>
                     📭 下架
                   </button>
@@ -3077,9 +3079,10 @@ function PropertyModalContent({
                     },
                   })
                 }} style={{
-                  flex:1, padding:'8px 0', border:'1px solid #ef444444',
-                  borderRadius:10, background:'rgba(239,68,68,0.1)',
-                  color:'#ef4444', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  width:'100%', padding:'7px 0',
+                  border:'1px solid #ef444444', borderRadius:10,
+                  background:'rgba(239,68,68,0.1)',
+                  color:'#ef4444', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 }}>
                   🗑️ 放棄
                 </button>
@@ -3113,10 +3116,10 @@ function PropertyModalContent({
                   },
                 })
               }} style={{
-                width:'100%', padding:'10px 0',
-                border:'1px solid #a855f744', borderRadius:14,
+                width:'100%', padding:'7px 0',
+                border:'1px solid #a855f744', borderRadius:10,
                 background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
-                color:'#c084fc', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                color:'#c084fc', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
               }}>
                 ⚡ 購買地皮
               </button>
@@ -3127,8 +3130,8 @@ function PropertyModalContent({
               setDetailProperty(null)
               ;(window as any).__pipzFlyToProperty?.(p.anchorLat, p.anchorLng, p.cellRow, p.cellCol)
             }} style={{
-              width:'100%', marginTop:8, padding:'6px 0',
-              border:'1px solid #3b82f644', borderRadius:14,
+              width:'100%', padding:'7px 0',
+              border:'1px solid #3b82f644', borderRadius:10,
               background:'transparent', color:'#60a5fa',
               fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
             }}>
@@ -3137,8 +3140,8 @@ function PropertyModalContent({
 
             {/* Cancel */}
             <button onClick={() => setDetailProperty(null)} style={{
-              width:'100%', marginTop:8, padding:'6px 0',
-              border:'1px solid #2a3a5a', borderRadius:14,
+              width:'100%', padding:'7px 0',
+              border:'1px solid #2a3a5a', borderRadius:10,
               background:'transparent', color:'#5a6d85',
               fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
             }}>
