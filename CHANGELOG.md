@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.35.0 (2026-07-06)
+
+### Fixed
+- **📍 Grid anchor now constant for multi-player stability** — Previously the grid anchor was
+set dynamically from the user's first GPS fix, leading to different anchors across different
+sessions/devices. Now hard-coded as `GRID_ANCHOR = {lat: 22.3752, lng: 114.1134}` — NEVER
+changes.
+- **🗄️ SQL migration: unified all 50 properties** — Properties were scattered across 6 different
+anchors. Migration recalculated each property's actual center coordinates, then reassigned
+them all to the unified anchor with correct row/col offsets.
+- **📍 Location name geocoding fixed** — `fetchLocationName` now uses each property's actual
+cell center (`anchorLat + cellRow * 0.0003 + 0.00015`) instead of just the grid anchor, so
+location names reflect the real geographic area.
+
+### Removed
+- **🗑️ `fetchGridAnchor` / `setGridAnchor` / `roundToGrid`** — No longer needed since anchor
+is a constant. Removed from `RealMap.tsx`.
+- **🗑️ Dynamic grid initialization on GPS fix** — Grid is now initialized immediately on map
+mount with the constant anchor, not on first GPS position.
+
 ## v0.34.2 (2026-07-06)
 
 ### Fixed

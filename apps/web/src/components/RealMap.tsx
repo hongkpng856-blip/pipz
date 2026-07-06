@@ -92,6 +92,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const anchorRef = useRef<{ lat: number; lng: number } | null>(null)
   const lastKnownPosRef = useRef<{ lat: number; lng: number } | null>(null)
   const [gridVisible, setGridVisible] = useState(true)
+  const [gpsToggleState, setGpsToggleState] = useState(true)  // force re-render for GPS toggle visual
   const gridVisibleRef = useRef(true)
   gridVisibleRef.current = gridVisible
   const userIdRef = useRef(userId ?? null)
@@ -950,20 +951,29 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           {mode === 'vehicle' ? '乘車中' : mode === 'stationary' ? '靜止中' : '步行中'}
         </div>
       )}
-      {/* ── Recenter button ── */}
+      {/* ── GPS auto-follow toggle ── */}
       <button
-        className={`real-map-recenter-btn ${!gpsFollowRef.current ? 'gps-follow-off' : ''}`}
+        className={`real-map-gps-toggle ${gpsFollowRef.current ? 'gps-on' : 'gps-off'}`}
         onClick={() => {
           const map = mapRef.current
           const pos = lastKnownPosRef.current
-          if (map && pos) {
+          if (gpsFollowRef.current) {
+            // ON → OFF: just disable, don't move map
+            gpsFollowRef.current = false
+          } else {
+            // OFF → ON: enable + fly to current location
             gpsFollowRef.current = true
-            map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
+            if (map && pos) {
+              map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16), { animate: true })
+            }
           }
+          // Force re-render to update CSS class (use state trick)
+          setGpsToggleState(!gpsToggleState)
         }}
-        aria-label="回到我的位置"
+        aria-label={gpsFollowRef.current ? '關閉GPS自動跟蹤' : '開啟GPS自動跟蹤'}
+        title={gpsFollowRef.current ? 'GPS跟蹤：開啟' : 'GPS跟蹤：關閉'}
       >
-        🎯
+        {gpsFollowRef.current ? '🎯' : '📍'}
       </button>
       {/* ── Grid toggle button ── */}
       <button
