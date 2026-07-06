@@ -31,7 +31,7 @@ async function fetchLocationName(lat: number, lng: number): Promise<string> {
   }
 }
 import { useAuth } from '../lib/auth-context'
-import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty, loadAllListedProperties, listProperty, unlistProperty } from '../lib/supabase-db'
+import { ensureProfile, loadPets, savePet, updatePet, deletePet, getProfile, updateTotalSteps, upsertDailySteps, getTodaySteps, getWeeklySteps, loadEggs, saveEgg, deleteEgg, loadFavorites, setFavoriteOrder, loadAllMarketData, listPet, unlistPet, buyPet, createNotification, logEvent, loadInventory, addInventoryItem, removeInventoryItem, equipItem, loadPetEquipment, unequipSlot, MILESTONES, type Property, loadProperties, sellProperty, loadAllListedProperties, listProperty, unlistProperty, fetchAllFlagCells, type FlagCell } from '../lib/supabase-db'
 import { PositionTracker } from '../lib/position-tracker'
 
 function genSeed() { return Math.floor(Math.random() * 2147483646) + 1 }
@@ -112,6 +112,7 @@ export default function HomePage() {
   const [marketSellerId, setMarketSellerId] = useState<string | null>(null)
   // ── Monopoly Properties ──
   const [properties, setProperties] = useState<Property[]>([])
+  const [allFlagCells, setAllFlagCells] = useState<FlagCell[]>([])
   const [showProperties, setShowProperties] = useState(false)
   const [listingPropId, setListingPropId] = useState<number | null>(null)
   const [listingPriceStr, setListingPriceStr] = useState('')
@@ -464,6 +465,8 @@ export default function HomePage() {
       await enrichWithLocation(props)
       setProperties([...props])
     } catch {}
+    // Refresh all-flag-cells after property change
+    fetchAllFlagCells().then(cells => setAllFlagCells(cells))
   }, [user, enrichWithLocation])
 
   useEffect(() => {
@@ -1785,9 +1788,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} trailDayFilter={trailDayFilter} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} trailDayFilter={trailDayFilter} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>

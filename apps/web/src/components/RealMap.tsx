@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useSta
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
+import type { FlagCell } from '../lib/supabase-db'
 
 interface Props {
   position: { lat: number; lng: number; heading?: number; accuracy?: number } | null
@@ -13,7 +14,8 @@ interface Props {
   compassActive?: boolean
   pet?: { rarity: string; speciesId?: string; evolutionStage?: number } | null
   userId?: string | null
-  ownedCells?: Set<string>  // "row,col" keys — show flag on these cells
+  ownedCells?: Set<string>  // "row,col" keys — MY cells (for Property tab)
+  allFlagCells?: FlagCell[]  // ALL occupied cells from all users (for map flags)
   trailDayFilter?: number | null  // null = all days, 0-6 = specific day for trail heatmap
 }
 
@@ -75,7 +77,7 @@ export interface RealMapHandle {
   toggleOverview: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, trailDayFilter }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -104,6 +106,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const highlightCellColRef = useRef<number | null>(null)
   const highlightCircleRef = useRef<L.CircleMarker | null>(null)
   const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
+  const allFlagCellsRef = useRef<FlagCell[]>([])
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
   const [trailOverview, setTrailOverview] = useState(false)
   const trailOverviewRef = useRef(false)
@@ -261,7 +264,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Place flags on top of grid
   }
 
-  /** Place or update flag markers on all owned cells — coloured, clickable, zoom-gated only (no walking gate) */
+  /** Place or update flag markers on all occupied cells (any user) — coloured, clickable, zoom-gated only */
   function placeAllFlags(map: L.Map) {
     // Remove old handler + group
     if (flagZoomHandlerRef.current) {
@@ -275,23 +278,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     flagMarkerByCell.current.clear()
 
-    const cells = ownedCellsRef.current
-    if (!cells || cells.size === 0) return
+    const cells = allFlagCellsRef.current
+    if (!cells || cells.length === 0) return
 
     const group = L.layerGroup([])
 
-    cells.forEach(key => {
-      const parts = key.split(',')
-      const cellAnchorLat = parseFloat(parts[0])
-      const cellAnchorLng = parseFloat(parts[1])
-      const row = parseInt(parts[2])
-      const col = parseInt(parts[3])
-      const north = cellAnchorLat + row * CELL_SIZE_DEG
-      const west = cellAnchorLng + col * CELL_SIZE_DEG
+    cells.forEach(cell => {
+      const { anchorLat, anchorLng, cellRow, cellCol } = cell
+      const north = anchorLat + cellRow * CELL_SIZE_DEG
+      const west = anchorLng + cellCol * CELL_SIZE_DEG
       const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
-      const zoneIdx = getZoneIdx(row, col)
+      const zoneIdx = getZoneIdx(cellRow, cellCol)
       const color = ZONE_COLORS[zoneIdx]
-      const name = `第${row+1}區 ${col+1}號`
+      const name = `第${cellRow+1}區 ${cellCol+1}號`
 
       const flagIcon = L.divIcon({
         className: 'pipz-flag-marker',
@@ -306,17 +305,17 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         iconAnchor: [10, 10],
       })
       const flag = L.marker(center, { icon: flagIcon, interactive: true, keyboard: false })
-      flagMarkerByCell.current.set(`${row},${col}`, flag)
+      flagMarkerByCell.current.set(`${cellRow},${cellCol}`, flag)
       // Click flag → show cell popup (same as grid-cell click)
       flag.on('click', () => {
         const anchor = anchorRef.current
         if (!anchor) return
-        showCellPopup(map, center, name, color, center.lat, center.lng, row, col)
+        showCellPopup(map, center, name, color, center.lat, center.lng, cellRow, cellCol)
       })
       group.addLayer(flag)
     })
 
-    // Zoom-based visibility: show when zoom 17+ (no walking gate)
+    // Zoom-based visibility: show when zoom 14+ (no walking gate)
     const zoomHandler = () => {
       const z = map.getZoom()
       if (!group || !flagGroupRef.current) return
@@ -1025,6 +1024,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   useEffect(() => {
     ownedCellsRef.current = ownedCells
   }, [ownedCells])
+
+  // ── Sync allFlagCells → flag rendering ──
+  useEffect(() => {
+    allFlagCellsRef.current = allFlagCells ?? []
+    const map = mapRef.current
+    if (map && gridVisibleRef.current) {
+      placeAllFlags(map)
+    }
+  }, [allFlagCells])
 
   // ── Sync trailDayFilter prop — show/hide trail polylines by day ──
   useEffect(() => {

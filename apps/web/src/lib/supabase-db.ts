@@ -584,6 +584,20 @@ export async function loadProperties(userId: string): Promise<Property[]> {
   return ((data as any[]) ?? []).map(mapDbProp)
 }
 
+/** Cell coordinates for flag rendering — all users */
+export interface FlagCell {
+  anchorLat: number
+  anchorLng: number
+  cellRow: number
+  cellCol: number
+}
+
+export async function fetchAllFlagCells(): Promise<FlagCell[]> {
+  const res = await fetch('/api/properties/all-cells')
+  if (!res.ok) return []
+  return res.json()
+}
+
 export async function getPropertyOwner(
   anchorLat: number, anchorLng: number, cellRow: number, cellCol: number
 ): Promise<{ userId: string; price: number } | null> {
