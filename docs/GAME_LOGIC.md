@@ -608,9 +608,10 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 ## Monopoly Grid (v0.22.0+)
 
 ### World Anchor
-- Grid is defined by a **fixed geographic anchor** stored on the server (`grid_config` table in Supabase)
-- Anchor is calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0003° ≈ 30m)
-- Once set, the anchor **cannot be changed** — all players see the same grid cells
+- Grid is defined by a **hard-coded constant** `GRID_ANCHOR = {lat: 22.3752, lng: 114.1134}` (v0.35.0+)
+- **Before v0.35.0**: Anchor was calculated by rounding the first-ever GPS fix to nearest `CELL_SIZE_DEG` (0.0003° ≈ 30m) and stored on the server (`grid_config` table). This caused properties to scatter across 6 different anchors across different sessions/devices.
+- **Now**: Anchor is a compile-time constant — NEVER changes. All players see the same grid cells. No server fetch needed.
+- `fetchGridAnchor()` / `setGridAnchor()` / `roundToGrid()` all **removed** in v0.35.0
 
 ### Grid Layout (v0.24.0 – v0.25.0)
 - **6×6 grid** → dynamic viewport-based using `L.Rectangle` objects (removed in v0.26.0)
@@ -663,7 +664,7 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Flags managed by standalone **`placeAllFlags(map)`** function:
   - Iterates `ownedCells` Set (O(n)), places `L.marker` with 🚩 icon at each cell center
   - Called from `useEffect([ownedCells])` — triggers on every property change (buy/sell/list/unlist)
-  - Also called on grid anchor load and first GPS fix for initial render
+  - Also called on grid anchor init and on `ownedCells` change for flag refresh
   - **Independent of `updateGrid()`** — flags remain visible during pan/zoom/grid toggle
 - Old flags cleared and rebuilt only when `ownedCells` changes (via `useEffect`), not on grid rebuild
 
@@ -695,9 +696,9 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Naming: `第${row+1}區 ${col+1}號`
 - Zone colours (v0.34.0+): deterministic hash by **region block** — `(Math.floor(row / 10) * 7 + Math.floor(col / 10) * 13) % ZONE_COLORS.length`. Same 10×10 block always gets same colour; neighbouring blocks get different colours.
 - Old cells are removed (`r.remove()`) and recreated on every view change — safe because L.Rectangle creation is fast (< 1ms per cell at ≤ 5000 cells)
-- Grid anchor stored in `anchorRef` on the React component
+- Grid anchor is `GRID_ANCHOR` constant — assigned to `anchorRef` on map mount
 - Grid persists on server — survives localStorage clears and browser changes
-- API: `GET /api/grid-config` to read anchor, `POST /api/grid-config` (lat, lng) to set it (only first call succeeds)
+- API: `GET /api/grid-config` still works (returns anchor from DB, kept for backward compat). Client no longer calls it — anchor is a constant.
 
 ---
 

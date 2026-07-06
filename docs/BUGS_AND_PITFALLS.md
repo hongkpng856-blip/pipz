@@ -430,6 +430,15 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Each `L.Rectangle` has its own `click`, `mouseover`, `mouseout` events. Hover tooltip + click highlight animation + Leaflet popup — all native. |
 | **Verification** | Pan map → grid stays with geographic landmarks. Click any cell → highlight + popup. Scroll/zoom → no gaps. |
 
+### 11.4 Grid Anchor Instability (Multi-Player) — FIXED v0.35.0
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (properties scatter across different geographic areas per device/session) |
+| **Root Cause** | Grid anchor was dynamically set from the user's first GPS fix (`roundToGrid(lat, lng)` → saved to server via `POST /api/grid-config`). This meant: (1) Different devices at different locations would set different anchors; (2) Same user on different days (different starting GPS) could trigger anchor re-initialization. Properties bought under anchor A would appear in a completely different location when viewed under anchor B. By the time this was discovered, 50 properties existed across **6 different anchors**. |
+| **Fix** | (1) Hard-code a single constant `GRID_ANCHOR = {lat: 22.3752, lng: 114.1134}` in `RealMap.tsx`. (2) Remove `fetchGridAnchor()` / `setGridAnchor()` / `roundToGrid()` — client no longer fetches or sets the anchor. (3) SQL migration: for each of the 50 properties, calculate its actual center `(anchor_lat + row * CELL_SIZE_DEG + CELL_SIZE_DEG/2)`, then recalculate row/col relative to the unified anchor. Resolved 3 duplicate-cell conflicts by shifting to nearest free cell. (4) Fixed `fetchLocationName()` — was passing just the anchor lat/lng to the geocoding API; now passes the property's actual **cell center** coordinates so location names are correct. |
+| **Prevention** | Anchor must be a **compile-time constant** for any grid-based multi-player game. Never derive the anchor from a runtime value (GPS fix, user input, etc.). If the anchor needs to change, plan a coordinated data migration that recalculates all property positions. |
+
 ---
 
 ## 10. GPS Warmup + Map Animation Interference
