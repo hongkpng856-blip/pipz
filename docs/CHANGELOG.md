@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.36.1 — Property Modal Button Uniformity + Toggle UX (2026-07-07)
+
+**Fix:** Property Detail Modal buttons now all uniform full-width stacked layout. Toggle button redesigned as pill-style.
+
+**Changes:**
+- **Modal buttons** — All action buttons now identical dimensions (`width:100%`, `padding:7px 0`, `borderRadius:10`, `fontSize:11`). Stacked vertically in a column (`flexDirection:'column', gap:6`). Previously the top row (上架出售 + 放棄) used side-by-side `flex:1` buttons with different padding from the bottom buttons (在地圖上顯示 + 關閉).
+- **Toggle button** — Simplified from segmented control (2 pills) to a single pill toggle (`borderRadius:20`, purple border + subtle bg) toggling between 「📜 大卡」↔「📜 細卡」. Matches the section-count font size (10px).
+- **大卡 grid** — Now correctly renders 2-column `prop-grid` (was using same 3-column `pet-grid` as 細卡).
+
+**Changed files:**
+- `apps/web/src/app/page.tsx` — modal actions layout restructured, toggle button redesigned
+
 ## v0.36.0 — Property Card Expand-on-Click (2026-07-07)
 
 **Redesign:** Property grid cards now match pet card size (3-column `.pet-grid`). Click any card to open a full Monopoly-deed style modal with all details.

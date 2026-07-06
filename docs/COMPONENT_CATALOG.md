@@ -388,7 +388,7 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 
 ### Layout
 - Title: 🏠 地產 (large, top-left)
-- **📜 細卡/📜 大卡** toggle button (right of section count) — default state uses pet-card size (3-column `.pet-grid`). Toggle has no visual effect in current version (both states render 3-column grid).
+- **📜 pill toggle button** (right of section count, `borderRadius:20`) — toggles between 「📜 細卡」(default) ↔「📜 大卡」. 細卡 uses 3-column `pet-grid`, 大卡 uses 2-column `prop-grid` (wider cards).
 - Scrollable grid of property cards (`.pet-grid`, 3-column, gap:6), each showing:
   - **Zone colour top accent bar** (2px, zone colour, rounded top corners)
   - **Emoji icon**: ✅ (own) or 🏠 (unlisted/other's)
@@ -514,7 +514,7 @@ Three reusable modals defined directly in `page.tsx`, rendered near the bottom o
       - 🌐 座標 | anchorLat, anchorLng (4 decimal places)
       - 👤 賣家 | sellerName or "匿名賣家" (no border-bottom)
     - Listed status badge (when `p.isListed`): 📌 上架中 · ⚡{price} 步 (green, border-top separator)
-  - **Actions section** (flex column, gap 6px):
+  - **Actions section (v0.36.1+ all uniform full-width):** All buttons are full-width (`width:100%`), same height (`padding:7px 0`), same border-radius (`10px`), same font-size (`11px`), stacked vertically with 6px gap. Previously had mixed sizes (side-by-side `flex:1` + full-width). Colours differentiate actions:
     - **Own property (unlisted):** 📌 上架出售 (green) + 🗑️ 放棄 (red, opens Confirm Modal)
     - **Own property (listed):** 📭 下架 (amber) + 🗑️ 放棄 (red)
     - **Other's property:** ⚡ 購買地皮 (purple gradient, opens Confirm Modal → transfer)
