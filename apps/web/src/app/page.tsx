@@ -2373,25 +2373,35 @@ export default function HomePage() {
                         className="pet-card pet-card-prop"
                         onClick={() => setDetailProperty(prop)}
                         style={{borderColor:`${color}44`}}>
-                        <div className="prop-accent" style={{background:color}} />
-                        <div className="prop-body">
+                        <div className="prop-header" style={{background:color}}>
                           <div className="prop-icon">🏠</div>
-                          <div className="prop-info">
-                            <div className="prop-name" style={{color}}>{name}</div>
-                            <div className="prop-meta">
-                              <span className="prop-badge" style={{background:`${color}22`, color}}>{zoneNames[zoneIdx]}</span>
-                              <span className="prop-price">⚡{formatSteps(prop.price)}</span>
-                            </div>
-                          </div>
+                          <div className="prop-name">{name}</div>
                         </div>
-                        {prop.locationName ? (
-                          <div className="prop-location">📍 {prop.locationName.replace('📍 ','')}</div>
-                        ) : (
-                          <div className="prop-location" style={{color:'#3a4d65'}}>🔍 載入地段…</div>
-                        )}
-                        {prop.isListed && (
-                          <div className="prop-listed">📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
-                        )}
+                        <div className="prop-body">
+                          <div className="prop-zone" style={{color}}>{zoneNames[zoneIdx]}</div>
+                          <div className="prop-row">
+                            <span className="prop-label">價格</span>
+                            <span className="prop-value">⚡{formatSteps(prop.price)}</span>
+                          </div>
+                          <div className="prop-row">
+                            <span className="prop-label">購入</span>
+                            <span className="prop-value">{new Date(prop.purchasedAt).toLocaleDateString('zh-HK')}</span>
+                          </div>
+                          {prop.locationName ? (
+                            <div className="prop-row">
+                              <span className="prop-label">地段</span>
+                              <span className="prop-value">{prop.locationName.replace('📍 ','')}</span>
+                            </div>
+                          ) : (
+                            <div className="prop-row" style={{color:'#3a4d65'}}>
+                              <span className="prop-label">地段</span>
+                              <span className="prop-value">🔍 載入中…</span>
+                            </div>
+                          )}
+                          {prop.isListed && (
+                            <div className="prop-listed">📌 上架中 ⚡{formatSteps(prop.listPrice ?? 0)}</div>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
