@@ -1145,6 +1145,15 @@ export default function HomePage() {
     })
   }
 
+  // ── Monster encounter handler: triggered when player walks into a monster cell ──
+  const [encounter, setEncounter] = useState<{ emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number } | null>(null)
+  const monsterEncountered = useCallback((monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => {
+    // Stop walking so the encounter popup appears
+    if (walking) walkStop()
+    logMsg(`⚔️ 遇到 ${monster.emoji} ${monster.label} Lv.${monster.level}！`)
+    setEncounter(monster)
+  }, [walking])
+
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
     setEggHatchingId(egg.id)
@@ -1946,9 +1955,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onMonsterEncounter={monsterEncountered} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onMonsterEncounter={monsterEncountered} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
@@ -3311,6 +3320,59 @@ function PropertyModalContent({
           </div>
         </div>
       </div>
+
+      {/* ════ Monster encounter modal ════ */}
+      {encounter && (() => {
+        const m = encounter
+        const rc: Record<string, string> = {
+          common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
+          epic: '#8b5cf6', legendary: '#f59e0b',
+        }
+        const rl: Record<string, string> = {
+          common: '普通', uncommon: '稀有', rare: '珍貴', epic: '史詩', legendary: '傳說',
+        }
+        const c = rc[m.rarity] || '#9ca3af'
+        return (
+          <div className="fixed-modal-layer" style={{zIndex:100, display:'flex', alignItems:'center', justifyContent:'center'}}>
+            <div className="card" style={{
+              width:260, padding:20, textAlign:'center',
+              border:`1.5px solid ${c}66`, boxShadow:`0 0 30px ${c}33`,
+            }}>
+              <div style={{fontSize:48, lineHeight:1, marginBottom:8}}>{m.emoji}</div>
+              <div style={{fontSize:18, fontWeight:800, color:'#e8e0d0', marginBottom:2}}>{m.label}</div>
+              <div style={{fontSize:10, fontWeight:700, color:c, marginBottom:8, textTransform:'uppercase', letterSpacing:1}}>
+                {rl[m.rarity] || m.rarity} · Lv.{m.level}
+              </div>
+              <div style={{fontSize:11, color:'#5a6d85', marginBottom:14}}>
+                ⚔️ 野生怪獸擋住去路！
+              </div>
+              <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+                <button onClick={() => {
+                  addStRef.current?.(m.level * 10)
+                  logMsg(`🎉 擊敗 ${m.emoji} ${m.label}！獲得 ${m.level * 10} 步獎勵！`)
+                  setEncounter(null)
+                }} style={{
+                  padding:'6px 20px', borderRadius:10, cursor:'pointer',
+                  background:'rgba(34,197,94,0.15)', border:'1px solid rgba(34,197,94,0.3)',
+                  color:'#22c55e', fontSize:12, fontWeight:700, fontFamily:'inherit',
+                }}>
+                  ⚔️ 戰鬥
+                </button>
+                <button onClick={() => {
+                  logMsg(`🏃 從 ${m.emoji} ${m.label} 手中逃走`)
+                  setEncounter(null)
+                }} style={{
+                  padding:'6px 20px', borderRadius:10, cursor:'pointer',
+                  background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)',
+                  color:'#ef4444', fontSize:12, fontWeight:600, fontFamily:'inherit',
+                }}>
+                  🏃 逃走
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

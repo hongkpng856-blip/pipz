@@ -17,6 +17,7 @@ interface Props {
   ownedCells?: Set<string>  // "row,col" keys — MY cells (for Property tab)
   allFlagCells?: FlagCell[]  // ALL occupied cells from all users (for map flags)
   trailDayFilter?: number | null  // null = all days, 0-6 = specific day for trail heatmap
+  onMonsterEncounter?: (monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => void
 }
 
 const RC: Record<string, string> = {
@@ -130,6 +131,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
   const allFlagCellsRef = useRef<FlagCell[]>([])
   const monsterGroupRef = useRef<L.LayerGroup | null>(null)
+  const encounteredMonstersRef = useRef<Set<string>>(new Set())
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
   const [trailOverview, setTrailOverview] = useState(false)
   const trailOverviewRef = useRef(false)
@@ -403,14 +405,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           className: 'pipz-monster-marker',
           html: `<div style="
             display:flex;align-items:center;justify-content:center;
-            width:20px;height:20px;line-height:1;cursor:pointer;
-            font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+            width:22px;height:22px;line-height:1;cursor:pointer;
+            font-size:14px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
             border-radius:50%;
-            background:rgba(239,68,68,0.15);
-            border:1.5px solid rgba(239,68,68,0.4);
-          ">⚔️</div>`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10],
+            background:rgba(139,92,246,0.15);
+            border:1.5px solid rgba(139,92,246,0.4);
+          ">👾</div>`,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
         })
         const marker = L.marker(center, { icon: monIcon, interactive: false, keyboard: false })
         group.addLayer(marker)
@@ -1103,6 +1105,26 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
 
       saveTrailToStorage()
+    }
+
+    // ── Monster encounter: check if current cell has a monster ──
+    if (walking && (mode === 'walk' || mode === 'vehicle')) {
+      const anchor = anchorRef.current
+      if (anchor) {
+        const row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)
+        const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
+        const cellKey = `${row},${col}`
+        if (!encounteredMonstersRef.current.has(cellKey)) {
+          // Build owned set for monster check
+          const ownedSet = new Set<string>()
+          allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
+          const monster = getMonsterForCell(row, col, ownedSet)
+          if (monster) {
+            encounteredMonstersRef.current.add(cellKey)
+            onMonsterEncounter?.({ ...monster, cellRow: row, cellCol: col })
+          }
+        }
+      }
     }
   }, [position?.lat, position?.lng, mode, deviceHeading])
 
