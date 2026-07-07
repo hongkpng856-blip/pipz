@@ -1156,23 +1156,25 @@ export default function HomePage() {
       logMsg(`⚔️ 遇到 ${monsterData.emoji} ${monsterData.label}！`)
       showMonsterModal(monsterData, addStRef, logMsg)
     } else {
-      // Roll a random event (excluding eventOnly events for cell encounters)
+      // Roll a random event from the full pool (excluding eventOnly events)
       const available = EVENT_POOL.filter(e => (e.weight || 0) > 0 && !e.eventOnly)
       if (available.length > 0) {
         const totalWeight = available.reduce((s, e) => s + e.weight, 0)
         let roll = Math.random() * totalWeight
+        let picked = available[available.length - 1] // fallback
         for (const ev of available) {
           roll -= ev.weight
-          if (roll <= 0) {
-            // Only trigger if not already showing an event
-            if (!currentEvent && !pendingEventRef.current) {
-              setCurrentEvent(ev)
-            } else {
-              logMsg(`🎲 ${ev.icon} ${ev.name}：${ev.description}`)
-            }
-            break
-          }
+          if (roll <= 0) { picked = ev; break }
         }
+        // Only trigger if not already showing an event
+        if (!currentEvent && !pendingEventRef.current) {
+          logMsg(`🎲 ${picked.icon} ${picked.name}：${picked.description}`)
+          setCurrentEvent(picked)
+        } else {
+          logMsg(`🎲 ${picked.icon} ${picked.name}（已有事件）`)
+        }
+      } else {
+        logMsg(`❓ 呢格有啲嘢，但乜都冇發生`)
       }
     }
   }, [currentEvent, logMsg, addStRef])
