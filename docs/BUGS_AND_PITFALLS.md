@@ -604,3 +604,18 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix (v0.37.0)** | New API route `/api/properties/all-cells` fetches ALL occupied cells using `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS). `loadUserProperties()` auto-refreshes this data after buy/sell. `placeAllFlags()` now iterates over `allFlagCellsRef.current` (`FlagCell[]` array) instead of `ownedCellsRef.current` (`Set<string>`). |
 | **Files changed** | `route.ts` (new all-cells endpoint), `supabase-db.ts` (new `FlagCell` type + `fetchAllFlagCells()`), `page.tsx` (new `allFlagCells` state integrated into `loadUserProperties()`), `RealMap.tsx` (switched flag source to `allFlagCells`) |
 | **Prevention** | Any feature that needs cross-user data (e.g. leaderboard, PvP, trade visibility) must use an API route with `SUPABASE_SERVICE_ROLE_KEY` — never rely on client-side Supabase queries which are subject to RLS. RLS only shows the current user's own rows unless specifically configured otherwise. |
+
+---
+
+## 15. D-Pad Interval Race Condition (Fixed v0.37.1)
+
+### 15.1 onMouseDown Interval Never Fires Before onMouseUp
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 High (D-pad appears usable but does nothing on click) |
+| **Symptom** | Tapping any D-pad arrow button (▲◄►▼) yields no movement. Coordinates don't change. Holding the button for <150ms also does nothing. |
+| **Root Cause** | `startManualWalk(dir)` created a `setInterval(updateFn, 150)` and set it as `manualWalkRef.current`. Button `onMouseDown` fired `startManualWalk`, but `onMouseUp` fired `stopManualWalk` within ~50ms — before the interval's first callback at 150ms. The interval was cleared before it ever executed, so `mapPos` was never updated. |
+| **Fix (v0.37.1)** | Extracted `stepManualWalk(dir)` that calls `setMapPos()` **synchronously** on every press. `startManualWalk` now calls `stepManualWalk` immediately, then sets up the interval only for continued movement while held. Even a sub-150ms tap produces one position update. |
+| **Files changed** | `apps/web/src/app/page.tsx` — added `stepManualWalk()`, refactored `startManualWalk()` to call it synchronously + start interval |
+| **Prevention** | Any interaction pattern that uses `onMouseDown` to start an async timer + `onMouseUp` to cancel it must ensure the **first action is synchronous**. The timer should only add **repeat** behavior. Test with the shortest possible click/tap (not just held-down) to verify immediate response. On touch devices, also verify `onTouchStart`/`onTouchEnd` fire in the correct order (they do, but the same race condition applies). |

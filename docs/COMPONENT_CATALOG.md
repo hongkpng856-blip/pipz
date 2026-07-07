@@ -188,7 +188,15 @@ Previously displayed a top-down pixel view during GPS walking and encounter anim
 
 ### Dev Tools (always visible)
 - **🔧 Dev 工具** toggle button at the top of the main content — visible to **all users** (no login required, no email check)
+- Panel is **floating overlay** (`position: absolute; max-height: 50vh; overflow-y: auto`) — map stays visible behind it
 - **GPS**: 📡 開GPS / ⏹ 熄GPS toggle (starts/stops `watchPosition`)
+- **🕹️ 手動模式 ON/OFF** toggle (v0.37.1+): when ON, stops real GPS and enables D-pad arrow controls; when OFF, D-pad is disabled and GPS can be restarted
+- **D-Pad** (▲◄►▼, v0.37.1+): press a direction to walk without GPS (~15m per step):
+  - Tap → moves one step immediately
+  - Hold → continues walking every 150ms
+  - Shows current `lat, lng` below the D-pad
+  - Only works when manual mode is ON
+  - Uses `stepManualWalk()` + `setInterval` pattern (not `onMouseDown`-only, to avoid missed ticks)
 - **🎲 Event** button — one-click trigger for random roguelike events (Risk Ladder, 陽光草原, etc.); useful for testers to verify event flow without waiting 800 steps
 - **Walk Speed**: 1x / 5x / 10x / 50x buttons — set simulation step multiplier; 🟢 indicator shows current speed
 - **Walk Simulation**: 🚶 模擬 / ⏹ 停止 toggle — continuous steps at selected multiplier (1x=~1-4 steps/800ms, 50x=~50-200 steps/tick)

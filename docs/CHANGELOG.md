@@ -1,17 +1,22 @@
 # Changelog
 
-## v0.37.1 — Manual D-Pad Walk (2026-07-07)
+## v0.37.1 — Manual D-Pad Walk + Floating Dev Tools (2026-07-07)
 
-**New:** Arrow key D-pad in Dev Tools to walk without GPS. onMouseDown (or touch) starts walking in a direction; release stops.
+**New:** D-pad walking simulator and manual mode toggle in Dev Tools. Panel now floats over the map instead of pushing content down.
 
 **Changes:**
-- **D-pad buttons** (▲◄►▼) — cyan-styled arrow pad, each button fires `startManualWalk(dir)` on press and `stopManualWalk()` on release
-- **`startManualWalk(dir)`** — sets `walking=true`, `movementMode='walk'`, creates 150ms interval moving `mapPos` by 0.00015° (~15m) per tick in the chosen direction; initializes position at 22.3194, 114.1694 if not set
-- **`stopManualWalk()`** — clears the interval
+- **🕹️ 手動模式 ON/OFF toggle** — when ON: stops real GPS (`walkStop()`), enables D-pad, sets initial position; when OFF: stops D-pad, clears mapPos, GPS can be restarted
+- **D-pad buttons** (▲◄►▼) — cyan-styled arrow pad. Works only when manual mode is ON
+  - `stepManualWalk(dir)` — immediate position update on tap (+0.00015° ≈ 15m per step)
+  - `startManualWalk(dir)` — calls `stepManualWalk` immediately, then starts 150ms interval for held-down continuous walking
+  - `stopManualWalk()` — clears the interval on release
+- **Dev Tools panel** — now `position: absolute; max-height: 50vh; overflow-y: auto` — floats over the map, map stays visible behind it
 - Shows current `lat, lng` below the D-pad for orientation
 
+**Bug fix:** D-pad had no reaction on click because `startManualWalk` only started a 150ms interval, but `onMouseUp`/`onTouchEnd` fired before the interval ever ran. Fixed by extracting `stepManualWalk()` that runs **synchronously** on every press, then the interval only adds continued movement while held.
+
 **Changed files:**
-- `apps/web/src/app/page.tsx` — added `manualWalkRef`, `manualPosRef`, `startManualWalk()`, `stopManualWalk()`, D-pad JSX in Dev Tools
+- `apps/web/src/app/page.tsx` — added `manualMode` state, `manualWalkRef`, `manualPosRef`, `stepManualWalk()`, `startManualWalk()`, `stopManualWalk()`, `toggleManualMode()`, D-pad JSX + manual mode toggle in Dev Tools, panel `position: absolute` overlay
 
 ## v0.37.0 — Cross-User Flag Visibility (2026-07-07)
 
