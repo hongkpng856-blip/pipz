@@ -403,17 +403,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           className: 'pipz-monster-marker',
           html: `<div style="
             display:flex;align-items:center;justify-content:center;
-            width:24px;height:18px;line-height:1;cursor:pointer;
-            font-size:12px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-            position:relative;
-          ">${monster.emoji}<span style="
-            position:absolute;top:-4px;right:-6px;
-            background:${monster.color};color:white;
-            font-size:7px;font-weight:700;line-height:12px;
-            padding:0 3px;border-radius:6px;min-width:12px;text-align:center;
-          ">${monster.level}</span></div>`,
-          iconSize: [24, 18],
-          iconAnchor: [12, 9],
+            width:20px;height:20px;line-height:1;cursor:pointer;
+            font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+            border-radius:50%;
+            background:rgba(239,68,68,0.15);
+            border:1.5px solid rgba(239,68,68,0.4);
+          ">⚔️</div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
         })
         const marker = L.marker(center, { icon: monIcon, interactive: false, keyboard: false })
         group.addLayer(marker)
