@@ -1126,7 +1126,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         }
       }
     }
-  }, [position?.lat, position?.lng, mode, deviceHeading])
+  }, [position?.lat, position?.lng, mode, deviceHeading, walking])
 
   // ── Sync ownedCellsRef with latest prop ──
   useEffect(() => {
