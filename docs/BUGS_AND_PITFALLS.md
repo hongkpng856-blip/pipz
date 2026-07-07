@@ -619,3 +619,19 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix (v0.37.1)** | Extracted `stepManualWalk(dir)` that calls `setMapPos()` **synchronously** on every press. `startManualWalk` now calls `stepManualWalk` immediately, then sets up the interval only for continued movement while held. Even a sub-150ms tap produces one position update. |
 | **Files changed** | `apps/web/src/app/page.tsx` — added `stepManualWalk()`, refactored `startManualWalk()` to call it synchronously + start interval |
 | **Prevention** | Any interaction pattern that uses `onMouseDown` to start an async timer + `onMouseUp` to cancel it must ensure the **first action is synchronous**. The timer should only add **repeat** behavior. Test with the shortest possible click/tap (not just held-down) to verify immediate response. On touch devices, also verify `onTouchStart`/`onTouchEnd` fire in the correct order (they do, but the same race condition applies). |
+
+---
+
+## 13. React State Batching — setState Inside Cross-Component Callback
+
+### 13.1 Monster Encounter Modal Never Renders (setEncounter Called but State Not Applied)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (monster encounter invisible) |
+| **Symptom** | Walking into a monster cell triggers detection logic (console: `TRIGGERING ENCOUNTER!`), `setEncounter(monster)` is called inside the `monsterEncountered` callback, but the modal component (`{encounter && ...}` or `<MonsterModal encounter={encounter}>`) never renders. Console shows no `[Modal]` debug logs. |
+| **Root Cause** | Unclear — appears to be a React 18 state-batching issue where `setState` called inside a `useCallback` (with `[]` deps) that was defined in parent component A but invoked from child component B's `useEffect` doesn't trigger a re-render in component A with the new state. The callback reference is stable (empty deps), `setEncounter` is a stable setState function, and the console confirms the callback body executes. But the parent component re-renders with `encounter` still `null`. `ReactDOM.createPortal` with the same condition also fails to render. |
+| **Failed attempts** | 1. IIFE inline pattern `{encounter && (() => {...})()}` → no render<br>2. Separate `<MonsterModal>` component → no render<br>3. `ReactDOM.createPortal(conditional content, document.body)` → no render<br>4. Adding `walking` to useCallback deps → no change<br>5. Removing `walkStop()` from callback → no change<br>6. `useCallback(..., [])` vs `useCallback(..., [walking])` → no difference |
+| **Fix (v0.37.3)** | Bypass React state entirely: call `showMonsterModal()` which uses **direct DOM manipulation** (`document.createElement('div')` + `innerHTML` + `appendChild`). The overlay is created imperatively in the callback, not via React rendering. Event listeners use `addEventListener`. Modal is closed via `overlay.remove()`. |
+| **Files changed** | `apps/web/src/app/page.tsx` — replaced `setEncounter(monster)` with `showMonsterModal(monster, addStRef, logMsg)` |
+| **Prevention** | When a React state update from a cross-component callback (parent useCallback → passed to child → called from child's useEffect) consistently fails to trigger a re-render with the new state, bypass the React rendering pipeline entirely with direct DOM manipulation for the specific UI element. This is a last resort — only after exhausting all React debugging approaches. |

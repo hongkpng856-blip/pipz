@@ -378,6 +378,54 @@ stepEggCounter % 2000 === 0 && Math.random() < 0.4 → spawn PixelLab egg
 - **Queue system**: if an event triggers simultaneously, event shows first, egg popup appears on dismiss (via `pendingEggRef`/`pendingEventRef`)
 - Hatches into PixelLab pet (cat or shiba) matching egg type
 
+## Monster Encounters (v0.37.2+)
+
+### Grid-Based Monster Spawn
+
+Monsters are placed on unowned grid cells using deterministic hash-based generation:
+
+```
+for each cell (row, col):
+    if cell is owned (in allFlagCells) → skip
+    hash = abs(row * 374761393 + col * 668265263) % 2147483647
+    if (hash % 100) / 100 < 0.18 (18% spawn rate) → spawn monster
+```
+
+Each monster has:
+- **emoji + label**: 🐺野狼 (common), 🐗山豬 (uncommon), 🐻黑熊 (rare), 🦅雷鷹 (epic), 🐉巨龍 (legendary)
+- **level**: varies by rarity (1-3 common, 2-5 uncommon, 3-7 rare, 5-10 epic, 10-15 legendary)
+- **color**: rarity-coloured border for modal card
+- **rarity**: from `['common', 'uncommon', 'rare', 'epic', 'legendary']`
+
+Rendered as unified 👾 icon (purple badge) on the grid — type/level/rarity hidden until encounter.
+
+### Encounter Trigger (v0.37.3+)
+
+When the player walks into a cell (position changes):
+
+1. `useEffect` in RealMap detects position change (dep array: `[position.lat, position.lng, mode, deviceHeading, walking]`)
+2. Converts position to grid cell: `row = floor((lat - anchorLat) / CELL_SIZE_DEG)`, `col = floor((lng - anchorLng) / CELL_SIZE_DEG)`
+3. Calls `getMonsterForCell(row, col, ownedSet)`:
+   - Returns `null` if no spawn at this cell
+   - Returns monster data `{ emoji, label, color, level, rarity }` if spawned
+4. Checks `encounteredMonstersRef` (Set<string> of `"row,col"` keys) — skip if already encountered
+5. Calls `onMonsterEncounter?.(monsterData)` with spread `{ ...monster, cellRow: row, cellCol: col }`
+6. **Callback triggers modal via direct DOM** (`showMonsterModal`):
+   - Creates `.fixed-modal-layer` div with card showing monster emoji, name, rarity, level
+   - ⚔️戰鬥 button: awards `level × 10` steps, logs victory, removes overlay
+   - 🏃逃走 button: logs escape, removes overlay
+7. Refreshing the page clears encountered monsters Set (same cell can be encountered again)
+
+### Encounter Dedup
+
+- `encounteredMonstersRef = useRef<Set<string>>(new Set())`
+- Each `"row,col"` is added to the Set after triggering
+- On page refresh, the ref is re-created → same cell can be encountered again
+
+### Technical Note: DOM Modal vs React State
+
+The encounter modal uses **direct DOM manipulation** (not React state) due to a React 18 batching issue where `setEncounter(monster)` called from a cross-component callback does not trigger a render with the new state. See `BUGS_AND_PITFALLS.md` §13.1 for full details.
+
 ### Egg & Hatching Flow
 
 1. **Encounter** (every 2000 steps, 40%): 🥚 Egg Found Popup appears → egg saved to DB → user taps "收埋" or "去蛋頁面孵化"
