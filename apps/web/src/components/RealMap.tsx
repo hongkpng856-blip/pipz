@@ -1114,15 +1114,20 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         const row = Math.floor((lat - anchor.lat) / CELL_SIZE_DEG)
         const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
         const cellKey = `${row},${col}`
+        console.log('[Monster] ENCOUNTER CHECK at cell', cellKey, 'walking=', walking, 'mode=', mode)
         if (!encounteredMonstersRef.current.has(cellKey)) {
           // Build owned set for monster check
           const ownedSet = new Set<string>()
           allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
           const monster = getMonsterForCell(row, col, ownedSet)
+          console.log('[Monster] FOUND?', monster ? monster.emoji + ' ' + monster.label : 'NO')
           if (monster) {
+            console.log('[Monster] TRIGGERING ENCOUNTER!')
             encounteredMonstersRef.current.add(cellKey)
             onMonsterEncounter?.({ ...monster, cellRow: row, cellCol: col })
           }
+        } else {
+          console.log('[Monster] Already encountered, skipping')
         }
       }
     }
