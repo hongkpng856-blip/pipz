@@ -91,6 +91,7 @@ export default function HomePage() {
     const [simulating, setSimulating] = useState(false)
     const [simSpeed, setSimSpeed] = useState(1) // 1x, 5x, 10x, 50x
     const [simGpsWalking, setSimGpsWalking] = useState(false)
+    const [manualMode, setManualMode] = useState(false)
     const simGpsPosRef = useRef({ lat: 22.3194, lng: 114.1694, heading: 0, step: 0 })
     const [mapPos, setMapPos] = useState<{lat: number; lng: number; heading?: number; accuracy?: number} | null>(null)
     const [movementMode, setMovementMode] = useState<'walk' | 'vehicle' | 'stationary' | null>(null)
@@ -1092,11 +1093,12 @@ export default function HomePage() {
 
   // ── Manual direction pad: arrow buttons move mapPos without GPS ──
   function startManualWalk(dir: 'up' | 'down' | 'left' | 'right') {
+    if (!manualMode) return  // only work when manual mode is active
     if (manualWalkRef.current) clearInterval(manualWalkRef.current)
     setWalking(true)
     setMovementMode('walk')
     // Set initial position if not set
-    if (!mapPos) {
+    if (!mapPos && !manualWalkRef.current) {
       setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
     }
     const stepSize = 0.00015  // ~15m per tick
@@ -1120,6 +1122,26 @@ export default function HomePage() {
   }
   function stopManualWalk() {
     if (manualWalkRef.current) { clearInterval(manualWalkRef.current); manualWalkRef.current = null }
+  }
+
+  // ── Toggle manual mode: stops real GPS, enables D-pad ──
+  function toggleManualMode() {
+    setManualMode(v => {
+      if (!v) {
+        // Turning ON: stop real GPS, set walk mode with fake position
+        if (walking) walkStop()
+        setWalking(true)
+        setMovementMode('walk')
+        setMapPos(prev => prev ?? { lat: 22.3194, lng: 114.1694, heading: 0, accuracy: 8 })
+      } else {
+        // Turning OFF: stop D-pad, GPS can be restarted manually
+        stopManualWalk()
+        setWalking(false)
+        setMapPos(null)
+        setMovementMode(null)
+      }
+      return !v
+    })
   }
 
   // ── Hatch an egg from inventory ──
@@ -1560,7 +1582,7 @@ export default function HomePage() {
         {/* ── Main ── */}
         <div className="main">
               {/* ── Dev Tools (global) ── */}
-              <div>
+              <div style={{position:'relative'}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
                     background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.15)',
@@ -1571,7 +1593,11 @@ export default function HomePage() {
                   🔧 {showDevTools ? '收起 Dev 工具 ▲' : 'Dev 工具 ▼'}
                 </button>
                 {showDevTools && (
-                  <div className="card" style={{padding:12}}>
+                  <div className="card" style={{
+                    padding:12,
+                    position:'absolute', top:'100%', left:0, right:0, zIndex:50,
+                    maxHeight:'50vh', overflowY:'auto',
+                  }}>
                     {/* ── GPS Control ── */}
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
                       <button
@@ -1637,6 +1663,22 @@ export default function HomePage() {
                         {simGpsWalking ? '⏹ 停GPS模擬' : '🗺️ GPS步行模擬'}
                       </button>
                       {simGpsWalking && <span style={{fontSize:9, color:'#22c55e'}}>🟢 模擬步行中</span>}
+                    </div>
+
+                    {/* ── Manual Mode Toggle ── */}
+                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                      <button
+                        onClick={toggleManualMode}
+                        style={{
+                          fontSize:10, padding:'4px 10px', cursor:'pointer', fontFamily:'inherit',
+                          borderRadius:10, lineHeight:1,
+                          background: manualMode ? 'rgba(34,211,238,0.15)' : 'rgba(59,130,246,0.08)',
+                          border: manualMode ? '1px solid rgba(34,211,238,0.4)' : '1px solid rgba(59,130,246,0.15)',
+                          color: manualMode ? '#22d3ee' : '#60a5fa',
+                        }}>
+                        🕹️ {manualMode ? '手動模式 ON' : '手動模式 OFF'}
+                      </button>
+                      {manualMode && <span style={{fontSize:9, color:'#22d3ee'}}>🟢 GPS 已停用，使用方向鍵移動</span>}
                     </div>
 
                     {/* ── Manual D-Pad Walk ── */}
