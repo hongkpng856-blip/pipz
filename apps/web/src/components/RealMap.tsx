@@ -36,6 +36,28 @@ const ZONE_NAMES = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅�
 const REGION_SIZE = 10  // cells per region — 10×10 blocks share the same zone colour
 const GRID_ANCHOR = { lat: 22.3752, lng: 114.1134 }  // fixed world anchor — NEVER changes (multi-player stability)
 
+// ── Monster spawn config ──
+const MONSTER_TYPES = [
+  { emoji: '🐺', label: '野狼', color: '#9ca3af', rarity: 'common' },
+  { emoji: '🐗', label: '山豬', color: '#22c55e', rarity: 'uncommon' },
+  { emoji: '🐻', label: '黑熊', color: '#3b82f6', rarity: 'rare' },
+  { emoji: '🦅', label: '雷鷹', color: '#8b5cf6', rarity: 'epic' },
+  { emoji: '🐉', label: '巨龍', color: '#f59e0b', rarity: 'legendary' },
+]
+const MONSTER_SPAWN_RATE = 0.18  // 18% chance per cell
+const MONSTER_LEVELS = [1, 2, 3, 5, 10]  // level per rarity index
+
+/** Deterministic monster generator: same cell always gives same monster */
+function getMonsterForCell(row: number, col: number, ownedSet: Set<string> | undefined): { emoji: string; label: string; color: string; level: number; rarity: string } | null {
+  if (ownedSet?.has(`${row},${col}`)) return null  // occupied → no monster
+  const hash = Math.abs(row * 374761393 + col * 668265263) % 2147483647
+  if ((hash % 100) / 100 >= MONSTER_SPAWN_RATE) return null  // no spawn
+  const typeIdx = hash % MONSTER_TYPES.length
+  const t = MONSTER_TYPES[typeIdx]
+  const level = MONSTER_LEVELS[typeIdx] + (hash % 5)  // add 0-4 variance
+  return { emoji: t.emoji, label: t.label, color: t.color, level, rarity: t.rarity }
+}
+
 /** Get zone index from grid position — cells in same 10×10 block get same colour */
 function getZoneIdx(row: number, col: number): number {
   const r = Math.floor(row / REGION_SIZE)
@@ -107,6 +129,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const highlightCircleRef = useRef<L.CircleMarker | null>(null)
   const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
   const allFlagCellsRef = useRef<FlagCell[]>([])
+  const monsterGroupRef = useRef<L.LayerGroup | null>(null)
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
   const [trailOverview, setTrailOverview] = useState(false)
   const trailOverviewRef = useRef(false)
@@ -262,6 +285,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       }
     }
     // Place flags on top of grid
+    placeMonstersOnGrid(map)
   }
 
   /** Place or update flag markers on all occupied cells (any user) — coloured, clickable, zoom-gated only */
@@ -335,6 +359,71 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
 
     flagGroupRef.current = group
+  }
+
+  /** Place monster markers on visible unowned grid cells */
+  function placeMonstersOnGrid(map: L.Map) {
+    // Remove old monsters
+    if (monsterGroupRef.current) {
+      map.removeLayer(monsterGroupRef.current)
+      monsterGroupRef.current = null
+    }
+
+    const anchor = anchorRef.current
+    if (!anchor) return
+
+    const bounds = map.getBounds()
+    const sw = bounds.getSouthWest()
+    const ne = bounds.getNorthEast()
+
+    const minRow = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG)
+    const maxRow = Math.ceil((ne.lat - anchor.lat) / CELL_SIZE_DEG)
+    const minCol = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG)
+    const maxCol = Math.ceil((ne.lng - anchor.lng) / CELL_SIZE_DEG)
+
+    // Build owned set from allFlagCells for quick lookup
+    const ownedSet = new Set<string>()
+    allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
+
+    const group = L.layerGroup([])
+
+    for (let row = minRow; row <= maxRow; row++) {
+      for (let col = minCol; col <= maxCol; col++) {
+        const cellKey = `${row},${col}`
+        if (ownedSet.has(cellKey)) continue  // skip occupied cells
+
+        const monster = getMonsterForCell(row, col, undefined)
+        if (!monster) continue
+
+        const north = anchor.lat + row * CELL_SIZE_DEG
+        const west = anchor.lng + col * CELL_SIZE_DEG
+        const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
+
+        const monIcon = L.divIcon({
+          className: 'pipz-monster-marker',
+          html: `<div style="
+            display:flex;align-items:center;justify-content:center;
+            width:24px;height:18px;line-height:1;cursor:pointer;
+            font-size:12px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+            position:relative;
+          ">${monster.emoji}<span style="
+            position:absolute;top:-4px;right:-6px;
+            background:${monster.color};color:white;
+            font-size:7px;font-weight:700;line-height:12px;
+            padding:0 3px;border-radius:6px;min-width:12px;text-align:center;
+          ">${monster.level}</span></div>`,
+          iconSize: [24, 18],
+          iconAnchor: [12, 9],
+        })
+        const marker = L.marker(center, { icon: monIcon, interactive: false, keyboard: false })
+        group.addLayer(marker)
+      }
+    }
+
+    if (map.getZoom() >= 14) {
+      group.addTo(map)
+    }
+    monsterGroupRef.current = group
   }
 
   /** Get grid cell name from lat/lng */
@@ -1031,6 +1120,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     const map = mapRef.current
     if (map && gridVisibleRef.current) {
       placeAllFlags(map)
+      placeMonstersOnGrid(map)
     }
   }, [allFlagCells])
 
@@ -1156,7 +1246,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           gridVisibleRef.current = newVal // Sync ref immediately (before next render)
           setGridVisible(newVal)
           if (!newVal) {
-            // Hide: remove all grid rects + property flags
+            // Hide: remove all grid rects + property flags + monsters
             gridRectsRef.current.forEach(r => r.remove())
             gridRectsRef.current = []
             // Clean up flag zoom handler so flags don't reappear on zoom change
@@ -1167,10 +1257,15 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
             if (flagGroupRef.current && map) {
               map.removeLayer(flagGroupRef.current)
             }
+            if (monsterGroupRef.current && map) {
+              map.removeLayer(monsterGroupRef.current)
+              monsterGroupRef.current = null
+            }
           } else if (map && anchorRef.current) {
-            // Show: redraw grid + restore flags
+            // Show: redraw grid + restore flags + monsters
             updateGrid(map, anchorRef.current, true)
             placeAllFlags(map)
+            placeMonstersOnGrid(map)
           }
         }}
         aria-label={gridVisible ? '隱藏網格' : '顯示網格'}
