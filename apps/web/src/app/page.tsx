@@ -3323,7 +3323,8 @@ function PropertyModalContent({
 
       {/* ════ Monster encounter modal ════ */}
       {encounter && (() => {
-        const m = encounter
+              if (typeof window !== 'undefined') console.log('[Modal] encounter IS truthy, rendering modal for', encounter?.label, encounter?.emoji)
+              const m = encounter
         const rc: Record<string, string> = {
           common: '#9ca3af', uncommon: '#22c55e', rare: '#3b82f6',
           epic: '#8b5cf6', legendary: '#f59e0b',
