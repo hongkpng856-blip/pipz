@@ -100,7 +100,7 @@ export interface RealMapHandle {
   toggleOverview: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter, onMonsterEncounter }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
