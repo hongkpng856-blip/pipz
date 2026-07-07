@@ -1092,33 +1092,34 @@ export default function HomePage() {
   }, [simGpsWalking])
 
   // ── Manual direction pad: arrow buttons move mapPos without GPS ──
-  function startManualWalk(dir: 'up' | 'down' | 'left' | 'right') {
-    if (!manualMode) return  // only work when manual mode is active
-    if (manualWalkRef.current) clearInterval(manualWalkRef.current)
+  function stepManualWalk(dir: 'up' | 'down' | 'left' | 'right') {
+    if (!manualMode) return
     setWalking(true)
     setMovementMode('walk')
-    // Set initial position if not set
-    if (!mapPos && !manualWalkRef.current) {
-      setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
-    }
-    const stepSize = 0.00015  // ~15m per tick
-    manualWalkRef.current = setInterval(() => {
-      setMapPos(prev => {
-        if (!prev) {
-          manualPosRef.current = { lat: 22.3194, lng: 114.1694 }
-          return { lat: 22.3194, lng: 114.1694, heading: 0, accuracy: 8 }
-        }
-        let { lat, lng } = prev
-        switch (dir) {
-          case 'up':    lat += stepSize; break
-          case 'down':  lat -= stepSize; break
-          case 'left':  lng -= stepSize; break
-          case 'right': lng += stepSize; break
-        }
-        manualPosRef.current = { lat, lng }
-        return { ...prev, lat, lng, heading: prev.heading ?? 0, accuracy: 8 }
-      })
-    }, 150)
+    setMapPos(prev => {
+      if (!prev) {
+        const p = { lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 }
+        return p
+      }
+      let { lat, lng } = prev
+      const stepSize = 0.00015  // ~15m per tick
+      switch (dir) {
+        case 'up':    lat += stepSize; break
+        case 'down':  lat -= stepSize; break
+        case 'left':  lng -= stepSize; break
+        case 'right': lng += stepSize; break
+      }
+      manualPosRef.current = { lat, lng }
+      return { ...prev, lat, lng, heading: prev.heading ?? 0, accuracy: 8 }
+    })
+  }
+  function startManualWalk(dir: 'up' | 'down' | 'left' | 'right') {
+    if (!manualMode) return
+    // Take one step immediately so even a quick tap moves
+    stepManualWalk(dir)
+    // Then continue walking while held
+    if (manualWalkRef.current) clearInterval(manualWalkRef.current)
+    manualWalkRef.current = setInterval(() => stepManualWalk(dir), 150)
   }
   function stopManualWalk() {
     if (manualWalkRef.current) { clearInterval(manualWalkRef.current); manualWalkRef.current = null }
