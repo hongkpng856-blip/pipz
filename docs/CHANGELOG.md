@@ -1,6 +1,24 @@
 # Changelog
 
-## v0.36.1 — Property Modal Button Uniformity + Toggle UX (2026-07-07)
+## v0.37.0 — Cross-User Flag Visibility (2026-07-07)
+
+**Fix:** Property flags now show for ALL users' occupied cells, not just the current user's cells.
+
+**Root cause:** `placeAllFlags()` was reading from `ownedCells` (built from `loadProperties(userId)` — current user only), so other users' flags never appeared.
+
+**Changes:**
+- **New API route** `/api/properties/all-cells` — returns all occupied cells `(anchor_lat, anchor_lng, cell_row, cell_col)` from all users, using `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS
+- **New function** `fetchAllFlagCells()` + `FlagCell` interface in `supabase-db.ts`
+- **RealMap** now accepts `allFlagCells: FlagCell[]` prop alongside existing `ownedCells`
+- `placeAllFlags()` iterates over `allFlagCellsRef.current` instead of `ownedCellsRef.current`
+- `loadUserProperties()` now also auto-refreshes `allFlagCells` after buy/sell, so new properties appear instantly
+- `ownedCells` (Set&lt;string&gt;) kept for the Property tab — only `allFlagCells` is used for map flags
+
+**Changed files:**
+- `apps/web/src/app/api/properties/all-cells/route.ts` — NEW: fetches all property cells via service role
+- `apps/web/src/lib/supabase-db.ts` — added `FlagCell` type + `fetchAllFlagCells()`
+- `apps/web/src/app/page.tsx` — added `allFlagCells` state + fetch, wrapped into `loadUserProperties()`
+- `apps/web/src/components/RealMap.tsx` — `placeAllFlags()` reads from `allFlagCells` instead of `ownedCells`
 
 **Fix:** Property Detail Modal buttons now all uniform full-width stacked layout. Toggle button redesigned as pill-style.
 

@@ -99,6 +99,8 @@ export default function HomePage() {
     const compassHeadingRef = useRef(0)
     const realMapRef = useRef<RealMapHandle>(null)
     const simRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const manualWalkRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const manualPosRef = useRef({ lat: 22.3194, lng: 114.1694 })
     const [eggHatchingId, setEggHatchingId] = useState<string | null>(null)
     const [newPetId, setNewPetId] = useState<string | null>(() => {
       if (typeof window !== 'undefined') return localStorage.getItem('pipz_new_pet') || null
@@ -1088,6 +1090,38 @@ export default function HomePage() {
     return () => { if (simGpsRef.current) { clearInterval(simGpsRef.current); simGpsRef.current = null } }
   }, [simGpsWalking])
 
+  // ── Manual direction pad: arrow buttons move mapPos without GPS ──
+  function startManualWalk(dir: 'up' | 'down' | 'left' | 'right') {
+    if (manualWalkRef.current) clearInterval(manualWalkRef.current)
+    setWalking(true)
+    setMovementMode('walk')
+    // Set initial position if not set
+    if (!mapPos) {
+      setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
+    }
+    const stepSize = 0.00015  // ~15m per tick
+    manualWalkRef.current = setInterval(() => {
+      setMapPos(prev => {
+        if (!prev) {
+          manualPosRef.current = { lat: 22.3194, lng: 114.1694 }
+          return { lat: 22.3194, lng: 114.1694, heading: 0, accuracy: 8 }
+        }
+        let { lat, lng } = prev
+        switch (dir) {
+          case 'up':    lat += stepSize; break
+          case 'down':  lat -= stepSize; break
+          case 'left':  lng -= stepSize; break
+          case 'right': lng += stepSize; break
+        }
+        manualPosRef.current = { lat, lng }
+        return { ...prev, lat, lng, heading: prev.heading ?? 0, accuracy: 8 }
+      })
+    }, 150)
+  }
+  function stopManualWalk() {
+    if (manualWalkRef.current) { clearInterval(manualWalkRef.current); manualWalkRef.current = null }
+  }
+
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
     setEggHatchingId(egg.id)
@@ -1603,6 +1637,87 @@ export default function HomePage() {
                         {simGpsWalking ? '⏹ 停GPS模擬' : '🗺️ GPS步行模擬'}
                       </button>
                       {simGpsWalking && <span style={{fontSize:9, color:'#22c55e'}}>🟢 模擬步行中</span>}
+                    </div>
+
+                    {/* ── Manual D-Pad Walk ── */}
+                    <div style={{
+                      display:'flex', flexDirection:'column', alignItems:'center',
+                      marginBottom:8, gap:3,
+                    }}>
+                      <div style={{fontSize:9, color:'#5a6d85', marginBottom:2}}>🕹️ 手動方向</div>
+                      <div style={{display:'flex', gap:3, justifyContent:'center'}}>
+                        <button
+                          onMouseDown={() => startManualWalk('up')}
+                          onMouseUp={stopManualWalk}
+                          onMouseLeave={stopManualWalk}
+                          onTouchStart={() => startManualWalk('up')}
+                          onTouchEnd={stopManualWalk}
+                          style={{
+                            width:40, height:34, borderRadius:8, cursor:'pointer',
+                            background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.3)',
+                            color:'#22d3ee', fontSize:18, lineHeight:1,
+                            fontFamily:'inherit', userSelect:'none',
+                            WebkitUserSelect:'none',
+                          }}
+                        >▲</button>
+                      </div>
+                      <div style={{display:'flex', gap:3, justifyContent:'center'}}>
+                        <button
+                          onMouseDown={() => startManualWalk('left')}
+                          onMouseUp={stopManualWalk}
+                          onMouseLeave={stopManualWalk}
+                          onTouchStart={() => startManualWalk('left')}
+                          onTouchEnd={stopManualWalk}
+                          style={{
+                            width:40, height:34, borderRadius:8, cursor:'pointer',
+                            background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.3)',
+                            color:'#22d3ee', fontSize:18, lineHeight:1,
+                            fontFamily:'inherit', userSelect:'none',
+                            WebkitUserSelect:'none',
+                          }}
+                        >◄</button>
+                        <div style={{
+                          width:40, height:34, borderRadius:8,
+                          background:'rgba(255,255,255,0.03)',
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          fontSize:10, color:'#5a6d85',
+                        }}>⬥</div>
+                        <button
+                          onMouseDown={() => startManualWalk('right')}
+                          onMouseUp={stopManualWalk}
+                          onMouseLeave={stopManualWalk}
+                          onTouchStart={() => startManualWalk('right')}
+                          onTouchEnd={stopManualWalk}
+                          style={{
+                            width:40, height:34, borderRadius:8, cursor:'pointer',
+                            background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.3)',
+                            color:'#22d3ee', fontSize:18, lineHeight:1,
+                            fontFamily:'inherit', userSelect:'none',
+                            WebkitUserSelect:'none',
+                          }}
+                        >►</button>
+                      </div>
+                      <div style={{display:'flex', gap:3, justifyContent:'center'}}>
+                        <button
+                          onMouseDown={() => startManualWalk('down')}
+                          onMouseUp={stopManualWalk}
+                          onMouseLeave={stopManualWalk}
+                          onTouchStart={() => startManualWalk('down')}
+                          onTouchEnd={stopManualWalk}
+                          style={{
+                            width:40, height:34, borderRadius:8, cursor:'pointer',
+                            background:'rgba(34,211,238,0.1)', border:'1px solid rgba(34,211,238,0.3)',
+                            color:'#22d3ee', fontSize:18, lineHeight:1,
+                            fontFamily:'inherit', userSelect:'none',
+                            WebkitUserSelect:'none',
+                          }}
+                        >▼</button>
+                      </div>
+                      {mapPos && (
+                        <span style={{fontSize:8, color:'#5a6d85', marginTop:2}}>
+                          {mapPos.lat.toFixed(5)}, {mapPos.lng.toFixed(5)}
+                        </span>
+                      )}
                     </div>
 
                     {/* ── Test Pet ── */}

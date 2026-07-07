@@ -85,7 +85,7 @@ Rendered by `RealMap.tsx`. Always shown in the map tab. Imported with `next/dyna
   - **No pet logged in**: shows 🥚 emoji with rarity tint
   - Sprite regenerated on pet change via `useEffect` → `setIcon(buildPetIcon())`
 - **Accuracy circle**: translucent cyan circle around user marker showing GPS accuracy
-- **Owned cell flags** (v0.34.0+): `ownedCells` prop (`Set<string>` with `"row,col"` keys) passed from `page.tsx` — each owned cell renders a 🏠 `L.divIcon` at cell center. Interactive, clickable to open cell popup. Flags are **tied to grid toggle**: `gridVisible=false` → flags hidden, `gridVisible=true` → flags shown. Managed by `placeAllFlags()` function, triggered by grid toggle ON and `useEffect([ownedCells])` (only when grid is ON).
+- **Owned cell flags** (v0.34.0+, updated v0.37.0): `allFlagCells` prop (`FlagCell[]`) passed from `page.tsx` — fetched via `/api/properties/all-cells` (service role, all users). Each occupied cell renders a 🏠 `L.divIcon` at cell center. Interactive, clickable to open cell popup. Flags are **tied to grid toggle**: `gridVisible=false` → flags hidden, `gridVisible=true` → flags shown. Managed by `placeAllFlags()` function, triggered by grid toggle ON and `useEffect([allFlagCells])` (only when grid is ON). Previously used `ownedCells` (current user only) — changed in v0.37.0 to show flags from ALL users.
 - **Zone-based grid coloring** (v0.34.0+): grid cells share colour in 10×10 region blocks via `getZoneIdx(row, col)` — deterministic hash `(Math.floor(row/10)*7 + Math.floor(col/10)*13) % 6`. Six named zones: 紫晶區, 翠綠區, 琥珀區, 碧藍區, 赤紅區, 湛藍區.
 |- **Path trail** (v0.18.1+): **7-day colour per-day polyline** system via `trailByDay` ref (`Map<number, LatLng[]>`):
 |  - Each day of week gets an independent `L.polyline` with its own colour from `DAY_COLORS`
@@ -405,6 +405,7 @@ As of v0.28.0, the standalone Eggs tab was removed. Eggs are now displayed as pa
 
 ### API
 - **GET** `/api/properties?anchor_lat=X&anchor_lng=Y&cell_row=R&cell_col=C` — check ownership + get owner details (used by RealMap popup). Returns `{owner, isMine, price, ownerName, name, purchasedAt}`. Owner's display name is fetched from `profiles` table using service role key (bypasses RLS).
+- **GET** `/api/properties/all-cells` — (v0.37.0) returns ALL occupied cells `{anchorLat, anchorLng, cellRow, cellCol}[]` from all users. Uses `SUPABASE_SERVICE_ROLE_KEY` to bypass RLS. Consumed by `fetchAllFlagCells()` for cross-user flag rendering on map.
 - **POST** `/api/properties` with `{userId, anchorLat, anchorLng, cellRow, cellCol, price}` — buy cell (deducts steps)
 - **PATCH** `/api/properties` with `{id, is_listed: bool, list_price?: number}` — list/unlist property on marketplace
 - **DELETE** `/api/properties?id=X&user_id=Y` — delete property (permanent, no refund)

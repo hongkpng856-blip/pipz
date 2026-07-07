@@ -588,4 +588,19 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Why no animation?** | The fade-in was purely cosmetic (< 300ms). Eliminating it removes an entire class of race-condition bugs at negligible UX cost. Verified with 30-cycle stress test at 50ms intervals — 100% pass rate. |
 | **Prevention** | Any portal-based overlay system must guarantee ZERO invisible DOM elements that can intercept events. If animation is needed, use `display: none` + CSS `transition-delay` (not setTimeout/rAF) with proper `visibility` coordination. |
 
-*Last updated: 2026-07-06. Add new entries at the top when you discover new pitfalls.*
+*Last updated: 2026-07-07. Add new entries at the top when you discover new pitfalls.*
+
+---
+
+## 14. Cross-User Flag Visibility (Fixed v0.37.0)
+
+### 14.1 Other Users' Flags Never Appear
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (flags only shown for current user's cells) |
+| **Symptom** | User A buys a cell → flag appears on User A's map. User B logs in → cannot see User A's flag even when zoomed in with grid enabled. |
+| **Root Cause** | `placeAllFlags()` in RealMap.tsx read from `ownedCellsRef.current`, which was built from `loadProperties(userId)` — a Supabase query filtered by `user_id`. Only the current user's cells were ever returned, so flags only showed for cells owned by the logged-in account. |
+| **Fix (v0.37.0)** | New API route `/api/properties/all-cells` fetches ALL occupied cells using `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS). `loadUserProperties()` auto-refreshes this data after buy/sell. `placeAllFlags()` now iterates over `allFlagCellsRef.current` (`FlagCell[]` array) instead of `ownedCellsRef.current` (`Set<string>`). |
+| **Files changed** | `route.ts` (new all-cells endpoint), `supabase-db.ts` (new `FlagCell` type + `fetchAllFlagCells()`), `page.tsx` (new `allFlagCells` state integrated into `loadUserProperties()`), `RealMap.tsx` (switched flag source to `allFlagCells`) |
+| **Prevention** | Any feature that needs cross-user data (e.g. leaderboard, PvP, trade visibility) must use an API route with `SUPABASE_SERVICE_ROLE_KEY` — never rely on client-side Supabase queries which are subject to RLS. RLS only shows the current user's own rows unless specifically configured otherwise. |
