@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.37.2 — Monster Spawn on Grid + Unified Icon (2026-07-07)
+
+**New:** Monsters spawn on unowned grid cells (18% chance). Show as unified ⚔️ icon — actual monster type/level/rarity is only revealed on encounter.
+
+**Changes:**
+- **`getMonsterForCell(row, col, ownedSet)`** — deterministic hash-based generator; same cell always yields the same monster
+- **5 monster types:** 🐺野狼 (common) 🐗山豬 (uncommon) 🐻黑熊 (rare) 🦅雷鷹 (epic) 🐉巨龍 (legendary)
+- **18% spawn rate** per cell; level varies by rarity (type base + 0-4 variance)
+- **No monsters on occupied cells** — uses `allFlagCells` to skip owned cells
+- **`placeMonstersOnGrid(map)`** — renders ⚔️ icon at cell centre (red-edged badge with subtle red background, zoom-gated ≥14)
+- **Integration:** called from `updateGrid()` and grid toggle show/hide; re-placed when `allFlagCells` change (e.g. after buying a cell)
+- **Encounter-ready data:** monster data (emoji, label, color, level, rarity) is available for future "enter cell → trigger battle" mechanic
+
 ## v0.37.1 — Manual D-Pad Walk + Floating Dev Tools (2026-07-07)
 
 **New:** D-pad walking simulator and manual mode toggle in Dev Tools. Panel now floats over the map instead of pushing content down.
