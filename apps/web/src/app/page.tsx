@@ -1127,10 +1127,11 @@ export default function HomePage() {
 
   // ── Toggle manual mode: stops real GPS, enables D-pad ──
   function toggleManualMode() {
+    // Always stop GPS first regardless of walking flag
+    walkStop()
     setManualMode(v => {
       if (!v) {
         // Turning ON: stop real GPS, set walk mode with fake position
-        if (walking) walkStop()
         setWalking(true)
         setMovementMode('walk')
         setMapPos(prev => prev ?? { lat: 22.3194, lng: 114.1694, heading: 0, accuracy: 8 })
