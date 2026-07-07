@@ -1148,12 +1148,40 @@ export default function HomePage() {
   }
 
   // ── Monster encounter handler: triggered when player walks into a monster cell ──
-  const [encounter, setEncounter] = useState<{ emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number } | null>(null)
   const monsterEncountered = useCallback((monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => {
-    // Don't call walkStop() — let the modal appear while player is still on the cell
     logMsg(`⚔️ 遇到 ${monster.emoji} ${monster.label} Lv.${monster.level}！`)
-    setEncounter(monster)
+    // Show modal directly via DOM
+    showMonsterModal(monster, addStRef, logMsg)
   }, [])
+
+  // ── Direct DOM monster modal (bypasses React state rendering issues) ──
+  function showMonsterModal(m: { emoji: string; label: string; color: string; level: number; rarity: string }, addStRef: React.MutableRefObject<((n: number) => void) | undefined>, logMsg: (s: string) => void) {
+    const c = RARITY_COLORS[m.rarity] || '#9ca3af'
+    const rarityLabel = RARITY_LABELS[m.rarity] || m.rarity
+    const overlay = document.createElement('div')
+    overlay.className = 'fixed-modal-layer'
+    overlay.style.cssText = 'position:fixed !important;inset:0;z-index:100;display:flex;align-items:center;justify-content:center'
+    overlay.innerHTML = `<div class="card" style="width:260px;padding:20px;text-align:center;border:1.5px solid ${c}66;box-shadow:0 0 30px ${c}33;background:#1a1b2e;border-radius:12px;">
+      <div style="font-size:48px;line-height:1;margin-bottom:8px">${m.emoji}</div>
+      <div style="font-size:18px;font-weight:800;color:#e8e0d0;margin-bottom:2px">${m.label}</div>
+      <div style="font-size:10px;font-weight:700;color:${c};margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${rarityLabel} · Lv.${m.level}</div>
+      <div style="font-size:11px;color:#5a6d85;margin-bottom:14px">⚔️ 野生怪獸擋住去路！</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="monster-battle-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-size:12px;font-weight:700;font-family:inherit">⚔️ 戰鬥</button>
+        <button id="monster-run-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">🏃 逃走</button>
+      </div>
+    </div>`
+    overlay.querySelector('#monster-battle-btn')?.addEventListener('click', () => {
+      addStRef.current?.(m.level * 10)
+      logMsg(`🎉 擊敗 ${m.emoji} ${m.label}！獲得 ${m.level * 10} 步獎勵！`)
+      overlay.remove()
+    })
+    overlay.querySelector('#monster-run-btn')?.addEventListener('click', () => {
+      logMsg(`🏃 從 ${m.emoji} ${m.label} 手中逃走`)
+      overlay.remove()
+    })
+    document.body.appendChild(overlay)
+  }
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
@@ -3322,55 +3350,8 @@ function PropertyModalContent({
         </div>
       </div>
 
-      {/* ════ Monster encounter modal ════ */}
-      {encounter !== null && ReactDOM.createPortal(
-        (() => {
-          console.log('[Modal portal] RENDERING encounter', encounter.emoji, encounter.label)
-          const m = encounter
-          const c = RARITY_COLORS[m.rarity] || '#9ca3af'
-          return (
-            <div className="fixed-modal-layer" style={{zIndex:100, display:'flex', alignItems:'center', justifyContent:'center'}}>
-              <div className="card" style={{
-                width:260, padding:20, textAlign:'center',
-                border:`1.5px solid ${c}66`, boxShadow:`0 0 30px ${c}33`,
-              }}>
-                <div style={{fontSize:48, lineHeight:1, marginBottom:8}}>{m.emoji}</div>
-                <div style={{fontSize:18, fontWeight:800, color:'#e8e0d0', marginBottom:2}}>{m.label}</div>
-                <div style={{fontSize:10, fontWeight:700, color:c, marginBottom:8, textTransform:'uppercase', letterSpacing:1}}>
-                  {RARITY_LABELS[m.rarity] || m.rarity} · Lv.{m.level}
-                </div>
-                <div style={{fontSize:11, color:'#5a6d85', marginBottom:14}}>
-                  ⚔️ 野生怪獸擋住去路！
-                </div>
-                <div style={{display:'flex', gap:8, justifyContent:'center'}}>
-                  <button onClick={() => {
-                    addStRef.current?.(m.level * 10)
-                    logMsg(`🎉 擊敗 ${m.emoji} ${m.label}！獲得 ${m.level * 10} 步獎勵！`)
-                    setEncounter(null)
-                  }} style={{
-                    padding:'6px 20px', borderRadius:10, cursor:'pointer',
-                    background:'rgba(34,197,94,0.15)', border:'1px solid rgba(34,197,94,0.3)',
-                    color:'#22c55e', fontSize:12, fontWeight:700, fontFamily:'inherit',
-                  }}>
-                    ⚔️ 戰鬥
-                  </button>
-                  <button onClick={() => {
-                    logMsg(`🏃 從 ${m.emoji} ${m.label} 手中逃走`)
-                    setEncounter(null)
-                  }} style={{
-                    padding:'6px 20px', borderRadius:10, cursor:'pointer',
-                    background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)',
-                    color:'#ef4444', fontSize:12, fontWeight:600, fontFamily:'inherit',
-                  }}>
-                    🏃 逃走
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        })(),
-        document.body
-      )}
+      {/* Monster modal is rendered via direct DOM in monsterEncountered callback */}
+      {/* This placeholder stays empty - the DOM modal takes over */}
     </div>
   )
 }
