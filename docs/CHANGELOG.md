@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.37.1 — Manual D-Pad Walk (2026-07-07)
+
+**New:** Arrow key D-pad in Dev Tools to walk without GPS. onMouseDown (or touch) starts walking in a direction; release stops.
+
+**Changes:**
+- **D-pad buttons** (▲◄►▼) — cyan-styled arrow pad, each button fires `startManualWalk(dir)` on press and `stopManualWalk()` on release
+- **`startManualWalk(dir)`** — sets `walking=true`, `movementMode='walk'`, creates 150ms interval moving `mapPos` by 0.00015° (~15m) per tick in the chosen direction; initializes position at 22.3194, 114.1694 if not set
+- **`stopManualWalk()`** — clears the interval
+- Shows current `lat, lng` below the D-pad for orientation
+
+**Changed files:**
+- `apps/web/src/app/page.tsx` — added `manualWalkRef`, `manualPosRef`, `startManualWalk()`, `stopManualWalk()`, D-pad JSX in Dev Tools
+
 ## v0.37.0 — Cross-User Flag Visibility (2026-07-07)
 
 **Fix:** Property flags now show for ALL users' occupied cells, not just the current user's cells.
