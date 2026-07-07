@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
-import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
+import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, EVENT_POOL, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import ModalPortal from '../components/ModalPortal'
 const RealMap = dynamic(() => import('../components/RealMap'), { ssr: false })
@@ -1147,12 +1147,35 @@ export default function HomePage() {
     })
   }
 
-  // ── Monster encounter handler: triggered when player walks into a monster cell ──
-  const monsterEncountered = useCallback((monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => {
-    logMsg(`⚔️ 遇到 ${monster.emoji} ${monster.label} Lv.${monster.level}！`)
-    // Show modal directly via DOM
-    showMonsterModal(monster, addStRef, logMsg)
-  }, [])
+  // ── Cell event handler: walking into a ❓ cell triggers a random event ──
+  const handleCellEvent = useCallback((row: number, col: number, cellKey: string, monsterData: { emoji: string; label: string; color: string; level: number; rarity: string } | null) => {
+    // 50% chance: monster encounter (if monster data exists)
+    // 50% chance: random event from the event pool
+    if (monsterData && Math.random() < 0.5) {
+      // Show monster encounter modal
+      logMsg(`⚔️ 遇到 ${monsterData.emoji} ${monsterData.label}！`)
+      showMonsterModal(monsterData, addStRef, logMsg)
+    } else {
+      // Roll a random event (excluding eventOnly events for cell encounters)
+      const available = EVENT_POOL.filter(e => (e.weight || 0) > 0 && !e.eventOnly)
+      if (available.length > 0) {
+        const totalWeight = available.reduce((s, e) => s + e.weight, 0)
+        let roll = Math.random() * totalWeight
+        for (const ev of available) {
+          roll -= ev.weight
+          if (roll <= 0) {
+            // Only trigger if not already showing an event
+            if (!currentEvent && !pendingEventRef.current) {
+              setCurrentEvent(ev)
+            } else {
+              logMsg(`🎲 ${ev.icon} ${ev.name}：${ev.description}`)
+            }
+            break
+          }
+        }
+      }
+    }
+  }, [currentEvent, logMsg, addStRef])
 
   // ── Direct DOM monster modal (bypasses React state rendering issues) ──
   function showMonsterModal(m: { emoji: string; label: string; color: string; level: number; rarity: string }, addStRef: React.MutableRefObject<((n: number) => void) | undefined>, logMsg: (s: string) => void) {
@@ -1984,9 +2007,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onMonsterEncounter={monsterEncountered} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onMonsterEncounter={monsterEncountered} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>

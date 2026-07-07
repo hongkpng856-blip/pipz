@@ -17,7 +17,7 @@ interface Props {
   ownedCells?: Set<string>  // "row,col" keys — MY cells (for Property tab)
   allFlagCells?: FlagCell[]  // ALL occupied cells from all users (for map flags)
   trailDayFilter?: number | null  // null = all days, 0-6 = specific day for trail heatmap
-  onMonsterEncounter?: (monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => void
+  onCellEvent?: (row: number, col: number, cellKey: string, monsterData: { emoji: string; label: string; color: string; level: number; rarity: string } | null) => void
 }
 
 const RC: Record<string, string> = {
@@ -100,7 +100,7 @@ export interface RealMapHandle {
   toggleOverview: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter, onMonsterEncounter }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter, onCellEvent }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -410,7 +410,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
             border-radius:50%;
             background:rgba(139,92,246,0.15);
             border:1.5px solid rgba(139,92,246,0.4);
-          ">👾</div>`,
+          ">❓</div>`,
           iconSize: [22, 22],
           iconAnchor: [11, 11],
         })
@@ -1122,9 +1122,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           const monster = getMonsterForCell(row, col, ownedSet)
           console.log('[Monster] FOUND?', monster ? monster.emoji + ' ' + monster.label : 'NO')
           if (monster) {
-            console.log('[Monster] TRIGGERING ENCOUNTER!')
+            console.log('[Monster] TRIGGERING CELL EVENT at', cellKey)
             encounteredMonstersRef.current.add(cellKey)
-            onMonsterEncounter?.({ ...monster, cellRow: row, cellCol: col })
+            onCellEvent?.(row, col, cellKey, monster)
           }
         } else {
           console.log('[Monster] Already encountered, skipping')
