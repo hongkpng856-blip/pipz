@@ -1148,11 +1148,10 @@ export default function HomePage() {
   // ── Monster encounter handler: triggered when player walks into a monster cell ──
   const [encounter, setEncounter] = useState<{ emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number } | null>(null)
   const monsterEncountered = useCallback((monster: { emoji: string; label: string; color: string; level: number; rarity: string; cellRow: number; cellCol: number }) => {
-    // Stop walking so the encounter popup appears
-    if (walking) walkStop()
+    // Don't call walkStop() — let the modal appear while player is still on the cell
     logMsg(`⚔️ 遇到 ${monster.emoji} ${monster.label} Lv.${monster.level}！`)
     setEncounter(monster)
-  }, [walking])
+  }, [])
 
   // ── Hatch an egg from inventory ──
   const hatchEgg = async (egg: EggItem) => {
