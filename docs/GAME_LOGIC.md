@@ -378,7 +378,7 @@ stepEggCounter % 2000 === 0 && Math.random() < 0.4 → spawn PixelLab egg
 - **Queue system**: if an event triggers simultaneously, event shows first, egg popup appears on dismiss (via `pendingEggRef`/`pendingEventRef`)
 - Hatches into PixelLab pet (cat or shiba) matching egg type
 
-## Monster Encounters (v0.37.2+)
+## Monster & Mystery Cell Encounters (v0.37.2+)
 
 ### Grid-Based Monster Spawn
 
@@ -397,34 +397,39 @@ Each monster has:
 - **color**: rarity-coloured border for modal card
 - **rarity**: from `['common', 'uncommon', 'rare', 'epic', 'legendary']`
 
-Rendered as unified 👾 icon (purple badge) on the grid — type/level/rarity hidden until encounter.
+### Grid Icon (v0.38.0+)
 
-### Encounter Trigger (v0.37.3+)
+Cells with monsters show a unified **❓** (purple badge) instead of the earlier 👾 icon. The question mark represents a mystery — the player doesn't know what's inside until they walk in.
 
-When the player walks into a cell (position changes):
+### Cell Event Trigger (v0.38.0+)
+
+When the player walks into a ❓ cell (position changes):
 
 1. `useEffect` in RealMap detects position change (dep array: `[position.lat, position.lng, mode, deviceHeading, walking]`)
 2. Converts position to grid cell: `row = floor((lat - anchorLat) / CELL_SIZE_DEG)`, `col = floor((lng - anchorLng) / CELL_SIZE_DEG)`
 3. Calls `getMonsterForCell(row, col, ownedSet)`:
    - Returns `null` if no spawn at this cell
    - Returns monster data `{ emoji, label, color, level, rarity }` if spawned
-4. Checks `encounteredMonstersRef` (Set<string> of `"row,col"` keys) — skip if already encountered
-5. Calls `onMonsterEncounter?.(monsterData)` with spread `{ ...monster, cellRow: row, cellCol: col }`
-6. **Callback triggers modal via direct DOM** (`showMonsterModal`):
-   - Creates `.fixed-modal-layer` div with card showing monster emoji, name, rarity, level
-   - ⚔️戰鬥 button: awards `level × 10` steps, logs victory, removes overlay
-   - 🏃逃走 button: logs escape, removes overlay
-7. Refreshing the page clears encountered monsters Set (same cell can be encountered again)
+4. Checks `encounteredMonstersRef` (Set<string> of `"row,col"` keys) — skip if already triggered
+5. Calls `onCellEvent(row, col, cellKey, monsterData)` — passes both cell info and monster data
+6. **Callback in page.tsx (`handleCellEvent`)** decides the outcome:
+   - **50%: Monster encounter** — calls `showMonsterModal()` (direct DOM overlay with ⚔️戰鬥 / 🏃逃走 buttons)
+   - **50%: Random event** — rolls from `EVENT_POOL` (available events excluding `eventOnly` items like 流星, 哥布林偷襲, 連環寶箱). The rolled event uses the existing `EventModal` via `setCurrentEvent()`
+7. Both outcomes produce a log message in the dev tools log
 
 ### Encounter Dedup
 
 - `encounteredMonstersRef = useRef<Set<string>>(new Set())`
 - Each `"row,col"` is added to the Set after triggering
-- On page refresh, the ref is re-created → same cell can be encountered again
+- On page refresh, the ref is re-created → same cell can be triggered again
 
 ### Technical Note: DOM Modal vs React State
 
-The encounter modal uses **direct DOM manipulation** (not React state) due to a React 18 batching issue where `setEncounter(monster)` called from a cross-component callback does not trigger a render with the new state. See `BUGS_AND_PITFALLS.md` §13.1 for full details.
+The monster encounter modal uses **direct DOM manipulation** (not React state) due to a React 18 batching issue where `setEncounter(monster)` called from a cross-component callback does not trigger a render with the new state. See `BUGS_AND_PITFALLS.md` §13.1 for full details.
+
+### Step-Based Events (unchanged)
+
+The step-based event system (every ~800 steps via `eventStepCounter`) is **independent** from the cell event system. Both can trigger during a single walking session. Cell events are position-based; step events are counter-based.
 
 ### Egg & Hatching Flow
 
