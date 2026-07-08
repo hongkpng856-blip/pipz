@@ -793,3 +793,62 @@ On first valid GPS position after mount, if saved trails exist in localStorage:
 - Shows: `[gps-dot] 🧭 步行中` (compass active) or `[gps-dot] 🛰️ 步行中` (GPS heading)
 - Mode indicator: 步行中 / 乘車中 / 靜止中
 - Color: cyan (walk), amber (vehicle), grey (stationary)
+
+---
+
+## Random Shops on Grid (v0.39.x) 🏪
+
+### Overview
+Shops are placed on unowned grid cells (12% spawn rate) alongside monsters. Each shop sells **🥚 eggs** for 👣 **steps**. Shops have a **countdown timer** (15-45 min lifetime) — when it expires, the shop disappears.
+
+### Shop Types
+
+| Type | Weight | Grid Badge | Actual Price | Behaviour |
+|------|--------|------------|--------------|-----------|
+| 🟢 抵買店 | 35% | 50% | 👣 1,000 | Honest discount |
+| 🟡 高檔店 | 25% | 10% | 👣 5,000 | Honest (expensive) |
+| 🟣 神秘店 | 20% | ?? | 👣 2,000 | Unknown until you enter |
+| 🔴 特賣場 (trap) | 12% | **85%** | Lose 👣 3,000 | **Looks amazing, but buying loses steps!** |
+| 🔵 名牌店 (surprise) | 8% | 10% | 👣 500 | **Looks expensive, but actually cheap!** |
+
+### Implementation
+
+#### Spawn Logic
+```
+hash = abs(row * 174761393 + col * 468265263) % 2147483647  // different seed from monsters
+if hash%100/100 >= 0.12 → no shop
+weighted random pick among 5 shop types (see weights above)
+```
+
+#### Grid Icon
+- All shops share unified **🏪** icon
+- **Top-right badge:** discount % (e.g. `50%`, `10%`, `85%`, `??`)
+- **Bottom-right badge:** countdown timer `MM:SS`
+  - `> 2 min` → gray
+  - `< 2 min` → shop's color
+  - `< 30 s` → 🟠 orange
+  - `< 12 s` → 🔴 red + red glow
+- Zoom-gated: visible at zoom ≥ 14
+- Refreshed every **2 seconds** via `placeShopsOnGrid()` timer
+
+#### Lifecycle
+1. Shop spawns on cell with `expiresAt = Date.now() + (15-45 min)` (deterministic duration from hash)
+2. Countdown displays on grid badge
+3. Player walks into shop → `onShopEntered` triggers → `showShopModal()` modal
+4. Modal shows storefront with: discount % (42px), egg product display, original price (crossed), discounted price
+5. **Buy ->** deduct steps from `totalSteps`, add PixelLab egg to inventory, save to DB
+6. **Trap ->** lose steps, no egg (trap is revealed on buy, not on entry)
+7. **Surprise ->** pay cheaper price than displayed
+8. When countdown ends → shop disappears from grid → new shop may appear elsewhere on next grid refresh
+
+#### Modal Countdown
+- Shows `MM:SS` inside the shop card
+- Updates every 1s via `setInterval`
+- Auto-closes 2s after expiry
+- Timer cleaned up on buy, close, or manual removal
+
+#### Dedup
+- Uses same `encounteredMonstersRef` Set as monster/cell events
+- Each cell triggers max once per session (shop OR monster OR nothing)
+- Different from the `getShopForCell` / `placeShopsOnGrid` mesh rendering (which shows all shops in viewport)
+
