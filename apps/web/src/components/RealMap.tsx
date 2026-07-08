@@ -133,6 +133,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const monsterGroupRef = useRef<L.LayerGroup | null>(null)
   const encounteredMonstersRef = useRef<Set<string>>(new Set())
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
+  const trailStartedRef = useRef(false)
   const [trailOverview, setTrailOverview] = useState(false)
   const trailOverviewRef = useRef(false)
   const trailDayFilterRef = useRef<number | null>(null)
@@ -1067,7 +1068,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // No heading source → arrow stays at last known heading (default = north)
 
     // ── Trail drawing + persist ──
-    if (walking && (mode === 'walk' || mode === 'vehicle')) {
+    // Skip trail drawing on the very first position fix (avoids phantom line from nowhere)
+    if (walking && (mode === 'walk' || mode === 'vehicle') && trailStartedRef.current) {
       const dayIdx = new Date().getDay()
 
       if (mode === 'walk') {
@@ -1106,6 +1108,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
       saveTrailToStorage()
     }
+
+    // Enable trail drawing for subsequent position updates
+    trailStartedRef.current = true
 
     // ── Monster encounter: check if current cell has a monster ──
     if (walking && (mode === 'walk' || mode === 'vehicle')) {
