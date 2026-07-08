@@ -515,8 +515,26 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
 
         // Rough countdown text for grid icon
-        const rem = shop.expiresAt - Date.now()
-        const countdownText = rem <= 0 ? '已過期' : rem > 60000 ? `${Math.round(rem/60000)}m` : rem > 10000 ? `${Math.round(rem/10000)*10}s` : '<1m'
+        const rem = Math.max(0, shop.expiresAt - Date.now())
+        const remMin = Math.floor(rem / 60000)
+        const remSec = Math.floor((rem % 60000) / 1000)
+        const pctLeft = shop.expiresAt > 0 ? Math.min(1, rem / (shop.expiresAt - Date.now() + rem)) : 0
+        // Format: >5min show MM:SS, 1-5min show M:SS, <1min show 0:SS, <10s show 0:0S
+        let countdownText: string
+        if (rem <= 0) {
+          countdownText = '已過期'
+        } else if (remMin >= 5) {
+          countdownText = `${String(remMin).padStart(2,'0')}:${String(remSec).padStart(2,'0')}`
+        } else {
+          countdownText = `${remMin}:${String(remSec).padStart(2,'0')}`
+        }
+        // Color transition: shop color → orange → red as time runs out
+        let cdlColor: string
+        if (rem <= 0) cdlColor = '#666'
+        else if (rem < 12000) cdlColor = '#ef4444'  // < 12s → red
+        else if (rem < 30000) cdlColor = '#f97316'  // < 30s → orange
+        else if (rem < 120000) cdlColor = shop.color  // < 2min → shop color
+        else cdlColor = '#94a5b8'  // normal color
 
         const shopIcon = L.divIcon({
           className: 'pipz-shop-marker',
@@ -529,7 +547,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           ">
             🏪
             <span style="position:absolute;top:-7px;right:-9px;font-size:8px;font-weight:800;color:#fff;background:${shop.color};padding:1px 3px;border-radius:6px;line-height:1.2;min-width:16px;text-align:center">${shop.displayDiscount}</span>
-            <span style="position:absolute;bottom:-7px;right:-9px;font-size:7px;font-weight:700;color:#94a5b8;background:rgba(0,0,0,0.6);padding:1px 3px;border-radius:6px;line-height:1.2">${countdownText}</span>
+            <span style="position:absolute;bottom:-7px;right:-9px;font-size:7px;font-weight:700;color:${cdlColor};background:${rem < 12000 ? 'rgba(239,68,68,0.25)' : 'rgba(0,0,0,0.6)'};padding:1px 3px;border-radius:6px;line-height:1.2">${countdownText}</span>
           </div>`,
           iconSize: [30, 30],
           iconAnchor: [15, 15],
@@ -1284,14 +1302,14 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
   }, [allFlagCells])
 
-  // ── Shop countdown timer: refresh shop markers every 5s to update countdown badge ──
+  // ── Shop countdown timer: refresh shop markers every 2s to update countdown badge ──
   useEffect(() => {
     const timer = setInterval(() => {
       const map = mapRef.current
       if (map && gridVisibleRef.current) {
         placeShopsOnGrid(map)
       }
-    }, 5000)
+    }, 2000)
     shopTimerRef.current = timer
     return () => { clearInterval(timer); shopTimerRef.current = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
