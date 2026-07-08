@@ -17,6 +17,7 @@
 
 **Changed files:**
 - `apps/web/src/app/page.tsx` — `toggleManualMode()` saves position to `manualPosRef` before `walkStop()`, restores position on OFF, auto-GPS effect now depends on `[tab, walking]`
+- `apps/web/src/components/RealMap.tsx` — added `trailStartedRef` guard to skip trail drawing on the very first GPS position fix (avoids phantom trail from default position to real GPS location)
 
 ## v0.38.0 — ❓ Mystery Cells + Random Event Encounters (2026-07-08)
 

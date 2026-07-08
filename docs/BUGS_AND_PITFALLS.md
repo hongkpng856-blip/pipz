@@ -655,3 +655,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Code** | `apps/web/src/app/page.tsx` — `toggleManualMode()`, auto-GPS `useEffect` |
 | **Prevention** | Always think about the **full lifecyle** of state across toggle sequences: (1) Saving state before mutation, (2) Restoring state after mutation, (3) Side-effects (like GPS restart) that depend on the toggled state. Use a checklist: "What happens at T=0, T=toggle-ON, T=toggle-OFF, T=toggle-ON-again?" |
 | **Related** | `walkStop()` is a general-purpose cleanup function — it aggressively resets `mapPos`, `walking`, and `movementMode` to default/null. Any function that calls `walkStop()` and then attempts to restore specific state must save that state *before* calling `walkStop()`, because `walkStop()` mutates shared state synchronously. |
+
+### 14.2 Phantom Trail on First GPS Fix (Trail Starts from Nowhere)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (misleading trail appearance) |
+| **Symptom** | When the app first loads, a trail line appears connecting "nowhere" to the first GPS position. The initial zoom animation (fitBounds → flyTo) shows this phantom line. The trail appears to start from a random location, not from where the user actually started walking. |
+| **Root Cause** | The position `useEffect` in RealMap checks `walking && (mode === 'walk' || 'vehicle')` and always adds a trail point. On the FIRST GPS fix, `walking=true` and `mode='walk'`, so a trail point is added at the GPS location. This creates a trail with just one point, which Leaflet renders as a line from some default position. Additionally, the initial zoom animation (`map.fitBounds()` of all existing trails + `map.flyTo()`) visually emphasizes this phantom point. |
+| **Fix** | Add `trailStartedRef = useRef(false)`. Guard trail drawing with `trailStartedRef.current`. Set `trailStartedRef.current = true` AFTER the first position update's trail-drawing block (outside the `if (walking...)` guard). The first position update skips trail drawing entirely; subsequent updates draw normally. |
+| **Code** | `apps/web/src/components/RealMap.tsx` — line 136 (`trailStartedRef`), line 1070 (guard), line 1113 (`= true`) |
+| **Prevention** | Any position-based drawing system (trails, markers, paths) must handle the "first position" case specially. Common patterns: (a) Skip drawing on the first update entirely, (b) Use a "first draw" flag that's set after the first update completes. The key insight is that the first position is a GPS cold-start fix, not a movement update — it represents "where you are now", not "where you moved to". |
