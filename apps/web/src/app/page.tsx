@@ -1128,19 +1128,26 @@ export default function HomePage() {
 
   // ── Toggle manual mode: stops real GPS, enables D-pad ──
   function toggleManualMode() {
+    // Save current position before walkStop clears it
+    setMapPos(prev => {
+      if (prev) {
+        manualPosRef.current = { lat: prev.lat, lng: prev.lng }
+      }
+      return prev // don't change state yet
+    })
     // Always stop GPS first regardless of walking flag
     walkStop()
     setManualMode(v => {
       if (!v) {
-        // Turning ON: stop real GPS, set walk mode with fake position
+        // Turning ON: use saved position as starting point
         setWalking(true)
         setMovementMode('walk')
-        setMapPos(prev => prev ?? { lat: 22.3194, lng: 114.1694, heading: 0, accuracy: 8 })
+        setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
       } else {
-        // Turning OFF: stop D-pad, GPS can be restarted manually
+        // Turning OFF: stop D-pad, keep last position visible
         stopManualWalk()
         setWalking(false)
-        setMapPos(null)
+        // Don't clear mapPos — GPS auto-start will update position when fix arrives
         setMovementMode(null)
       }
       return !v
