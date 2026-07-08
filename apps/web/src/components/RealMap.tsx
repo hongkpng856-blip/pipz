@@ -50,20 +50,21 @@ const MONSTER_SPAWN_RATE = 0.18  // 18% chance per cell
 const MONSTER_LEVELS = [1, 2, 3, 5, 10]  // level per rarity index
 
 // ── Shop config ──
+// All shops share the same 🏪 icon; the top-right badge shows the displayed discount %
+// Some shops are honest, some are traps (looks cheap but expensive), some are surprises (looks expensive but cheap)
 const SHOP_TYPES = [
-  { id: 'cheap_nice',    icon: '🏪', label: '平價小舖', desc: '抵買！蛋價有折',         color: '#22c55e', weight: 35, discountMult: 0.5,  isTrap: false, isSurprise: false },
-  { id: 'expensive',     icon: '💎', label: '豪華商店', desc: '高級貨色，價錢都高級',     color: '#f59e0b', weight: 25, discountMult: 2.5,  isTrap: false, isSurprise: false },
-  { id: 'mystery',       icon: '🎭', label: '神秘商店', desc: '唔知係平定貴...',         color: '#8b5cf6', weight: 20, discountMult: 1.0,  isTrap: false, isSurprise: false },
-  { id: 'trap',          icon: '🎪', label: '特賣場',   desc: '好似好抵…（小心！）',     color: '#ef4444', weight: 12, discountMult: 0.3,  isTrap: true,  isSurprise: false },
-  { id: 'surprise',      icon: '🏛️', label: '高級商店', desc: '睇落好貴，但原來好平！',   color: '#06b6d4', weight: 8,  discountMult: 0.2,  isTrap: false, isSurprise: true },
+  { id: 'cheap_nice',    label: '抵買店', desc: '真係好抵！',                    color: '#22c55e', weight: 35, displayDiscount: '50%', actualPrice: 1000,  isTrap: false, isSurprise: false },
+  { id: 'expensive',     label: '高檔店', desc: '高級貨色，價錢都高級啲',         color: '#f59e0b', weight: 25, displayDiscount: '10%', actualPrice: 5000,  isTrap: false, isSurprise: false },
+  { id: 'mystery',       label: '神秘店', desc: '唔知係平定貴...',                color: '#8b5cf6', weight: 20, displayDiscount: '??',  actualPrice: 2000,  isTrap: false, isSurprise: false },
+  { id: 'trap',          label: '特賣場', desc: '超抵！唔買對唔住自己！（？）',   color: '#ef4444', weight: 12, displayDiscount: '85%', actualPrice: 0,     isTrap: true,  isSurprise: false },  // shows 85% off but LOSES steps!
+  { id: 'surprise',      label: '名牌店', desc: '名店設計... 原來好平！',          color: '#06b6d4', weight: 8,  displayDiscount: '10%', actualPrice: 500,   isTrap: false, isSurprise: true },  // shows only 10% off but actually cheap
 ] as const
 const SHOP_SPAWN_RATE = 0.12  // 12% chance per cell (lower than monsters so shops are rarer)
-const BASE_EGG_PRICE = 2000   // base price in steps (before discount mult)
 
 interface ShopData {
-  id: string; icon: string; label: string; desc: string; color: string
-  discountMult: number; isTrap: boolean; isSurprise: boolean
-  finalPrice: number  // BASE_EGG_PRICE * discountMult, rounded
+  id: string; label: string; desc: string; color: string
+  displayDiscount: string; actualPrice: number
+  isTrap: boolean; isSurprise: boolean
 }
 
 /** Deterministic monster generator: same cell always gives same monster */
@@ -88,12 +89,12 @@ function getShopForCell(row: number, col: number, ownedSet: Set<string> | undefi
   for (const shop of SHOP_TYPES) {
     roll -= shop.weight
     if (roll <= 0) {
-      return { ...shop, finalPrice: Math.round(BASE_EGG_PRICE * shop.discountMult) }
+      return { ...shop }
     }
   }
   // Fallback (shouldn't happen)
   const last = SHOP_TYPES[SHOP_TYPES.length - 1]
-  return { ...last, finalPrice: Math.round(BASE_EGG_PRICE * last.discountMult) }
+  return { ...last }
 }
 
 /** Get zone index from grid position — cells in same 10×10 block get same colour */
@@ -500,16 +501,18 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
         const shopIcon = L.divIcon({
           className: 'pipz-shop-marker',
-          html: `<div style="
-            display:flex;align-items:center;justify-content:center;
-            width:24px;height:24px;line-height:1;cursor:pointer;
-            font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+          html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;
+            width:28px;height:28px;line-height:1;cursor:pointer;
+            font-size:16px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
             border-radius:50%;
             background:rgba(6,182,212,0.12);
             border:1.5px solid rgba(6,182,212,0.4);
-          ">${shop.icon}</div>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          ">
+            🏪
+            <span style="position:absolute;top:-6px;right:-8px;font-size:9px;font-weight:800;color:#fff;background:${shop.color};padding:1px 4px;border-radius:8px;line-height:1.3;min-width:18px;text-align:center">${shop.displayDiscount}</span>
+          </div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
         })
         const marker = L.marker(center, { icon: shopIcon, interactive: false, keyboard: false })
         group.addLayer(marker)

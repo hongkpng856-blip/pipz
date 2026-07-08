@@ -1188,7 +1188,7 @@ export default function HomePage() {
 
   // ── Shop entered handler: walking into a 🏪 shop cell ──
   const handleShopEntered = useCallback((shop: any, row: number, col: number) => {
-    logMsg(`🏪 發現 ${shop.icon} ${shop.label}！`)
+    logMsg(`🏪 發現 ${shop.label}（${shop.displayDiscount}）！`)
     showShopModal(shop, row, col, totalSteps, setSteps, setTotalSteps, setEggs, user, logMsg, addStRef)
   }, [totalSteps, logMsg, addStRef, user])
 
@@ -1223,7 +1223,7 @@ export default function HomePage() {
 
   // ── Direct DOM shop modal ──
   function showShopModal(
-    shop: { id: string; icon: string; label: string; desc: string; color: string; discountMult: number; isTrap: boolean; isSurprise: boolean; finalPrice: number },
+    shop: { id: string; label: string; desc: string; color: string; displayDiscount: string; actualPrice: number; isTrap: boolean; isSurprise: boolean },
     row: number, col: number,
     totalSteps: number,
     setSteps: React.Dispatch<React.SetStateAction<number>>,
@@ -1236,54 +1236,63 @@ export default function HomePage() {
     const overlay = document.createElement('div')
     overlay.className = 'fixed-modal-layer'
     overlay.style.cssText = 'position:fixed !important;inset:0;z-index:100;display:flex;align-items:center;justify-content:center'
-    const canAfford = totalSteps >= shop.finalPrice && !shop.isTrap
-    const displayPrice = shop.isTrap ? shop.finalPrice : shop.finalPrice  // trap shows cheap price, surprise shows expensive
 
-    const trapChance = shop.isTrap
-    const surpriseChance = shop.isSurprise
+    const isTrap = shop.isTrap
+    const isSurprise = shop.isSurprise
+
+    // The price shown in the modal depends on the shop type
+    // - Normal shops: show actualPrice
+    // - Trap: show "85% discount" version (low price to lure player), but buying = lose steps
+    // - Surprise: show "10% discount" version (high price), but buying = low price
+    const displayPrice = isTrap ? 500 : isSurprise ? 5000 : shop.actualPrice  // trap looks cheap, surprise looks expensive
+    const canAfford = totalSteps >= (isTrap ? 500 : isSurprise ? shop.actualPrice : shop.actualPrice)
 
     overlay.innerHTML = `<div class="card" style="width:280px;padding:20px;text-align:center;border:1.5px solid ${shop.color}66;box-shadow:0 0 30px ${shop.color}33;background:#1a1b2e;border-radius:12px;">
-      <div style="font-size:42px;line-height:1;margin-bottom:6px">${shop.icon}</div>
+      <div style="font-size:42px;line-height:1;margin-bottom:6px">🏪</div>
       <div style="font-size:16px;font-weight:800;color:#e8e0d0;margin-bottom:2px">${shop.label}</div>
-      <div style="font-size:11px;color:#5a6d85;margin-bottom:10px">${shop.desc}</div>
+      <div style="font-size:11px;color:#5a6d85;margin-bottom:4px">${shop.desc}</div>
+      <div style="font-size:10px;color:${shop.color};margin-bottom:8px;font-weight:700">折扣：${shop.displayDiscount}</div>
       <div style="font-size:13px;color:#94a5b8;margin-bottom:6px">
         🥚 <strong>蛋 × 1</strong>
-        <span style="color:${shop.color};font-weight:700;margin-left:6px">👣 ${shop.finalPrice}</span>
+        <span style="color:${shop.color};font-weight:700;margin-left:6px">👣 ${displayPrice}</span>
       </div>
       <div style="font-size:10px;color:#5a6d85;margin-bottom:14px">
-        ${trapChance ? '⚠️ 外觀唔可以盡信...' : surpriseChance ? '🎉 今日好運！' : ''}
+        ${isTrap ? '⚡ 限時優惠即將結束！' : isSurprise ? '💼 名牌精品...' : ''}
         你而家有 👣 <strong>${totalSteps}</strong>
       </div>
       <div style="display:flex;gap:8px;justify-content:center">
-        <button id="shop-buy-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);color:#06b6d4;font-size:12px;font-weight:700;font-family:inherit;${!canAfford && !trapChance ? 'opacity:0.4;cursor:not-allowed' : ''}">
-          ${trapChance ? '🎪 買！' : canAfford ? '🛒 購買' : '😢 步數不足'}
+        <button id="shop-buy-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);color:#06b6d4;font-size:12px;font-weight:700;font-family:inherit;${!canAfford && !isTrap ? 'opacity:0.4;cursor:not-allowed' : ''}">
+          ${isTrap ? '🎪 限時搶購！' : canAfford ? '🛒 購買' : '😢 步數不足'}
         </button>
         <button id="shop-close-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">🚪 離開</button>
       </div>
     </div>`
 
     overlay.querySelector('#shop-buy-btn')?.addEventListener('click', () => {
-      if (trapChance) {
-        // Trap! Lose steps instead of getting egg
-        const lostSteps = Math.round(shop.finalPrice * 1.5)
+      if (isTrap) {
+        // Trap! Looks cheap but actually LOSES steps
+        const lostSteps = 3000
         setSteps(s => Math.max(0, s - lostSteps))
         setTotalSteps(s => Math.max(0, s - lostSteps))
-        logMsg(`💥 中計！呢間 ${shop.icon} ${shop.label} 係陷阱！失去 👣 ${lostSteps} 步！`)
+        logMsg(`💥 中計！呢間 ${shop.label} 係陷阱！失去 👣 ${lostSteps} 步！😱`)
         overlay.remove()
         return
       }
-      if (totalSteps < shop.finalPrice) {
-        logMsg(`👣 步數不足 (需要 ${shop.finalPrice}，你有 ${totalSteps})`)
+      if (totalSteps < shop.actualPrice) {
+        logMsg(`👣 步數不足 (需要 ${shop.actualPrice}，你有 ${totalSteps})`)
         return
       }
-      // Deduct steps
-      const realPrice = surpriseChance ? Math.round(shop.finalPrice * 0.3) : shop.finalPrice
-      setSteps(s => Math.max(0, s - realPrice))
-      setTotalSteps(s => Math.max(0, s - realPrice))
-      logMsg(`🛒 用 👣 ${realPrice} 步買咗 🥚 蛋！`)
+      // Deduct steps (surprise shops have much lower actualPrice than displayed)
+      const paidSteps = isSurprise ? shop.actualPrice : shop.actualPrice
+      setSteps(s => Math.max(0, s - paidSteps))
+      setTotalSteps(s => Math.max(0, s - paidSteps))
+      if (isSurprise) {
+        logMsg(`🎉 驚喜！呢間 ${shop.label} 話就話唔抵，但其實只需 👣 ${paidSteps} 步！買到 🥚 蛋！`)
+      } else {
+        logMsg(`🛒 用 👣 ${paidSteps} 步買咗 🥚 蛋！`)
+      }
 
       // Add egg
-      addStRef.current?.(0)  // just to trigger re-render
       const eggId = `pixellab_${Date.now()}`
       const newEgg = { id: eggId, rarity: 'Rare', collectedAt: Date.now() }
       setEggs(v => [...v, newEgg])
@@ -1299,7 +1308,7 @@ export default function HomePage() {
     })
 
     overlay.querySelector('#shop-close-btn')?.addEventListener('click', () => {
-      logMsg(`🚪 離開 ${shop.icon} ${shop.label}`)
+      logMsg(`🚪 離開 ${shop.label}`)
       overlay.remove()
     })
 
