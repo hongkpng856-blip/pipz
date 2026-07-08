@@ -18,6 +18,7 @@ interface Props {
   allFlagCells?: FlagCell[]  // ALL occupied cells from all users (for map flags)
   trailDayFilter?: number | null  // null = all days, 0-6 = specific day for trail heatmap
   onCellEvent?: (row: number, col: number, cellKey: string, monsterData: { emoji: string; label: string; color: string; level: number; rarity: string } | null) => void
+  onShopEntered?: (shop: ShopData, row: number, col: number) => void
 }
 
 const RC: Record<string, string> = {
@@ -48,6 +49,23 @@ const MONSTER_TYPES = [
 const MONSTER_SPAWN_RATE = 0.18  // 18% chance per cell
 const MONSTER_LEVELS = [1, 2, 3, 5, 10]  // level per rarity index
 
+// ── Shop config ──
+const SHOP_TYPES = [
+  { id: 'cheap_nice',    icon: '🏪', label: '平價小舖', desc: '抵買！蛋價有折',         color: '#22c55e', weight: 35, discountMult: 0.5,  isTrap: false, isSurprise: false },
+  { id: 'expensive',     icon: '💎', label: '豪華商店', desc: '高級貨色，價錢都高級',     color: '#f59e0b', weight: 25, discountMult: 2.5,  isTrap: false, isSurprise: false },
+  { id: 'mystery',       icon: '🎭', label: '神秘商店', desc: '唔知係平定貴...',         color: '#8b5cf6', weight: 20, discountMult: 1.0,  isTrap: false, isSurprise: false },
+  { id: 'trap',          icon: '🎪', label: '特賣場',   desc: '好似好抵…（小心！）',     color: '#ef4444', weight: 12, discountMult: 0.3,  isTrap: true,  isSurprise: false },
+  { id: 'surprise',      icon: '🏛️', label: '高級商店', desc: '睇落好貴，但原來好平！',   color: '#06b6d4', weight: 8,  discountMult: 0.2,  isTrap: false, isSurprise: true },
+] as const
+const SHOP_SPAWN_RATE = 0.12  // 12% chance per cell (lower than monsters so shops are rarer)
+const BASE_EGG_PRICE = 2000   // base price in steps (before discount mult)
+
+interface ShopData {
+  id: string; icon: string; label: string; desc: string; color: string
+  discountMult: number; isTrap: boolean; isSurprise: boolean
+  finalPrice: number  // BASE_EGG_PRICE * discountMult, rounded
+}
+
 /** Deterministic monster generator: same cell always gives same monster */
 function getMonsterForCell(row: number, col: number, ownedSet: Set<string> | undefined): { emoji: string; label: string; color: string; level: number; rarity: string } | null {
   if (ownedSet?.has(`${row},${col}`)) return null  // occupied → no monster
@@ -57,6 +75,25 @@ function getMonsterForCell(row: number, col: number, ownedSet: Set<string> | und
   const t = MONSTER_TYPES[typeIdx]
   const level = MONSTER_LEVELS[typeIdx] + (hash % 5)  // add 0-4 variance
   return { emoji: t.emoji, label: t.label, color: t.color, level, rarity: t.rarity }
+}
+
+/** Deterministic shop generator: same cell always gives same shop (different seed from monsters) */
+function getShopForCell(row: number, col: number, ownedSet: Set<string> | undefined): ShopData | null {
+  if (ownedSet?.has(`${row},${col}`)) return null  // occupied → no shop
+  const hash = Math.abs(row * 174761393 + col * 468265263) % 2147483647  // different seed from monsters
+  if ((hash % 100) / 100 >= SHOP_SPAWN_RATE) return null  // no shop
+  // Weighted random pick among shop types
+  const totalWeight = SHOP_TYPES.reduce((s, t) => s + t.weight, 0)
+  let roll = (hash / 100) % totalWeight
+  for (const shop of SHOP_TYPES) {
+    roll -= shop.weight
+    if (roll <= 0) {
+      return { ...shop, finalPrice: Math.round(BASE_EGG_PRICE * shop.discountMult) }
+    }
+  }
+  // Fallback (shouldn't happen)
+  const last = SHOP_TYPES[SHOP_TYPES.length - 1]
+  return { ...last, finalPrice: Math.round(BASE_EGG_PRICE * last.discountMult) }
 }
 
 /** Get zone index from grid position — cells in same 10×10 block get same colour */
@@ -100,7 +137,7 @@ export interface RealMapHandle {
   toggleOverview: () => void
 }
 
-const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter, onCellEvent }, ref) {
+const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, walking, pet, mode, deviceHeading, compassActive, userId, ownedCells, allFlagCells, trailDayFilter, onCellEvent, onShopEntered }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
@@ -131,6 +168,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const ownedCellsRef = useRef<Set<string> | undefined>(undefined)
   const allFlagCellsRef = useRef<FlagCell[]>([])
   const monsterGroupRef = useRef<L.LayerGroup | null>(null)
+  const shopGroupRef = useRef<L.LayerGroup | null>(null)
   const encounteredMonstersRef = useRef<Set<string>>(new Set())
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
   const trailStartedRef = useRef(false)
@@ -289,6 +327,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     }
     // Place flags on top of grid
     placeMonstersOnGrid(map)
+    placeShopsOnGrid(map)
   }
 
   /** Place or update flag markers on all occupied cells (any user) — coloured, clickable, zoom-gated only */
@@ -424,6 +463,63 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       group.addTo(map)
     }
     monsterGroupRef.current = group
+  }
+
+  /** Place shop markers on visible unowned grid cells */
+  function placeShopsOnGrid(map: L.Map) {
+    // Remove old shops
+    if (shopGroupRef.current) {
+      map.removeLayer(shopGroupRef.current)
+      shopGroupRef.current = null
+    }
+    const bounds = map.getBounds()
+    const anchor = anchorRef.current
+    if (!anchor) return
+
+    const sw = bounds.getSouthWest()
+    const ne = bounds.getNorthEast()
+    const minRow = Math.floor((sw.lat - anchor.lat) / CELL_SIZE_DEG)
+    const maxRow = Math.ceil((ne.lat - anchor.lat) / CELL_SIZE_DEG)
+    const minCol = Math.floor((sw.lng - anchor.lng) / CELL_SIZE_DEG)
+    const maxCol = Math.ceil((ne.lng - anchor.lng) / CELL_SIZE_DEG)
+
+    const ownedSet = new Set<string>()
+    allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
+
+    const group = L.layerGroup([])
+    for (let row = minRow; row <= maxRow; row++) {
+      for (let col = minCol; col <= maxCol; col++) {
+        const cellKey = `${row},${col}`
+        if (ownedSet.has(cellKey)) continue
+        const shop = getShopForCell(row, col, undefined)
+        if (!shop) continue
+
+        const north = anchor.lat + row * CELL_SIZE_DEG
+        const west = anchor.lng + col * CELL_SIZE_DEG
+        const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
+
+        const shopIcon = L.divIcon({
+          className: 'pipz-shop-marker',
+          html: `<div style="
+            display:flex;align-items:center;justify-content:center;
+            width:24px;height:24px;line-height:1;cursor:pointer;
+            font-size:13px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
+            border-radius:50%;
+            background:rgba(6,182,212,0.12);
+            border:1.5px solid rgba(6,182,212,0.4);
+          ">${shop.icon}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        })
+        const marker = L.marker(center, { icon: shopIcon, interactive: false, keyboard: false })
+        group.addLayer(marker)
+      }
+    }
+
+    if (map.getZoom() >= 14) {
+      group.addTo(map)
+    }
+    shopGroupRef.current = group
   }
 
   /** Get grid cell name from lat/lng */
@@ -1120,11 +1216,12 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         const col = Math.floor((lng - anchor.lng) / CELL_SIZE_DEG)
         const cellKey = `${row},${col}`
         console.log('[Monster] ENCOUNTER CHECK at cell', cellKey, 'walking=', walking, 'mode=', mode)
+        // Build owned set for monster/shop check
+        const ownedSetLocal = new Set<string>()
+        allFlagCellsRef.current.forEach(c => ownedSetLocal.add(`${c.cellRow},${c.cellCol}`))
+
         if (!encounteredMonstersRef.current.has(cellKey)) {
-          // Build owned set for monster check
-          const ownedSet = new Set<string>()
-          allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
-          const monster = getMonsterForCell(row, col, ownedSet)
+          const monster = getMonsterForCell(row, col, ownedSetLocal)
           console.log('[Monster] FOUND?', monster ? monster.emoji + ' ' + monster.label : 'NO')
           if (monster) {
             console.log('[Monster] TRIGGERING CELL EVENT at', cellKey)
@@ -1133,6 +1230,16 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           }
         } else {
           console.log('[Monster] Already encountered, skipping')
+        }
+
+        // ── Shop check (separate from monster) ──
+        if (!encounteredMonstersRef.current.has(cellKey)) {
+          const shop = getShopForCell(row, col, ownedSetLocal)
+          if (shop) {
+            console.log('[Shop] FOUND', shop.icon, shop.label, 'at', cellKey)
+            encounteredMonstersRef.current.add(cellKey)
+            onShopEntered?.(shop, row, col)
+          }
         }
       }
     }
@@ -1150,6 +1257,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     if (map && gridVisibleRef.current) {
       placeAllFlags(map)
       placeMonstersOnGrid(map)
+      placeShopsOnGrid(map)
     }
   }, [allFlagCells])
 
@@ -1290,11 +1398,16 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
               map.removeLayer(monsterGroupRef.current)
               monsterGroupRef.current = null
             }
+            if (shopGroupRef.current && map) {
+              map.removeLayer(shopGroupRef.current)
+              shopGroupRef.current = null
+            }
           } else if (map && anchorRef.current) {
             // Show: redraw grid + restore flags + monsters
             updateGrid(map, anchorRef.current, true)
             placeAllFlags(map)
             placeMonstersOnGrid(map)
+            placeShopsOnGrid(map)
           }
         }}
         aria-label={gridVisible ? '隱藏網格' : '顯示網格'}

@@ -1186,6 +1186,12 @@ export default function HomePage() {
     }
   }, [currentEvent, logMsg, addStRef])
 
+  // ── Shop entered handler: walking into a 🏪 shop cell ──
+  const handleShopEntered = useCallback((shop: any, row: number, col: number) => {
+    logMsg(`🏪 發現 ${shop.icon} ${shop.label}！`)
+    showShopModal(shop, row, col, totalSteps, setSteps, setTotalSteps, setEggs, user, logMsg, addStRef)
+  }, [totalSteps, logMsg, addStRef, user])
+
   // ── Direct DOM monster modal (bypasses React state rendering issues) ──
   function showMonsterModal(m: { emoji: string; label: string; color: string; level: number; rarity: string }, addStRef: React.MutableRefObject<((n: number) => void) | undefined>, logMsg: (s: string) => void) {
     const c = RARITY_COLORS[m.rarity] || '#9ca3af'
@@ -1212,6 +1218,91 @@ export default function HomePage() {
       logMsg(`🏃 從 ${m.emoji} ${m.label} 手中逃走`)
       overlay.remove()
     })
+    document.body.appendChild(overlay)
+  }
+
+  // ── Direct DOM shop modal ──
+  function showShopModal(
+    shop: { id: string; icon: string; label: string; desc: string; color: string; discountMult: number; isTrap: boolean; isSurprise: boolean; finalPrice: number },
+    row: number, col: number,
+    totalSteps: number,
+    setSteps: React.Dispatch<React.SetStateAction<number>>,
+    setTotalSteps: React.Dispatch<React.SetStateAction<number>>,
+    setEggs: React.Dispatch<React.SetStateAction<any[]>>,
+    user: any,
+    logMsg: (s: string) => void,
+    addStRef: React.MutableRefObject<((n: number) => void) | undefined>,
+  ) {
+    const overlay = document.createElement('div')
+    overlay.className = 'fixed-modal-layer'
+    overlay.style.cssText = 'position:fixed !important;inset:0;z-index:100;display:flex;align-items:center;justify-content:center'
+    const canAfford = totalSteps >= shop.finalPrice && !shop.isTrap
+    const displayPrice = shop.isTrap ? shop.finalPrice : shop.finalPrice  // trap shows cheap price, surprise shows expensive
+
+    const trapChance = shop.isTrap
+    const surpriseChance = shop.isSurprise
+
+    overlay.innerHTML = `<div class="card" style="width:280px;padding:20px;text-align:center;border:1.5px solid ${shop.color}66;box-shadow:0 0 30px ${shop.color}33;background:#1a1b2e;border-radius:12px;">
+      <div style="font-size:42px;line-height:1;margin-bottom:6px">${shop.icon}</div>
+      <div style="font-size:16px;font-weight:800;color:#e8e0d0;margin-bottom:2px">${shop.label}</div>
+      <div style="font-size:11px;color:#5a6d85;margin-bottom:10px">${shop.desc}</div>
+      <div style="font-size:13px;color:#94a5b8;margin-bottom:6px">
+        🥚 <strong>蛋 × 1</strong>
+        <span style="color:${shop.color};font-weight:700;margin-left:6px">👣 ${shop.finalPrice}</span>
+      </div>
+      <div style="font-size:10px;color:#5a6d85;margin-bottom:14px">
+        ${trapChance ? '⚠️ 外觀唔可以盡信...' : surpriseChance ? '🎉 今日好運！' : ''}
+        你而家有 👣 <strong>${totalSteps}</strong>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="shop-buy-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);color:#06b6d4;font-size:12px;font-weight:700;font-family:inherit;${!canAfford && !trapChance ? 'opacity:0.4;cursor:not-allowed' : ''}">
+          ${trapChance ? '🎪 買！' : canAfford ? '🛒 購買' : '😢 步數不足'}
+        </button>
+        <button id="shop-close-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">🚪 離開</button>
+      </div>
+    </div>`
+
+    overlay.querySelector('#shop-buy-btn')?.addEventListener('click', () => {
+      if (trapChance) {
+        // Trap! Lose steps instead of getting egg
+        const lostSteps = Math.round(shop.finalPrice * 1.5)
+        setSteps(s => Math.max(0, s - lostSteps))
+        setTotalSteps(s => Math.max(0, s - lostSteps))
+        logMsg(`💥 中計！呢間 ${shop.icon} ${shop.label} 係陷阱！失去 👣 ${lostSteps} 步！`)
+        overlay.remove()
+        return
+      }
+      if (totalSteps < shop.finalPrice) {
+        logMsg(`👣 步數不足 (需要 ${shop.finalPrice}，你有 ${totalSteps})`)
+        return
+      }
+      // Deduct steps
+      const realPrice = surpriseChance ? Math.round(shop.finalPrice * 0.3) : shop.finalPrice
+      setSteps(s => Math.max(0, s - realPrice))
+      setTotalSteps(s => Math.max(0, s - realPrice))
+      logMsg(`🛒 用 👣 ${realPrice} 步買咗 🥚 蛋！`)
+
+      // Add egg
+      addStRef.current?.(0)  // just to trigger re-render
+      const eggId = `pixellab_${Date.now()}`
+      const newEgg = { id: eggId, rarity: 'Rare', collectedAt: Date.now() }
+      setEggs(v => [...v, newEgg])
+      // Save to DB if logged in
+      if (user) {
+        import('../lib/supabase-db').then(({ saveEgg }) => {
+          saveEgg(user.id, 'Rare', eggId).catch(() => {})
+        })
+      }
+
+      overlay.remove()
+      logMsg(`🥚 圓貓蛋已加入背包！去 🐾 寵物頁孵化`)
+    })
+
+    overlay.querySelector('#shop-close-btn')?.addEventListener('click', () => {
+      logMsg(`🚪 離開 ${shop.icon} ${shop.label}`)
+      overlay.remove()
+    })
+
     document.body.appendChild(overlay)
   }
 
@@ -2016,9 +2107,9 @@ export default function HomePage() {
 
               {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
               {walking && mapPos ? (
-                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} />
+                <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               ) : (
-                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} />
+                <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
               {/* 📊 Stats Card — with weekly bar chart (health app style) */}
               <div className="section card" style={{padding:0}}>
