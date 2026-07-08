@@ -1223,7 +1223,7 @@ export default function HomePage() {
 
   // ── Direct DOM shop modal ──
   function showShopModal(
-    shop: { id: string; label: string; desc: string; color: string; displayDiscount: string; actualPrice: number; isTrap: boolean; isSurprise: boolean },
+    shop: { id: string; label: string; desc: string; color: string; displayDiscount: string; actualPrice: number; isTrap: boolean; isSurprise: boolean; expiresAt: number },
     row: number, col: number,
     totalSteps: number,
     setSteps: React.Dispatch<React.SetStateAction<number>>,
@@ -1261,6 +1261,14 @@ export default function HomePage() {
         </div>
         <div style="font-size:11px;color:#5a6d85;margin-top:4px;font-weight:600">
           ${shop.isTrap ? '⚡ 限時優惠即將結束！' : shop.isSurprise ? '💼 限定商品限時折扣' : shop.displayDiscount === '??' ? '🎲 揭開神秘價格' : '🎉 限時折扣'}
+        </div>
+      </div>
+      <!-- Countdown Timer (beautiful) -->
+      <div style="padding:4px 20px 10px;text-align:center">
+        <div id="shop-countdown" style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:${shop.color};font-weight:700">
+          <span>⏳</span>
+          <span id="shop-countdown-text" style="font-variant-numeric:tabular-nums">--:--</span>
+          <span style="font-weight:400;color:#5a6d85">剩餘</span>
         </div>
       </div>
       <!-- Product Display -->
@@ -1302,6 +1310,8 @@ export default function HomePage() {
     </div>`
 
     overlay.querySelector('#shop-buy-btn')?.addEventListener('click', () => {
+      // Clear countdown timer
+      const ct = (overlay as any).__countdownTimer; if (ct) clearInterval(ct)
       if (isTrap) {
         // Trap! Looks cheap but actually LOSES steps
         const lostSteps = 3000
@@ -1346,6 +1356,33 @@ export default function HomePage() {
     })
 
     document.body.appendChild(overlay)
+
+    // ── Countdown timer for shop modal ──
+    const countdownEl = document.getElementById('shop-countdown-text')
+    const countdownTimer = setInterval(() => {
+      if (!overlay.parentNode) { clearInterval(countdownTimer); return }
+      const rem = Math.max(0, shop.expiresAt - Date.now())
+      if (countdownEl) {
+        const min = Math.floor(rem / 60000)
+        const sec = Math.floor((rem % 60000) / 1000)
+        countdownEl.textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+      }
+      if (rem <= 0) {
+        clearInterval(countdownTimer)
+        countdownEl && (countdownEl.textContent = '已結束')
+        // Auto-close after 2s
+        setTimeout(() => { if (overlay.parentNode) overlay.remove() }, 2000)
+      }
+    }, 1000)
+    // Clean up timer when modal is closed
+    const origClose = overlay.querySelector('#shop-close-btn')?.click
+    overlay.querySelector('#shop-close-btn')?.addEventListener('click', () => { clearInterval(countdownTimer) })
+    // Also clean up on buy
+    const origBuy = overlay.querySelector('#shop-buy-btn')?.click
+    overlay.querySelector('#shop-buy-btn')?.addEventListener('change', () => {})  // dummy, real cleanup in buy handler below
+
+    // Store cleanup ref for buy handler
+    ;(overlay as any).__countdownTimer = countdownTimer
   }
 
   // ── Hatch an egg from inventory ──

@@ -65,6 +65,7 @@ interface ShopData {
   id: string; label: string; desc: string; color: string
   displayDiscount: string; actualPrice: number
   isTrap: boolean; isSurprise: boolean
+  expiresAt: number  // epoch ms when shop disappears
 }
 
 /** Deterministic monster generator: same cell always gives same monster */
@@ -79,22 +80,34 @@ function getMonsterForCell(row: number, col: number, ownedSet: Set<string> | und
 }
 
 /** Deterministic shop generator: same cell always gives same shop (different seed from monsters) */
-function getShopForCell(row: number, col: number, ownedSet: Set<string> | undefined): ShopData | null {
+function getShopForCell(row: number, col: number, ownedSet: Set<string> | undefined, shopLifetimeMap?: Map<string, number>): ShopData | null {
   if (ownedSet?.has(`${row},${col}`)) return null  // occupied → no shop
-  const hash = Math.abs(row * 174761393 + col * 468265263) % 2147483647  // different seed from monsters
-  if ((hash % 100) / 100 >= SHOP_SPAWN_RATE) return null  // no shop
+  const cellKey = `${row},${col}`
+  // Check expiry if we have a lifetime map
+  if (shopLifetimeMap) {
+    const expiresAt = shopLifetimeMap.get(cellKey)
+    if (expiresAt && Date.now() > expiresAt) return null  // expired
+  }
+  const hash = Math.abs(row * 174761393 + col * 468265263) % 2147483647
+  if ((hash % 100) / 100 >= SHOP_SPAWN_RATE) return null
   // Weighted random pick among shop types
   const totalWeight = SHOP_TYPES.reduce((s, t) => s + t.weight, 0)
   let roll = (hash / 100) % totalWeight
+  let shopConfig: any = null
   for (const shop of SHOP_TYPES) {
     roll -= shop.weight
-    if (roll <= 0) {
-      return { ...shop }
-    }
+    if (roll <= 0) { shopConfig = shop; break }
   }
-  // Fallback (shouldn't happen)
-  const last = SHOP_TYPES[SHOP_TYPES.length - 1]
-  return { ...last }
+  if (!shopConfig) shopConfig = SHOP_TYPES[SHOP_TYPES.length - 1]
+
+  // Compute or retrieve expiry
+  let expiresAt = shopLifetimeMap?.get(cellKey)
+  if (!expiresAt) {
+    const durMs = (15 + (hash % 30)) * 60 * 1000  // 15-45 minutes
+    expiresAt = Date.now() + durMs
+    shopLifetimeMap?.set(cellKey, expiresAt)
+  }
+  return { ...shopConfig, expiresAt }
 }
 
 /** Get zone index from grid position — cells in same 10×10 block get same colour */
@@ -170,6 +183,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const allFlagCellsRef = useRef<FlagCell[]>([])
   const monsterGroupRef = useRef<L.LayerGroup | null>(null)
   const shopGroupRef = useRef<L.LayerGroup | null>(null)
+  const shopLifetimeRef = useRef<Map<string, number>>(new Map())  // cellKey → expiresAt
+  const shopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const encounteredMonstersRef = useRef<Set<string>>(new Set())
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
   const trailStartedRef = useRef(false)
@@ -492,27 +507,32 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       for (let col = minCol; col <= maxCol; col++) {
         const cellKey = `${row},${col}`
         if (ownedSet.has(cellKey)) continue
-        const shop = getShopForCell(row, col, undefined)
+        const shop = getShopForCell(row, col, undefined, shopLifetimeRef.current)
         if (!shop) continue
 
         const north = anchor.lat + row * CELL_SIZE_DEG
         const west = anchor.lng + col * CELL_SIZE_DEG
         const center = L.latLng(north + CELL_SIZE_DEG / 2, west + CELL_SIZE_DEG / 2)
 
+        // Rough countdown text for grid icon
+        const rem = shop.expiresAt - Date.now()
+        const countdownText = rem <= 0 ? '已過期' : rem > 60000 ? `${Math.round(rem/60000)}m` : rem > 10000 ? `${Math.round(rem/10000)*10}s` : '<1m'
+
         const shopIcon = L.divIcon({
           className: 'pipz-shop-marker',
           html: `<div style="position:relative;display:flex;align-items:center;justify-content:center;
-            width:28px;height:28px;line-height:1;cursor:pointer;
+            width:30px;height:30px;line-height:1;cursor:pointer;
             font-size:16px;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));
             border-radius:50%;
             background:rgba(6,182,212,0.12);
             border:1.5px solid rgba(6,182,212,0.4);
           ">
             🏪
-            <span style="position:absolute;top:-6px;right:-8px;font-size:9px;font-weight:800;color:#fff;background:${shop.color};padding:1px 4px;border-radius:8px;line-height:1.3;min-width:18px;text-align:center">${shop.displayDiscount}</span>
+            <span style="position:absolute;top:-7px;right:-9px;font-size:8px;font-weight:800;color:#fff;background:${shop.color};padding:1px 3px;border-radius:6px;line-height:1.2;min-width:16px;text-align:center">${shop.displayDiscount}</span>
+            <span style="position:absolute;bottom:-7px;right:-9px;font-size:7px;font-weight:700;color:#94a5b8;background:rgba(0,0,0,0.6);padding:1px 3px;border-radius:6px;line-height:1.2">${countdownText}</span>
           </div>`,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
         })
         const marker = L.marker(center, { icon: shopIcon, interactive: false, keyboard: false })
         group.addLayer(marker)
@@ -1263,6 +1283,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       placeShopsOnGrid(map)
     }
   }, [allFlagCells])
+
+  // ── Shop countdown timer: refresh shop markers every 5s to update countdown badge ──
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const map = mapRef.current
+      if (map && gridVisibleRef.current) {
+        placeShopsOnGrid(map)
+      }
+    }, 5000)
+    shopTimerRef.current = timer
+    return () => { clearInterval(timer); shopTimerRef.current = null }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Sync trailDayFilter prop — show/hide trail polylines by day ──
   useEffect(() => {
