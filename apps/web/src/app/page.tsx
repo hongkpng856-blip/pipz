@@ -802,8 +802,7 @@ export default function HomePage() {
     } else if (tab !== 'map' && walking) {
       walkStop()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
+  }, [tab, walking])
 
   const spawnPet = async (r: Rarity) => {
     const seed = genSeed()
@@ -1144,10 +1143,11 @@ export default function HomePage() {
         setMovementMode('walk')
         setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
       } else {
-        // Turning OFF: stop D-pad, keep last position visible
+        // Turning OFF: stop D-pad, restore last known position
         stopManualWalk()
         setWalking(false)
-        // Don't clear mapPos — GPS auto-start will update position when fix arrives
+        // Restore last position (walkStop cleared it)
+        setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng, heading: 0, accuracy: 8 })
         setMovementMode(null)
       }
       return !v
