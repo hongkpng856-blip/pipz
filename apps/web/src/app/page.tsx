@@ -1247,24 +1247,54 @@ export default function HomePage() {
     const displayPrice = isTrap ? 500 : isSurprise ? 5000 : shop.actualPrice  // trap looks cheap, surprise looks expensive
     const canAfford = totalSteps >= (isTrap ? 500 : isSurprise ? shop.actualPrice : shop.actualPrice)
 
-    overlay.innerHTML = `<div class="card" style="width:280px;padding:20px;text-align:center;border:1.5px solid ${shop.color}66;box-shadow:0 0 30px ${shop.color}33;background:#1a1b2e;border-radius:12px;">
-      <div style="font-size:42px;line-height:1;margin-bottom:6px">🏪</div>
-      <div style="font-size:16px;font-weight:800;color:#e8e0d0;margin-bottom:2px">${shop.label}</div>
-      <div style="font-size:11px;color:#5a6d85;margin-bottom:4px">${shop.desc}</div>
-      <div style="font-size:10px;color:${shop.color};margin-bottom:8px;font-weight:700">折扣：${shop.displayDiscount}</div>
-      <div style="font-size:13px;color:#94a5b8;margin-bottom:6px">
-        🥚 <strong>蛋 × 1</strong>
-        <span style="color:${shop.color};font-weight:700;margin-left:6px">👣 ${displayPrice}</span>
+    overlay.innerHTML = `<div class="card" style="width:300px;overflow:hidden;border:1.5px solid ${shop.color}66;box-shadow:0 0 30px ${shop.color}33;background:#1a1b2e;border-radius:14px;">
+      <!-- Shop Header / Sign -->
+      <div style="background:linear-gradient(135deg,${shop.color}22,${shop.color}11);padding:16px 20px 12px;text-align:center;border-bottom:1px solid ${shop.color}33">
+        <div style="font-size:32px;line-height:1;margin-bottom:4px">🏪</div>
+        <div style="font-size:16px;font-weight:800;color:#e8e0d0;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,0.4)">${shop.label}</div>
+        <div style="font-size:10px;color:#5a6d85;margin-top:2px">${shop.desc}</div>
       </div>
-      <div style="font-size:10px;color:#5a6d85;margin-bottom:14px">
-        ${isTrap ? '⚡ 限時優惠即將結束！' : isSurprise ? '💼 名牌精品...' : ''}
-        你而家有 👣 <strong>${totalSteps}</strong>
+      <!-- Label: 折扣 -->
+      <div style="padding:10px 20px 0;text-align:center">
+        <span style="display:inline-block;font-size:11px;font-weight:700;color:${shop.color};background:${shop.color}15;padding:3px 12px;border-radius:10px;border:1px solid ${shop.color}33">
+          ${shop.isTrap ? '🔥 限時優惠' : shop.isSurprise ? '💼 限定商品' : shop.displayDiscount === '??' ? '🎲 神秘商品' : `✨ ${shop.displayDiscount} OFF`}
+        </span>
       </div>
-      <div style="display:flex;gap:8px;justify-content:center">
-        <button id="shop-buy-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);color:#06b6d4;font-size:12px;font-weight:700;font-family:inherit;${!canAfford && !isTrap ? 'opacity:0.4;cursor:not-allowed' : ''}">
-          ${isTrap ? '🎪 限時搶購！' : canAfford ? '🛒 購買' : '😢 步數不足'}
-        </button>
-        <button id="shop-close-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">🚪 離開</button>
+      <!-- Product Display -->
+      <div style="padding:14px 20px;display:flex;align-items:center;gap:12px">
+        <div style="flex-shrink:0;width:56px;height:56px;background:${shop.color}15;border-radius:12px;border:1px solid ${shop.color}22;display:flex;align-items:center;justify-content:center;font-size:28px">🥚</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:#e8e0d0">圓貓蛋</div>
+          <div style="font-size:10px;color:#5a6d85">孵化出圓貓 PixelLab 寵物</div>
+        </div>
+      </div>
+      <!-- Price Tag -->
+      <div style="padding:0 20px 12px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05)">
+        <div style="font-size:11px;color:#5a6d85;margin-bottom:4px">原價</div>
+        <div style="font-size:14px;color:#5a6d85;text-decoration:line-through;margin-bottom:2px">👣 ${isTrap ? 1500 : isSurprise ? 6000 : shop.actualPrice * 2}</div>
+        <div style="font-size:22px;font-weight:800;color:${shop.color}">
+          👣 ${displayPrice}
+          <span style="font-size:10px;font-weight:600;color:#5a6d85;margin-left:4px">/ 步</span>
+        </div>
+      </div>
+      <!-- Bottom: Player Steps + Buttons -->
+      <div style="padding:12px 20px 16px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;color:#5a6d85;text-align:center">
+          你而家有 👣 <strong style="color:#e8e0d0">${totalSteps}</strong>
+          ${isTrap ? ' · <span style="color:#ef4444">⚠️ 留意條款</span>' : ''}
+          ${isSurprise ? ' · <span style="color:#22c55e">🎉 驚喜價</span>' : ''}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button id="shop-buy-btn" style="flex:1;padding:10px 16px;border-radius:10px;cursor:pointer;
+            background:${isTrap ? 'rgba(239,68,68,0.2)' : canAfford ? `linear-gradient(135deg,${shop.color}44,${shop.color}22)` : 'rgba(100,100,100,0.1)'};
+            border:1px solid ${isTrap ? 'rgba(239,68,68,0.4)' : canAfford ? `${shop.color}44` : 'rgba(100,100,100,0.2)'};
+            color:${isTrap ? '#ef4444' : canAfford ? shop.color : '#5a6d85'};
+            font-size:13px;font-weight:700;font-family:inherit;
+            ${!canAfford && !isTrap ? 'opacity:0.5;cursor:not-allowed' : isTrap ? '' : ''}">
+            ${isTrap ? '⚡ 限時搶購！' : canAfford ? '🛒 立即購買' : '😢 步數不足'}
+          </button>
+          <button id="shop-close-btn" style="padding:10px 16px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">✕</button>
+        </div>
       </div>
     </div>`
 
