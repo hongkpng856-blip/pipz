@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.38.1 — Manual Mode Position Fix + GPS Auto-Restart (2026-07-08)
+
+### Fixed
+- **🔴 Manual mode starts at hardcoded position instead of current GPS** — `toggleManualMode` called `walkStop()` (clears `mapPos` to `null`) before `setMapPos(prev => prev ?? hardcoded)`. The updater always saw `prev = null`, so D-pad started from `(22.3194, 114.1694)` every time. **Fix:** Save current position to `manualPosRef` *before* `walkStop()` using `setMapPos(prev => { manualPosRef.current = {lat: prev.lat, lng: prev.lng}; return prev })`. The updater for turning ON now reads from `manualPosRef.current`.
+- **🔴 Manual mode OFF doesn't snap back to GPS** — Two root causes:
+  1. **`walkStop()` cleared `mapPos` to `null`**, so when `setManualMode` updater ran (with no `setMapPos` call), the map went blank until a GPS fix arrived. **Fix:** Updater now calls `setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng })` to restore the last position.
+  2. **Auto-GPS `useEffect` only depended on `[tab]`, not `[tab, walking]`**. When `walking` changed from `true` to `false` (manual mode OFF), the effect never re-ran — GPS was never restarted after `walkStop()`. The button showed "📡 開GPS" indefinitely. **Fix:** Add `walking` to dependency array: `useEffect(() => {...}, [tab, walking])`.
+- **Re-opening manual mode from GPS position** — Because `manualPosRef` is updated with the current GPS position before each toggle, turning manual mode ON again always starts from the user's current real location, not the previous D-pad destination.
+
+### Expected Behaviour
+1. Toggle ON → D-pad starts from current GPS position
+2. Walk with D-pad to any location
+3. Toggle OFF → last D-pad position stays on map → GPS auto-starts → snap to real GPS when fix arrives
+4. Toggle ON again → starts from current GPS position again (free to move)
+
+**Changed files:**
+- `apps/web/src/app/page.tsx` — `toggleManualMode()` saves position to `manualPosRef` before `walkStop()`, restores position on OFF, auto-GPS effect now depends on `[tab, walking]`
+
 ## v0.38.0 — ❓ Mystery Cells + Random Event Encounters (2026-07-08)
 
 **New:** Monster icon changed from 👾 to ❓ (purple question mark badge). Walking into a ❓ cell now triggers a **random event** — monster encounter is one possible outcome among the full event pool.

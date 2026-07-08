@@ -635,3 +635,23 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix (v0.37.3)** | Bypass React state entirely: call `showMonsterModal()` which uses **direct DOM manipulation** (`document.createElement('div')` + `innerHTML` + `appendChild`). The overlay is created imperatively in the callback, not via React rendering. Event listeners use `addEventListener`. Modal is closed via `overlay.remove()`. |
 | **Files changed** | `apps/web/src/app/page.tsx` — replaced `setEncounter(monster)` with `showMonsterModal(monster, addStRef, logMsg)` |
 | **Prevention** | When a React state update from a cross-component callback (parent useCallback → passed to child → called from child's useEffect) consistently fails to trigger a re-render with the new state, bypass the React rendering pipeline entirely with direct DOM manipulation for the specific UI element. This is a last resort — only after exhausting all React debugging approaches. |
+
+---
+
+## 14. GPS Auto-Restart & toggleManualMode Position Handling
+
+### 14.1 `walkStop()` Destroys Position Before `setManualMode` Updater Runs
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (D-pad always starts from hardcoded position, GPS never restarts) |
+| **Symptom** | Toggle manual mode ON → D-pad always starts from (22.3194, 114.1694) regardless of real GPS position. Toggle manual mode OFF → map stays at last D-pad position (no longer snaps to null), but GPS never restarts — the 📡 開GPS button stays visible forever. The auto-GPS effect does not fire. |
+| **Root Cause 1: Position cleared by walkStop** | `toggleManualMode()` calls `walkStop()` at the top, which calls `setMapPos(null)`. Then the `setManualMode(v => ...)` updater runs `setMapPos(prev => prev ?? { 22.3194, 114.1694 })`. Since `walkStop()` already set `prev=null`, the fallback always fires — the user's GPS position is lost. |
+| **Root Cause 2: GPS never restarts** | The auto-GPS `useEffect(() => { if (tab==='map' && !walking) walkStart() }, [tab])` only depends on `[tab]`. When `walking` changes from `true` to `false` (manual mode OFF), the effect does **not** re-run (tab is still 'map' and `walking` is not a dep). So `walkStart()` is never called, and GPS stays off. |
+| **Fix 1** | Save position to `manualPosRef` *before* `walkStop()`: `setMapPos(prev => { if (prev) manualPosRef.current = {lat: prev.lat, lng: prev.lng}; return prev })`. Then in the updater: `setMapPos({ lat: manualPosRef.current.lat, lng: manualPosRef.current.lng })`. |
+| **Fix 2** | Add `walking` to the auto-GPS effect's dependency array: `useEffect(() => {...}, [tab, walking])`. When `walking` flips to `false`, the effect re-runs and calls `walkStart()`. |
+| **Fix 3 (re-open manual mode from GPS)** | Save current position before each toggle. `manualPosRef` is always updated with the latest real position. When toggling ON again, read from `manualPosRef.current` — always starts from current GPS location, never from the old D-pad destination. |
+| **Expected flow** | 1. Toggle ON → GPS position saved → walkStop() → position restored → D-pad starts from real GPS. 2. Toggle OFF → last D-pad position restored → auto-GPS effect re-runs (walking changed) → walkStart() → GPS fix updates position. 3. Toggle ON again → current GPS position used, not old D-pad position. |
+| **Code** | `apps/web/src/app/page.tsx` — `toggleManualMode()`, auto-GPS `useEffect` |
+| **Prevention** | Always think about the **full lifecyle** of state across toggle sequences: (1) Saving state before mutation, (2) Restoring state after mutation, (3) Side-effects (like GPS restart) that depend on the toggled state. Use a checklist: "What happens at T=0, T=toggle-ON, T=toggle-OFF, T=toggle-ON-again?" |
+| **Related** | `walkStop()` is a general-purpose cleanup function — it aggressively resets `mapPos`, `walking`, and `movementMode` to default/null. Any function that calls `walkStop()` and then attempts to restore specific state must save that state *before* calling `walkStop()`, because `walkStop()` mutates shared state synchronously. |
