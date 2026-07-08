@@ -1254,14 +1254,17 @@ export default function HomePage() {
         <div style="font-size:16px;font-weight:800;color:#e8e0d0;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,0.4)">${shop.label}</div>
         <div style="font-size:10px;color:#5a6d85;margin-top:2px">${shop.desc}</div>
       </div>
-      <!-- Label: 折扣 -->
-      <div style="padding:10px 20px 0;text-align:center">
-        <span style="display:inline-block;font-size:11px;font-weight:700;color:${shop.color};background:${shop.color}15;padding:3px 12px;border-radius:10px;border:1px solid ${shop.color}33">
-          ${shop.isTrap ? '🔥 限時優惠' : shop.isSurprise ? '💼 限定商品' : shop.displayDiscount === '??' ? '🎲 神秘商品' : `✨ ${shop.displayDiscount} OFF`}
-        </span>
+      <!-- Big Discount Percentage -->
+      <div style="padding:18px 20px 8px;text-align:center">
+        <div style="font-size:42px;font-weight:900;color:${shop.color};line-height:1;letter-spacing:1px;text-shadow:0 2px 8px ${shop.color}44">
+          ${shop.displayDiscount}
+        </div>
+        <div style="font-size:11px;color:#5a6d85;margin-top:4px;font-weight:600">
+          ${shop.isTrap ? '⚡ 限時優惠即將結束！' : shop.isSurprise ? '💼 限定商品限時折扣' : shop.displayDiscount === '??' ? '🎲 揭開神秘價格' : '🎉 限時折扣'}
+        </div>
       </div>
       <!-- Product Display -->
-      <div style="padding:14px 20px;display:flex;align-items:center;gap:12px">
+      <div style="padding:10px 20px;display:flex;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,0.04)">
         <div style="flex-shrink:0;width:56px;height:56px;background:${shop.color}15;border-radius:12px;border:1px solid ${shop.color}22;display:flex;align-items:center;justify-content:center;font-size:28px">🥚</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;color:#e8e0d0">圓貓蛋</div>
@@ -1269,7 +1272,7 @@ export default function HomePage() {
         </div>
       </div>
       <!-- Price Tag -->
-      <div style="padding:0 20px 12px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05)">
+      <div style="padding:8px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:11px;color:#5a6d85;margin-bottom:4px">原價</div>
         <div style="font-size:14px;color:#5a6d85;text-decoration:line-through;margin-bottom:2px">👣 ${isTrap ? 1500 : isSurprise ? 6000 : shop.actualPrice * 2}</div>
         <div style="font-size:22px;font-weight:800;color:${shop.color}">
