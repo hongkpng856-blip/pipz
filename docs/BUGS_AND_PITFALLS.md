@@ -666,3 +666,49 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Add `trailStartedRef = useRef(false)`. Guard trail drawing with `trailStartedRef.current`. Set `trailStartedRef.current = true` AFTER the first position update's trail-drawing block (outside the `if (walking...)` guard). The first position update skips trail drawing entirely; subsequent updates draw normally. |
 | **Code** | `apps/web/src/components/RealMap.tsx` — line 136 (`trailStartedRef`), line 1070 (guard), line 1113 (`= true`) |
 | **Prevention** | Any position-based drawing system (trails, markers, paths) must handle the "first position" case specially. Common patterns: (a) Skip drawing on the first update entirely, (b) Use a "first draw" flag that's set after the first update completes. The key insight is that the first position is a GPS cold-start fix, not a movement update — it represents "where you are now", not "where you moved to". |
+
+### 15 — Random Shops System Bugs (v0.39.x)
+
+### 15.1 Position Effect Shop Check Ignores Lifetime Map — Expired Shops Still Trigger
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (expired shop can still be entered) |
+| **Symptom** | When a shop's countdown reaches 0, the 🏪 badge disappears from the grid. But if the player is standing on the same cell, walking into it still triggers the shop modal — the expired shop is still interactable. |
+| **Root Cause** | The position `useEffect`'s shop check calls `getShopForCell(row, col, ownedSetLocal)` **without** passing `shopLifetimeRef.current`. This means the expiry check is skipped: `getShopForCell` checks `if (shopLifetimeMap)` before reading expiry, and since no map is passed, it always creates a new shop with a fresh `expiresAt`. Meanwhile, `placeShopsOnGrid` correctly passes `shopLifetimeRef.current`, so the grid correctly hides expired shops. |
+| **Fix** | Pass `shopLifetimeRef.current` to `getShopForCell` in the position useEffect shop check. |
+| **Code** | `apps/web/src/components/RealMap.tsx` — line 1278 |
+| **Prevention** | When a function has two call sites that should behave identically, both must receive the same optional parameters. The `getShopForCell` signature requires `shopLifetimeMap?` — but only the grid rendering call passed it. Audit all call sites when adding optional state-dependent parameters to a shared function. |
+
+### 15.2 Shared `encounteredMonstersRef` Between Monsters and Shops
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (cell with both monster and shop only triggers monster) |
+| **Symptom** | A cell can have both a monster (18% rate) and a shop (12% rate) because they use different hash seeds. ~2.16% of monster cells also have a shop. When the player walks in, only the monster encounter triggers; the shop is silently skipped. |
+| **Root Cause** | Both the monster check and the shop check use the same `encounteredMonstersRef.current.has(cellKey)` guard. The monster check runs first, adds the cellKey to the set. The shop check immediately after sees the set contains the key and skips. |
+| **Fix** | (Low priority) Use separate dedup sets for monsters and shops, or check shops first, or allow both to trigger in sequence. |
+| **Workaround** | The shop will be available on the grid but never trigger inside the cell encounter effect. The player can still see the shop icon on the grid, but if a monster also exists on that cell, the monster takes priority. |
+| **Prevention** | Shared dedup sets must be carefully reviewed when adding new entity types to the same detection mechanism. Consider whether entities are mutually exclusive or can coexist. |
+
+### 15.3 Shop Lifetime Reset on Page Refresh
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (minor UX inconsistency) |
+| **Symptom** | After refreshing the page, all shops get a new countdown timer. Previously expired shops reappear. Previously active shops get extended lifetimes. |
+| **Root Cause** | `shopLifetimeRef` is a `useRef<Map<string, number>>` that stores `cellKey → expiresAt`. Refs are reset on page reload. When `getShopForCell` is called after refresh, there's no cached `expiresAt` in the map, so it generates a new one (`Date.now() + deterministic_duration`). |
+| **Fix** | (Long-term) Persist shop lifetimes to `localStorage` with a key like `pipz_shop_expiry_{cellKey}`. On mount, restore from localStorage. Clean up expired entries periodically. |
+| **Workaround** | None needed — lifetimes are 15-45 minutes, so a page refresh within that window is rare. The deterministic duration ensures the same cell always has the same expiry rule, just shifted by the time of first discovery. |
+| **Prevention** | Any "time-until-expiry" feature using in-memory refs will lose state on page refresh. If persistence matters, use localStorage or a server-side timestamp. |
+
+### 15.4 Grid Icon Badge Clutter
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (visual density) |
+| **Symptom** | The shop marker icon has two badges: discount % (top-right, colored) and countdown `MM:SS` (bottom-right, dark). At 30×30 pixel size, the badges are very small and overlap visually. |
+| **Root Cause** | Both badges are positioned on the right side of the icon: top-right for discount, bottom-right for countdown. With icon size 30×30 and font sizes 7-8px, the badges occupy a significant portion of the icon. |
+| **Fix** | Consider: (a) Move countdown to the left side (bottom-left), (b) Merge into a single badge (e.g. `50%·25m`), (c) Only show one badge at a time (discount if > 5min, countdown if < 5min), (d) Increase icon size to 34×34. |
+| **Workaround** | Current implementation works but looks crowded. The countdown is more important for time-critical shops, while the discount is more important for decision-making. Priority-based display might be better. |
+| **Prevention** | When adding multiple data elements to a small DOM element, test at the actual rendered size. 30×30 pixels is very small for two separate badges. Consider combining or alternating displays. |

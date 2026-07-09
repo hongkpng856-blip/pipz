@@ -1275,7 +1275,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
         // ── Shop check (separate from monster) ──
         if (!encounteredMonstersRef.current.has(cellKey)) {
-          const shop = getShopForCell(row, col, ownedSetLocal)
+          const shop = getShopForCell(row, col, ownedSetLocal, shopLifetimeRef.current)
           if (shop) {
             console.log('[Shop] FOUND', shop.icon, shop.label, 'at', cellKey)
             encounteredMonstersRef.current.add(cellKey)
