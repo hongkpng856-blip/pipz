@@ -2100,18 +2100,17 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden', padding:'6px 0', gap:6 }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'hidden', position:'fixed', top:0, left:0, right:0, bottom:0, zIndex:1 }}>
 
-              {/* ── Map — takes 2/3 ── */}
-              <div style={{ flex: 2, minHeight:0, position:'relative' }}>
+              {/* ── Map fills everything ── */}
+              <div style={{ flex:1, minHeight:0, position:'relative' }}>
               {walking && mapPos ? (
                 <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               ) : (
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
-              </div>
-              {/* 📊 Stats Card — takes 1/3 */}
-              <div className="section card" style={{flex:1, minHeight:0, overflow:'auto', padding:0}}>
+                {/* 📊 Semi-transparent Steps Card overlay at bottom */}
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
