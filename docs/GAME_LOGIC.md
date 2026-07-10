@@ -427,13 +427,13 @@ When the player walks into a ❓ cell (position changes):
 
 The monster encounter modal uses **direct DOM manipulation** (not React state) due to a React 18 batching issue where `setEncounter(monster)` called from a cross-component callback does not trigger a render with the new state. See `BUGS_AND_PITFALLS.md` §13.1 for full details.
 
-### Step-Based Events (unchanged)
+### Step-Based Events (TEMPORARILY DISABLED — v0.39.3)
 
-The step-based event system (every ~800 steps via `eventStepCounter`) is **independent** from the cell event system. Both can trigger during a single walking session. Cell events are position-based; step events are counter-based.
+~~The step-based event system (every ~800 steps via `eventStepCounter`) is **independent** from the cell event system. Both can trigger during a single walking session. Cell events are position-based; step events are counter-based.~~ (Commented out in `addSt()` — see `INV`/`eventStepCounter`/`rollEvent` at app/page.tsx)
 
 ### Egg & Hatching Flow
 
-1. **Encounter** (every 2000 steps, 40%): 🥚 Egg Found Popup appears → egg saved to DB → user taps "收埋" or "去蛋頁面孵化"
+1. ~~**Encounter** (every 2000 steps, 40%): 🥚 Egg Found Popup appears → egg saved to DB → user taps "收埋" or "去蛋頁面孵化"~~ (Temporarily disabled — `eggStepCounter` logic commented out in `addSt()`)
 2. **Hatch** (from eggs tab): Tap egg → 2-second hatching animation → pet spawned → **new pet popup appears**
 3. **New Pet Popup**: Shows pet's pixel art, rarity badge, species ID, level/stage, and 4 stats (⚡🍀💜🔋) in a bordered overlay
 4. "🎉 睇下寵物" button → closes popup + switches to pets tab

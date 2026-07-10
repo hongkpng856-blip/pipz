@@ -1,6 +1,33 @@
 # Changelog
 
-## v0.39.2 — Shop Countdown Timer + Color Urgency (2026-07-09)
+## v0.39.3 — Map Layout Redesign: 2/3 Map + 1/3 Steps Card, Remove Exploration Progress (2026-07-09)
+
+### Changed
+- **Map tab layout:** full-height flex container (`calc(100dvh - 110px)`) with `flex: 2` for map, `flex: 1` for steps card
+- **Gap between cards:** `6px` padding + gap, no wasted space
+- **`.real-map-container` height:** changed from `fixed 300px` to `100%` so map fills flex parent
+- **`RealMap` root div:** added `height: 100%` to fill flex child
+
+### Removed
+- **🎮 探險進度 section** — removed entirely from map tab (event progress bar + egg progress bar + header)
+- **⚔️ 事件進度 progress bar** — removed UI
+- **🥚 遇蛋機會 progress bar** — removed UI
+
+### Disabled (temporarily commented out)
+- **Step-based event rolling:** `eventStepCounter` accumulation every 800 steps, `rollEvent()` call, `setCurrentEvent` trigger
+- **Step-based egg encounters:** `eggStepCounter` every 2000 steps, 40% random egg spawn, DB save, modal trigger
+
+### Preserved (still active)
+- ❓ Cell events (walking into mystery cells)
+- 🏪 Random shops on grid (countdown, trap/surprise)
+- 🗺️ Full map functionality (grid, monsters, trails, shops)
+- 📊 Stats Card (steps, total steps, daily average, weekly chart)
+- All tab navigation, D-pad, GPS
+
+**Changed files:**
+- `apps/web/src/app/page.tsx` — map tab flex layout, removed exploration section, disabled event/egg encounter logic
+- `apps/web/src/app/globals.css` — `.real-map-container` height: 100% (was 300px)
+- `apps/web/src/components/RealMap.tsx` — root div height: 100%
 
 **New:** Grid shop icons show live MM:SS countdown; color transitions from normal → orange → red as time runs out; shops disappear when expired. For testing, shop lifetimes are 15-45 minutes.
 
