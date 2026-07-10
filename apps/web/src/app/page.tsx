@@ -1823,7 +1823,7 @@ export default function HomePage() {
         {/* ── Main ── */}
         <div className="main">
               {/* ── Dev Tools (global) ── */}
-              <div style={{position:'relative'}}>
+              <div style={{position:'fixed', top:42, left:0, right:0, zIndex:1002, padding:'0 12px'}}>
                 <button onClick={() => setShowDevTools(!showDevTools)}
                   style={{
                     background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.15)',
@@ -1836,7 +1836,7 @@ export default function HomePage() {
                 {showDevTools && (
                   <div className="card" style={{
                     padding:12,
-                    position:'absolute', top:'100%', left:0, right:0, zIndex:50,
+                    position:'absolute', top:'100%', left:12, right:12, zIndex:50,
                     maxHeight:'50vh', overflowY:'auto',
                   }}>
                     {/* ── GPS Control ── */}
