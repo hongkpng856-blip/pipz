@@ -747,7 +747,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* ════ RealMap — Leaflet GPS Map ════ */
 
 .real-map-container {
-  height: 300px; width: 100%; border-radius: 16px; overflow: hidden;
+  height: 100%; width: 100%; border-radius: 16px; overflow: hidden;
   background: #0f172a;
 }
 /* ── Monopoly grid tooltip ── */

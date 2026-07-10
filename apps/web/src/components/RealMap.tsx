@@ -1394,7 +1394,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   }, [mode])
 
   return (
-    <div className="section card" style={{ padding: 0, position: 'relative', width: '100%' }}>
+    <div className="section card" style={{ padding: 0, position: 'relative', width: '100%', height:'100%' }}>
       <div ref={containerRef} className="real-map-container" />
       {walking && (
         <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : mode === 'stationary' ? 'real-map-mode-stationary' : ''}`}>

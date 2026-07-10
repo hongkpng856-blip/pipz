@@ -2100,19 +2100,18 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display: tab === 'map' ? '' : 'none' }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden' }}>
 
-
-
-
-              {/* ── Map / PetCompanion (map always visible, GPS enables tracking) ── */}
+              {/* ── Map — takes 2/3 ── */}
+              <div style={{ flex: 2, minHeight:0, position:'relative' }}>
               {walking && mapPos ? (
                 <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               ) : (
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
-              {/* 📊 Stats Card — with weekly bar chart (health app style) */}
-              <div className="section card" style={{padding:0}}>
+              </div>
+              {/* 📊 Stats Card — takes 1/3 */}
+              <div className="section card" style={{flex:1, minHeight:0, overflow:'auto', padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
