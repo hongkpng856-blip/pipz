@@ -2110,7 +2110,7 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom */}
-                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0}}>
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:1000, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
@@ -2201,11 +2201,34 @@ export default function HomePage() {
                     </div>
                   )}
 
-                </div>              {/* ── close stats card padding ── */}
-              </div>                {/* ── close stats card ── */}
+                    {/* ── Nav buttons integrated into steps card ── */}
+                    <div style={{display:'flex', justifyContent:'space-around', padding:'6px 0 4px', borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:6}}>
+                      {([
+                        { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
+                        { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
+                        { k: 'properties' as Tab, icon: '🏠', label: '地產' },
+                        { k: 'community' as Tab, icon: '🏪', label: '社群' },
+                        { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
+                      ]).map(t => (
+                        <button key={t.k} onClick={() => setTab(t.k)}
+                          style={{
+                            display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                            background:'transparent', border:'none', padding:'4px 8px',
+                            cursor:'pointer', fontFamily:'inherit',
+                            opacity: tab === t.k ? 1 : 0.5,
+                            filter: tab === t.k ? 'none' : 'grayscale(0.5)',
+                            transition:'opacity 0.15s',
+                          }}>
+                          <span style={{fontSize:16}}>{t.icon}</span>
+                          <span style={{fontSize:8, color: tab === t.k ? '#e2e8f0' : '#5a6d85', fontWeight: tab === t.k ? 700 : 500}}>{t.label}</span>
+                        </button>
+                      ))}
+                    </div>
 
+                </div>              {/* ── close stats card padding ── */}
+              </div>                {/* ── close stats card overlay ── */}
             </div>                {/* ── close map wrapper ── */}
-          </div>                  {/* ── close map tab fade-up ── */}
+          </div>
 
           {/* ════ PETS TAB ════ */}
           {tab === 'pets' && (
@@ -2746,8 +2769,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ════ BOTTOM NAV (fixed) ════ */}
-      <div className="bottom-nav">
+      {/* ════ BOTTOM NAV — hidden on map tab (integrated into steps card) ════ */}
+      <div className="bottom-nav" style={{ display: tab === 'map' ? 'none' : '' }}>
         <div className="nav-bar">
           <div className="nav-grid">
             {([
