@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.39.4 — Fullscreen Map with Integrated Bottom Nav + Header Overlay (2026-07-10/11)
+
+### Changed
+- **Map tab layout:** `position: fixed; inset: 0; z-index: 1` — map fills entire viewport
+- **Steps card:** Semi-transparent overlay at map bottom (`position: absolute; bottom: 0; z-index: 1000; margin-bottom: 0`)
+  - `rgba(15,23,42,0.7)` background + `backdrop-filter: blur(8px)`
+  - Flush with screen bottom (`margin-bottom: 0` overrides `.section` default)
+- **Header:** `position: fixed; z-index: 1001` — always visible above fullscreen map
+- **Bottom Nav:** `position: fixed; z-index: 1001` — always visible above fullscreen map (on non-map tabs)
+- **Map tab:** Bottom nav hidden on map tab; navigation integrated into steps card
+- **Map control buttons (GPS/Grid/Trail/Zoom):** `z-index: 1000` — sit above steps card overlay (`z-index: 999`)
+
+### Fixed
+- **Stacking context:** Header and bottom-nav now use `position: fixed` with `z-index: 1001`, placing them above the fullscreen map in the root stacking context
+- **Map controls unclickable:** Steps card `z-index` lowered from `1000` to `999` so control buttons (GPS/grid/trail/zoom at `z-index: 1000`) remain clickable
+
+### Changed files
+- `apps/web/src/app/page.tsx` — map tab `position: fixed; inset: 0`, steps card `z-index: 999; margin-bottom: 0`, removed integrated nav duplication
+- `apps/web/src/app/globals.css` — header `position: fixed; z-index: 1001`, bottom-nav `position: fixed; z-index: 1001`
+
 ## v0.39.3 — Map Layout Redesign: 2/3 Map + 1/3 Steps Card, Remove Exploration Progress (2026-07-09)
 
 ### Changed
