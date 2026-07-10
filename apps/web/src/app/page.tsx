@@ -2204,8 +2204,8 @@ export default function HomePage() {
                 </div>              {/* ── close stats card padding ── */}
               </div>                {/* ── close stats card ── */}
 
-
-            </div>
+            </div>                {/* ── close map wrapper ── */}
+          </div>                  {/* ── close map tab fade-up ── */}
 
           {/* ════ PETS TAB ════ */}
           {tab === 'pets' && (
