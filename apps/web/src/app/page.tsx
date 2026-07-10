@@ -2110,7 +2110,7 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom */}
-                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:1000, background:'rgba(15,23,42,0.88)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0}}>
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, background:'rgba(15,23,42,0.88)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0}}>
                 <div style={{padding:'14px 16px'}}>
                   {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
