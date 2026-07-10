@@ -2100,7 +2100,7 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden' }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden', padding:'6px 0', gap:6 }}>
 
               {/* ── Map — takes 2/3 ── */}
               <div style={{ flex: 2, minHeight:0, position:'relative' }}>
