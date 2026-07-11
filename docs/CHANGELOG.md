@@ -7,17 +7,20 @@
 - **Steps card:** Semi-transparent overlay at map bottom (`position: absolute; bottom: 0; z-index: 1000; margin-bottom: 0`)
   - `rgba(15,23,42,0.7)` background + `backdrop-filter: blur(8px)`
   - Flush with screen bottom (`margin-bottom: 0` overrides `.section` default)
-- **Header:** `position: fixed; z-index: 1001` — always visible above fullscreen map
-- **Bottom Nav:** `position: fixed; z-index: 1001` — always visible above fullscreen map (on non-map tabs)
+- **Header:** `position: fixed; top:0; left:0; right:0; z-index: 1001` — spans full viewport width (not limited by `.layout`'s `max-width: 24rem`)
+- **Bottom Nav:** `position: fixed; bottom:0; left:0; right:0; z-index: 1001`
+- **Dev Tools:** `position: fixed; top:42px; left:0; right:0; z-index: 1002` — always visible above fullscreen map
 - **Map tab:** Bottom nav hidden on map tab; navigation integrated into steps card
 - **Map control buttons (GPS/Grid/Trail/Zoom):** `z-index: 1000` — sit above steps card overlay (`z-index: 999`)
 
 ### Fixed
-- **Stacking context:** Header and bottom-nav now use `position: fixed` with `z-index: 1001`, placing them above the fullscreen map in the root stacking context
-- **Map controls unclickable:** Steps card `z-index` lowered from `1000` to `999` so control buttons (GPS/grid/trail/zoom at `z-index: 1000`) remain clickable
+- **Stacking context:** Header, bottom-nav now use `position: fixed` with `z-index: 1001`, placing them above the fullscreen map in the root stacking context
+- **Map controls unclickable:** Steps card `z-index` lowered from `1000` to `999` so control buttons remain clickable
+- **Dev Tools hidden by fullscreen map:** Changed from `position: relative` (inside scroll-wrap, behind map) to `position: fixed; z-index: 1002` above everything
+- **Header not filling full width:** `position: absolute` only spanned `.layout`'s `max-width: 24rem`; `position: fixed` spans entire viewport
 
 ### Changed files
-- `apps/web/src/app/page.tsx` — map tab `position: fixed; inset: 0`, steps card `z-index: 999; margin-bottom: 0`, removed integrated nav duplication
+- `apps/web/src/app/page.tsx` — map tab `position: fixed; inset: 0`, steps card `z-index: 999; margin-bottom: 0`, Dev Tools `position: fixed; top: 42; z-index: 1002`
 - `apps/web/src/app/globals.css` — header `position: fixed; z-index: 1001`, bottom-nav `position: fixed; z-index: 1001`
 
 ## v0.39.3 — Map Layout Redesign: 2/3 Map + 1/3 Steps Card, Remove Exploration Progress (2026-07-09)
