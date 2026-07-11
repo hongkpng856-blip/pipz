@@ -2200,6 +2200,8 @@ export default function HomePage() {
                   )}
 
                 </div>              {/* ── close stats card padding ── */}
+                {/* ── Map controls integrated into steps card ── */}
+                <div id="map-btns-portal" style={{display:'flex', gap:8, justifyContent:'center', padding:'6px 16px 10px', borderTop:'1px solid rgba(255,255,255,0.06)'}}></div>
               </div>                {/* ── close stats card overlay ── */}
             </div>                {/* ── close map wrapper ── */}
           </div>

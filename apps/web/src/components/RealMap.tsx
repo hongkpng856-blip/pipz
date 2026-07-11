@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useState } from 'react'
+import { createPortal } from 'react-dom'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
@@ -1404,6 +1405,8 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
           {mode === 'vehicle' ? '乘車中' : mode === 'stationary' ? '靜止中' : '步行中'}
         </div>
       )}
+      {typeof document !== 'undefined' && createPortal(
+        <div style={{display:'flex', gap:8, justifyContent:'center', alignItems:'center'}}>
       {/* ── GPS auto-follow toggle ── */}
       <button
         className={`real-map-gps-toggle ${gpsFollowRef.current ? 'gps-on' : 'gps-off'}`}
@@ -1477,6 +1480,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       >
         {trailOverview ? '🗺️' : '👣'}
       </button>
+    </div>,
+    document.getElementById('map-btns-portal') || document.body
+  )}
     </div>
   )
 })

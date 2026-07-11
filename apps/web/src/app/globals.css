@@ -922,7 +922,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* GPS auto-follow toggle button */
 .real-map-gps-toggle {
   position: absolute;
-  top: 226px;
+  bottom: 24px;
   right: 10px;
   z-index: 1000;
   width: 40px;
@@ -968,7 +968,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* Grid toggle button — above GPS toggle */
 .real-map-grid-toggle-btn {
   position: absolute;
-  top: 178px;
+  bottom: 72px;
   right: 10px;
   z-index: 1000;
   width: 40px;
@@ -997,7 +997,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* Trail overview button — above grid toggle */
 .real-map-trail-overview {
   position: absolute;
-  top: 130px;
+  bottom: 122px;
   right: 10px;
   z-index: 1000;
   width: 40px;
@@ -1025,6 +1025,15 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 .real-map-trail-overview:active {
   background: rgba(251,191,36,0.3);
   transform: scale(0.92);
+}
+
+/* ── Map control buttons in steps card portal ── */
+#map-btns-portal button {
+  position: static !important;
+  width: 36px;
+  height: 36px;
+  font-size: 16px;
+  margin: 0;
 }
 
 /* Stationary mode badge override */
