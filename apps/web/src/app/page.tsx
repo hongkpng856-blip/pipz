@@ -2098,7 +2098,7 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'hidden', position:'fixed', top:42, left:0, right:0, bottom:62, zIndex:1 }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'hidden', position:'fixed', top:42, left:0, right:0, bottom:0, zIndex:1 }}>
 
               {/* ── Map fills everything ── */}
               <div style={{ flex:1, minHeight:0, position:'relative' }}>
