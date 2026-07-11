@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.39.5 — Dev Tools in Header, Map Buttons Below Zoom, Nav Integrated into Steps Card (2026-07-11)
+
+### Changed
+- **Dev Tools:** Moved from fixed overlay (below header) into header-right as a compact 🔧 button — always accessible, saves vertical space
+- **Map control buttons (📍GPS/🔲Grid/👣Trail):** Relocated from bottom-right corner to top-right, stacked below zoom (+/-) controls
+- **Bottom nav integration:** 5 nav buttons (🗺️ 🐾 🏠 🏪 🎒) restored inside steps card as an integrated row with separator; bottom-nav hidden on map tab (no duplication)
+- **Map area extent:** `position: fixed; top: 42; bottom: 0` — steps card now extends to the very bottom of the screen (instead of `bottom: 62` which left a gap)
+
+### Fixed
+- **Map controls behind header/bottom-nav:** Map area constrained to `top: 42` (below header) and visible gap-free — controls no longer hidden by fixed overlays
+- **Steps card not flush to bottom:** Changed map fade-up `bottom: 62` → `bottom: 0` so steps card overlay reaches screen bottom
+- **Dev Tools button duplication:** Single 🔧 button in header replaces both the full-width bar button and the old overlay toggle
+
+### Changed files
+- `apps/web/src/app/page.tsx` — Dev Tools 🔧 in header-right, steps card integrated nav row, map fade-up `bottom: 0`, bottom-nav `display: none` on map tab
+- `apps/web/src/app/globals.css` — GPS/grid/trail buttons `top: Npx` (was `bottom: Npx`); updated comments
+- `apps/web/src/components/RealMap.tsx` — removed createPortal import
+
 ## v0.39.4 — Fullscreen Map with Integrated Bottom Nav + Header Overlay (2026-07-10/11)
 
 ### Changed
