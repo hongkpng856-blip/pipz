@@ -922,7 +922,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* GPS auto-follow toggle button */
 .real-map-gps-toggle {
   position: absolute;
-  bottom: 24px;
+  top: 226px;
   right: 10px;
   z-index: 1000;
   width: 40px;
@@ -968,7 +968,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* Grid toggle button — above GPS toggle */
 .real-map-grid-toggle-btn {
   position: absolute;
-  bottom: 72px;
+  top: 178px;
   right: 10px;
   z-index: 1000;
   width: 40px;
@@ -997,7 +997,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
 /* Trail overview button — above grid toggle */
 .real-map-trail-overview {
   position: absolute;
-  bottom: 122px;
+  top: 130px;
   right: 10px;
   z-index: 1000;
   width: 40px;

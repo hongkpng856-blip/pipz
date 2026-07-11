@@ -1791,6 +1791,15 @@ export default function HomePage() {
           ) : null}
           <div className="header-right">
             {syncing && <span style={{fontSize:10, color:'#5a6d85'}}>⏳</span>}
+            <button onClick={() => setShowDevTools(!showDevTools)}
+              style={{
+                background:'rgba(59,130,246,0.12)', border:'none',
+                cursor:'pointer', color:'#60a5fa',
+                fontSize:11, padding:'2px 6px', borderRadius:6,
+                fontFamily:'inherit', marginRight:2,
+              }}>
+              🔧
+            </button>
             {user ? (
               <>
                 <button onClick={() => setShowProfile(true)}
@@ -1822,23 +1831,13 @@ export default function HomePage() {
 
         {/* ── Main ── */}
         <div className="main">
-              {/* ── Dev Tools (global) ── */}
-              <div style={{position:'fixed', top:42, left:0, right:0, zIndex:1002, padding:'0 12px'}}>
-                <button onClick={() => setShowDevTools(!showDevTools)}
-                  style={{
-                    background:'rgba(59,130,246,0.08)', border:'1px solid rgba(59,130,246,0.15)',
-                    color:'#60a5fa', fontSize:10, cursor:'pointer', fontFamily:'inherit',
-                    padding:'3px 12px', width:'100%', textAlign:'center', borderRadius:8,
-                    marginBottom: showDevTools ? 0 : 12,
-                  }}>
-                  🔧 {showDevTools ? '收起 Dev 工具 ▲' : 'Dev 工具 ▼'}
-                </button>
-                {showDevTools && (
-                  <div className="card" style={{
-                    padding:12,
-                    position:'absolute', top:'100%', left:12, right:12, zIndex:50,
-                    maxHeight:'50vh', overflowY:'auto',
-                  }}>
+              {/* ── Dev Tools panel (toggled by header 🔧 button) ── */}
+              {showDevTools && (
+                <div className="card" style={{
+                  position:'fixed', top:42, left:0, right:0, zIndex:1002,
+                  padding:12, margin:'0 12px',
+                  maxHeight:'50vh', overflowY:'auto',
+                }}>
                     {/* ── GPS Control ── */}
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
                       <button
@@ -2088,7 +2087,6 @@ export default function HomePage() {
                     )}
                   </div>
                 )}
-              </div>
 
           {/* ════ Loading ════ */}
           {loading ? (
