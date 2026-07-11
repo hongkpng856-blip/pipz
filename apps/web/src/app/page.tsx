@@ -2199,30 +2199,6 @@ export default function HomePage() {
                     </div>
                   )}
 
-                    {/* ── Nav buttons integrated into steps card ── */}
-                    <div style={{display:'flex', justifyContent:'space-around', padding:'6px 0 4px', borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:6}}>
-                      {([
-                        { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
-                        { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
-                        { k: 'properties' as Tab, icon: '🏠', label: '地產' },
-                        { k: 'community' as Tab, icon: '🏪', label: '社群' },
-                        { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
-                      ]).map(t => (
-                        <button key={t.k} onClick={() => setTab(t.k)}
-                          style={{
-                            display:'flex', flexDirection:'column', alignItems:'center', gap:3,
-                            background:'transparent', border:'none', padding:'4px 8px',
-                            cursor:'pointer', fontFamily:'inherit',
-                            opacity: tab === t.k ? 1 : 0.5,
-                            filter: tab === t.k ? 'none' : 'grayscale(0.5)',
-                            transition:'opacity 0.15s',
-                          }}>
-                          <span style={{fontSize:16}}>{t.icon}</span>
-                          <span style={{fontSize:8, color: tab === t.k ? '#e2e8f0' : '#5a6d85', fontWeight: tab === t.k ? 700 : 500}}>{t.label}</span>
-                        </button>
-                      ))}
-                    </div>
-
                 </div>              {/* ── close stats card padding ── */}
               </div>                {/* ── close stats card overlay ── */}
             </div>                {/* ── close map wrapper ── */}
@@ -2767,8 +2743,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ════ BOTTOM NAV — hidden on map tab (integrated into steps card) ════ */}
-      <div className="bottom-nav" style={{ display: tab === 'map' ? 'none' : '' }}>
+      {/* ════ BOTTOM NAV (visible on all tabs) ════ */}
+      <div className="bottom-nav" style={{ display: tab === 'map' ? 'flex' : '' }}>
         <div className="nav-bar">
           <div className="nav-grid">
             {([
