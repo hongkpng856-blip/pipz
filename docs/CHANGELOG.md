@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.39.6 — Expandable Steps Card with Drag Handle (2026-07-11)
+
+### Added
+- **Drag handle:** White line at top of steps card — tap to toggle expand/collapse, or drag up/down with smooth animation
+- **Expanded content:** Extra stats shown when card is expanded (distance, calories, active time), with "👆 向下滑動收起" hint
+- **Native touch handling:** `passive: false` on `touchmove` + `preventDefault()` prevents map scroll interference during drag
+
+### Changed
+- **Steps card layout:** Content wrapped in collapsible `<div>` with `overflow: hidden` + `max-height` transition (`210px` collapsed → `70vh` expanded); `border-radius: 16px 16px 0 0` added
+- **Restored original positions:** Map control buttons (📍🔲👣) back in bottom-right corner of map (reverted from top-right experiment)
+
+### Changed files
+- `apps/web/src/app/page.tsx` — card expanded state/refs, native touch/mouse event listeners, drag handle with ref, collapsible wrapper, extra expanded content
+
 ## v0.39.5 — Dev Tools in Header, Map Buttons Below Zoom, Nav Integrated into Steps Card (2026-07-11)
 
 ### Changed
