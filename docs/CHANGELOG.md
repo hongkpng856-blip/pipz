@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.39.9 — Fixed Nav Visibility, Proper Content Measurement, iOS Touch Fix (2026-07-12)
+
+### Fixed
+- **Nav buttons not visible at collapsed state:** `contentRef` was measuring the `flex:1` wrapper (whose height is flex-allocated), not the actual inner content. Added `innerRef` on a dedicated inner `<div>` wrapping only the numbers + chart, so `innerH` accurately reflects real content height. Card height = `innerH + 24 + navH + cardDragY` now always fits all content.
+- **Circular measurement bug:** Previously `contentH` would measure the element's own flex-distributed height, creating a self-reinforcing cycle that never adjusted to true content size. The inner div is unaffected by flex distribution.
+- **iOS touch-to-drag not working:** Safari ignores `touch-action: none` on non-root elements. Added native `touchstart`/`touchmove` listeners with `preventDefault()` + `stopPropagation()` on the card element to block scroll interference.
+
+### Changed
+- **Drag hit area:** `onPointerDown` moved from the handle `<div>` to the card root `<div>`. Touching anywhere on the card (numbers, chart, empty space) starts a drag — the handle is just a visual affordance.
+- **Flex layout finalised:** Card uses `display: flex; flex-direction: column`. Upper content (`flex: 1; overflow: hidden`) collapses/expands during drag. Nav area (`flex-shrink: 0`) is always pinned to the bottom.
+
+### Added
+- `cardRef` (on the card root) – native touch intercept for iOS
+- `innerRef` (on the true content wrapper) – for accurate height measurement
+- `navRef` (on the nav area) – for nav height measurement
+
+### Changed files
+- `apps/web/src/app/page.tsx` — major restructure: `innerRef`/`navRef`/`cardRef`, `innerH`/`navH` state, flex layout, `onPointerDown` on card root, native touch intercept effect, height formula uses `innerH + HANDLE_H + navH + cardDragY`
+- `docs/CHANGELOG.md` — this entry
+
 ## v0.39.8 — Dynamic Card Height, Content Measurement, Nav Visibility Fix (2026-07-12)
 
 ### Fixed
