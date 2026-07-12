@@ -79,6 +79,7 @@ export default function HomePage() {
   const [cardExpanded, setCardExpanded] = useState(false)
   const cardDragStartY = useRef(0)
   const cardDragging = useRef(false)
+  const cardHandleRef = useRef<HTMLDivElement>(null)
   const [compactProps, setCompactProps] = useState(false)
   const [ready, setReady] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -302,6 +303,52 @@ export default function HomePage() {
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_pets', JSON.stringify(pets)) } catch {} } }, [pets, user])
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_steps', String(steps)) } catch {} } }, [steps, user])
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_totalSteps', String(totalSteps)) } catch {} } }, [totalSteps, user])
+
+  // ── Card drag-to-expand (native events for reliable preventDefault) ──
+  useEffect(() => {
+    const el = cardHandleRef.current
+    if (!el) return
+    const onStart = (e: TouchEvent) => {
+      cardDragStartY.current = e.touches[0].clientY
+      cardDragging.current = false
+    }
+    const onMove = (e: TouchEvent) => {
+      const dy = cardDragStartY.current - e.touches[0].clientY
+      if (Math.abs(dy) > 15) cardDragging.current = true
+      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
+      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
+      e.preventDefault() // block map scroll/pan during drag
+    }
+    const onEnd = () => {
+      if (!cardDragging.current) setCardExpanded(v => !v)
+      cardDragging.current = false
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false }) // passive:false = can preventDefault
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    // Also handle mouse for desktop testing
+    const onMDown = (e: MouseEvent) => { cardDragStartY.current = e.clientY; cardDragging.current = false }
+    const onMMove = (e: MouseEvent) => {
+      if (!cardDragging.current) return
+      const dy = cardDragStartY.current - e.clientY
+      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
+      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
+    }
+    const onMUp = () => { if (!cardDragging.current) setCardExpanded(v => !v); cardDragging.current = false }
+    el.addEventListener('mousedown', onMDown)
+    document.addEventListener('mousemove', onMMove)
+    document.addEventListener('mouseup', onMUp)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+      el.removeEventListener('mousedown', onMDown)
+      document.removeEventListener('mousemove', onMMove)
+      document.removeEventListener('mouseup', onMUp)
+    }
+  }, [])
 
   useEffect(() => { setReady(true) }, [])
 
@@ -2114,21 +2161,7 @@ export default function HomePage() {
                 <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0'}}>
                   {/* ── Drag handle ── */}
                   <div
-                    onTouchStart={(e) => {
-                      cardDragStartY.current = e.touches[0].clientY
-                      cardDragging.current = false
-                    }}
-                    onTouchMove={(e) => {
-                      const dy = cardDragStartY.current - e.touches[0].clientY
-                      if (Math.abs(dy) > 15) cardDragging.current = true
-                      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
-                      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
-                    }}
-                    onTouchEnd={() => {
-                      if (!cardDragging.current) { setCardExpanded(v => !v); }
-                      cardDragging.current = false
-                    }}
-                    onTouchCancel={() => { cardDragging.current = false }}
+                    ref={cardHandleRef}
                     onClick={() => setCardExpanded(v => !v)}
                     style={{display:'flex', justifyContent:'center', padding:'8px 0 4px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none'}}
                   >
