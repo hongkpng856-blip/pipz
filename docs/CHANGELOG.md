@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.39.10 — Incremental Drag Tracking, Direction-Based Snap, Tap No-Collapse (2026-07-12)
+
+### Fixed
+- **Card jumps to 0 when dragging down:** Replaced cumulative `dy = startY - currentY` with incremental `deltaY = prevMoveY - currentY`, adding to `cardDragYRef.current`. Card now smoothly follows the finger in both directions instead of snapping to minimum on any downward movement.
+- **Tap after drag collapses card:** Tap now always expands (or no-ops if already expanded). Tapping can never collapse the card — only dragging down collapses.
+- **Direction-snap threshold unstable:** Used `cardDragDirRef` (tracks `'up'`/`'down'` on every pointermove > 8px) instead of a fixed pixel threshold for snap-on-release decision.
+- **Tap-to-toggle reads stale ref:** `cardDragYRef.current` was never updated in the tap `onUp` path, so a second tap always read `currentY = 0` and expanded again. Now synced in both tap and drag paths.
+
+### Changed
+- **onMove:** `deltaY = prevMoveY - currentY` — additive to `cardDragYRef.current`. Clamped to `[0, CARD_MAX_EXTRA]` so the card respects both bounds.
+- **onUp — tap:** `setCardDragY(CARD_MAX_EXTRA)` unconditionally. Collapsed → expand; already expanded → React bailout (no-op).
+- **onUp — drag:** `cardDragDirRef.current === 'up' ? CARD_MAX_EXTRA : 0` — direction-based snap.
+- **`cardDragDirRef`** added (`useRef<'up'|'down'|null>`), reset to `null` in `onPointerDown`, updated on every `pointermove > 8px`.
+
+### Changed files
+- `apps/web/src/app/page.tsx` — onMove rewritten (incremental delta, direction tracking), onUp simplified (tap always expands, direction snap for drag), `cardDragDirRef` added.
+- `docs/CHANGELOG.md` — this entry.
+
 ## v0.39.9 — Fixed Nav Visibility, Proper Content Measurement, iOS Touch Fix (2026-07-12)
 
 ### Fixed
