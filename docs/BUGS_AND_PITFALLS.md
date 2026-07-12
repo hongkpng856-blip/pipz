@@ -712,3 +712,71 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Consider: (a) Move countdown to the left side (bottom-left), (b) Merge into a single badge (e.g. `50%·25m`), (c) Only show one badge at a time (discount if > 5min, countdown if < 5min), (d) Increase icon size to 34×34. |
 | **Workaround** | Current implementation works but looks crowded. The countdown is more important for time-critical shops, while the discount is more important for decision-making. Priority-based display might be better. |
 | **Prevention** | When adding multiple data elements to a small DOM element, test at the actual rendered size. 30×30 pixels is very small for two separate badges. Consider combining or alternating displays. |
+
+## 16 — Expandable Steps Card Drag System (v0.39.x)
+
+### 16.1 Cumulative `dy` Clamp → Card Jumps to 0 on Down-Drag
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (drag unusable) |
+| **Symptom** | Touching the card and dragging down causes the card to instantly snap to its collapsed height instead of following the finger. |
+| **Root Cause** | `onMove` computed `dy = startY - currentY` (cumulative from touch point), then `Math.max(0, Math.min(MAX, dy))` clamped negative `dy` to 0. Any downward finger movement immediately set `cardDragY = 0`. |
+| **Fix** | Switch to incremental tracking: `deltaY = prevMoveY - ev.clientY`, then `newExtra = cardDragYRef.current + deltaY`. Each call adds/subtracts the small movement since the last pointermove, so the card smoothly rises or falls by exactly the finger's displacement. |
+| **Code** | `apps/web/src/app/page.tsx` — `onMove` closure in `onPointerDown`, line ~2151 |
+| **Prevention** | For finger-follow drag, always use **incremental delta** (`current - previous`, then add to running state). Never use **cumulative distance from start** unless the operation is purely one-directional. The cumulative approach fails when the user reverses direction. |
+
+### 16.2 Tap Toggle Collapses Expanded Card
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (unexpected behavior) |
+| **Symptom** | After dragging the card up to expand, any subsequent tap on the card collapses it again. User must keep tapping to keep the card open. |
+| **Root Cause** | `onUp` tap branch used `currentY > 20 ? 0 : MAX` — a toggle that reads `cardDragYRef.current`. If the card was expanded (>20), tap set it to 0 (collapsed). The user expected the card to stay expanded after the drag release. |
+| **Fix** | Change tap behavior: `setCardDragY(CARD_MAX_EXTRA)` unconditionally. Collapsed → expands; already expanded → React state is the same → React bailout (no re-render, no visual change). |
+| **Code** | `apps/web/src/app/page.tsx` — `onUp` closure, line ~2165 |
+| **Prevention** | After a drag action, the natural next action is NOT a toggle. Users tap to interact with content, not to toggle the container. Consider whether tap-to-toggle is truly desired on expanded containers. |
+
+### 16.3 `cardDragYRef.current` Not Updated in Tap Path
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (tap-toggle always expands, never collapses) |
+| **Symptom** | After tapping to expand, the next tap also expands (no-op) instead of collapsing. The ref still reads `currentY = 0`, causing the toggle condition to always decide "expand". |
+| **Root Cause** | `cardDragYRef.current` was only updated inside `onMove` (during drag). The tap branch in `onUp` called `setCardDragY(target)` (React state) but never updated `cardDragYRef.current`. Next tap read the stale ref value. |
+| **Fix** | Set `cardDragYRef.current = target` in both tap and drag branches of `onUp`. |
+| **Code** | `apps/web/src/app/page.tsx` — `onUp`, line ~2165-2175 |
+| **Prevention** | Any time you have a ref + state pair tracking the same value (`cardDragYRef + cardDragY` for closure access), updates to one must always mirror to the other. Audit all paths that call `setState(value)` and ensure the ref is also updated. |
+
+### 16.4 Fixed Pixel Threshold for Snap Decision
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (inconsistent snap behavior across screen sizes) |
+| **Symptom** | On phones with small viewports (CARD_MAX_EXTRA ~80px), the `> 70px` threshold required dragging nearly 90% of the full range before the card would snap to expanded on release. On large screens (MAX ~200px), `> 70px` was too easy to pass. |
+| **Root Cause** | Hardcoded threshold `currentY > 70` did not scale with `CARD_MAX_EXTRA` (which depends on `window.innerHeight * 0.52 - contentHeight`). |
+| **Fix** | Use direction-based snap instead of threshold: `cardDragDirRef.current` tracks `'up'`/`'down'` on every pointermove > 8px. On release, snap to `MAX` if last direction was `'up'`, `0` if `'down'`. |
+| **Code** | `apps/web/src/app/page.tsx` — `cardDragDirRef` (line ~81), `onMove` direction tracking (line ~2154), `onUp` snap (line ~2173) |
+| **Prevention** | Avoid hardcoded pixel thresholds for proportionally-sized interactions. Use ratios (50%) or direction-based logic instead. |
+
+### 16.5 `contentRef` Measuring Flex-Allocated Height (Circular)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (card height never adjusts to actual content) |
+| **Symptom** | The card's collapsed height was stuck at the initial hardcoded value (~300px) even after content changed (chart loaded/hidden). |
+| **Root Cause** | `contentRef` was placed on the `flex: 1; overflow: hidden` div. `getBoundingClientRect().height` returned the **flex-allocated** height (= `cardHeight - handleH - navH = contentH + cardDragY`), not the **content** height. This created a circular dependency where `contentH` always equaled itself. |
+| **Fix** | Add a dedicated inner `<div>` (`innerRef`) inside the flex wrapper, wrapping only the numbers + chart. Measure `innerRef.current.getBoundingClientRect().height` — this is the true content height unaffected by flex distribution. |
+| **Code** | `apps/web/src/app/page.tsx` — `innerRef` added, `contentRef` removed, height formula uses `innerH` |
+| **Prevention** | Never measure the height of a `flex: 1` or `flex-grow` element and use that measurement to set its own parent's height — the measurement is the result of flex distribution, not the cause. Measure a child wrapper that sizes to its own content. |
+
+### 16.6 iOS `touch-action: none` Ignored on Non-Root Elements
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (touch drag does not work on iPhone/iPad) |
+| **Symptom** | On iOS Safari, touching the card triggers page scroll instead of card drag. `touch-action: none` CSS on the card element is ignored. |
+| **Root Cause** | iOS Safari only respects `touch-action: none` on the `<html>` root element. On non-root elements, CSS `touch-action` is not supported, so touch events bubble up to the document and trigger scroll. |
+| **Fix** | Add native `touchstart`/`touchmove` event listeners on the card element with `{ passive: false }` and call `e.preventDefault()` + `e.stopPropagation()`. This blocks iOS scroll before it starts. Attach/detach via `useEffect` + `cardRef`. |
+| **Code** | `apps/web/src/app/page.tsx` — `cardRef` `useEffect` (line ~325) |
+| **Prevention** | For touch-interactive elements on iOS, always add native `touchstart`/`touchmove` listener with `preventDefault()`. CSS `touch-action` alone is insufficient on iOS. Use both for cross-browser compatibility. |
