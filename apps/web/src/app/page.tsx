@@ -310,15 +310,15 @@ export default function HomePage() {
 
   const contentRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLDivElement>(null)
-  const [contentH, setContentH] = useState(300) // generous initial avoids clipping on first paint
-  const [navH, setNavH] = useState(80)
-  // Measure content height after render
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [innerH, setInnerH] = useState(250) // generous initial avoids clipping
+  const [navH, setNavH] = useState(75)
+  // Measure inner content + nav after render
   useEffect(() => {
-    if (contentRef.current) setContentH(contentRef.current.getBoundingClientRect().height)
+    if (innerRef.current) setInnerH(innerRef.current.getBoundingClientRect().height)
     if (navRef.current) setNavH(navRef.current.getBoundingClientRect().height)
   }, [weeklySteps, user, steps, totalSteps])
   const HANDLE_H = 24
-  const NAV_H_FIXED = 80 // fallback if not measured yet
   // iOS fix: native touchstart/touchmove preventDefault so touch-action:none works
   const cardRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -330,7 +330,7 @@ export default function HomePage() {
     return () => { el.removeEventListener('touchstart', stopTouch); el.removeEventListener('touchmove', stopTouch) }
   }, [])
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
-  const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (contentH + HANDLE_H + navH))
+  const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (innerH + HANDLE_H + navH))
 
   useEffect(() => { setReady(true) }, [])
 
@@ -2171,7 +2171,7 @@ export default function HomePage() {
                     document.addEventListener('pointermove', onMove);
                     document.addEventListener('pointerup', onUp);
                   }}
-                  style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', display:'flex', flexDirection:'column', height: contentH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
+                  style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', display:'flex', flexDirection:'column', height: innerH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
@@ -2185,7 +2185,8 @@ export default function HomePage() {
                     }} />
                   </div>
                   {/* ── Collapsible content ── */}
-                  <div ref={contentRef} style={{flex:1, overflow:'hidden', padding:'0 16px'}}>
+                  <div style={{flex:1, overflow:'hidden'}}>
+                    <div ref={innerRef} style={{padding:'0 16px'}}>
                    {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
                     <div style={{textAlign:'center', position:'relative'}}>
@@ -2275,7 +2276,8 @@ export default function HomePage() {
                     </div>
                   )}
 
-                </div>              {/* ── close collapsible upper content ── */}
+                </div>              {/* ── close inner content ── */}
+                </div>              {/* ── close upper content wrapper ── */}
 
                   {/* ── Fixed nav area ── */}
                   <div ref={navRef} style={{flexShrink:0, padding:'0 16px 14px'}}>
