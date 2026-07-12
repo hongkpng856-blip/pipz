@@ -316,7 +316,7 @@ export default function HomePage() {
     setContentH(contentRef.current.getBoundingClientRect().height)
   }, [weeklySteps, user, steps, totalSteps])
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
-  const CARD_MAX_EXTRA = Math.max(100, CARD_TARGET_H - contentH)
+  const CARD_MAX_EXTRA = Math.max(100, CARD_TARGET_H - (contentH + 24))
 
   useEffect(() => { setReady(true) }, [])
 
@@ -2126,7 +2126,7 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
-                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', height: contentH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', height: contentH + 24 + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
