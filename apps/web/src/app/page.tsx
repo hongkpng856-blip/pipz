@@ -2125,33 +2125,34 @@ export default function HomePage() {
                   <div
                     ref={cardHandleRef}
                     onPointerDown={(e) => {
-                      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
                       cardDragStartY.current = e.clientY;
                       cardDragging.current = false;
                       cardAnimRef.current = false;
+                      // Capture events at document level for reliable tracking
+                      const onMove = (ev: PointerEvent) => {
+                        const dy = cardDragStartY.current - ev.clientY;
+                        if (Math.abs(dy) > 8) cardDragging.current = true;
+                        const clamped = Math.max(0, Math.min(CARD_MAX_DRAG, dy));
+                        cardDragYRef.current = clamped;
+                        setCardDragY(clamped);
+                      };
+                      const onUp = () => {
+                        document.removeEventListener('pointermove', onMove);
+                        document.removeEventListener('pointerup', onUp);
+                        const currentY = cardDragYRef.current;
+                        if (!cardDragging.current) {
+                          cardAnimRef.current = true;
+                          setCardDragY(currentY > 50 ? 0 : CARD_MAX_DRAG);
+                        } else {
+                          cardAnimRef.current = true;
+                          setCardDragY(currentY > 70 ? CARD_MAX_DRAG : 0);
+                        }
+                        cardDragging.current = false;
+                        setTimeout(() => { cardAnimRef.current = false; }, 350);
+                      };
+                      document.addEventListener('pointermove', onMove);
+                      document.addEventListener('pointerup', onUp);
                     }}
-                    onPointerMove={(e) => {
-                      const dy = cardDragStartY.current - e.clientY;
-                      if (Math.abs(dy) > 8) cardDragging.current = true;
-                      const clamped = Math.max(0, Math.min(CARD_MAX_DRAG, dy));
-                      cardDragYRef.current = clamped;
-                      setCardDragY(clamped);
-                    }}
-                    onPointerUp={() => {
-                      const currentY = cardDragYRef.current;
-                      if (!cardDragging.current) {
-                        // Tap — toggle
-                        cardAnimRef.current = true;
-                        setCardDragY(currentY > 50 ? 0 : CARD_MAX_DRAG);
-                      } else {
-                        // Drag — snap
-                        cardAnimRef.current = true;
-                        setCardDragY(currentY > 70 ? CARD_MAX_DRAG : 0);
-                      }
-                      cardDragging.current = false;
-                      setTimeout(() => { cardAnimRef.current = false; }, 350);
-                    }}
-                    onPointerCancel={() => { cardDragging.current = false; }}
                     style={{display:'flex', justifyContent:'center', padding:'12px 0 8px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none', WebkitUserSelect:'none'}}
                   >
                     <div style={{
