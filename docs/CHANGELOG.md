@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.39.7 — Finger-Follow Drag with Viewport-Based Height (2026-07-12)
+
+### Changed
+- **Drag mechanism:** Replaced native touch/mouse event listeners (useEffect) with React `onPointerDown` + document-level `pointermove`/`pointerup` listeners. No `setPointerCapture` — events track finger reliably even when moving outside the handle.
+- **Card sizing:** Switched from `max-height` on inner wrapper to fixed `height` on the card itself (`CARD_COLLAPSED + cardDragY`). Card now forces itself to the target height regardless of content amount.
+- **Expanded height:** `CARD_TARGET_H = window.innerHeight × 52%` (dynamically computed), making the card reach approximately the middle of the screen on any device.
+- **Touch handling:** `touch-action: none` added to both card and handle divs; `pointerdown` calls `e.preventDefault()`/`e.stopPropagation()` to prevent map pan interference.
+- **Tap behavior:** Distinguishes tap (no movement) from drag — tap toggles between collapsed/expanded; drag snaps based on release position (>70px → expand, else collapse).
+
+### Removed
+- `useEffect`-based native `touchstart`/`touchmove`/`touchend` `mousedown`/`mousemove`/`mouseup` listeners
+- `cardTouchHandled` ref (no longer needed)
+- `cardExpanded` state (replaced by `cardDragY` pixel tracking)
+- `max-height` collapsible wrapper with inner `<div>`
+- Fake expanded content (calories/distance)
+
+### Changed files
+- `apps/web/src/app/page.tsx` — full rewrite of drag logic: `CARD_COLLAPSED`, `CARD_TARGET_H`, `CARD_MAX_EXTRA` constants; `onPointerDown` handler with closure-based `onMove`/`onUp`; card `height` + `overflow: hidden` + `transition`
+- `apps/web/docs/CHANGELOG.md` — this entry
+
 ## v0.39.6 — Expandable Steps Card with Drag Handle (2026-07-11)
 
 ### Added
