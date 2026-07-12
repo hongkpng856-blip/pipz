@@ -2165,11 +2165,15 @@ export default function HomePage() {
                       if (!cardDragging.current) {
                         cardAnimRef.current = true;
                         // Tap — toggle
-                        setCardDragY(currentY > 20 ? 0 : CARD_MAX_EXTRA);
+                        const tapTarget = currentY > 20 ? 0 : CARD_MAX_EXTRA;
+                        cardDragYRef.current = tapTarget;
+                        setCardDragY(tapTarget);
                       } else {
                         cardAnimRef.current = true;
                         // Direction-based snap
-                        setCardDragY(cardDragDirRef.current === 'up' ? CARD_MAX_EXTRA : 0);
+                        const snapTarget = cardDragDirRef.current === 'up' ? CARD_MAX_EXTRA : 0;
+                        cardDragYRef.current = snapTarget;
+                        setCardDragY(snapTarget);
                       }
                       cardDragging.current = false;
                       setTimeout(() => { cardAnimRef.current = false; }, 350);
