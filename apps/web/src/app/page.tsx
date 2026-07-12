@@ -79,6 +79,7 @@ export default function HomePage() {
   const [cardExpanded, setCardExpanded] = useState(false)
   const cardDragStartY = useRef(0)
   const cardDragging = useRef(false)
+  const cardDragDirRef = useRef<'up'|'down'|null>(null)
   const cardHandleRef = useRef<HTMLDivElement>(null)
   const cardTouchHandled = useRef(false)
   const cardAnimRef = useRef(false)
@@ -2144,11 +2145,15 @@ export default function HomePage() {
                   onPointerDown={(e) => {
                     cardDragStartY.current = e.clientY;
                     cardDragging.current = false;
+                    cardDragDirRef.current = null;
                     cardAnimRef.current = false;
                     // Capture events at document level for reliable tracking
                     const onMove = (ev: PointerEvent) => {
                       const dy = cardDragStartY.current - ev.clientY;
-                      if (Math.abs(dy) > 8) cardDragging.current = true;
+                      if (Math.abs(dy) > 8) {
+                        cardDragging.current = true;
+                        cardDragDirRef.current = dy > 0 ? 'up' : 'down';
+                      }
                       const newExtra = Math.max(0, Math.min(CARD_MAX_EXTRA, dy));
                       cardDragYRef.current = newExtra;
                       setCardDragY(newExtra);
@@ -2163,8 +2168,8 @@ export default function HomePage() {
                         setCardDragY(currentY > 20 ? 0 : CARD_MAX_EXTRA);
                       } else {
                         cardAnimRef.current = true;
-                        // Dragged — snap based on how far from collapsed
-                        setCardDragY(currentY > CARD_MAX_EXTRA * 0.4 ? CARD_MAX_EXTRA : 0);
+                        // Direction-based snap
+                        setCardDragY(cardDragDirRef.current === 'up' ? CARD_MAX_EXTRA : 0);
                       }
                       cardDragging.current = false;
                       setTimeout(() => { cardAnimRef.current = false; }, 350);
