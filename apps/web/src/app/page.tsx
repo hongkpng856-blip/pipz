@@ -2164,10 +2164,9 @@ export default function HomePage() {
                       const currentY = cardDragYRef.current;
                       if (!cardDragging.current) {
                         cardAnimRef.current = true;
-                        // Tap — toggle
-                        const tapTarget = currentY > 20 ? 0 : CARD_MAX_EXTRA;
-                        cardDragYRef.current = tapTarget;
-                        setCardDragY(tapTarget);
+                        // Tap — always expands if collapsed, no-op if already expanded
+                        setCardDragY(CARD_MAX_EXTRA);
+                        cardDragYRef.current = CARD_MAX_EXTRA;
                       } else {
                         cardAnimRef.current = true;
                         // Direction-based snap
