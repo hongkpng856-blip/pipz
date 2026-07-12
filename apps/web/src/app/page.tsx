@@ -77,6 +77,8 @@ export default function HomePage() {
   const [tab, setTab] = useState<Tab>('map')
   const [log, setLog] = useState<string[]>([])
   const [cardExpanded, setCardExpanded] = useState(false)
+  const cardDragStartY = useRef(0)
+  const cardDragging = useRef(false)
   const [compactProps, setCompactProps] = useState(false)
   const [ready, setReady] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -2113,21 +2115,21 @@ export default function HomePage() {
                   {/* ── Drag handle ── */}
                   <div
                     onTouchStart={(e) => {
-                      const startY = e.touches[0].clientY
-                      const onMove = (ev: TouchEvent) => {
-                        const dy = startY - ev.touches[0].clientY
-                        if (dy > 40) { setCardExpanded(true); cleanup() }
-                        else if (dy < -40) { setCardExpanded(false); cleanup() }
-                      }
-                      const cleanup = () => {
-                        document.removeEventListener('touchmove', onMove)
-                        document.removeEventListener('touchend', cleanup)
-                        document.removeEventListener('touchcancel', cleanup)
-                      }
-                      document.addEventListener('touchmove', onMove, {passive:true})
-                      document.addEventListener('touchend', cleanup, {once:true})
-                      document.addEventListener('touchcancel', cleanup, {once:true})
+                      cardDragStartY.current = e.touches[0].clientY
+                      cardDragging.current = false
                     }}
+                    onTouchMove={(e) => {
+                      const dy = cardDragStartY.current - e.touches[0].clientY
+                      if (Math.abs(dy) > 15) cardDragging.current = true
+                      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
+                      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
+                    }}
+                    onTouchEnd={() => {
+                      if (!cardDragging.current) { setCardExpanded(v => !v); }
+                      cardDragging.current = false
+                    }}
+                    onTouchCancel={() => { cardDragging.current = false }}
+                    onClick={() => setCardExpanded(v => !v)}
                     style={{display:'flex', justifyContent:'center', padding:'8px 0 4px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none'}}
                   >
                     <div style={{
