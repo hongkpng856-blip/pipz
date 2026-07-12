@@ -350,10 +350,10 @@ export default function HomePage() {
     el.addEventListener('touchend', onEnd)
     el.addEventListener('touchcancel', onEnd)
     // Also handle mouse for desktop testing
-    const onMDown = (e: MouseEvent) => { cardDragStartY.current = e.clientY; cardDragging.current = false; cardAnimRef.current = false; cardDragYRef.current = 0 }
+    const onMDown = (e: MouseEvent) => { cardDragStartY.current = e.clientY; cardDragging.current = false; cardAnimRef.current = false }
     const onMMove = (e: MouseEvent) => {
-      if (!cardDragging.current) return
       const dy = cardDragStartY.current - e.clientY
+      if (Math.abs(dy) > 8) cardDragging.current = true
       const clamped = Math.max(0, Math.min(MAX_DRAG, dy))
       cardDragYRef.current = clamped
       setCardDragY(clamped)
