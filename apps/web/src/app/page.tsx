@@ -309,14 +309,18 @@ export default function HomePage() {
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_totalSteps', String(totalSteps)) } catch {} } }, [totalSteps, user])
 
   const contentRef = useRef<HTMLDivElement>(null)
-  const [contentH, setContentH] = useState(400) // generous initial avoids clipping on first paint
-  // Measure content height after render (useEffect handles reflows)
+  const navRef = useRef<HTMLDivElement>(null)
+  const [contentH, setContentH] = useState(300) // generous initial avoids clipping on first paint
+  const [navH, setNavH] = useState(80)
+  // Measure content height after render
   useEffect(() => {
-    if (!contentRef.current) return
-    setContentH(contentRef.current.getBoundingClientRect().height)
+    if (contentRef.current) setContentH(contentRef.current.getBoundingClientRect().height)
+    if (navRef.current) setNavH(navRef.current.getBoundingClientRect().height)
   }, [weeklySteps, user, steps, totalSteps])
+  const HANDLE_H = 24
+  const NAV_H_FIXED = 80 // fallback if not measured yet
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
-  const CARD_MAX_EXTRA = Math.max(100, CARD_TARGET_H - (contentH + 24))
+  const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (contentH + HANDLE_H + navH))
 
   useEffect(() => { setReady(true) }, [])
 
@@ -2126,10 +2130,11 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
-                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', height: contentH + 24 + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', display:'flex', flexDirection:'column', height: contentH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
+                    style={{flexShrink:0, display:'flex', justifyContent:'center', padding:'12px 0 8px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none', WebkitUserSelect:'none'}}
                     onPointerDown={(e) => {
                       cardDragStartY.current = e.clientY;
                       cardDragging.current = false;
@@ -2159,7 +2164,6 @@ export default function HomePage() {
                       document.addEventListener('pointermove', onMove);
                       document.addEventListener('pointerup', onUp);
                     }}
-                    style={{display:'flex', justifyContent:'center', padding:'12px 0 8px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none', WebkitUserSelect:'none'}}
                   >
                     <div style={{
                       width: 40, height: 4, borderRadius: 2,
@@ -2169,7 +2173,7 @@ export default function HomePage() {
                     }} />
                   </div>
                   {/* ── Collapsible content ── */}
-                  <div ref={contentRef} style={{padding:'0 16px 14px'}}>
+                  <div ref={contentRef} style={{flex:1, overflow:'hidden', padding:'0 16px'}}>
                    {/* Numbers row */}
                   <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
                     <div style={{textAlign:'center', position:'relative'}}>
@@ -2259,6 +2263,10 @@ export default function HomePage() {
                     </div>
                   )}
 
+                </div>              {/* ── close collapsible upper content ── */}
+
+                  {/* ── Fixed nav area ── */}
+                  <div ref={navRef} style={{flexShrink:0, padding:'0 16px 14px'}}>
                     {/* ── Tab nav integrated into steps card ── */}
                     <div style={{display:'flex', justifyContent:'space-around', padding:'6px 0 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:6}}>
                       {([
@@ -2283,7 +2291,7 @@ export default function HomePage() {
                       ))}
                     </div>
 
-                </div>              {/* ── close stats card padding ── */}
+                </div>              {/* ── close nav area ── */}
               </div>                {/* ── close stats card overlay ── */}
             </div>                {/* ── close map wrapper ── */}
           </div>
