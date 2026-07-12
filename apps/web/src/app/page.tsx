@@ -2125,7 +2125,7 @@ export default function HomePage() {
                   <div
                     ref={cardHandleRef}
                     onPointerDown={(e) => {
-                      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                      try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch {}
                       cardDragStartY.current = e.clientY;
                       cardDragging.current = false;
                       cardAnimRef.current = false;
