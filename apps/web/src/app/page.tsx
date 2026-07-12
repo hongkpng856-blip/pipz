@@ -309,7 +309,7 @@ export default function HomePage() {
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_totalSteps', String(totalSteps)) } catch {} } }, [totalSteps, user])
 
   // ── Card drag-to-expand (pointer events, finger-follows) ──
-  const CARD_COLLAPSED = 180
+  const CARD_COLLAPSED = 240
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
   const CARD_MAX_EXTRA = Math.max(100, CARD_TARGET_H - CARD_COLLAPSED)
 
