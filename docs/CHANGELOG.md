@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.39.8 — Dynamic Card Height, Content Measurement, Nav Visibility Fix (2026-07-12)
+
+### Fixed
+- **Nav buttons hidden at start:** Card now measures its content height via `contentRef` (`useRef<HTMLDivElement>`). Collapsed height = `contentH + 24px` (handle), so the five nav buttons (🗺️ 🐾 🏠 🏪 🎒) are always fully visible on first load.
+- **Content clipping with fixed height:** Previously used hard-coded `CARD_COLLAPSED` values (180→240→280→300px) which either clipped the nav or wasted space. Dynamic measurement eliminates this trade‑off.
+
+### Changed
+- **Card height formula:** `height: contentH + 24 + cardDragY` — always fits the actual content exactly when collapsed, scales linearly during drag, reaches `CARD_TARGET_H` (52 vh) when fully expanded.
+- **CARD_TARGET_H adjusted:** Expanded target is now `window.innerHeight × 52%`, computed live. `CARD_MAX_EXTRA` accounts for handle height so the card stops exactly at the halfway point.
+- **Handle height (+24px):** Explicitly added to both collapsed and expanded height calculations so the drag handle is never clipped or overlapped.
+
+### Technical notes
+- Initial `contentH` state defaults to 400px (generous), preventing clipping on the first paint. A `useEffect` with deps `[weeklySteps, user, steps, totalSteps]` re‑measures after data loads and corrects the height.
+- The measurement effect also handles content changes: when weekly chart data arrives or step totals update, the collapsed height re‑adjusts automatically.
+
+### Changed files
+- `apps/web/src/app/page.tsx` — added `contentRef`, `contentH` state + measurement effect; card `height` uses `contentH + 24 + cardDragY`; `CARD_MAX_EXTRA` subtracts `contentH + 24`
+
 ## v0.39.7 — Finger-Follow Drag with Viewport-Based Height (2026-07-12)
 
 ### Changed
