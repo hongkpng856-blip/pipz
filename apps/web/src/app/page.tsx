@@ -319,6 +319,16 @@ export default function HomePage() {
   }, [weeklySteps, user, steps, totalSteps])
   const HANDLE_H = 24
   const NAV_H_FIXED = 80 // fallback if not measured yet
+  // iOS fix: native touchstart/touchmove preventDefault so touch-action:none works
+  const cardRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    const stopTouch = (e: TouchEvent) => { e.preventDefault(); e.stopPropagation() }
+    el.addEventListener('touchstart', stopTouch, { passive: false })
+    el.addEventListener('touchmove', stopTouch, { passive: false })
+    return () => { el.removeEventListener('touchstart', stopTouch); el.removeEventListener('touchmove', stopTouch) }
+  }, [])
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
   const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (contentH + HANDLE_H + navH))
 
@@ -2130,7 +2140,7 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
-                <div className="section card"
+                <div ref={cardRef} className="section card"
                   onPointerDown={(e) => {
                     cardDragStartY.current = e.clientY;
                     cardDragging.current = false;
