@@ -2148,13 +2148,16 @@ export default function HomePage() {
                     cardDragDirRef.current = null;
                     cardAnimRef.current = false;
                     // Capture events at document level for reliable tracking
+                    // Track incremental movement (not cumulative from start)
+                    let prevMoveY = e.clientY;
                     const onMove = (ev: PointerEvent) => {
-                      const dy = cardDragStartY.current - ev.clientY;
-                      if (Math.abs(dy) > 8) {
+                      const deltaY = prevMoveY - ev.clientY; // positive = up, negative = down
+                      prevMoveY = ev.clientY;
+                      if (Math.abs(deltaY) > 8) {
                         cardDragging.current = true;
-                        cardDragDirRef.current = dy > 0 ? 'up' : 'down';
+                        cardDragDirRef.current = deltaY > 0 ? 'up' : 'down';
                       }
-                      const newExtra = Math.max(0, Math.min(CARD_MAX_EXTRA, dy));
+                      const newExtra = Math.max(0, Math.min(CARD_MAX_EXTRA, cardDragYRef.current + deltaY));
                       cardDragYRef.current = newExtra;
                       setCardDragY(newExtra);
                     };
