@@ -2159,11 +2159,12 @@ export default function HomePage() {
                       const currentY = cardDragYRef.current;
                       if (!cardDragging.current) {
                         cardAnimRef.current = true;
-                        // Tap on collapsed → expand; tap on expanded → collapse
+                        // Tap — toggle
                         setCardDragY(currentY > 20 ? 0 : CARD_MAX_EXTRA);
                       } else {
                         cardAnimRef.current = true;
-                        setCardDragY(currentY > 70 ? CARD_MAX_EXTRA : 0);
+                        // Dragged — snap based on how far from collapsed
+                        setCardDragY(currentY > CARD_MAX_EXTRA * 0.4 ? CARD_MAX_EXTRA : 0);
                       }
                       cardDragging.current = false;
                       setTimeout(() => { cardAnimRef.current = false; }, 350);
