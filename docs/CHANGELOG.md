@@ -3,8 +3,7 @@
 ## v0.39.6 — Expandable Steps Card with Drag Handle (2026-07-11)
 
 ### Added
-- **Drag handle:** White line at top of steps card — tap to toggle expand/collapse, or drag up/down with smooth animation
-- **Expanded content:** Extra stats shown when card is expanded (distance, calories, active time), with "👆 向下滑動收起" hint
+- **Drag handle:** White line at top of steps card — tap to toggle expand/collapse, or drag up/down with smooth `max-height` transition
 - **Native touch handling:** `passive: false` on `touchmove` + `preventDefault()` prevents map scroll interference during drag
 
 ### Changed

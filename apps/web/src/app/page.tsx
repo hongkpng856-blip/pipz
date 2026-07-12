@@ -2295,29 +2295,6 @@ export default function HomePage() {
                       ))}
                     </div>
 
-                    {/* ── Extra content when expanded ── */}
-                    {cardExpanded && (
-                      <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:8, paddingTop:10}}>
-                        <div style={{display:'flex', justifyContent:'space-around', marginBottom:10}}>
-                          <div style={{textAlign:'center'}}>
-                            <div className="steps-num" style={{fontSize:16}}>0</div>
-                            <div className="steps-label" style={{marginTop:2}}>距離 (km)</div>
-                          </div>
-                          <div style={{textAlign:'center'}}>
-                            <div className="steps-num" style={{fontSize:16}}>0</div>
-                            <div className="steps-label" style={{marginTop:2}}>卡路里</div>
-                          </div>
-                          <div style={{textAlign:'center'}}>
-                            <div className="steps-num" style={{fontSize:16}}>0</div>
-                            <div className="steps-label" style={{marginTop:2}}>活躍時間 (hr)</div>
-                          </div>
-                        </div>
-                        <div style={{fontSize:9, color:'#5a6d85', textAlign:'center'}}>
-                          👆 向下滑動收起
-                        </div>
-                      </div>
-                    )}
-
                 </div>              {/* ── close stats card padding ── */}
                 </div>              {/* ── close collapsible wrapper ── */}
               </div>                {/* ── close stats card overlay ── */}
