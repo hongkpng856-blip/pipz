@@ -81,6 +81,9 @@ export default function HomePage() {
   const cardDragging = useRef(false)
   const cardHandleRef = useRef<HTMLDivElement>(null)
   const cardTouchHandled = useRef(false)
+  const cardAnimRef = useRef(false)
+  const cardDragYRef = useRef(0)
+  const [cardDragY, setCardDragY] = useState(0) // extra height in px (0=collapsed, up to 280=expanded)
   const [compactProps, setCompactProps] = useState(false)
   const [ready, setReady] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -305,42 +308,63 @@ export default function HomePage() {
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_steps', String(steps)) } catch {} } }, [steps, user])
   useEffect(() => { if (!user) { try { localStorage.setItem('pipz_totalSteps', String(totalSteps)) } catch {} } }, [totalSteps, user])
 
-  // ── Card drag-to-expand (native events for reliable preventDefault) ──
+  // ── Card drag-to-expand (native events, finger-follows) ──
   useEffect(() => {
     const el = cardHandleRef.current
     if (!el) return
+    const MAX_DRAG = 280
     const onStart = (e: TouchEvent) => {
       cardDragStartY.current = e.touches[0].clientY
       cardDragging.current = false
+      cardAnimRef.current = false
       e.stopPropagation()
-      e.preventDefault() // claim this touch for drag, not map pan
+      e.preventDefault()
     }
     const onMove = (e: TouchEvent) => {
       const dy = cardDragStartY.current - e.touches[0].clientY
-      if (Math.abs(dy) > 10) cardDragging.current = true
-      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
-      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
+      if (Math.abs(dy) > 8) cardDragging.current = true
+      // Clamp: 0 (collapsed) to MAX_DRAG (fully expanded)
+      const clamped = Math.max(0, Math.min(MAX_DRAG, dy))
+      cardDragYRef.current = clamped
+      setCardDragY(clamped)
+      e.stopPropagation()
       e.preventDefault()
     }
     const onEnd = () => {
       cardTouchHandled.current = true
-      if (!cardDragging.current) setCardExpanded(v => !v)
+      const currentY = cardDragYRef.current
+      if (currentY > 70) {
+        // Expand
+        cardAnimRef.current = true
+        setCardDragY(MAX_DRAG)
+      } else {
+        // Collapse
+        cardAnimRef.current = true
+        setCardDragY(0)
+      }
       cardDragging.current = false
-      setTimeout(() => { cardTouchHandled.current = false }, 100)
+      setTimeout(() => { cardTouchHandled.current = false; cardAnimRef.current = false }, 350)
     }
     el.addEventListener('touchstart', onStart, { passive: false }) // passive:false so we can preventDefault
     el.addEventListener('touchmove', onMove, { passive: false }) // passive:false = can preventDefault
     el.addEventListener('touchend', onEnd)
     el.addEventListener('touchcancel', onEnd)
     // Also handle mouse for desktop testing
-    const onMDown = (e: MouseEvent) => { cardDragStartY.current = e.clientY; cardDragging.current = false }
+    const onMDown = (e: MouseEvent) => { cardDragStartY.current = e.clientY; cardDragging.current = false; cardAnimRef.current = false; cardDragYRef.current = 0 }
     const onMMove = (e: MouseEvent) => {
       if (!cardDragging.current) return
       const dy = cardDragStartY.current - e.clientY
-      if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
-      else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
+      const clamped = Math.max(0, Math.min(MAX_DRAG, dy))
+      cardDragYRef.current = clamped
+      setCardDragY(clamped)
     }
-    const onMUp = () => { if (!cardDragging.current) setCardExpanded(v => !v); cardDragging.current = false }
+    const onMUp = () => {
+      const currentY = cardDragYRef.current
+      if (currentY > 70) { cardAnimRef.current = true; setCardDragY(MAX_DRAG) }
+      else { cardAnimRef.current = true; setCardDragY(0) }
+      cardDragging.current = false
+      setTimeout(() => { cardAnimRef.current = false }, 350)
+    }
     el.addEventListener('mousedown', onMDown)
     document.addEventListener('mousemove', onMMove)
     document.addEventListener('mouseup', onMUp)
@@ -2167,21 +2191,21 @@ export default function HomePage() {
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
-                    onClick={() => { if (cardTouchHandled.current) return; setCardExpanded(v => !v) }}
+                    onClick={() => { if (cardTouchHandled.current) return; cardAnimRef.current = true; setCardDragY(prev => prev > 50 ? 0 : 280); setTimeout(() => { cardAnimRef.current = false }, 350) }}
                     style={{display:'flex', justifyContent:'center', padding:'12px 0 8px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none', WebkitUserSelect:'none'}}
                   >
                     <div style={{
                       width: 40, height: 4, borderRadius: 2,
                       background: 'rgba(255,255,255,0.25)',
                       transition: 'opacity 0.2s',
-                      opacity: cardExpanded ? 0.5 : 1,
+                      opacity: cardDragY > 50 ? 0.5 : 1,
                     }} />
                   </div>
                   {/* ── Collapsible content ── */}
                   <div style={{
                     overflow: 'hidden',
-                    maxHeight: cardExpanded ? '70vh' : 210,
-                    transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1)',
+                    maxHeight: 210 + cardDragY,
+                    transition: cardAnimRef.current ? 'max-height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none',
                   }}>
                   <div style={{padding:'0 16px 14px'}}>
                   {/* Numbers row */}
