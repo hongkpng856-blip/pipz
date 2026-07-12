@@ -312,6 +312,8 @@ export default function HomePage() {
     const onStart = (e: TouchEvent) => {
       cardDragStartY.current = e.touches[0].clientY
       cardDragging.current = false
+      e.stopPropagation()
+      e.preventDefault() // claim this touch for drag, not map pan
     }
     const onMove = (e: TouchEvent) => {
       const dy = cardDragStartY.current - e.touches[0].clientY
@@ -326,7 +328,7 @@ export default function HomePage() {
       cardDragging.current = false
       setTimeout(() => { cardTouchHandled.current = false }, 100)
     }
-    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchstart', onStart, { passive: false }) // passive:false so we can preventDefault
     el.addEventListener('touchmove', onMove, { passive: false }) // passive:false = can preventDefault
     el.addEventListener('touchend', onEnd)
     el.addEventListener('touchcancel', onEnd)
@@ -2161,16 +2163,16 @@ export default function HomePage() {
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
-                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0'}}>
+                <div className="section card" style={{position:'absolute', bottom:0, left:0, right:0, zIndex:999, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
                     onClick={() => { if (cardTouchHandled.current) return; setCardExpanded(v => !v) }}
-                    style={{display:'flex', justifyContent:'center', padding:'8px 0 4px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none'}}
+                    style={{display:'flex', justifyContent:'center', padding:'12px 0 8px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none', WebkitUserSelect:'none'}}
                   >
                     <div style={{
-                      width: 36, height: 4, borderRadius: 2,
-                      background: 'rgba(255,255,255,0.3)',
+                      width: 40, height: 4, borderRadius: 2,
+                      background: 'rgba(255,255,255,0.25)',
                       transition: 'opacity 0.2s',
                       opacity: cardExpanded ? 0.5 : 1,
                     }} />
