@@ -80,6 +80,7 @@ export default function HomePage() {
   const cardDragStartY = useRef(0)
   const cardDragging = useRef(false)
   const cardHandleRef = useRef<HTMLDivElement>(null)
+  const cardTouchHandled = useRef(false)
   const [compactProps, setCompactProps] = useState(false)
   const [ready, setReady] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -314,14 +315,16 @@ export default function HomePage() {
     }
     const onMove = (e: TouchEvent) => {
       const dy = cardDragStartY.current - e.touches[0].clientY
-      if (Math.abs(dy) > 15) cardDragging.current = true
+      if (Math.abs(dy) > 10) cardDragging.current = true
       if (dy > 40) { setCardExpanded(true); cardDragging.current = false }
       else if (dy < -40) { setCardExpanded(false); cardDragging.current = false }
-      e.preventDefault() // block map scroll/pan during drag
+      e.preventDefault()
     }
     const onEnd = () => {
+      cardTouchHandled.current = true
       if (!cardDragging.current) setCardExpanded(v => !v)
       cardDragging.current = false
+      setTimeout(() => { cardTouchHandled.current = false }, 100)
     }
     el.addEventListener('touchstart', onStart, { passive: true })
     el.addEventListener('touchmove', onMove, { passive: false }) // passive:false = can preventDefault
@@ -2162,7 +2165,7 @@ export default function HomePage() {
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
-                    onClick={() => setCardExpanded(v => !v)}
+                    onClick={() => { if (cardTouchHandled.current) return; setCardExpanded(v => !v) }}
                     style={{display:'flex', justifyContent:'center', padding:'8px 0 4px', cursor:'grab', touchAction:'none', WebkitTouchCallout:'none', userSelect:'none'}}
                   >
                     <div style={{
