@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.40.0 — Tabbed Card Content: Each Nav Button Shows Its Own Preview + Extended (2026-07-12)
+
+### Added
+- **Tab-switching card content (`cardTab` state):** The draggable card now shows different content depending on which of the 5 bottom nav buttons is active. 🗺️ shows steps + chart; 🐾 shows pet preview + skills; 🏠 shows property stats; 🏪 shows community info; 🎒 shows backpack summary.
+- **Preview + Extended sections per tab:** Each tab has a compact Preview (measured by `innerRef`, always visible at collapsed state) and an Extended section below it (revealed when the card is pulled up, clipped by `overflow:hidden` on the flex wrapper).
+- **Tab persistence across page switches:** `cardTab` state is independent of page-level `tab` state. When the user navigates to the pets page (🐾) and returns to the map (🗺️), the card remembers which tab was last selected.
+
+### Changed
+- **Card nav buttons** now set both `cardTab` (card content) and `tab` (page-level navigation), preserving old full-page access while adding card-level content.
+- **Map visibility** remains conditioned on `tab === 'map'` — non-map tabs show their full-page content as before.
+- **`innerRef`** only measures the Preview section. Extended content sits below the measured area and is clipped/revealed by the parent's flex-allocated height + `overflow:hidden`.
+- **Effect deps** extended to include `cardTab`, so `innerH` is remeasured when the active tab changes.
+- **Map Extended content** includes weekly bar chart + owned cells/flags/pet status row.
+
+### Changed files
+- `apps/web/src/app/page.tsx` — `cardTab` state added; card inner content switched by tab (5 previews, 5 extended sections); nav buttons set both states; effect deps updated.
+
 ## v0.39.10 — Incremental Drag Tracking, Direction-Based Snap, Tap No-Collapse (2026-07-12)
 
 ### Fixed
