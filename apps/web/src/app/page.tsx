@@ -2420,7 +2420,7 @@ export default function HomePage() {
                         { k: 'community' as Tab, icon: '🏪', label: '社群' },
                         { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
                       ]).map(t => (
-                        <button key={t.k} onClick={() => setCardTab(t.k)}
+                        <button key={t.k} onClick={() => { setCardTab(t.k); setTab(t.k); }}
                           style={{
                             display:'flex', flexDirection:'column', alignItems:'center', gap:3,
                             background:'transparent', border:'none', padding:'4px 8px',
@@ -2990,7 +2990,7 @@ export default function HomePage() {
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
-              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
+              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => { setTab(t.k); setCardTab(t.k); }}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
                 <span className={`nav-label ${tab === t.k ? 'active' : 'inactive'}`}>{t.label}</span>
               </button>
