@@ -2354,6 +2354,17 @@ export default function HomePage() {
                             🔄 進化階段: {pet.evolution}
                           </div>
                         )}
+                        {/* Go to full pets page */}
+                        <button onClick={() => setTab('pets')}
+                          style={{marginTop:10, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#22c55e', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
+                          🐾 寵物詳情 →
+                        </button>
+                      </>)}
+
+                      {cardTab === 'pets' && !pet && (<>
+                        <div style={{textAlign:'center', padding:'16px 0', color:'#94a5b8', fontSize:12}}>
+                          🥚 尚未認養寵物<br/>行多啲步孵出第一隻！
+                        </div>
                       </>)}
 
                       {cardTab === 'properties' && (<>
@@ -2363,6 +2374,10 @@ export default function HomePage() {
                             拉高更多睇詳細地產列表（開發中）
                           </div>
                         </div>
+                        <button onClick={() => setTab('properties')}
+                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#f59e0b', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
+                          🏠 地產詳情 →
+                        </button>
                       </>)}
 
                       {cardTab === 'community' && (<>
@@ -2372,6 +2387,10 @@ export default function HomePage() {
                             社群功能開發中
                           </div>
                         </div>
+                        <button onClick={() => setTab('community')}
+                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#06b6d4', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
+                          🏪 社群詳情 →
+                        </button>
                       </>)}
 
                       {cardTab === 'inventory' && (<>
@@ -2381,6 +2400,10 @@ export default function HomePage() {
                             背包功能開發中
                           </div>
                         </div>
+                        <button onClick={() => setTab('inventory')}
+                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#8b5cf6', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
+                          🎒 背包詳情 →
+                        </button>
                       </>)}
 
                     </div>
@@ -2397,7 +2420,7 @@ export default function HomePage() {
                         { k: 'community' as Tab, icon: '🏪', label: '社群' },
                         { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
                       ]).map(t => (
-                        <button key={t.k} onClick={() => { setCardTab(t.k); setTab(t.k); }}
+                        <button key={t.k} onClick={() => setCardTab(t.k)}
                           style={{
                             display:'flex', flexDirection:'column', alignItems:'center', gap:3,
                             background:'transparent', border:'none', padding:'4px 8px',

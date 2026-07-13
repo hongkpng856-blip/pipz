@@ -780,3 +780,38 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Add native `touchstart`/`touchmove` event listeners on the card element with `{ passive: false }` and call `e.preventDefault()` + `e.stopPropagation()`. This blocks iOS scroll before it starts. Attach/detach via `useEffect` + `cardRef`. |
 | **Code** | `apps/web/src/app/page.tsx` — `cardRef` `useEffect` (line ~325) |
 | **Prevention** | For touch-interactive elements on iOS, always add native `touchstart`/`touchmove` listener with `preventDefault()`. CSS `touch-action` alone is insufficient on iOS. Use both for cross-browser compatibility. |
+
+## 17 — Tabbed Card Content (v0.40.0)
+
+### 17.1 `cardTab` vs `tab` State Split — Page Navigation Lost
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (features disappeared) |
+| **Symptom** | Adding a separate `cardTab` state for the card's tab content caused all 5 bottom nav buttons to lose their page-navigation behavior. Clicking 🐾 only changed the card preview instead of navigating to the full pets page. Entire feature pages (pets, community, inventory) became inaccessible. |
+| **Root Cause** | The nav buttons' `onClick` was changed from `setTab(t.k)` to `setCardTab(t.k)`. `tab` (the page-level routing state) was never updated. The existing page-level content (`{tab === 'pets' && (...) }`) depended on `tab` being set, so it never rendered. |
+| **Fix** | Card buttons must ONLY set `cardTab`, not `tab`. For full-page navigation, add explicit "詳細" buttons inside the extended content section of each tab. `cardTab` controls the card preview; `tab` remains a user-initiated navigation (via "詳細" buttons or event-triggered navigation like egg found). |
+| **Code** | `apps/web/src/app/page.tsx` — nav button `onClick` (line ~2400): `onClick={() => setCardTab(t.k)}` |
+| **Prevention** | When adding a new state that replaces part of an existing state's responsibility, audit every consumer of the original state. `tab` was read in 10+ places, not just the nav buttons. A state-splitting change must update ALL consumers or keep both states in sync. |
+
+### 17.2 Map Forced Visible — Non-Map Tabs Show Map Background
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (non-map tabs rendered over the map, visual chaos) |
+| **Symptom** | The map container was changed from `display: tab === 'map' ? 'flex' : 'none'` to always `display: 'flex'`. When switching to the pets tab, the full-page pet content rendered ON TOP of the map, creating overlapping layouts. |
+| **Root Cause** | The map container used `position: fixed` with `z-index: 1`. Making it always visible meant it occupied screen space even when the pets/community/inventory pages were shown. Those pages (also `position: fixed` with their own containers) overlapped. |
+| **Fix** | Revert to conditional display: `display: tab === 'map' ? 'flex' : 'none'`. The map is only visible when the map tab is active. Other tabs show their full-page content without a map background. |
+| **Code** | `apps/web/src/app/page.tsx` — map container `style.display` (line ~2135) |
+| **Prevention** | Never unconditionally show a `position: fixed` overlay that was designed to be conditional. Any change from "show on tab X" to "always show" must verify all overlapping elements. `position: fixed` elements stack in DOM order. |
+
+### 17.3 New Tab Content Appeared Without User Request
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (unexpected UI elements) |
+| **Symptom** | The card started showing pet preview, property stats, community info, and backpack preview when those tabs were clicked. The user was surprised by new UI elements that weren't there before. |
+| **Root Cause** | The `cardTab` content (5 switch-case previews) was added in a single patch. Each tab's Preview section was implemented before the user confirmed the design direction. The user expected only the map tab's steps content at this stage. |
+| **Fix** | Keep the tab content but ensure the page-level navigation still works (`setTab` alongside `setCardTab`). The card previews are additive — they don't break existing functionality. |
+| **Code** | `apps/web/src/app/page.tsx` — card inner content switches by `cardTab` (lines ~2200-2385) |
+| **Prevention** | When introducing new UI elements visible to the user, match the pace of user expectations. A single patch that adds both a new state AND 5 new visual sections is harder to roll back. Implement the state first, then add content incrementally per user confirmation. |

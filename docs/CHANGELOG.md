@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.40.1 — Card Nav Stays on Map, "詳細" Buttons for Full Page (2026-07-12)
+
+### Fixed
+- **Card nav buttons no longer navigate away from map:** `onClick` changed back to `setCardTab(t.k)` only (removed `setTab(t.k)`). Clicking 🐾/🏠/🏪/🎒 in the card now switches card content while keeping the map visible.
+- **Map extended content (3-column row) was wrapping all tab content:** The pet/property/community/inventory tab sections were accidentally nested inside the map details 3rd column (`宠Pet狀態`). Fixed by closing the map flex row before the other tabs' extended content.
+
+### Added
+- **"詳細" button in each non-map tab's extended section:** A button at the bottom of 🐾 (寵物詳情 →), 🏠 (地產詳情 →), 🏪 (社群詳情 →), 🎒 (背包詳情 →) that sets `tab` to navigate to the full page when the user wants more detail.
+
+### Changed
+- **Card nav buttons:** Only `setCardTab`, never `setTab`. Page navigation is opt-in via the "詳細" button in extended content.
+- **BUGS_AND_PITFALLS.md** updated Section 17 with correct fix.
+
 ## v0.40.0 — Tabbed Card Content: Each Nav Button Shows Its Own Preview + Extended (2026-07-12)
 
 ### Added
