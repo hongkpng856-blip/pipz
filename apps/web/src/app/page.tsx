@@ -2132,7 +2132,7 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display:'flex', flexDirection:'column', overflow:'hidden', position:'fixed', top:42, left:0, right:0, bottom:0, zIndex:1 }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'hidden', position:'fixed', top:42, left:0, right:0, bottom:0, zIndex:1 }}>
 
               {/* ── Map fills everything ── */}
               <div style={{ flex:1, minHeight:0, position:'relative' }}>
@@ -2397,7 +2397,7 @@ export default function HomePage() {
                         { k: 'community' as Tab, icon: '🏪', label: '社群' },
                         { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
                       ]).map(t => (
-                        <button key={t.k} onClick={() => setCardTab(t.k)}
+                        <button key={t.k} onClick={() => { setCardTab(t.k); setTab(t.k); }}
                           style={{
                             display:'flex', flexDirection:'column', alignItems:'center', gap:3,
                             background:'transparent', border:'none', padding:'4px 8px',
