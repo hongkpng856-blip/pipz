@@ -2317,21 +2317,6 @@ export default function HomePage() {
                             </div>
                           </div>
                         )}
-                        {/* Map details */}
-                        <div style={{display:'flex', gap:16, padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                          <div style={{textAlign:'center', flex:1}}>
-                            <div style={{fontSize:18, fontWeight:700, color:'#e2e8f0'}}>{ownedCells?.length || 0}</div>
-                            <div style={{fontSize:9, color:'#94a5b8', marginTop:2}}>已佔領地</div>
-                          </div>
-                          <div style={{textAlign:'center', flex:1}}>
-                            <div style={{fontSize:18, fontWeight:700, color:'#e2e8f0'}}>{allFlagCells?.length || 0}</div>
-                            <div style={{fontSize:9, color:'#94a5b8', marginTop:2}}>插旗點</div>
-                          </div>
-                          <div style={{textAlign:'center', flex:1}}>
-                            <div style={{fontSize:18, fontWeight:700, color:'#e2e8f0'}}>{(pet && walking) ? '步行中' : pet ? '待機' : '離線'}</div>
-                            <div style={{fontSize:9, color:'#94a5b8', marginTop:2}}>寵物狀態</div>
-                          </div>
-                        </div>
                       </>)}
 
                       {cardTab === 'pets' && pet && (<>
