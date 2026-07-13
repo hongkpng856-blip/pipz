@@ -815,3 +815,25 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Keep the tab content but ensure the page-level navigation still works (`setTab` alongside `setCardTab`). The card previews are additive — they don't break existing functionality. |
 | **Code** | `apps/web/src/app/page.tsx` — card inner content switches by `cardTab` (lines ~2200-2385) |
 | **Prevention** | When introducing new UI elements visible to the user, match the pace of user expectations. A single patch that adds both a new state AND 5 new visual sections is harder to roll back. Implement the state first, then add content incrementally per user confirmation. |
+
+### 17.4 Bottom Nav Doesn't Sync cardTab — Map Shows Pet Content After Return
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (wrong content on map tab) |
+| **Symptom** | User clicks 🐾 in the card bottom nav → navigates to pets full page → clicks 🗺️ in the bottom nav to return to map → the card shows **pet preview** instead of steps. The map "remembers" the last cardTab. |
+| **Root Cause** | Two separate nav button implementations exist: (a) `card-nav` buttons inside the map card (set `cardTab`), and (b) `bottom-nav` buttons shown on non-map pages (set `tab`). When the user navigated to pets via card buttons (set `cardTab='pets', tab='pets'`) and returned via bottom nav buttons (only set `tab='map'`), `cardTab` remained `'pets'`. React re-renders with `tab='map'` (map visible) + `cardTab='pets'` → card shows pet content. |
+| **Fix** | Both nav sets must set both states. Card nav: `onClick={() => { setCardTab(t.k); setTab(t.k); }}`. Bottom nav: `onClick={() => { setTab(t.k); setCardTab(t.k); }}`. The state update order differs depending on which nav was already the primary driver, but the end state is the same. |
+| **Code** | `apps/web/src/app/page.tsx` — card nav buttons (line ~2420) and bottom nav buttons (line ~2990) |
+| **Prevention** | When two overlapping state variables (`tab` and `cardTab`) are set by different UI elements, every `setTab` call must also update `cardTab` and vice versa. Audit all call sites whenever adding a parallel state. There were 9 call sites for `setTab` and 1 for `setCardTab`; only the primary nav buttons were updated initially, missing the bottom nav. |
+
+### 17.5 Map Extended Content Contains Unwanted Stats
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (annoyance) |
+| **Symptom** | When pulling up the map tab's extended content (revealed by card drag), the user sees "已佔領地", "插旗點", "寵物狀態" stats that they didn't ask for. The map details row was added without user confirmation. |
+| **Root Cause** | The map tab's extended section was designed as a dashboard-like space. The developer added a 3-column stats row (owned cells, flag cells, pet status) as "useful map data" during the initial implementation of tab content, without checking if the user wanted these visible. |
+| **Fix** | Remove the entire 3-column row from the map extended content. Only the weekly bar chart remains in the map tab's extended section. |
+| **Code** | `apps/web/src/app/page.tsx` — lines ~2320-2334 (deleted in v0.40.2) |
+| **Prevention** | Never add visible UI elements that the user hasn't requested or confirmed, especially on a production app where the user is actively testing. A "show more" dynamic content system should be additive: start minimal, add per request. |

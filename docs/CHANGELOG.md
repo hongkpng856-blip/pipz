@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.40.2 — Sync cardTab on Bottom Nav, Remove Map Details Row from Extended Content (2026-07-12)
+
+### Fixed
+- **Map showed pet content after returning from pets page:** The bottom nav bar (`bottom-nav`) only set `tab` when clicking 🗺️/🐾/🏠/🏪/🎒, leaving `cardTab` unchanged. Navigating to pets page via card buttons (which set `cardTab='pets'`) and back via bottom nav (which didn't set `cardTab`) left `cardTab='pets'`, so the card showed pet content on the map. Fixed by `onClick={() => { setTab(t.k); setCardTab(t.k); }}` on both nav button sets (card nav + bottom nav).
+
+### Cleaned
+- **Removed 3-column map details row from map extended content:** The map tab's extended section (revealed by pull-up) contained "已佔領地", "插旗點", "寵物狀態" stats that the user didn't want. Only the weekly bar chart remains.
+
+### Changed
+- Both `card-nav` (inside the map card) and `bottom-nav` (shown on non-map tabs) now set both `tab` and `cardTab` in sync.
+- Card nav buttons: `onClick={() => { setCardTab(t.k); setTab(t.k); }}`
+- Bottom nav buttons: `onClick={() => { setTab(t.k); setCardTab(t.k); }}`
+
 ## v0.40.1 — Card Nav Stays on Map, "詳細" Buttons for Full Page (2026-07-12)
 
 ### Fixed
