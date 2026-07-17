@@ -75,7 +75,6 @@ export default function HomePage() {
   const [walking, setWalking] = useState(false)
   const [petAnim, setPetAnim] = useState<'idle'|'walk'|'happy'>('idle')
   const [tab, setTab] = useState<Tab>('map')
-  const [cardTab, setCardTab] = useState<Tab>('map') // inside-card tab content
   const [log, setLog] = useState<string[]>([])
   const [cardExpanded, setCardExpanded] = useState(false)
   const cardDragStartY = useRef(0)
@@ -319,7 +318,7 @@ export default function HomePage() {
   useEffect(() => {
     if (innerRef.current) setInnerH(innerRef.current.getBoundingClientRect().height)
     if (navRef.current) setNavH(navRef.current.getBoundingClientRect().height)
-  }, [weeklySteps, user, steps, totalSteps, cardTab])
+  }, [weeklySteps, user, steps, totalSteps])
   const HANDLE_H = 24
   // iOS fix: native touchstart/touchmove preventDefault so touch-action:none works
   const cardRef = useRef<HTMLDivElement>(null)
@@ -2197,200 +2196,119 @@ export default function HomePage() {
                       opacity: cardDragY > 50 ? 0.5 : 1,
                     }} />
                   </div>
-                  {/* ── Collapsible content: switches by cardTab ── */}
+                  {/* ── Collapsible content: all sections stacked ── */}
                   <div style={{flex:1, overflow:'hidden'}}>
                     {/* ── Preview (measured for collapsed height) ── */}
                     <div ref={innerRef} style={{padding:'0 16px'}}>
-                      {cardTab === 'map' && (<>
-                        {/* Numbers row */}
-                        <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
-                          <div style={{textAlign:'center', position:'relative'}}>
-                            <div className="steps-num step-bounce"
-                              key={stepAnimTick}>
-                              {ready ? steps.toLocaleString() : '0'}
-                            </div>
-                            {stepFlashType !== 'none' && (
-                              <div className={stepFlashType === 'skill' ? 'step-flash-skill' : 'step-flash'}
-                                style={{position:'absolute', inset:-8, borderRadius:8, pointerEvents:'none', zIndex:2}} />
-                            )}
-                            {stepArrows.map((a, i) => (
-                              <div key={a.id} className={a.type === 'skill' ? 'arrow-float-skill' : 'arrow-float'}
-                                style={{position:'absolute', fontSize:14, fontWeight:700, color:'#22c55e', left:`${-20 + i * 14}px`, top:0, pointerEvents:'none', zIndex:3}}>↑</div>
-                            ))}
-                            <div className="steps-label" style={{marginTop:2}}>今日步數</div>
-                            {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>👟 雙倍步伐</div>)}
-                            {pet?.skills?.some(s => s.effect === SkillEffect.StepBonus) && (<div style={{fontSize:7, color:'#22d3ee', marginTop:1}}>💨 疾步如飛</div>)}
+                      {/* Numbers row — always visible */}
+                      <div style={{display:'flex', justifyContent:'space-around', marginBottom:14, position:'relative'}}>
+                        <div style={{textAlign:'center', position:'relative'}}>
+                          <div className="steps-num step-bounce"
+                            key={stepAnimTick}>
+                            {ready ? steps.toLocaleString() : '0'}
                           </div>
-                          <div style={{width:1, background:'#1e2a45'}} />
-                          <div style={{textAlign:'center'}}>
-                            <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
-                            <div className="steps-label" style={{marginTop:2}}>總步數</div>
-                            {pet?.skills?.some(s => s.effect === SkillEffect.EnergyBonus) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>⚡ 能量過載</div>)}
-                          </div>
-                          <div style={{width:1, background:'#1e2a45'}} />
-                          <div style={{textAlign:'center'}}>
-                            <div className="steps-num">{weeklySteps.length > 0 ? Math.round(weeklySteps.reduce((a,b) => a+b.steps, 0) / 7) : 0}</div>
-                            <div className="steps-label" style={{marginTop:2}}>日均</div>
-                          </div>
+                          {stepFlashType !== 'none' && (
+                            <div className={stepFlashType === 'skill' ? 'step-flash-skill' : 'step-flash'}
+                              style={{position:'absolute', inset:-8, borderRadius:8, pointerEvents:'none', zIndex:2}} />
+                          )}
+                          {stepArrows.map((a, i) => (
+                            <div key={a.id} className={a.type === 'skill' ? 'arrow-float-skill' : 'arrow-float'}
+                              style={{position:'absolute', fontSize:14, fontWeight:700, color:'#22c55e', left:`${-20 + i * 14}px`, top:0, pointerEvents:'none', zIndex:3}}>↑</div>
+                          ))}
+                          <div className="steps-label" style={{marginTop:2}}>今日步數</div>
+                          {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>👟 雙倍步伐</div>)}
+                          {pet?.skills?.some(s => s.effect === SkillEffect.StepBonus) && (<div style={{fontSize:7, color:'#22d3ee', marginTop:1}}>💨 疾步如飛</div>)}
                         </div>
-                      </>)}
-
-                      {cardTab === 'pets' && pet && (<>
-                        {/* Pet preview row */}
-                        <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0'}}>
-                          <div style={{fontSize:40}}>{pet.name?.[0] || '🐣'}</div>
-                          <div style={{flex:1}}>
-                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>{pet.name || '無名寵物'}</div>
-                            <div style={{fontSize:11, color:'#94a5b8', marginTop:2}}>
-                              Lv.{pet.level} {RARITY_LABELS[pet.rarity] || pet.rarity}
-                            </div>
-                            <div style={{marginTop:6, height:6, borderRadius:3, background:'#1e2a45', overflow:'hidden'}}>
-                              <div style={{width:`${(pet.xp || 0) / ((pet.level || 1) * 100) * 100}%`, height:'100%', borderRadius:3, background:'#22c55e', transition:'width 0.3s'}} />
-                            </div>
-                          </div>
+                        <div style={{width:1, background:'#1e2a45'}} />
+                        <div style={{textAlign:'center'}}>
+                          <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
+                          <div className="steps-label" style={{marginTop:2}}>總步數</div>
+                          {pet?.skills?.some(s => s.effect === SkillEffect.EnergyBonus) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>⚡ 能量過載</div>)}
                         </div>
-                      </>)}
-
-                      {cardTab === 'pets' && !pet && (<>
-                        <div style={{textAlign:'center', padding:'16px 0', color:'#94a5b8', fontSize:12}}>
-                          🥚 尚未認養寵物<br/>行多啲步孵出第一隻！
+                        <div style={{width:1, background:'#1e2a45'}} />
+                        <div style={{textAlign:'center'}}>
+                          <div className="steps-num">{weeklySteps.length > 0 ? Math.round(weeklySteps.reduce((a,b) => a+b.steps, 0) / 7) : 0}</div>
+                          <div className="steps-label" style={{marginTop:2}}>日均</div>
                         </div>
-                      </>)}
-
-                      {cardTab === 'properties' && (<>
-                        <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0'}}>
-                          <div style={{fontSize:36}}>🏡</div>
-                          <div>
-                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>我的地產</div>
-                            <div style={{fontSize:11, color:'#94a5b8', marginTop:2}}>
-                              擁有 {ownedCells?.length || 0} 塊地 | {allFlagCells?.length || 0} 面旗
-                            </div>
-                          </div>
-                        </div>
-                      </>)}
-
-                      {cardTab === 'community' && (<>
-                        <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0'}}>
-                          <div style={{fontSize:36}}>🏪</div>
-                          <div>
-                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>社群</div>
-                            <div style={{fontSize:11, color:'#94a5b8', marginTop:2}}>
-                              🏪 商店 · 👥 玩家互動
-                            </div>
-                          </div>
-                        </div>
-                      </>)}
-
-                      {cardTab === 'inventory' && (<>
-                        <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0'}}>
-                          <div style={{fontSize:36}}>🎒</div>
-                          <div>
-                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>背包</div>
-                            <div style={{fontSize:11, color:'#94a5b8', marginTop:2}}>
-                              道具 · 裝備
-                            </div>
-                          </div>
-                        </div>
-                      </>)}
-
+                      </div>
                     </div>
-                    {/* ── Extended content (revealed by pull-up) ── */}
+                    {/* ── Extended content (all sections, revealed by pull-up) ── */}
                     <div style={{padding:'0 16px 14px'}}>
-                      {cardTab === 'map' && (<>
-                        {/* Weekly bar chart */}
-                        {weeklySteps.length > 0 && (
-                          <div style={{marginBottom:14}}>
-                            <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:8}}>
-                              <span>📊 本週步數</span>
-                              <span>{formatSteps(weeklySteps.reduce((a,b) => a+b.steps, 0))} / 週</span>
-                            </div>
-                            <div className="weekly-chart">
-                              {(()=>{const m=Math.max(...weeklySteps.map(d=>d.steps),1);return weeklySteps.map((day,i)=>{const h=m>0?Math.round((day.steps/m)*60):4;return(
-                                <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:70}}>
-                                  <div style={{width:'100%', maxWidth:28, height:h, borderRadius:'4px 4px 0 0', background:day.isToday?'linear-gradient(180deg,#22c55e,#16a34a)':'rgba(255,255,255,0.1)', minHeight:4, transition:'height 0.3s'}} />
-                                  <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginTop:4}}>
-                                    <span className="weekly-bar-steps">{formatSteps(day.steps)}</span>
-                                    <span className={`weekly-bar-label ${day.isToday ? 'weekly-bar-label-today' : ''}`}>{day.dayLabel}</span>
-                                  </div>
+                      {/* Weekly chart */}
+                      {weeklySteps.length > 0 && (
+                        <div style={{marginBottom:14}}>
+                          <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:8}}>
+                            <span>📊 本週步數</span>
+                            <span>{formatSteps(weeklySteps.reduce((a,b) => a+b.steps, 0))} / 週</span>
+                          </div>
+                          <div className="weekly-chart">
+                            {(()=>{const m=Math.max(...weeklySteps.map(d=>d.steps),1);return weeklySteps.map((day,i)=>{const h=m>0?Math.round((day.steps/m)*60):4;return(
+                              <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:70}}>
+                                <div style={{width:'100%', maxWidth:28, height:h, borderRadius:'4px 4px 0 0', background:day.isToday?'linear-gradient(180deg,#22c55e,#16a34a)':'rgba(255,255,255,0.1)', minHeight:4, transition:'height 0.3s'}} />
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginTop:4}}>
+                                  <span className="weekly-bar-steps">{formatSteps(day.steps)}</span>
+                                  <span className={`weekly-bar-label ${day.isToday ? 'weekly-bar-label-today' : ''}`}>{day.dayLabel}</span>
                                 </div>
-                              )})})()}
+                              </div>
+                            )})})()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── 🐾 Pet ── */}
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0'}}>
+                        <div style={{fontSize:11, color:'#94a5b8', marginBottom:8}}>🐾 寵物</div>
+                        {pet ? (<>
+                          <div style={{display:'flex', alignItems:'center', gap:10}}>
+                            <div style={{fontSize:32}}>{pet.name?.[0] || '🐣'}</div>
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet.name || '無名寵物'}</div>
+                              <div style={{fontSize:10, color:'#94a5b8', marginTop:2}}>Lv.{pet.level} {RARITY_LABELS[pet.rarity] || pet.rarity}</div>
+                              <div style={{marginTop:4, height:4, borderRadius:2, background:'#1e2a45', overflow:'hidden'}}>
+                                <div style={{width:`${(pet.xp || 0) / ((pet.level || 1) * 100) * 100}%`, height:'100%', borderRadius:2, background:'#22c55e'}} />
+                              </div>
                             </div>
                           </div>
-                        )}
-                      </>)}
-
-                      {cardTab === 'pets' && pet && (<>
-                        {/* Pet skills */}
-                        {pet.skills && pet.skills.length > 0 && (
-                          <div style={{marginTop:6}}>
-                            <div style={{fontSize:11, color:'#94a5b8', marginBottom:6}}>🧠 技能</div>
-                            <div style={{display:'flex', flexWrap:'wrap', gap:6}}>
+                          {pet.skills && pet.skills.length > 0 && (
+                            <div style={{display:'flex', flexWrap:'wrap', gap:4, marginTop:8}}>
                               {pet.skills.map((sk,i) => (
-                                <div key={i} style={{padding:'4px 10px', borderRadius:6, background:'rgba(255,255,255,0.05)', fontSize:10, color:'#e2e8f0'}}>
+                                <div key={i} style={{padding:'3px 8px', borderRadius:4, background:'rgba(255,255,255,0.05)', fontSize:9, color:'#e2e8f0'}}>
                                   {sk.name || SkillEffect[sk.effect]}
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          )}
+                        </>) : (
+                          <div style={{fontSize:11, color:'#5a6d85', fontStyle:'italic'}}>🥚 尚未認養寵物，行多啲步孵出第一隻！</div>
                         )}
-                        {/* Evolution info */}
-                        {pet.evolution && (
-                          <div style={{marginTop:10, fontSize:10, color:'#94a5b8'}}>
-                            🔄 進化階段: {pet.evolution}
+                      </div>
+
+                      {/* ── 🏠 Property ── */}
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0'}}>
+                        <div style={{fontSize:11, color:'#94a5b8', marginBottom:6}}>🏠 地產</div>
+                        <div style={{display:'flex', gap:20}}>
+                          <div style={{textAlign:'center'}}>
+                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>{ownedCells?.length || 0}</div>
+                            <div style={{fontSize:9, color:'#5a6d85'}}>佔領地</div>
                           </div>
-                        )}
-                        {/* Go to full pets page */}
-                        <button onClick={() => setTab('pets')}
-                          style={{marginTop:10, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#22c55e', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🐾 寵物詳情 →
-                        </button>
-                      </>)}
-
-                      {cardTab === 'pets' && !pet && (<>
-                        <div style={{textAlign:'center', padding:'16px 0', color:'#94a5b8', fontSize:12}}>
-                          🥚 尚未認養寵物<br/>行多啲步孵出第一隻！
-                        </div>
-                      </>)}
-
-                      {cardTab === 'properties' && (<>
-                        <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                          <div style={{fontSize:11, color:'#94a5b8', marginBottom:8}}>🏴 佔領地圖</div>
-                          <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>
-                            拉高更多睇詳細地產列表（開發中）
+                          <div style={{textAlign:'center'}}>
+                            <div style={{fontSize:16, fontWeight:700, color:'#e2e8f0'}}>{allFlagCells?.length || 0}</div>
+                            <div style={{fontSize:9, color:'#5a6d85'}}>插旗點</div>
                           </div>
                         </div>
-                        <button onClick={() => setTab('properties')}
-                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#f59e0b', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🏠 地產詳情 →
-                        </button>
-                      </>)}
+                      </div>
 
-                      {cardTab === 'community' && (<>
-                        <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                          <div style={{fontSize:11, color:'#94a5b8', marginBottom:8}}>👥 附近玩家</div>
-                          <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>
-                            社群功能開發中
-                          </div>
-                        </div>
-                        <button onClick={() => setTab('community')}
-                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#06b6d4', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🏪 社群詳情 →
-                        </button>
-                      </>)}
+                      {/* ── 🏪 Community ── */}
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0'}}>
+                        <div style={{fontSize:11, color:'#94a5b8', marginBottom:6}}>🏪 社群</div>
+                        <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>附近玩家 · 商店（開發中）</div>
+                      </div>
 
-                      {cardTab === 'inventory' && (<>
-                        <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                          <div style={{fontSize:11, color:'#94a5b8', marginBottom:8}}>🎒 道具列表</div>
-                          <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>
-                            背包功能開發中
-                          </div>
-                        </div>
-                        <button onClick={() => setTab('inventory')}
-                          style={{marginTop:6, display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'8px 14px', fontSize:11, color:'#8b5cf6', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🎒 背包詳情 →
-                        </button>
-                      </>)}
-
+                      {/* ── 🎒 Backpack ── */}
+                      <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0'}}>
+                        <div style={{fontSize:11, color:'#94a5b8', marginBottom:6}}>🎒 背包</div>
+                        <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>道具 · 裝備（開發中）</div>
+                      </div>
                     </div>
                   </div>
 
@@ -2405,17 +2323,17 @@ export default function HomePage() {
                         { k: 'community' as Tab, icon: '🏪', label: '社群' },
                         { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
                       ]).map(t => (
-                        <button key={t.k} onClick={() => { setCardTab(t.k); setTab(t.k); }}
-                          style={{
-                            display:'flex', flexDirection:'column', alignItems:'center', gap:3,
-                            background:'transparent', border:'none', padding:'4px 8px',
-                            cursor:'pointer', fontFamily:'inherit',
-                            opacity: cardTab === t.k ? 1 : 0.5,
-                            filter: cardTab === t.k ? 'none' : 'grayscale(0.5)',
-                            transition:'opacity 0.15s',
-                          }}>
+                        <button key={t.k} onClick={() => setTab(t.k)}
+                           style={{
+                             display:'flex', flexDirection:'column', alignItems:'center', gap:3,
+                             background:'transparent', border:'none', padding:'4px 8px',
+                             cursor:'pointer', fontFamily:'inherit',
+                             opacity: tab === t.k ? 1 : 0.5,
+                             filter: tab === t.k ? 'none' : 'grayscale(0.5)',
+                             transition:'opacity 0.15s',
+                           }}>
                           <span style={{fontSize:16}}>{t.icon}</span>
-                          <span style={{fontSize:8, color: cardTab === t.k ? '#e2e8f0' : '#5a6d85', fontWeight: cardTab === t.k ? 700 : 500}}>{t.label}</span>
+                          <span style={{fontSize:8, color: tab === t.k ? '#e2e8f0' : '#5a6d85', fontWeight: tab === t.k ? 700 : 500}}>{t.label}</span>
                         </button>
                       ))}
                     </div>
@@ -2975,7 +2893,7 @@ export default function HomePage() {
               { k: 'community' as Tab, icon: '🏪', label: '社群' },
               { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
             ]).map(t => (
-              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => { setTab(t.k); setCardTab(t.k); }}>
+              <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
                 <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
                 <span className={`nav-label ${tab === t.k ? 'active' : 'inactive'}`}>{t.label}</span>
               </button>
