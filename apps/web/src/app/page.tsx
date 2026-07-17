@@ -2475,15 +2475,130 @@ export default function HomePage() {
 
                       {/* ── 🏪 Community extended ── */}
                       {cardTab === 'community' && (<>
-                        <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0', color:'#5a6d85', fontSize:10, fontStyle:'italic'}}>
-                          附近玩家 · 商店 · 排行榜（開發中）
-                        </div>
+                        {!user ? (
+                          <div style={{textAlign:'center', padding:'20px 0', color:'#5a6d85', fontSize:11, borderTop:'1px solid rgba(255,255,255,0.06)'}}>🔑 需要登入先可以使用交易市場</div>
+                        ) : (
+                          <>
+                            {/* My Listings */}
+                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                                <div style={{fontSize:10, color:'#94a5b8'}}>📋 我的上架</div>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>{myListings.length} 隻</div>
+                              </div>
+                              {myListings.length === 0 ? (
+                                <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有上架 — 喺寵物詳細頁可以上架</div>
+                              ) : (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
+                                  {myListings.slice(0,6).map(p => (
+                                    <div key={p.id} onClick={() => setDetailPetId(p.id)}
+                                      style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
+                                      <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
+                                      <div style={{fontSize:7, color:'#94a5b8'}}>Lv.{p.level}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Marketplace */}
+                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                                <div style={{fontSize:10, color:'#94a5b8'}}>🛒 市集</div>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>{marketListings.length} 隻</div>
+                              </div>
+                              {marketListings.length === 0 ? (
+                                <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>市集暫時未有寵物出售</div>
+                              ) : (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
+                                  {marketListings.slice(0,6).map(p => (
+                                    <div key={p.id} onClick={() => viewMarketPet(p)}
+                                      style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
+                                      <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
+                                      <div style={{fontSize:7, color:'#94a5b8'}}>Lv.{p.level}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Property Market */}
+                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                                <div style={{fontSize:10, color:'#94a5b8'}}>🏠 地皮市集</div>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>{listedProperties.length} 塊</div>
+                              </div>
+                              {listedProperties.length === 0 ? (
+                                <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有地皮出售</div>
+                              ) : (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
+                                  {listedProperties.slice(0,6).map(p => {
+                                    const zoneIdx = getZoneIdx(p.cellRow, p.cellCol)
+                                    const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+                                    const color = colors[zoneIdx]
+                                    const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+                                    return (
+                                      <div key={p.id} onClick={() => setDetailProperty(p)}
+                                        style={{padding:'6px 4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`1px solid ${color}33`, cursor:'pointer', textAlign:'center'}}>
+                                        <div style={{fontSize:9, fontWeight:600, color:'#e2e8f0'}}>{zoneNames[zoneIdx]}</div>
+                                        <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>{p.cellRow+1}區 {p.cellCol+1}號</div>
+                                        <div style={{fontSize:7, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(Number(p['price'])||p.price||0)}</div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
                       </>)}
 
                       {/* ── 🎒 Backpack extended ── */}
                       {cardTab === 'inventory' && (<>
-                        <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0', color:'#5a6d85', fontSize:10, fontStyle:'italic'}}>
-                          道具 · 裝備 · 使用（開發中）
+                        <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                            <div style={{fontSize:10, color:'#94a5b8'}}>🎒 背包</div>
+                            <div style={{fontSize:10, color:'#5a6d85'}}>
+                              {inventory.filter((i: any) => i.itemType === 'help').length} 道具 · {inventory.filter((i: any) => i.itemType === 'equipment').length} 裝備
+                            </div>
+                          </div>
+                          {!user ? (
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🔑 需要登入</div>
+                          ) : inventory.length === 0 ? (
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>📭 未有物品 — 行路探索拎道具啦！</div>
+                          ) : (
+                            (() => {
+                              const items = inventory.map((e: any) => {
+                                const def = e.itemType === 'help'
+                                  ? HELP_ITEM_POOL.find((d: any) => d.id === e.itemId)
+                                  : EQUIPMENT_POOL.find((d: any) => d.id === e.itemId)
+                                return { ...e, def }
+                              }).filter((x: any) => x.def)
+                              return (
+                                <div style={{maxHeight:200, overflow:'auto', display:'flex', flexDirection:'column', gap:4}}>
+                                  {items.map((item: any, i: number) => {
+                                    const def = item.def
+                                    const rarColor = def.rarity ? (RARITY_COLORS[def.rarity] || '#9ca3af') : '#9ca3af'
+                                    return (
+                                      <div key={item.itemId + i} style={{
+                                        padding:'8px 10px', border:`1px solid ${rarColor}22`, borderRadius:10,
+                                        display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.02)',
+                                      }}>
+                                        <div style={{width:28, height:28, borderRadius:8, background:`${rarColor}15`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, flexShrink:0}}>
+                                          {def.icon}
+                                        </div>
+                                        <div style={{flex:1, minWidth:0}}>
+                                          <div style={{fontSize:9, fontWeight:700, color:'#e2e8f0'}}>{def.name}</div>
+                                          <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>x{item.quantity || 1}</div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )
+                            })()
+                          )}
                         </div>
                       </>)}
                     </div>
