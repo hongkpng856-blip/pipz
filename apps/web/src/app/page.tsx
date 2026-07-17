@@ -2325,29 +2325,42 @@ export default function HomePage() {
                         </div>
                       </>)}
 
-                      {/* ── 🐾 Pets extended: full pet content ── */}
+                      {/* ── 🐾 Pets: full content from pets page ── */}
                       {cardTab === 'pets' && (() => {
+                        if (pets.length === 0) return (
+                          <div style={{textAlign:'center', padding:'30px 0', color:'#5a6d85'}}>
+                            <div style={{fontSize:36, marginBottom:8}}>🥚</div>
+                            <div style={{fontSize:12}}>未有寵物，行路孵化啦！</div>
+                          </div>
+                        )
                         const sorted = [...pets].sort((a, b) => {
                           const af = favorites.includes(a.id) ? 0 : 1
                           const bf = favorites.includes(b.id) ? 0 : 1
                           if (af !== bf) return af - bf
                           return (b.createdAt || 0) - (a.createdAt || 0)
                         })
+                        const teamPets = favorites.map(fid => pets.find(p => p.id === fid)).filter((p): p is Pet => p !== undefined).slice(0, 5)
+                        const otherPets = sorted.filter(p => !favorites.includes(p.id))
                         const activePetSkills = pets[activeIdx]?.skills ?? []
                         const energyMult = 1 + getEnergyBonus(activePetSkills)
                         const displayEnergy = Math.round(totalSteps * energyMult)
-                        const teamFull = favorites.filter(fid => pets.find(p => p.id === fid)).length >= 5
                         return (
                           <>
-                            {/* Energy + Eggs */}
-                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
-                              <div style={{display:'flex', alignItems:'center', gap:10}}>
-                                <div style={{width:30, height:30, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(245,158,11,0.12)', flexShrink:0}}>
-                                  <svg width="16" height="24" viewBox="0 0 26 38" fill="none"><path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b"/></svg>
-                                </div>
-                                <div style={{fontSize:20, fontWeight:700, color:'#f59e0b'}}>{formatSteps(displayEnergy)}</div>
-                                <div style={{fontSize:9, color:'#5a6d85'}}>⚡ 能量</div>
-                                {eggs.length > 0 && <div style={{marginLeft:'auto', fontSize:12, color:'#94a5b8'}}>🥚 ×{eggs.length}</div>}
+                            {/* Headline */}
+                            <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+                              <div style={{fontSize:12, fontWeight:700, color:'#e2e8f0'}}>🐾 寵物</div>
+                              <div style={{fontSize:10, color:'#5a6d85'}}>{pets.length} 隻</div>
+                            </div>
+
+                            {/* ⚡ Energy + Eggs section — same as pets page */}
+                            <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+                              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>⚡ 你擁有的能量</div>
+                                {eggs.length > 0 && <div style={{fontSize:10, color:'#94a5b8', marginLeft:'auto'}}>🥚 ×{eggs.length}</div>}
+                              </div>
+                              <div style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:8, background:'rgba(255,255,255,0.04)'}}>
+                                <svg width="18" height="26" viewBox="0 0 26 38" fill="none"><path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b"/></svg>
+                                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b'}}>{ready ? formatSteps(displayEnergy) : '0'}</div>
                               </div>
                               {/* Eggs grid */}
                               {eggs.length > 0 && (
@@ -2355,9 +2368,10 @@ export default function HomePage() {
                                   {eggs.map(egg => {
                                     const isHatching = eggHatchingId === egg.id
                                     return (
-                                      <div key={egg.id} style={{textAlign:'center', padding:'4px', borderRadius:6, background: isHatching ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)', cursor: isHatching ? 'default' : 'pointer', opacity: isHatching ? 1 : 0.7}} onClick={() => { if (!isHatching) handleOpenEgg(egg.id) }}>
-                                        <div style={{fontSize:16}}>{isHatching ? '🐣' : '🥚'}</div>
-                                        <div style={{fontSize:7, color: isHatching ? '#f59e0b' : '#5a6d85', marginTop:1}}>{"★".repeat(egg.rarity + 1)}</div>
+                                      <div key={egg.id} onClick={() => !isHatching && hatchEgg(egg)}
+                                        style={{textAlign:'center', padding:'6px 4px', borderRadius:6, borderColor:`${PC[egg.rarity]}44`, border:'1px solid', background:isHatching?'rgba(245,158,11,0.1)':'rgba(255,255,255,0.03)', cursor:isHatching?'default':'pointer'}}>
+                                        <div style={{fontSize:22}}>{isHatching ? '✨' : '🥚'}</div>
+                                        <div style={{fontSize:7, fontWeight:700, color:PC[egg.rarity], marginTop:2}}>{RARITY_LABELS[egg.rarity]}</div>
                                       </div>
                                     )
                                   })}
@@ -2365,40 +2379,60 @@ export default function HomePage() {
                               )}
                             </div>
 
-                            {/* Pet list */}
-                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
-                              <div style={{fontSize:10, color:'#94a5b8', marginBottom:6}}>🐾 寵物列表 ({pets.length})</div>
-                              {pets.length === 0 ? (
-                                <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🥚 尚未認養寵物</div>
-                              ) : (
-                                <div style={{maxHeight:200, overflow:'auto'}}>
-                                  {sorted.map((p, i) => {
-                                    const isFav = favorites.includes(p.id)
-                                    const isActive = i === activeIdx
-                                    return (
-                                      <div key={p.id || i} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
-                                        <div style={{fontSize:20, opacity: isActive ? 1 : 0.6}}>{p.name?.[0] || '🐣'}</div>
-                                        <div style={{flex:1, minWidth:0}}>
-                                          <div style={{display:'flex', alignItems:'center', gap:4}}>
-                                            <div style={{fontSize:11, fontWeight:600, color:'#e2e8f0'}}>{p.name || '無名'}</div>
-                                            {isActive && <div style={{fontSize:7, color:'#22c55e', background:'rgba(34,197,94,0.15)', padding:'1px 4px', borderRadius:4}}>活躍</div>}
-                                            {isFav && <div style={{fontSize:9, color:'#f59e0b'}}>⭐</div>}
-                                          </div>
-                                          <div style={{fontSize:8, color:'#5a6d85'}}>Lv.{p.level} {RARITY_LABELS[p.rarity] || p.rarity}</div>
-                                        </div>
-                                        <div style={{display:'flex', alignItems:'center', gap:4}}>
-                                          {p.skills && p.skills.length > 0 && <div style={{fontSize:7, color:'#94a5b8'}}>{p.skills.length}技</div>}
-                                          <button onClick={(e) => { e.stopPropagation(); if (!teamFull) toggleFavorite(p.id) }}
-                                            style={{border:'none', background:'rgba(59,130,246,0.12)', color: isFav ? '#f59e0b' : '#5a6d85', fontSize:14, cursor: 'pointer', padding:'2px 6px', borderRadius:4, fontFamily:'inherit'}}>
-                                            {isFav ? '★' : '☆'}
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )
-                                  })}
-                                </div>
-                              )}
+                            {/* ⭐ Team section */}
+                            <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+                              <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>⭐ 主力隊伍</div>
+                                <div style={{fontSize:10, color:'#5a6d85'}}>{favorites.length}/5</div>
+                              </div>
+                              <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:4}}>
+                                {Array.from({length:5}).map((_, slotIdx) => {
+                                  const pet = teamPets[slotIdx]
+                                  if (pet) return (
+                                    <div key={pet.id} onClick={() => setDetailPetId(pet.id)}
+                                      style={{textAlign:'center', padding:'6px 2px', borderRadius:6, background:'rgba(255,255,255,0.04)', border:`2px solid ${RARITY_COLORS[pet.rarity]}44`, cursor:'pointer', position:'relative'}}>
+                                      <PixelPetCanvas key={pet.id} seed={parseInt(pet.speciesId)||1} rarity={pet.rarity} evolutionStage={pet.evolutionStage} size={1.3} animation="idle" noAnim />
+                                      <div style={{fontSize:8, color:'#e2e8f0', marginTop:2}}>Lv.{pet.level}</div>
+                                      <div onClick={e => { e.stopPropagation(); toggleFavorite(pet.id) }}
+                                        style={{position:'absolute', top:0, right:0, fontSize:14, color:'#ef4444', cursor:'pointer', lineHeight:1}}>×</div>
+                                    </div>
+                                  )
+                                  return (
+                                    <div key={`empty-${slotIdx}`} style={{textAlign:'center', padding:'6px 2px', borderRadius:6, background:'rgba(255,255,255,0.02)', border:'2px dashed rgba(255,255,255,0.08)'}}>
+                                      <div style={{fontSize:14, opacity:0.2}}>+</div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
                             </div>
+
+                            {/* 🐾 Other pets grid */}
+                            {otherPets.length > 0 && (
+                              <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+                                <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                                  <div style={{fontSize:10, color:'#5a6d85'}}>🐾 其他寵物</div>
+                                  <div style={{fontSize:10, color:'#5a6d85'}}>{otherPets.length} 隻</div>
+                                </div>
+                                <div style={{maxHeight:180, overflow:'auto'}}>
+                                  <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:4, padding:'4px 0'}}>
+                                    {otherPets.map(p => {
+                                      const sc = RARITY_COLORS[p.rarity]
+                                      const origIdx = pets.indexOf(p)
+                                      return (
+                                        <div key={p.id} onClick={() => setDetailPetId(p.id)}
+                                          style={{textAlign:'center', padding:'6px 2px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`1px solid ${sc}33`, cursor:'pointer', position:'relative'}}>
+                                          <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.2} animation="idle" noAnim />
+                                          <div style={{fontSize:7, color:'#e2e8f0', marginTop:2}}>Lv.{p.level}</div>
+                                          {origIdx === activeIdx && <div style={{fontSize:6, color:'#22c55e', marginTop:1}}>活躍</div>}
+                                          <div onClick={e => { e.stopPropagation(); toggleFavorite(p.id) }}
+                                            style={{position:'absolute', top:0, right:0, fontSize:10, color:'#f59e0b', cursor:'pointer', lineHeight:1}}>+</div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </>
                         )
                       })()}
