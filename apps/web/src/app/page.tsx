@@ -2236,16 +2236,16 @@ export default function HomePage() {
                       )}
 
                       {/* ── 🐾 Pets preview: active pet summary ── */}
-                      {cardTab === 'pets' && (
+                      {cardTab === 'pets' && pet && (
                         <div style={{display:'flex', alignItems:'center', gap:10, padding:'4px 0', marginBottom:14}}>
-                          <div style={{fontSize:32}}>{pet?.name?.[0] || '🐣'}</div>
+                          <div style={{fontSize:32}}>{pet.name?.[0] || '🐣'}</div>
                           <div style={{flex:1, minWidth:0}}>
                             <div style={{display:'flex', alignItems:'center', gap:6}}>
-                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || ''}</div>
-                              <span style={{fontSize:9, color:'#94a5b8'}}>Lv.{pet?.level || 1}</span>
+                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet.name}</div>
+                              <span style={{fontSize:9, color:'#94a5b8'}}>Lv.{pet.level || 1}</span>
                             </div>
                             <div style={{marginTop:4, height:4, borderRadius:2, background:'#1e2a45', overflow:'hidden'}}>
-                              <div style={{width:`${((pet?.xp || 0) / ((pet?.level || 1) * 100) * 100).toFixed(1)}%`, height:'100%', borderRadius:2, background:'#22c55e', transition:'width 0.3s'}} />
+                              <div style={{width:`${((pet.xp || 0) / ((pet.level || 1) * 100) * 100).toFixed(1)}%`, height:'100%', borderRadius:2, background:'#22c55e', transition:'width 0.3s'}} />
                             </div>
                             <div style={{fontSize:9, color:'#5a6d85', marginTop:2}}>{pets.length} 隻寵物</div>
                           </div>
