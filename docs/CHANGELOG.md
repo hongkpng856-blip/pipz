@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.40.3 — Card Expands Full-Screen, Top Layer (z-index:1003) (2026-07-12)
+
+### Changed
+- **Card expands all the way to the top:** `CARD_TARGET_H` changed from `window.innerHeight * 0.52` (52% of screen) to `window.innerHeight - 50` (full screen minus header). The card can now be pulled from the bottom to the very top, covering the entire map.
+- **Card z-index raised to 1003 (top layer):** Moved from `zIndex:999` to `zIndex:1003`, placing the card above the header (1001), bottom nav (1001), and dev tools panel (1002). When fully expanded, the card covers ALL buttons and UI elements.
+
+### Code
+- `apps/web/src/app/page.tsx`:
+  - Line 334: `CARD_TARGET_H = window.innerHeight - 50` (was `* 0.52`)
+  - Line 2187: `zIndex:1003` (was `999`)
+
 ## v0.40.2 — Sync cardTab on Bottom Nav, Remove Map Details Row from Extended Content (2026-07-12)
 
 ### Fixed

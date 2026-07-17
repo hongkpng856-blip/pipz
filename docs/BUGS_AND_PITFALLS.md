@@ -837,3 +837,27 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Remove the entire 3-column row from the map extended content. Only the weekly bar chart remains in the map tab's extended section. |
 | **Code** | `apps/web/src/app/page.tsx` — lines ~2320-2334 (deleted in v0.40.2) |
 | **Prevention** | Never add visible UI elements that the user hasn't requested or confirmed, especially on a production app where the user is actively testing. A "show more" dynamic content system should be additive: start minimal, add per request. |
+
+## 18 — Card Z-Index Layer Stack (v0.40.3)
+
+### 18.1 Card Below Header — Buttons Clickable Through Card
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (overlay doesn't fully cover) |
+| **Symptom** | When the card was fully expanded, the header buttons (🔧, 🔑) and the bottom nav buttons were still visible and clickable above the card. The card was supposed to be the topmost layer, covering everything. |
+| **Root Cause** | The card had `zIndex:999`, but the header (`.header`) and bottom nav (`.bottom-nav`) both had `z-index:1001` via CSS. The dev tools panel had `zIndex:1002`. The card was below all of them in the stacking context. |
+| **Fix** | Set card `zIndex:1003` — one level above the highest competing element (dev tools panel at 1002). |
+| **Code** | `apps/web/src/app/page.tsx` — card wrapper `style.zIndex` (line ~2187) |
+| **Prevention** | Document the z-index layer stack in code comments. When adding new fixed/absolute elements, check the existing z-indices. Current stack (2026-07-12): map=1, header=1001, bottom-nav=1001, dev-panel=1002, card-overlay=1003. |
+
+### 18.2 Card Max Height Limited to 52% — Can't Reach Top
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (functional limitation) |
+| **Symptom** | User wanted the card to extend all the way to the top of the screen, but it stopped at ~52% of viewport height. |
+| **Root Cause** | `CARD_TARGET_H = window.innerHeight * 0.52`. The card's expansion was capped at half the screen. |
+| **Fix** | Change to `window.innerHeight - 50` (full screen minus 42px header + 8px padding). |
+| **Code** | `apps/web/src/app/page.tsx` — `CARD_TARGET_H` (line ~334) |
+| **Prevention** | When setting a max-height for draggable overlays, use viewport-relative calculations that account for known fixed elements (header height, safe areas). Percentage-based caps that predate a "full expansion" feature will need updating. |
