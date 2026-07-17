@@ -2454,9 +2454,6 @@ export default function HomePage() {
                             <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有佔領任何地</div>
                           )}
                         </div>
-                        <button onClick={() => setTab('properties')} style={{display:'flex', alignItems:'center', gap:4, marginTop:8, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, color:'#f59e0b', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🏠 詳細地產頁 →
-                        </button>
                       </>)}
 
                       {/* ── 🏪 Community extended ── */}
@@ -2464,9 +2461,6 @@ export default function HomePage() {
                         <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0', color:'#5a6d85', fontSize:10, fontStyle:'italic'}}>
                           附近玩家 · 商店 · 排行榜（開發中）
                         </div>
-                        <button onClick={() => setTab('community')} style={{display:'flex', alignItems:'center', gap:4, marginTop:8, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, color:'#06b6d4', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🏪 詳細社群頁 →
-                        </button>
                       </>)}
 
                       {/* ── 🎒 Backpack extended ── */}
@@ -2474,9 +2468,6 @@ export default function HomePage() {
                         <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'10px 0', color:'#5a6d85', fontSize:10, fontStyle:'italic'}}>
                           道具 · 裝備 · 使用（開發中）
                         </div>
-                        <button onClick={() => setTab('inventory')} style={{display:'flex', alignItems:'center', gap:4, marginTop:8, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, color:'#8b5cf6', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🎒 詳細背包頁 →
-                        </button>
                       </>)}
                     </div>
                   </div>
