@@ -1604,23 +1604,22 @@ export default function HomePage() {
       const isFav = prev.includes(petId)
       if (isFav) {
         if (user) setFavoriteOrder(petId, null)
-        // If removing the active pet's favorite, switch to first remaining fav or keep current
-        const newFavs = prev.filter(id => id !== petId)
-        if (newFavs.length > 0) {
-          const newActivePetId = newFavs[0]
-          const newIdx = pets.findIndex(p => p.id === newActivePetId)
-          if (newIdx >= 0) setActiveIdx(newIdx)
-        }
-        return newFavs
+        return prev.filter(id => id !== petId)
       }
       if (prev.length >= 5) return prev
       if (user) setFavoriteOrder(petId, prev.length + 1)
-      // If this is the first favorite, make it the active pet
-      const newFavs = [...prev, petId]
-      const newIdx = pets.findIndex(p => p.id === petId)
-      if (newIdx >= 0 && prev.length === 0) setActiveIdx(newIdx)
-      return newFavs
+      return [...prev, petId]
     })
+    // After state updates: switch active pet to first favorite
+    setTimeout(() => {
+      setFavorites((fav) => {
+        if (fav.length > 0) {
+          const idx = pets.findIndex(p => p.id === fav[0])
+          if (idx >= 0) setActiveIdx(idx)
+        }
+        return fav // don't modify
+      })
+    }, 0)
   }
 
   // ── Pet action helpers (deprecated: removed feed/pet/play) ──
@@ -2251,7 +2250,7 @@ export default function HomePage() {
                           <div style={{fontSize:32}}>{pet?.name?.[0] || '🐣'}</div>
                           <div style={{flex:1, minWidth:0}}>
                             <div style={{display:'flex', alignItems:'center', gap:6}}>
-                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || (pets.length > 0 ? '選擇寵物' : '無寵物')}</div>
+                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || '無寵物'}</div>
                               <span style={{fontSize:9, color:'#94a5b8'}}>Lv.{pet?.level || 1}</span>
                             </div>
                             <div style={{marginTop:4, height:4, borderRadius:2, background:'#1e2a45', overflow:'hidden'}}>
