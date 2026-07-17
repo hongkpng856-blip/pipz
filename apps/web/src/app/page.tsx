@@ -1604,11 +1604,22 @@ export default function HomePage() {
       const isFav = prev.includes(petId)
       if (isFav) {
         if (user) setFavoriteOrder(petId, null)
-        return prev.filter(id => id !== petId)
+        // If removing the active pet's favorite, switch to first remaining fav or keep current
+        const newFavs = prev.filter(id => id !== petId)
+        if (newFavs.length > 0) {
+          const newActivePetId = newFavs[0]
+          const newIdx = pets.findIndex(p => p.id === newActivePetId)
+          if (newIdx >= 0) setActiveIdx(newIdx)
+        }
+        return newFavs
       }
       if (prev.length >= 5) return prev
       if (user) setFavoriteOrder(petId, prev.length + 1)
-      return [...prev, petId]
+      // If this is the first favorite, make it the active pet
+      const newFavs = [...prev, petId]
+      const newIdx = pets.findIndex(p => p.id === petId)
+      if (newIdx >= 0 && prev.length === 0) setActiveIdx(newIdx)
+      return newFavs
     })
   }
 
@@ -2240,7 +2251,7 @@ export default function HomePage() {
                           <div style={{fontSize:32}}>{pet?.name?.[0] || '🐣'}</div>
                           <div style={{flex:1, minWidth:0}}>
                             <div style={{display:'flex', alignItems:'center', gap:6}}>
-                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || '無寵物'}</div>
+                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || (pets.length > 0 ? '選擇寵物' : '無寵物')}</div>
                               <span style={{fontSize:9, color:'#94a5b8'}}>Lv.{pet?.level || 1}</span>
                             </div>
                             <div style={{marginTop:4, height:4, borderRadius:2, background:'#1e2a45', overflow:'hidden'}}>
