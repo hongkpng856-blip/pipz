@@ -2257,7 +2257,7 @@ export default function HomePage() {
                           <div style={{fontSize:32}}>🏡</div>
                           <div>
                             <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>我的地產</div>
-                            <div style={{fontSize:10, color:'#5a6d85', marginTop:2}}>{ownedCells?.length || 0} 佔領 · {allFlagCells?.length || 0} 插旗</div>
+                            <div style={{fontSize:10, color:'#5a6d85', marginTop:2}}>{properties.length} 佔領 · {(allFlagCells || []).length} 插旗</div>
                           </div>
                         </div>
                       )}
@@ -2311,7 +2311,7 @@ export default function HomePage() {
                         {/* 佔領 + 寵物狀態 */}
                         <div style={{display:'flex', gap:20, padding:'6px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                           <div style={{textAlign:'center'}}>
-                            <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{ownedCells?.length || 0}</div>
+                            <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{properties.length}</div>
                             <div style={{fontSize:9, color:'#5a6d85'}}>佔領地</div>
                           </div>
                           <div style={{textAlign:'center'}}>
@@ -2440,18 +2440,35 @@ export default function HomePage() {
                       {/* ── 🏠 Properties extended ── */}
                       {cardTab === 'properties' && (<>
                         <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
-                          <div style={{fontSize:10, color:'#94a5b8', marginBottom:6}}>🏴 佔領區域</div>
-                          {ownedCells && ownedCells.length > 0 ? (
-                            <div style={{maxHeight:120, overflow:'auto'}}>
-                              {ownedCells.slice(0, 5).map((c, i) => (
-                                <div key={i} style={{fontSize:10, color:'#e2e8f0', padding:'3px 0', borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
-                                  📍 ({c.row}, {c.col})
-                                </div>
-                              ))}
-                              {ownedCells.length > 5 && <div style={{fontSize:9, color:'#5a6d85', padding:'3px 0'}}>...仲有 {ownedCells.length - 5} 塊</div>}
-                            </div>
+                          <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
+                            <div style={{fontSize:10, color:'#94a5b8'}}>🏠 地產列表</div>
+                            <div style={{fontSize:10, color:'#5a6d85'}}>{properties.length} 塊</div>
+                          </div>
+                          {!user ? (
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🔑 需要登入先可以購買地皮</div>
+                          ) : properties.length === 0 ? (
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🏠 未擁有任何地皮</div>
                           ) : (
-                            <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有佔領任何地</div>
+                            <div style={{maxHeight:180, overflow:'auto'}}>
+                              <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
+                                {properties.slice(0, 9).map(prop => {
+                                  const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
+                                  const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
+                                  const color = colors[zoneIdx]
+                                  const zoneNames = ['紫晶區', '翠綠區', '琥珀區', '碧藍區', '赤紅區', '湛藍區']
+                                  return (
+                                    <div key={prop.id} onClick={() => setDetailProperty(prop)}
+                                      style={{padding:'6px 4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`1px solid ${color}33`, cursor:'pointer', textAlign:'center', position:'relative'}}>
+                                      <div style={{position:'absolute', top:0, left:0, right:0, height:1, background:color, borderRadius:'6px 6px 0 0'}} />
+                                      <div style={{fontSize:8, fontWeight:600, color:'#e2e8f0', marginTop:3}}>{prop.cellRow+1}區 {prop.cellCol+1}號</div>
+                                      <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>{zoneNames[zoneIdx]}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(prop.price)}</div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                              {properties.length > 9 && <div style={{fontSize:9, color:'#5a6d85', textAlign:'center', padding:'4px 0'}}>...仲有 {properties.length - 9} 塊</div>}
+                            </div>
                           )}
                         </div>
                       </>)}
