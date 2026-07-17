@@ -331,7 +331,7 @@ export default function HomePage() {
     el.addEventListener('touchmove', stopTouch, { passive: false })
     return () => { el.removeEventListener('touchstart', stopTouch); el.removeEventListener('touchmove', stopTouch) }
   }, [])
-  const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.52) : 400
+  const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight - 50) : 400
   const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (innerH + HANDLE_H + navH))
 
   useEffect(() => { setReady(true) }, [])
