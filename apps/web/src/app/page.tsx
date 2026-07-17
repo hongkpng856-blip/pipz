@@ -2241,7 +2241,7 @@ export default function HomePage() {
                           <div style={{fontSize:32}}>{pet?.name?.[0] || '🐣'}</div>
                           <div style={{flex:1, minWidth:0}}>
                             <div style={{display:'flex', alignItems:'center', gap:6}}>
-                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || '無寵物'}</div>
+                              <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet?.name || ''}</div>
                               <span style={{fontSize:9, color:'#94a5b8'}}>Lv.{pet?.level || 1}</span>
                             </div>
                             <div style={{marginTop:4, height:4, borderRadius:2, background:'#1e2a45', overflow:'hidden'}}>
