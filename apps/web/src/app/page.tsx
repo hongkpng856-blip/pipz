@@ -2325,31 +2325,83 @@ export default function HomePage() {
                         </div>
                       </>)}
 
-                      {/* ── 🐾 Pets extended: list + skills ── */}
-                      {cardTab === 'pets' && (<>
-                        {pets.length > 0 ? (
-                          <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
-                            <div style={{fontSize:10, color:'#94a5b8', marginBottom:6}}>🐾 全部寵物 ({pets.length})</div>
-                            {pets.map((p, i) => (
-                              <div key={p.id || i} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
-                                <div style={{fontSize:20}}>{p.name?.[0] || '🐣'}</div>
-                                <div style={{flex:1, minWidth:0}}>
-                                  <div style={{fontSize:11, fontWeight:600, color:'#e2e8f0'}}>{p.name || '無名'}</div>
-                                  <div style={{fontSize:9, color:'#5a6d85'}}>Lv.{p.level} {RARITY_LABELS[p.rarity] || p.rarity}</div>
+                      {/* ── 🐾 Pets extended: full pet content ── */}
+                      {cardTab === 'pets' && (() => {
+                        const sorted = [...pets].sort((a, b) => {
+                          const af = favorites.includes(a.id) ? 0 : 1
+                          const bf = favorites.includes(b.id) ? 0 : 1
+                          if (af !== bf) return af - bf
+                          return (b.createdAt || 0) - (a.createdAt || 0)
+                        })
+                        const activePetSkills = pets[activeIdx]?.skills ?? []
+                        const energyMult = 1 + getEnergyBonus(activePetSkills)
+                        const displayEnergy = Math.round(totalSteps * energyMult)
+                        const teamFull = favorites.filter(fid => pets.find(p => p.id === fid)).length >= 5
+                        return (
+                          <>
+                            {/* Energy + Eggs */}
+                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                              <div style={{display:'flex', alignItems:'center', gap:10}}>
+                                <div style={{width:30, height:30, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(245,158,11,0.12)', flexShrink:0}}>
+                                  <svg width="16" height="24" viewBox="0 0 26 38" fill="none"><path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b"/></svg>
                                 </div>
-                                {p.skills && p.skills.length > 0 && (
-                                  <div style={{fontSize:8, color:'#f59e0b'}}>{p.skills.length}技能</div>
-                                )}
+                                <div style={{fontSize:20, fontWeight:700, color:'#f59e0b'}}>{formatSteps(displayEnergy)}</div>
+                                <div style={{fontSize:9, color:'#5a6d85'}}>⚡ 能量</div>
+                                {eggs.length > 0 && <div style={{marginLeft:'auto', fontSize:12, color:'#94a5b8'}}>🥚 ×{eggs.length}</div>}
                               </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{textAlign:'center', padding:'20px 0', color:'#5a6d85', fontSize:11}}>🥚 尚未認養寵物</div>
-                        )}
-                        <button onClick={() => setTab('pets')} style={{display:'flex', alignItems:'center', gap:4, marginTop:8, background:'rgba(255,255,255,0.05)', border:'none', borderRadius:8, padding:'7px 14px', fontSize:10, color:'#22c55e', cursor:'pointer', fontFamily:'inherit', width:'100%', justifyContent:'center'}}>
-                          🐾 詳細寵物頁 →
-                        </button>
-                      </>)}
+                              {/* Eggs grid */}
+                              {eggs.length > 0 && (
+                                <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:4, marginTop:6}}>
+                                  {eggs.map(egg => {
+                                    const isHatching = eggHatchingId === egg.id
+                                    return (
+                                      <div key={egg.id} style={{textAlign:'center', padding:'4px', borderRadius:6, background: isHatching ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)', cursor: isHatching ? 'default' : 'pointer', opacity: isHatching ? 1 : 0.7}} onClick={() => { if (!isHatching) handleOpenEgg(egg.id) }}>
+                                        <div style={{fontSize:16}}>{isHatching ? '🐣' : '🥚'}</div>
+                                        <div style={{fontSize:7, color: isHatching ? '#f59e0b' : '#5a6d85', marginTop:1}}>{"★".repeat(egg.rarity + 1)}</div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Pet list */}
+                            <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
+                              <div style={{fontSize:10, color:'#94a5b8', marginBottom:6}}>🐾 寵物列表 ({pets.length})</div>
+                              {pets.length === 0 ? (
+                                <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🥚 尚未認養寵物</div>
+                              ) : (
+                                <div style={{maxHeight:200, overflow:'auto'}}>
+                                  {sorted.map((p, i) => {
+                                    const isFav = favorites.includes(p.id)
+                                    const isActive = i === activeIdx
+                                    return (
+                                      <div key={p.id || i} style={{display:'flex', alignItems:'center', gap:8, padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+                                        <div style={{fontSize:20, opacity: isActive ? 1 : 0.6}}>{p.name?.[0] || '🐣'}</div>
+                                        <div style={{flex:1, minWidth:0}}>
+                                          <div style={{display:'flex', alignItems:'center', gap:4}}>
+                                            <div style={{fontSize:11, fontWeight:600, color:'#e2e8f0'}}>{p.name || '無名'}</div>
+                                            {isActive && <div style={{fontSize:7, color:'#22c55e', background:'rgba(34,197,94,0.15)', padding:'1px 4px', borderRadius:4}}>活躍</div>}
+                                            {isFav && <div style={{fontSize:9, color:'#f59e0b'}}>⭐</div>}
+                                          </div>
+                                          <div style={{fontSize:8, color:'#5a6d85'}}>Lv.{p.level} {RARITY_LABELS[p.rarity] || p.rarity}</div>
+                                        </div>
+                                        <div style={{display:'flex', alignItems:'center', gap:4}}>
+                                          {p.skills && p.skills.length > 0 && <div style={{fontSize:7, color:'#94a5b8'}}>{p.skills.length}技</div>}
+                                          <button onClick={(e) => { e.stopPropagation(); if (!teamFull) toggleFavorite(p.id) }}
+                                            style={{border:'none', background:'rgba(59,130,246,0.12)', color: isFav ? '#f59e0b' : '#5a6d85', fontSize:14, cursor: 'pointer', padding:'2px 6px', borderRadius:4, fontFamily:'inherit'}}>
+                                            {isFav ? '★' : '☆'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )
+                      })()}
 
                       {/* ── 🏠 Properties extended ── */}
                       {cardTab === 'properties' && (<>
