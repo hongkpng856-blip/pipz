@@ -861,3 +861,34 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Change to `window.innerHeight - 50` (full screen minus 42px header + 8px padding). |
 | **Code** | `apps/web/src/app/page.tsx` — `CARD_TARGET_H` (line ~334) |
 | **Prevention** | When setting a max-height for draggable overlays, use viewport-relative calculations that account for known fixed elements (header height, safe areas). Percentage-based caps that predate a "full expansion" feature will need updating. |
+
+### 19. Property tab showed "0 佔領" — used `Set` APIs on incompatible data
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 High (data not showing) |
+| **Symptom** | 🏠 property tab showed "0 佔領" and "未有佔領任何地" even when user had properties. |
+| **Root Cause** | Card property content used `ownedCells` (a JS `Set<string>`) and called `.length` / `.slice()`. A `Set` uses `.size`, no `.slice()`. Original page uses `properties` (Array). |
+| **Fix** | Replaced all `ownedCells` with `properties` array. Use `properties.length`, `properties.slice()`, map over Property objects with zone/row/col/price data. |
+| **Code** | `apps/web/src/app/page.tsx` — property preview + extended section |
+| **Prevention** | Always check variable type before calling `.length`. `Set` uses `.size`, `Map` too. TypeScript should ideally catch these mismatches. |
+
+### 20. Community and Inventory tabs showed placeholder text
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Symptom** | 🏪 and 🎒 tabs showed "開發中" instead of real market listings and items. |
+| **Root Cause** | Card content was hand-written placeholders. Original pages use `myListings`, `marketListings`, `listedProperties`, `inventory`, `HELP_ITEM_POOL`, `EQUIPMENT_POOL`. |
+| **Fix** | Port original page content into card extended sections — listing grids with `PixelPetCanvas`, zone-colored property cards, inventory item cards. |
+| **Code** | `apps/web/src/app/page.tsx` — community + inventory extended |
+
+### 21. "無寵物" preview block removed entirely
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low |
+| **Symptom** | User flagged "無寵物" as unwanted, said it never existed in original app. |
+| **Root Cause** | Pet preview used `pet?.name || '無寵物'` as fallback, then hidden when pet null. User wanted entire block gone regardless. |
+| **Fix** | Deleted the entire pet preview block (`cardTab === 'pets' && pet && (...)`). All pet data in extended area. |
+| **Code** | `apps/web/src/app/page.tsx` — line ~2238, deleted 17 lines |

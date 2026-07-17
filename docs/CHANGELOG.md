@@ -1,6 +1,22 @@
 # Changelog
 
-## v0.40.3 — Card Expands Full-Screen, Top Layer (z-index:1003) (2026-07-12)
+## v0.40.4 — Unified Card Tabs with Real Data, Removed Pet Preview Block (2026-07-18)
+
+### Changed
+- **Card tabs show real data:** All 5 card tabs now use the same data sources as the original full pages:
+  - 🐾 Pets: Energy + eggs, team grid, other pets grid with `PixelPetCanvas`
+  - 🏠 Properties: Real property cards with zone/row/col/price via `properties` array (was broken — used `ownedCells` Set)
+  - 🏪 Community: My listings, marketplace, property market with `myListings`/`marketListings`/`listedProperties`
+  - 🎒 Backpack: Items list with `HELP_ITEM_POOL`/`EQUIPMENT_POOL`
+- **Removed pet preview block entirely:** The pet tab no longer has a preview section (icon + name + Lv + XP bar). All pet content is in the extended area only.
+- **Removed all "詳細" buttons:** Card is self-contained; no separate page navigation needed.
+- **Removed `cardTab` navigation from bottom nav:** Bottom nav sets `tab` only, card nav sets `cardTab` only.
+- **Map always stays visible:** Card tab switching no longer navigates away from the map.
+
+### Fixed
+- **Property tab showed "0 佔領":** Was using `ownedCells` (a `Set`) with `.length`/`.slice()` which don't work. Switched to `properties` array (same as original properties page).
+- **Community/Inventory tabs showed placeholders:** Now use real data from `myListings`, `marketListings`, `listedProperties`, `inventory`, `HELP_ITEM_POOL`, `EQUIPMENT_POOL`.
+- **All `ownedCells.length` → `properties.length`** and `allFlagCells.length` kept as-is (it's an array).
 
 ### Changed
 - **Card expands all the way to the top:** `CARD_TARGET_H` changed from `window.innerHeight * 0.52` (52% of screen) to `window.innerHeight - 50` (full screen minus header). The card can now be pulled from the bottom to the very top, covering the entire map.
