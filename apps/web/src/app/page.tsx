@@ -1610,16 +1610,7 @@ export default function HomePage() {
       if (user) setFavoriteOrder(petId, prev.length + 1)
       return [...prev, petId]
     })
-    // After state updates: switch active pet to first favorite
-    setTimeout(() => {
-      setFavorites((fav) => {
-        if (fav.length > 0) {
-          const idx = pets.findIndex(p => p.id === fav[0])
-          if (idx >= 0) setActiveIdx(idx)
-        }
-        return fav // don't modify
-      })
-    }, 0)
+    // activeIdx sync is handled by the useEffect at line ~474
   }
 
   // ── Pet action helpers (deprecated: removed feed/pet/play) ──
