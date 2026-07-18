@@ -892,3 +892,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root Cause** | Pet preview used `pet?.name || '無寵物'` as fallback, then hidden when pet null. User wanted entire block gone regardless. |
 | **Fix** | Deleted the entire pet preview block (`cardTab === 'pets' && pet && (...)`). All pet data in extended area. |
 | **Code** | `apps/web/src/app/page.tsx` — line ~2238, deleted 17 lines |
+
+### 22. Card content clipped — "other pets" section couldn't scroll
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (content inaccessible) |
+| **Symptom** | When the card was fully expanded, the "other pets" section showed only the first few pets and the rest were clipped. User couldn't scroll to see them all. |
+| **Root Cause** | Card content wrapper had `overflow:hidden`, which clips content beyond the wrapper's height. Combined with `maxHeight:180` on inner sections, the effective visible area was very small. |
+| **Fix** | Change wrapper from `overflow:hidden` → `overflow:auto`. Remove all `maxHeight` + `.slice()` caps on inner sections. When collapsed, content fits → no scrollbar. When expanded and content overflows → user can scroll naturally. |
+| **Code** | `apps/web/src/app/page.tsx` — line ~2199 wrapper, lines ~2400/2436/2475/2497/2519/2563 for inner limits |
+| **Prevention** | When building a draggable reveal panel, test with real data volumes. Clip limits like `maxHeight:180` and `.slice(0,6)` seem fine in dev but break when users have 50+ pets. Use the actual content height to determine expansion limits, or use `overflow:auto` as the safe default. |

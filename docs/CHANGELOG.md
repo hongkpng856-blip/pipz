@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.40.5 — Scrollable Card Content, No Artificial Limits (2026-07-18)
+
+### Fixed
+- **Card content wrapper:** Changed from `overflow:hidden` to `overflow:auto`. When the card is fully expanded and content is taller than the viewport, users can now scroll to see all pets/items. Collapsed state is unaffected (content fits, no scrollbar).
+- **Removed all `maxHeight` + `.slice()` limits:** The "其他寵物", properties, inventory, and community sections no longer have arbitrary caps on how many items are visible. All items display fully.
+
+### Code
+- `apps/web/src/app/page.tsx`:
+  - Line ~2199: `overflow:hidden` → `overflow:auto`
+  - Line ~2400: removed `maxHeight:180` from other pets grid
+  - Line ~2436: removed `maxHeight:180` + `.slice(0,9)` + "仲有 X 塊" from properties
+  - Line ~2563: removed `maxHeight:200` from inventory
+  - Lines ~2475/2497/2519: removed `.slice(0,6)` from community sections
+
 ## v0.40.4 — Unified Card Tabs with Real Data, Removed Pet Preview Block (2026-07-18)
 
 ### Changed
