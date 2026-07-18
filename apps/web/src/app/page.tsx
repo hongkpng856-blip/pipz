@@ -2185,7 +2185,7 @@ export default function HomePage() {
                     document.addEventListener('pointermove', onMove);
                     document.addEventListener('pointerup', onUp);
                   }}
-                  style={{position:'absolute', bottom:0, left:0, right:0, zIndex:1003, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflow:'hidden', display:'flex', flexDirection:'column', height: innerH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
+                  style={{position:'absolute', bottom:0, left:0, right:0, zIndex:1003, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflowX:'hidden', overflowY:'hidden', display:'flex', flexDirection:'column', height: innerH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
@@ -2199,7 +2199,7 @@ export default function HomePage() {
                     }} />
                   </div>
                   {/* ── Collapsible content: switches by cardTab ── */}
-                  <div style={{flex:1, overflow:'hidden'}}>
+                  <div style={{flex:1, overflowX:'hidden', overflowY:'hidden'}}>
                     {/* ── Preview (measured for collapsed height) ── */}
                     <div ref={innerRef} style={{padding:'0 16px'}}>
                       {/* ── 🗺️ Map preview: steps numbers ── */}
@@ -2397,7 +2397,7 @@ export default function HomePage() {
                                   <div style={{fontSize:10, color:'#5a6d85'}}>🐾 其他寵物</div>
                                   <div style={{fontSize:10, color:'#5a6d85'}}>{otherPets.length} 隻</div>
                                 </div>
-                                <div style={{maxHeight:'50vh', overflowY:'auto'}}>
+                                <div style={{maxHeight:'50vh', overflowY:'auto', overflowX:'hidden', WebkitOverflowScrolling:'touch', overscrollBehavior:'contain'}}>
                                   <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:4, padding:'4px 0'}}>
                                     {otherPets.map(p => {
                                       const sc = RARITY_COLORS[p.rarity]
