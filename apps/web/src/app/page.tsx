@@ -2199,7 +2199,7 @@ export default function HomePage() {
                     }} />
                   </div>
                   {/* ── Collapsible content: switches by cardTab ── */}
-                  <div style={{flex:1, overflow:'hidden'}}>
+                  <div style={{flex:1, overflow:'auto'}}>
                     {/* ── Preview (measured for collapsed height) ── */}
                     <div ref={innerRef} style={{padding:'0 16px'}}>
                       {/* ── 🗺️ Map preview: steps numbers ── */}
@@ -2397,7 +2397,7 @@ export default function HomePage() {
                                   <div style={{fontSize:10, color:'#5a6d85'}}>🐾 其他寵物</div>
                                   <div style={{fontSize:10, color:'#5a6d85'}}>{otherPets.length} 隻</div>
                                 </div>
-                                <div style={{overflow:'auto'}}>
+                                <div>
                                   <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:4, padding:'4px 0'}}>
                                     {otherPets.map(p => {
                                       const sc = RARITY_COLORS[p.rarity]
