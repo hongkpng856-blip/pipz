@@ -903,3 +903,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Change wrapper from `overflow:hidden` → `overflow:auto`. Remove all `maxHeight` + `.slice()` caps on inner sections. When collapsed, content fits → no scrollbar. When expanded and content overflows → user can scroll naturally. |
 | **Code** | `apps/web/src/app/page.tsx` — line ~2199 wrapper, lines ~2400/2436/2475/2497/2519/2563 for inner limits |
 | **Prevention** | When building a draggable reveal panel, test with real data volumes. Clip limits like `maxHeight:180` and `.slice(0,6)` seem fine in dev but break when users have 50+ pets. Use the actual content height to determine expansion limits, or use `overflow:auto` as the safe default. |
+
+### 23. Horizontal scrollbar on card — content overflowed card width
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (cosmetic) |
+| **Symptom** | A horizontal scrollbar appeared on the card, caused by content extending beyond the card's viewport width. |
+| **Root Cause** | `overflow:'hidden'` (shorthand) sets both x and y, but the card's content grid (`repeat(4, 1fr)`) or PixelPetCanvas could push wider than the card's left:0/right:0 bounds on certain devices. |
+| **Fix** | Explicitly set `overflowX:'hidden'` and `overflowY:'hidden'` on the card container + flex wrapper. On the "other pets" scroll container, add `overflowX:'hidden'` alongside `overflowY:'auto'`, plus `overscrollBehavior:'contain'` and `WebkitOverflowScrolling:'touch'` for smooth iOS scrolling. |
+| **Code** | `apps/web/src/app/page.tsx` — line ~2188 (card), ~2199 (wrapper), ~2400 (scroll container) |
+| **Prevention** | When using `overflow:auto` for vertical scrolling on a container, always pair with `overflowX:'hidden'` to prevent accidental horizontal overflow. Add `overscrollBehavior:'contain'` to prevent scroll-chaining on mobile. |
