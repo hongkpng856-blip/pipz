@@ -2397,7 +2397,7 @@ export default function HomePage() {
                                   <div style={{fontSize:10, color:'#5a6d85'}}>🐾 其他寵物</div>
                                   <div style={{fontSize:10, color:'#5a6d85'}}>{otherPets.length} 隻</div>
                                 </div>
-                                <div style={{maxHeight:180, overflow:'auto'}}>
+                                <div style={{overflow:'auto'}}>
                                   <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:4, padding:'4px 0'}}>
                                     {otherPets.map(p => {
                                       const sc = RARITY_COLORS[p.rarity]
@@ -2433,9 +2433,9 @@ export default function HomePage() {
                           ) : properties.length === 0 ? (
                             <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🏠 未擁有任何地皮</div>
                           ) : (
-                            <div style={{maxHeight:180, overflow:'auto'}}>
+                            <div style={{overflow:'auto'}}>
                               <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
-                                {properties.slice(0, 9).map(prop => {
+                                {properties.map(prop => {
                                   const zoneIdx = getZoneIdx(prop.cellRow, prop.cellCol)
                                   const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                                   const color = colors[zoneIdx]
@@ -2451,7 +2451,6 @@ export default function HomePage() {
                                   )
                                 })}
                               </div>
-                              {properties.length > 9 && <div style={{fontSize:9, color:'#5a6d85', textAlign:'center', padding:'4px 0'}}>...仲有 {properties.length - 9} 塊</div>}
                             </div>
                           )}
                         </div>
@@ -2473,7 +2472,7 @@ export default function HomePage() {
                                 <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有上架 — 喺寵物詳細頁可以上架</div>
                               ) : (
                                 <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
-                                  {myListings.slice(0,6).map(p => (
+                                  {myListings.map(p => (
                                     <div key={p.id} onClick={() => setDetailPetId(p.id)}
                                       style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
                                       <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
@@ -2495,7 +2494,7 @@ export default function HomePage() {
                                 <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>市集暫時未有寵物出售</div>
                               ) : (
                                 <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
-                                  {marketListings.slice(0,6).map(p => (
+                                  {marketListings.map(p => (
                                     <div key={p.id} onClick={() => viewMarketPet(p)}
                                       style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
                                       <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
@@ -2517,7 +2516,7 @@ export default function HomePage() {
                                 <div style={{fontSize:10, color:'#5a6d85', fontStyle:'italic'}}>未有地皮出售</div>
                               ) : (
                                 <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
-                                  {listedProperties.slice(0,6).map(p => {
+                                  {listedProperties.map(p => {
                                     const zoneIdx = getZoneIdx(p.cellRow, p.cellCol)
                                     const colors = ['#8b5cf6', '#22c55e', '#f59e0b', '#06b6d4', '#ef4444', '#3b82f6']
                                     const color = colors[zoneIdx]
@@ -2560,7 +2559,7 @@ export default function HomePage() {
                                 return { ...e, def }
                               }).filter((x: any) => x.def)
                               return (
-                                <div style={{maxHeight:200, overflow:'auto', display:'flex', flexDirection:'column', gap:4}}>
+                                <div style={{overflow:'auto', display:'flex', flexDirection:'column', gap:4}}>
                                   {items.map((item: any, i: number) => {
                                     const def = item.def
                                     const rarColor = def.rarity ? (RARITY_COLORS[def.rarity] || '#9ca3af') : '#9ca3af'
