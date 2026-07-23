@@ -925,3 +925,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Raise all map overlay buttons (GPS badge, GPS toggle, grid toggle, trail overview) from z-index:1000 to z-index:1004 so they sit above the card. |
 | **Code** | `apps/web/src/app/globals.css` — lines 881, 927, 1000, 973 (now 1004) |
 | **Prevention** | Maintain a z-index layer chart. When any layer's z-index changes, verify all overlays in the same stacking context. |
+
+### 24. Zooming causes grid overlays (monsters/shops) to break or accumulate
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (visual clutter) |
+| **Symptom** | After zooming in/out, monster and shop markers show at wrong positions or accumulate. The grid auto-hide at low zoom doesn't clean up overlays, causing duplication when re-enabled. |
+| **Root Cause** | `updateGrid()` is called on `zoomend`/`moveend` (line 1053) but only refreshes grid rectangles — `placeMonstersOnGrid` and `placeShopsOnGrid` were NOT called on view change. When grid auto-hides (zoomFactor <= 0), only `gridVisibleRef` was toggled; overlays stayed on the map. |
+| **Fix** | 1) Add `placeMonstersOnGrid` + `placeShopsOnGrid` to the `onViewChange` handler so overlays refresh on every pan/zoom. 2) Clean up flag/monster/shop groups when grid auto-hides at low zoom. |
+| **Code** | `apps/web/src/app/components/RealMap.tsx` — line ~1050 (onViewChange), line ~252 (auto-hide cleanup) |
+| **Prevention** | Any overlay placement logic tied to map bounds must be refreshed on every zoom/move event. If the grid auto-toggles off, all associated overlays must be fully removed, not just hidden. |

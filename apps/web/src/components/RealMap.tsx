@@ -440,6 +440,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       monsterGroupRef.current = null
     }
 
+    // Skip if zoom too low — markers aren't visible anyway
+    if (map.getZoom() < 14) return
+
     const anchor = anchorRef.current
     if (!anchor) return
 
@@ -457,6 +460,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
 
     const group = L.layerGroup([])
+
+    // Safety cap: max 5000 cells to prevent lag when zoomed far out
+    const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1)
+    if (totalCells > 5000) return group
 
     for (let row = minRow; row <= maxRow; row++) {
       for (let col = minCol; col <= maxCol; col++) {
@@ -501,6 +508,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       map.removeLayer(shopGroupRef.current)
       shopGroupRef.current = null
     }
+
+    // Skip if zoom too low — markers aren't visible anyway
+    if (map.getZoom() < 14) return
+
     const bounds = map.getBounds()
     const anchor = anchorRef.current
     if (!anchor) return
@@ -516,6 +527,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     allFlagCellsRef.current.forEach(c => ownedSet.add(`${c.cellRow},${c.cellCol}`))
 
     const group = L.layerGroup([])
+    // Safety cap: max 5000 cells to prevent lag when zoomed far out
+    const totalCells = (maxRow - minRow + 1) * (maxCol - minCol + 1)
+    if (totalCells > 5000) return group
     for (let row = minRow; row <= maxRow; row++) {
       for (let col = minCol; col <= maxCol; col++) {
         const cellKey = `${row},${col}`
@@ -1059,13 +1073,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     updateGrid(map, GRID_ANCHOR)
     if (gridVisibleRef.current) placeAllFlags(map)
 
-    // Dynamic grid: redraw on every pan/zoom
+    // Dynamic grid: redraw on every pan/zoom (throttled)
+    let viewChangePending = false
     const onViewChange = () => {
-      if (anchorRef.current) updateGrid(map, anchorRef.current)
-      if (gridVisibleRef.current && anchorRef.current) {
-        placeMonstersOnGrid(map)
-        placeShopsOnGrid(map)
-      }
+      if (viewChangePending) return
+      viewChangePending = true
+      requestAnimationFrame(() => {
+        viewChangePending = false
+        if (anchorRef.current) updateGrid(map, anchorRef.current)
+        if (gridVisibleRef.current && anchorRef.current) {
+          placeMonstersOnGrid(map)
+          placeShopsOnGrid(map)
+        }
+      })
     }
     map.on('moveend zoomend', onViewChange)
 
