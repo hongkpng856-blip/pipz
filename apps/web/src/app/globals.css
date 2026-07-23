@@ -878,7 +878,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 1004;
+  z-index: 1000;
   background: rgba(11,17,32,0.75);
   border: 1px solid rgba(68,204,255,0.3);
   border-radius: 8px;
@@ -924,7 +924,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   position: absolute;
   top: 226px;
   right: 10px;
-  z-index: 1004;
+  z-index: 1000;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -970,7 +970,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   position: absolute;
   top: 178px;
   right: 10px;
-  z-index: 1004;
+  z-index: 1000;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -999,7 +999,7 @@ body { height: 100dvh; overflow: hidden; width: 100%; }
   position: absolute;
   top: 130px;
   right: 10px;
-  z-index: 1004;
+  z-index: 1000;
   width: 40px;
   height: 40px;
   border-radius: 50%;
