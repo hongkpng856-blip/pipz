@@ -936,3 +936,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | 1) Add `placeMonstersOnGrid` + `placeShopsOnGrid` to the `onViewChange` handler so overlays refresh on every pan/zoom. 2) Clean up flag/monster/shop groups when grid auto-hides at low zoom. |
 | **Code** | `apps/web/src/app/components/RealMap.tsx` — line ~1050 (onViewChange), line ~252 (auto-hide cleanup) |
 | **Prevention** | Any overlay placement logic tied to map bounds must be refreshed on every zoom/move event. If the grid auto-toggles off, all associated overlays must be fully removed, not just hidden. |
+
+### 25. Weekly bar colors didn't match trail colors — click-to-filter lost after UI rewrite
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (UX regression) |
+| **Symptom** | (1) Weekly steps chart bars all used the same white/green color scheme regardless of day. (2) Clicking a bar to filter the map to that day's trail no longer worked. |
+| **Root Cause** | When the card UI was rewritten, the weekly chart bar colors were simplified to `rgba(255,255,255,0.1)` for all days (with green gradient only for "today"). The onClick handler that sets `trailDayFilter` was lost. |
+| **Fix** | Use `DAY_COLORS[dayIdx]` (same constant used by RealMap for trail polylines) to color each bar. Add `onClick={() => setTrailDayFilter(active ? null : dayIdx)}` with visual feedback — active day gets a white border + brighter opacity. |
+| **Code** | `apps/web/src/app/page.tsx` — weekly chart render (~line 2283) |
+| **Prevention** | When porting UI sections during a rewrite, verify all interactive behaviors are preserved, not just the visual layout. The weekly bars had both a display function (show steps) and an interaction (click to filter). |

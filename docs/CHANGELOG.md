@@ -383,3 +383,15 @@
 - **`placeMonstersOnGrid(map)`** — renders ⚔️ icon at cell centre (red-edged badge with subtle red background, zoom-gated ≥14)
 - **Integration:** called from `updateGrid()` and grid toggle show/hide; re-placed when `allFlagCells` change (e.g. after buying a cell)
 - **Encounter-ready data:** monster data (emoji, label, color, level, rarity) is available for future "enter cell → trigger battle" mechanic
+
+## v0.40.7 — Weekly Bar Colors Sync, Clickable Bars Restored, Zoom Perf Fixes (2026-07-18)
+
+### Fixed
+- **Weekly bar colors now match trail DAY_COLORS:** Each day's bar uses the same color as the corresponding trail polyline on the map (purple/cyan/green/amber/red/pink/blue for Sun–Sat).
+- **Clickable weekly bars restored:** Click a day's bar to filter the map to show only that day's trail. Click again to show all. Active day has a white border + brighter opacity indicator.
+- **Zoom perf: monsters/shops only compute at zoom ≥ 14:** Added early return to skip cell iteration when zoom is too low for markers to be visible. Added 5000-cell safety cap to prevent lag. View-change handler is throttled with requestAnimationFrame.
+- **Grid auto-hide cleans up all overlays:** When zooming out past threshold, flags/monsters/shop groups are removed from the map, not just hidden.
+
+### Code
+- `apps/web/src/app/page.tsx`: weekly bar colors + onClick handler
+- `apps/web/src/app/components/RealMap.tsx`: placeMonstersOnGrid/placeShopsOnGrid early return, rAF throttle, safety cap, auto-hide cleanup
