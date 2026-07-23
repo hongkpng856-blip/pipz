@@ -2280,9 +2280,9 @@ export default function HomePage() {
                               <span>{formatSteps(weeklySteps.reduce((a,b) => a+b.steps, 0))} / 週</span>
                             </div>
                             <div className="weekly-chart">
-                              {(()=>{const m=Math.max(...weeklySteps.map(d=>d.steps),1);return weeklySteps.map((day,i)=>{const h=m>0?Math.round((day.steps/m)*60):4;return(
+                              {(()=>{const m=Math.max(...weeklySteps.map(d=>d.steps),1);return weeklySteps.map((day,i)=>{const h=m>0?Math.round((day.steps/m)*60):4;const dayIdx= new Date(day.date).getDay(); const barColor=DAY_COLORS[dayIdx]||'#6366f1';return(
                                 <div key={i} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-end', height:70}}>
-                                  <div style={{width:'100%', maxWidth:28, height:h, borderRadius:'4px 4px 0 0', background:day.isToday?'linear-gradient(180deg,#22c55e,#16a34a)':'rgba(255,255,255,0.1)', minHeight:4}} />
+                                  <div style={{width:'100%', maxWidth:28, height:h, borderRadius:'4px 4px 0 0', background:day.isToday?`linear-gradient(180deg,${barColor},#00000033)`:barColor, opacity:0.85, minHeight:4}} />
                                   <div style={{display:'flex', flexDirection:'column', alignItems:'center', marginTop:4}}>
                                     <span className="weekly-bar-steps">{formatSteps(day.steps)}</span>
                                     <span className={`weekly-bar-label ${day.isToday ? 'weekly-bar-label-today' : ''}`}>{day.dayLabel}</span>
