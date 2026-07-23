@@ -395,3 +395,14 @@
 ### Code
 - `apps/web/src/app/page.tsx`: weekly bar colors + onClick handler
 - `apps/web/src/app/components/RealMap.tsx`: placeMonstersOnGrid/placeShopsOnGrid early return, rAF throttle, safety cap, auto-hide cleanup
+
+## v0.40.8 — Content Stays at Bottom, Card Covers Map at Full Expand, Layout Refinements (2026-07-18)
+
+### Fixed
+- **Content now stays at the bottom of the card:** The wrapper uses `display:flex; flex-direction:column; justify-content:flex-end` with `innerRef` (preview) as the last DOM child so it anchors to the very bottom. Extended content sits above the preview. When the card is pulled up, space opens ABOVE the content — the content doesn't move upward.
+- **Card covers map control buttons when fully expanded:** Reverted map button z-index from 1004 back to 1000. Card z-index is 1003, so at full expansion the card overlays the buttons. When collapsed, the buttons are accessible.
+- **Card stops expanding at content boundary:** Removed the extH cap from CARD_MAX_EXTRA, instead rely on `overflow:hidden` + flex-end layout to let content stay at bottom while card can still pull to full screen.
+
+### Code
+- `apps/web/src/app/page.tsx`: wrapper `justifyContent:'flex-end'`, `innerRef` has `flexShrink:0`, clamp effect on tab change
+- `apps/web/src/app/globals.css`: all map overlay buttons restored to `z-index:1000`

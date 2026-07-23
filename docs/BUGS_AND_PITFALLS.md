@@ -947,3 +947,24 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Use `DAY_COLORS[dayIdx]` (same constant used by RealMap for trail polylines) to color each bar. Add `onClick={() => setTrailDayFilter(active ? null : dayIdx)}` with visual feedback — active day gets a white border + brighter opacity. |
 | **Code** | `apps/web/src/app/page.tsx` — weekly chart render (~line 2283) |
 | **Prevention** | When porting UI sections during a rewrite, verify all interactive behaviors are preserved, not just the visual layout. The weekly bars had both a display function (show steps) and an interaction (click to filter). |
+
+### 26. Card content moves up when expanded — should stay at bottom
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (UX regression) |
+| **Symptom** | When pulling the card up, the preview and extended content scroll upward. Once all content is visible, further pulling continues shifting the content up (clipped by overflow:hidden). User wanted content to anchor to the bottom so pulling only adds space ABOVE the content. |
+| **Root Cause** | The content wrapper was a plain block container (`flex:1` only). Children (innerRef + extRef) were at the top by default. When the wrapper grew, content stayed at the top and empty space appeared below — but the visual effect was content "sinking" to the bottom of the visible area as the card expanded upward. |
+| **Fix** | Make the wrapper a flex column with `justify-content: flex-end`. Place innerRef (preview) last in DOM order so it anchors to the very bottom. extRef (extended content) sits directly above it. Both stay at the bottom regardless of wrapper height. Space opens at the TOP when the card pulls up. |
+| **Code** | `apps/web/src/app/page.tsx` — wrapper `style={{flex:1, overflowX:'hidden', overflowY:'hidden', display:'flex', flexDirection:'column', justifyContent:'flex-end'}}`, innerRef gets `flexShrink:0` |
+| **Prevention** | When designing draggable bottom sheets with overflow:hidden wrappers, explicitly decide whether content should be top-aligned (slides under handle) or bottom-aligned (anchors near nav). The flex-end + DOM order trick is the cleanest way to achieve bottom-anchored content. |
+
+### 27. Map control buttons always above card — can't cover them at full expand
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (intentional revert) |
+| **Symptom** | After the Section 18.3 z-index fix (map buttons → 1004, card → 1003), the buttons were always clickable even when the card was fully expanded. User wants the card to overlay the buttons at full expansion. |
+| **Fix** | Revert map button z-index from 1004 back to 1000. Card remains at 1003. At full expansion the card covers the buttons; when collapsed the buttons are above the card and clickable. |
+| **Code** | `apps/web/src/app/globals.css` — all `.real-map-*` overlay z-index restored to 1000 |
+| **Prevention** | The stacking decision depends on UX priority: if full-screen card overlay matters more than one-handed button access, card wins. Document the layer chart and confirm with the user before finalizing. |
