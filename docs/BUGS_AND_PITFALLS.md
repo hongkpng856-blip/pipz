@@ -914,3 +914,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Explicitly set `overflowX:'hidden'` and `overflowY:'hidden'` on the card container + flex wrapper. On the "other pets" scroll container, add `overflowX:'hidden'` alongside `overflowY:'auto'`, plus `overscrollBehavior:'contain'` and `WebkitOverflowScrolling:'touch'` for smooth iOS scrolling. |
 | **Code** | `apps/web/src/app/page.tsx` — line ~2188 (card), ~2199 (wrapper), ~2400 (scroll container) |
 | **Prevention** | When using `overflow:auto` for vertical scrolling on a container, always pair with `overflowX:'hidden'` to prevent accidental horizontal overflow. Add `overscrollBehavior:'contain'` to prevent scroll-chaining on mobile. |
+
+### 18.3 Map Control Buttons (Grid/GPS/Trail) Covered by Card
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 High (unclickable) |
+| **Symptom** | When the card is fully expanded (z-index:1003), grid toggle, GPS toggle, and trail overview buttons are behind the card and cannot be clicked. |
+| **Root Cause** | Map control buttons had z-index:1000. Card was raised to z-index:1003 to cover header (1001) and bottom nav. Control buttons were not updated. |
+| **Fix** | Raise all map overlay buttons (GPS badge, GPS toggle, grid toggle, trail overview) from z-index:1000 to z-index:1004 so they sit above the card. |
+| **Code** | `apps/web/src/app/globals.css` — lines 881, 927, 1000, 973 (now 1004) |
+| **Prevention** | Maintain a z-index layer chart. When any layer's z-index changes, verify all overlays in the same stacking context. |

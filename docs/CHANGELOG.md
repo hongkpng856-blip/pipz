@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.40.6 — Map Control Buttons Above Card (z-index Fix) (2026-07-18)
+
+### Fixed
+- **Map control buttons (grid/GPS/trail) covered by expanded card:** All map overlay buttons raised from `z-index: 1000` to `z-index: 1004` so they remain clickable when the card is fully expanded.
+
+### Code
+- `apps/web/src/app/globals.css`: GPS badge, GPS toggle, grid toggle, trail overview — `z-index: 1000` → `z-index: 1004`
+
 ## v0.40.5 — Scrollable Card Content, No Artificial Limits (2026-07-18)
 
 ### Fixed
