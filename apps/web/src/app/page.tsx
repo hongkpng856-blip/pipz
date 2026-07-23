@@ -316,10 +316,12 @@ export default function HomePage() {
   const extRef = useRef<HTMLDivElement>(null)
   const [innerH, setInnerH] = useState(250) // generous initial avoids clipping
   const [navH, setNavH] = useState(75)
+  const [extH, setExtH] = useState(0)
   // Measure inner content + nav after render
   useEffect(() => {
     if (innerRef.current) setInnerH(innerRef.current.getBoundingClientRect().height)
     if (navRef.current) setNavH(navRef.current.getBoundingClientRect().height)
+    if (extRef.current) setExtH(extRef.current.scrollHeight)
   }, [weeklySteps, user, steps, totalSteps, cardTab])
   const HANDLE_H = 24
   // iOS fix: native touchstart/touchmove preventDefault so touch-action:none works
@@ -333,10 +335,15 @@ export default function HomePage() {
     return () => { el.removeEventListener('touchstart', stopTouch); el.removeEventListener('touchmove', stopTouch) }
   }, [])
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight - 50) : 400
-  const extH = extRef.current?.scrollHeight ?? 0
   const CARD_MAX_EXTRA = Math.max(80, Math.min(extH, CARD_TARGET_H - (innerH + HANDLE_H + navH)))
 
   useEffect(() => { setReady(true) }, [])
+
+  // ── Clamp cardDragY when max changes (e.g. tab switch) ──
+  useEffect(() => {
+    setCardDragY(prev => Math.min(prev, CARD_MAX_EXTRA))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardTab, extH, innerH, navH])
 
   // ── iOS: request motion/orientation permission via native click (React synthetic may not trigger prompt) ──
   useEffect(() => {
