@@ -252,6 +252,19 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       if (!fromToggle && gridVisibleRef.current) {
         gridVisibleRef.current = false
         setGridVisible(false)
+        // Clean up all grid-related overlays when auto-hiding
+        if (flagGroupRef.current && map) {
+          map.removeLayer(flagGroupRef.current)
+          flagGroupRef.current = null
+        }
+        if (monsterGroupRef.current && map) {
+          map.removeLayer(monsterGroupRef.current)
+          monsterGroupRef.current = null
+        }
+        if (shopGroupRef.current && map) {
+          map.removeLayer(shopGroupRef.current)
+          shopGroupRef.current = null
+        }
       }
       return
     }
@@ -1049,6 +1062,10 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
     // Dynamic grid: redraw on every pan/zoom
     const onViewChange = () => {
       if (anchorRef.current) updateGrid(map, anchorRef.current)
+      if (gridVisibleRef.current && anchorRef.current) {
+        placeMonstersOnGrid(map)
+        placeShopsOnGrid(map)
+      }
     }
     map.on('moveend zoomend', onViewChange)
 
