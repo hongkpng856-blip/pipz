@@ -313,6 +313,7 @@ export default function HomePage() {
   const contentRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
+  const extRef = useRef<HTMLDivElement>(null)
   const [innerH, setInnerH] = useState(250) // generous initial avoids clipping
   const [navH, setNavH] = useState(75)
   // Measure inner content + nav after render
@@ -332,7 +333,8 @@ export default function HomePage() {
     return () => { el.removeEventListener('touchstart', stopTouch); el.removeEventListener('touchmove', stopTouch) }
   }, [])
   const CARD_TARGET_H = typeof window !== 'undefined' ? Math.round(window.innerHeight - 50) : 400
-  const CARD_MAX_EXTRA = Math.max(80, CARD_TARGET_H - (innerH + HANDLE_H + navH))
+  const extH = extRef.current?.scrollHeight ?? 0
+  const CARD_MAX_EXTRA = Math.max(80, Math.min(extH, CARD_TARGET_H - (innerH + HANDLE_H + navH)))
 
   useEffect(() => { setReady(true) }, [])
 
@@ -2270,7 +2272,7 @@ export default function HomePage() {
                     </div>
 
                     {/* ── Extended content (revealed by pull-up) ── */}
-                    <div style={{padding:'0 16px 14px'}}>
+                    <div ref={extRef} style={{padding:'0 16px 14px'}}>
                       {/* ── 🗺️ Map extended: weekly chart ── */}
                       {cardTab === 'map' && (<>
                         {weeklySteps.length > 0 && (
