@@ -2208,7 +2208,7 @@ export default function HomePage() {
                     }} />
                   </div>
                   {/* ── Collapsible content: switches by cardTab ── */}
-                  <div style={{flex:1, overflowX:'hidden', overflowY:'hidden'}}>
+                  <div style={{flex:1, overflowX:'hidden', overflowY:'hidden', display:'flex', flexDirection:'column', justifyContent:'flex-start'}}>
                     {/* ── Preview (measured for collapsed height) ── */}
                     <div ref={innerRef} style={{padding:'0 16px'}}>
                       {/* ── 🗺️ Map preview: steps numbers ── */}
