@@ -393,3 +393,101 @@
 4. **RLS** → 涉及新表一定要開 RLS
 5. **z-index** → 改層級前睇 Section 17 圖表
 6. **改完** → update `docs/CHANGELOG.md` + 有需要加 BUGS section
+
+---
+
+# 改動影響分析流程 (Change Impact Analysis)
+
+> **每次用戶要求改某樣嘢，必須先做影響分析**，自動檢查牽涉邊啲相關位置、需唔需要一齊改。唔好淨係改用戶講嘅嗰一個地方。
+
+## 流程（5 步）
+
+### Step 1 — 定位主分類
+用戶話改「時間」，先諗：時間喺邊幾個系統出現？（見下方「跨分類依賴矩陣」）
+用上方分類索引搵出主檔案 + 行號。
+
+### Step 2 — 查依賴（影響分析）
+用「跨分類依賴矩陣」檢查所有受影響位置。重點問：
+- 呢個變數/常數有冇喺**第二個檔案**出現？（例：`DAY_COLORS` 喺 RealMap.tsx L29 同 page.tsx L46）
+- 呢個狀態有冇**多個消費者**？（例：`trailDayFilter` 同時影響 RealMap polyline + weekly chart bar highlight）
+- 呢個 UI 改動會唔會**影響 z-index / 佈局**？（例：改 card 高度 → 地圖按鈕被冚）
+- 呢個資料改動需唔需要**改 DB schema / RLS / API route**？
+- 呢個邏輯有冇 **guest vs logged-in 兩條路**？（localStorage vs Supabase）
+
+### Step 3 — 列出同步修改清單
+喺動手前，向用戶或自己列出：「呢個改動需要一齊改：A、B、C」。
+如果涉及 3+ 個檔案，**停低問用戶**（見 pipz-blueprint 嘅 "Ask before deciding" 規則）。
+
+### Step 4 — 一齊改 + 驗證
+- 所有相關位置同步修改（唔好改一半）
+- Build 驗證（`npx next build`，唔止 `tsc --noEmit`）
+- 用 git diff 檢查冇漏
+
+### Step 5 — 更新 Docs
+- `CHANGELOG.md`（每次 functional change）
+- `BUGS_AND_PITFALLS.md`（有 bug/坑就加）
+- 如果改咗模組結構 → 更新呢份 MODULES.md
+
+---
+
+## 跨分類依賴矩陣 (Cross-Module Dependency Matrix)
+
+> 點用：改左邊個分類，檢查右邊一齊受影響嘅分類。⚠️ = 好易漏。
+
+| 改動分類 | 一齊要改/檢查 |
+|---------|--------------|
+| **時間 / 日期** ⚠️ | ① Shop countdown（RealMap L505-594 + page.tsx L1403）② Trail day filter（`trailDayFilter` + `new Date().getDay()`）③ Weekly chart（`weeklySteps` date）④ `daily_activity` date ⑤ 通知 `created_at` ⑥ shop lifetime（`shopLifetimeRef`） |
+| **步數公式** ⚠️ | ① `addSt()` step manager（page.tsx L875）② GPS drift filter ③ `updateTotalSteps`/`upsertDailySteps`/`getWeeklySteps`（supabase-db）④ 進化檢查（`totalSteps`）⑤ 市集貨幣 ⑥ 步數視覺（`steps-num`/`step-bounce`/`step-flash`） |
+| **顏色 / 常數** ⚠️ | ① `DAY_COLORS`：**RealMap.tsx L29 + page.tsx L46 兩處要同步** ② `RARITY_COLORS` ③ zone colors（`getZoneIdx`）④ shop countdown 顏色 ⑤ design tokens（globals.css） |
+| **寵物 icon / 渲染** ⚠️ | ① 地圖 marker（`buildPetIcon` RealMap L1130-1158）② PixelPetCanvas ③ PetDetailModal ④ 主力隊伍 slots ⑤ **`walkingPet` 資料源：`userConfig` vs `pets[activeIdx]`（已知懸置問題）** |
+| **z-index / 層級** ⚠️ | ① Card 1003 ② header/bottom-nav 1001 ③ 地圖控制按鈕 1000 ④ modal portal 9999 ⑤ 改任何一個要查全部（見 BUGS 18.3 / 27） |
+| **Card 佈局** ⚠️ | ① `cardDragY`/`CARD_MAX_EXTRA`（page.tsx L87-88, L337）② content wrapper `justify-content:flex-end` ③ `innerRef`/`extRef` 測量 ④ 內部 scroll 區塊 ⑤ 地圖按鈕 z-index ⑥ 底部 nav |
+| **狀態 / cardTab** ⚠️ | ① `cardTab` state（page.tsx L78）② 底部 nav 按鈕 ③ RealMap props ④ preview + extended content 兩段 ⑤ tab 切換 reload effect（L571-583） |
+| **資料模型 / DB** | ① `supabase-schema.sql` ② `supabase/migrations/` ③ `supabase-db.ts` CRUD ④ RLS policies ⑤ page.tsx load effect ⑥ 對應 modal/component |
+| **RLS / 權限** | ① 新表一定要 `ENABLE ROW LEVEL SECURITY` + policies ② cross-user query 要用 server API route（`SUPABASE_SERVICE_ROLE_KEY`）③ 改 table → 檢查現有 policies 仲啱唔啱 |
+| **localStorage keys** | `pipz_trail_data` / `pipz_vehicle_trail` / `pipz_eggs` / `pipz_favs` — guest 同 logged-in 兩條路，改 key 要兩邊一齊改 |
+| **API routes** | 改資料層 → 檢查對應 `app/api/**` route 有冇受影響（見 Section 19） |
+| **步數 bar / 路線** | `DAY_COLORS` 兩處 + `trailDayFilter` + weekly chart click handler（見 Section 5） |
+
+---
+
+## 常見改動例子（睇一次就識）
+
+### 例 1：「改時間格式」
+影響：
+- Shop modal countdown（page.tsx L1403 附近）
+- Shop grid badge（RealMap L505-594）
+- Weekly chart dayLabel（page.tsx L2283）
+- Trail 記錄時間戳（`saveTrailToStorage`）
+- 通知 created_at 顯示
+
+**要一齊改：5 個位置** — 唔可以淨係改 modal 嗰個。
+
+### 例 2：「改每星期 bar 顏色」
+影響：
+- `DAY_COLORS`（page.tsx L46）
+- `DAY_COLORS`（RealMap.tsx L29）← **必同步，唔係地圖路線同 bar 又唔一致**（BUGS 25）
+- `trailDayFilter` 預設值（page.tsx L101）
+
+### 例 3：「改 Card 高度 / 佈局」
+影響：
+- `CARD_MAX_EXTRA` 公式（page.tsx L337）
+- `cardDragY` clamp effect（L342-347）
+- 地圖按鈕 z-index（可能被冚 — BUGS 18.3/27）
+- `innerRef`/`extRef` 測量
+- 內部 scroll 區塊（其他寵物等）
+
+### 例 4：「加新 DB table」
+影響：
+- migration file（`supabase/migrations/<timestamp>_name.sql`）
+- **RLS 一定要加**（唔係又收到 Supabase 安全警告）
+- `supabase-db.ts` 加 CRUD
+- page.tsx load effect + state
+- 如果 cross-user → server API route + service role key
+
+---
+
+## 永久 Skill
+
+呢個流程同時記錄喺 skill：**`pipz-change-impact`**（skill_view 攞詳細版）。
+每個 session 開始改 Pipz code 前，load 呢個 skill 或者直接睇 `docs/MODULES.md`。
