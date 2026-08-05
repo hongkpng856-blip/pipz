@@ -698,7 +698,7 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Severity** | 🟢 Low (minor UX inconsistency) |
 | **Symptom** | After refreshing the page, all shops get a new countdown timer. Previously expired shops reappear. Previously active shops get extended lifetimes. |
 | **Root Cause** | `shopLifetimeRef` is a `useRef<Map<string, number>>` that stores `cellKey → expiresAt`. Refs are reset on page reload. When `getShopForCell` is called after refresh, there's no cached `expiresAt` in the map, so it generates a new one (`Date.now() + deterministic_duration`). |
-| **Fix** | (Long-term) Persist shop lifetimes to `localStorage` with a key like `pipz_shop_expiry_{cellKey}`. On mount, restore from localStorage. Clean up expired entries periodically. |
+| **Fix** | ✅ **FIXED v0.40.10** — see Section 30. Persist shop lifetimes to `localStorage` key `pipz_shop_lifetimes` (single key, cellKey→expiresAt map). On mount, restore from localStorage and drop expired entries. Every new lifetime set persists immediately. |
 | **Workaround** | None needed — lifetimes are 15-45 minutes, so a page refresh within that window is rare. The deterministic duration ensures the same cell always has the same expiry rule, just shifted by the time of first discovery. |
 | **Prevention** | Any "time-until-expiry" feature using in-memory refs will lose state on page refresh. If persistence matters, use localStorage or a server-side timestamp. |
 

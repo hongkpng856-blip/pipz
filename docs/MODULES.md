@@ -174,7 +174,7 @@
 | page.tsx L1238-1430 | Direct DOM monster / shop modal（bypass React state）+ shop countdown |
 | `apps/web/src/components/MonsterModal.tsx` | 怪物詳細 popup |
 
-**相關 BUGS**：13.1（monster modal）、15.1-15.4（shop lifetime / 共用 ref / refresh reset / badge clutter）、24（zoom 效能）
+**相關 BUGS**：13.1（monster modal）、15.1-15.4（shop lifetime / 共用 ref / refresh reset / badge clutter — refresh reset 已修 BUGS 30）、24（zoom 效能）、29（milestone side-effect）
 
 ---
 
@@ -446,7 +446,7 @@
 | **狀態 / cardTab** ⚠️ | ① `cardTab` state（page.tsx L78）② 底部 nav 按鈕 ③ RealMap props ④ preview + extended content 兩段 ⑤ tab 切換 reload effect（L571-583） |
 | **資料模型 / DB** | ① `supabase-schema.sql` ② `supabase/migrations/` ③ `supabase-db.ts` CRUD ④ RLS policies ⑤ page.tsx load effect ⑥ 對應 modal/component |
 | **RLS / 權限** | ① 新表一定要 `ENABLE ROW LEVEL SECURITY` + policies ② cross-user query 要用 server API route（`SUPABASE_SERVICE_ROLE_KEY`）③ 改 table → 檢查現有 policies 仲啱唔啱 |
-| **localStorage keys** | `pipz_trail_data` / `pipz_vehicle_trail` / `pipz_eggs` / `pipz_favs` — guest 同 logged-in 兩條路，改 key 要兩邊一齊改 |
+| **localStorage keys** | `pipz_trail_data` / `pipz_vehicle_trail` / `pipz_eggs` / `pipz_favs` / `pipz_shop_lifetimes`（v0.40.10 新增，shop 倒數持久化，見 BUGS 30）— guest 同 logged-in 兩條路，改 key 要兩邊一齊改 |
 | **API routes** | 改資料層 → 檢查對應 `app/api/**` route 有冇受影響（見 Section 19） |
 | **步數 bar / 路線** | `DAY_COLORS` 兩處 + `trailDayFilter` + weekly chart click handler（見 Section 5） |
 
@@ -469,7 +469,7 @@
 | `gridVisible` | `gridVisibleRef`（RealMap L175） | updateGrid / flags | 🟡 中（BUGS 12.1） |
 | `ownedCells` | `ownedCellsRef`（RealMap L182） | monsters/shops 放置 | 🟡 中 |
 | `heading` | `headingRef`（RealMap L163） | marker 旋轉 | 🟢 低 |
-| shop lifetime | `shopLifetimeRef`（RealMap L186） | getShopForCell 倒數 | 🔴 高（in-memory，refresh reset） |
+| shop lifetime | `shopLifetimeRef`（RealMap L186，v0.40.10 起持久化到 `pipz_shop_lifetimes`） | getShopForCell 倒數 | 🟡 中（refresh 已唔會 reset，BUGS 30；改 lifetime 邏輯要檢查 load/persist 兩邊） |
 
 **規則：**
 1. 改任何上表 state → 檢查對應 ref 有冇同步（render-time sync 通常自動，但 eager/timer/interval 場景要手動）
