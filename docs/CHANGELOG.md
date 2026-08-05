@@ -406,3 +406,15 @@
 ### Code
 - `apps/web/src/app/page.tsx`: wrapper `justifyContent:'flex-end'`, `innerRef` has `flexShrink:0`, clamp effect on tab change
 - `apps/web/src/app/globals.css`: all map overlay buttons restored to `z-index:1000`
+
+## v0.40.9 — StepBonus Steps No Longer Lost (2026-07-29)
+
+### Fixed
+- **StepBonus skill bonus steps were lost** — `rollStepBonus` (+5~14 steps, 15% chance) was added to session steps but NOT to:
+  - Pet `totalSteps` (evolution progress)
+  - User `totalSteps` (market currency, milestones)
+  - DB sync (`updateTotalSteps` / `upsertDailySteps`)
+- **Stale `totalSteps` in sync** — `scheduleSync` used render-closure `totalSteps`; now uses eagerly-updated `totalStepsRef` so batched `addSt` calls sync accurate totals.
+
+### Files
+- `apps/web/src/app/page.tsx` — `addSt()`: unified `totalGain = finalSteps + bonus`; eager `totalStepsRef` update.

@@ -968,3 +968,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Fix** | Revert map button z-index from 1004 back to 1000. Card remains at 1003. At full expansion the card covers the buttons; when collapsed the buttons are above the card and clickable. |
 | **Code** | `apps/web/src/app/globals.css` — all `.real-map-*` overlay z-index restored to 1000 |
 | **Prevention** | The stacking decision depends on UX priority: if full-screen card overlay matters more than one-handed button access, card wins. Document the layer chart and confirm with the user before finalizing. |
+
+### 28. StepBonus bonus steps lost — not counted in totalSteps / DB sync
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 High |
+| **Status** | ✅ FIXED v0.40.9 |
+| **Symptom** | Pet with StepBonus skill (疾步如飛): bonus steps (+5~14, 15% chance) showed in today's session counter but never accumulated in user totalSteps, pet totalSteps, or Supabase — players effectively earned less than displayed. |
+| **Root cause** | `addSt()` computed `bonus = rollStepBonus(activeSkills)` and added it to `setSteps` (session display) but only `finalSteps` was added to `setTotalSteps`, `setPets` (pet.totalSteps), and `scheduleSync`. Also `scheduleSync` used render-closure `totalSteps` which could be stale when `addSt` fired multiple times in one tick. |
+| **Fix** | Unified `const totalGain = finalSteps + bonus`; applied to pet.totalSteps, user totalSteps, and `scheduleSync`. Added eager `totalStepsRef.current += totalGain` so sync/market/event checks read fresh totals even when addSt batches. |
+| **Prevention** | Any step-adding path must apply ALL step components (base + multiplier + bonus) uniformly to every consumer: session steps, pet steps, user totalSteps, DB sync, and refs. Use a ref for values read outside React render. |
