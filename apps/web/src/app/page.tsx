@@ -901,17 +901,18 @@ export default function HomePage() {
 
       // ── Demo egg for guests removed — no auto-eggs
 
-      // Milestone check (side-effect free)
-      const oldM = MILESTONES.filter(m => s >= m).length
-      const newM = MILESTONES.filter(m => newTotal >= m).length
-      if (newM > oldM && curUser) {
-        const ms = MILESTONES[oldM]
-        createNotification(curUser.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
-        setNotifUnread(n => n + 1)
-      }
-
       return newTotal
     })
+    // ── Milestone check (outside setState updater — pure updaters only) ──
+    const oldTotalForMilestone = totalStepsRef.current - totalGain
+    const newTotalForMilestone = totalStepsRef.current
+    const oldM = MILESTONES.filter(m => oldTotalForMilestone >= m).length
+    const newM = MILESTONES.filter(m => newTotalForMilestone >= m).length
+    if (newM > oldM && curUser) {
+      const ms = MILESTONES[oldM]
+      createNotification(curUser.id, 'milestone', '🏆 步數里程碑！', `你行咗 ${ms.toLocaleString()} 步！繼續加油！`)
+      setNotifUnread(n => n + 1)
+    }
     // ── Side-effects outside setState callback ──
     const encMult = getEncounterMultiplier(activeSkills)
     scheduleSync(pendingSteps.current + totalGain, totalStepsRef.current)

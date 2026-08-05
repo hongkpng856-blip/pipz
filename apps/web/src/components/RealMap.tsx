@@ -61,6 +61,35 @@ const SHOP_TYPES = [
 ] as const
 const SHOP_SPAWN_RATE = 0.12  // 12% chance per cell (lower than monsters so shops are rarer)
 
+// ── Shop lifetime persistence (BUGS 15.3 fix: survives refresh) ──
+const SHOP_LIFETIME_KEY = 'pipz_shop_lifetimes'  // cellKey → expiresAt (epoch ms)
+function loadShopLifetimes(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(SHOP_LIFETIME_KEY)
+    if (raw) {
+      const obj = JSON.parse(raw) as Record<string, number>
+      const m = new Map<string, number>()
+      const now = Date.now()
+      for (const [k, v] of Object.entries(obj)) {
+        if (v > now) m.set(k, v)  // drop expired
+      }
+      return m
+    }
+  } catch { /* corrupted storage — start fresh */ }
+  return new Map()
+}
+function persistShopLifetimes(m: Map<string, number>) {
+  try {
+    const obj: Record<string, number> = {}
+    m.forEach((v, k) => { obj[k] = v })
+    localStorage.setItem(SHOP_LIFETIME_KEY, JSON.stringify(obj))
+  } catch { /* storage full — ignore */ }
+}
+function setShopLifetime(map: Map<string, number>, cellKey: string, expiresAt: number) {
+  map.set(cellKey, expiresAt)
+  persistShopLifetimes(map)
+}
+
 interface ShopData {
   id: string; label: string; desc: string; color: string
   displayDiscount: string; actualPrice: number
@@ -105,7 +134,7 @@ function getShopForCell(row: number, col: number, ownedSet: Set<string> | undefi
   if (!expiresAt) {
     const durMs = (15 + (hash % 30)) * 60 * 1000  // 15-45 minutes
     expiresAt = Date.now() + durMs
-    shopLifetimeMap?.set(cellKey, expiresAt)
+    if (shopLifetimeMap) setShopLifetime(shopLifetimeMap, cellKey, expiresAt)
   }
   return { ...shopConfig, expiresAt }
 }
@@ -183,7 +212,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const allFlagCellsRef = useRef<FlagCell[]>([])
   const monsterGroupRef = useRef<L.LayerGroup | null>(null)
   const shopGroupRef = useRef<L.LayerGroup | null>(null)
-  const shopLifetimeRef = useRef<Map<string, number>>(new Map())  // cellKey → expiresAt
+  const shopLifetimeRef = useRef<Map<string, number>>(typeof window !== 'undefined' ? loadShopLifetimes() : new Map())  // cellKey → expiresAt (persisted)
   const shopTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const encounteredMonstersRef = useRef<Set<string>>(new Set())
   const trailHeatmapGroupRef = useRef<L.LayerGroup | null>(null)
