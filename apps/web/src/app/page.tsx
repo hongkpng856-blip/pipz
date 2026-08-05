@@ -890,12 +890,14 @@ export default function HomePage() {
     setSteps(s => s + finalSteps + bonus)
     const curUser = userRef.current
 
-    // Add steps to active pet (with multiplier)
+    // Add steps to active pet (with multiplier + bonus)
+    const totalGain = finalSteps + bonus
+    totalStepsRef.current += totalGain  // eager update — keeps sync/market/events fresh even when addSt batches
     if (activePet) {
-      setPets(v => v.map((p, i) => i === curActiveIdx ? { ...p, totalSteps: p.totalSteps + finalSteps } : p))
+      setPets(v => v.map((p, i) => i === curActiveIdx ? { ...p, totalSteps: p.totalSteps + totalGain } : p))
     }
     setTotalSteps(s => {
-      const newTotal = s + finalSteps
+      const newTotal = s + totalGain
 
       // ── Demo egg for guests removed — no auto-eggs
 
@@ -912,7 +914,7 @@ export default function HomePage() {
     })
     // ── Side-effects outside setState callback ──
     const encMult = getEncounterMultiplier(activeSkills)
-    scheduleSync(pendingSteps.current + finalSteps, totalSteps + finalSteps)
+    scheduleSync(pendingSteps.current + totalGain, totalStepsRef.current)
     // Encounter egg system disabled — no auto egg popups
     // ── Roguelike: event check ──
     eventStepCounter.current += Math.round(finalSteps * encMult)
