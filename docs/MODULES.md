@@ -410,6 +410,7 @@
 用「跨分類依賴矩陣」檢查所有受影響位置。重點問：
 - 呢個變數/常數有冇喺**第二個檔案**出現？（例：`DAY_COLORS` 喺 RealMap.tsx L29 同 page.tsx L46）
 - 呢個狀態有冇**多個消費者**？（例：`trailDayFilter` 同時影響 RealMap polyline + weekly chart bar highlight）
+- ⚠️ 呢個 state 有冇**對應嘅 ref 鏡像**？（例：`totalSteps` ↔ `totalStepsRef` — 改 state 唔同步 ref，sync/市集/事件會讀到 stale 值。見 BUGS 28）
 - 呢個 UI 改動會唔會**影響 z-index / 佈局**？（例：改 card 高度 → 地圖按鈕被冚）
 - 呢個資料改動需唔需要**改 DB schema / RLS / API route**？
 - 呢個邏輯有冇 **guest vs logged-in 兩條路**？（localStorage vs Supabase）
@@ -437,7 +438,7 @@
 | 改動分類 | 一齊要改/檢查 |
 |---------|--------------|
 | **時間 / 日期** ⚠️ | ① Shop countdown（RealMap L505-594 + page.tsx L1403）② Trail day filter（`trailDayFilter` + `new Date().getDay()`）③ Weekly chart（`weeklySteps` date）④ `daily_activity` date ⑤ 通知 `created_at` ⑥ shop lifetime（`shopLifetimeRef`） |
-| **步數公式** ⚠️ | ① `addSt()` step manager（page.tsx L875）② GPS drift filter ③ `updateTotalSteps`/`upsertDailySteps`/`getWeeklySteps`（supabase-db）④ 進化檢查（`totalSteps`）⑤ 市集貨幣 ⑥ 步數視覺（`steps-num`/`step-bounce`/`step-flash`） |
+| **步數公式** ⚠️ | ① `addSt()` step manager（page.tsx L875）② GPS drift filter ③ `updateTotalSteps`/`upsertDailySteps`/`getWeeklySteps`（supabase-db）④ 進化檢查（`totalSteps`）⑤ 市集貨幣 ⑥ 步數視覺（`steps-num`/`step-bounce`/`step-flash`）⑦ **`totalStepsRef`/`stepsRef` 鏡像**（見下方「state ↔ ref 鏡像清單」） |
 | **顏色 / 常數** ⚠️ | ① `DAY_COLORS`：**RealMap.tsx L29 + page.tsx L46 兩處要同步** ② `RARITY_COLORS` ③ zone colors（`getZoneIdx`）④ shop countdown 顏色 ⑤ design tokens（globals.css） |
 | **寵物 icon / 渲染** ⚠️ | ① 地圖 marker（`buildPetIcon` RealMap L1130-1158）② PixelPetCanvas ③ PetDetailModal ④ 主力隊伍 slots ⑤ **`walkingPet` 資料源：`userConfig` vs `pets[activeIdx]`（已知懸置問題）** |
 | **z-index / 層級** ⚠️ | ① Card 1003 ② header/bottom-nav 1001 ③ 地圖控制按鈕 1000 ④ modal portal 9999 ⑤ 改任何一個要查全部（見 BUGS 18.3 / 27） |
@@ -448,6 +449,32 @@
 | **localStorage keys** | `pipz_trail_data` / `pipz_vehicle_trail` / `pipz_eggs` / `pipz_favs` — guest 同 logged-in 兩條路，改 key 要兩邊一齊改 |
 | **API routes** | 改資料層 → 檢查對應 `app/api/**` route 有冇受影響（見 Section 19） |
 | **步數 bar / 路線** | `DAY_COLORS` 兩處 + `trailDayFilter` + weekly chart click handler（見 Section 5） |
+
+---
+
+## state ↔ ref 鏡像清單（改 state 必查）
+
+> ⚠️ **BUGS 28 教訓**：state 改咗但 ref 唔同步 → 讀 ref 嘅地方（sync/市集/事件/interval）讀到 stale 值。page.tsx 嘅 ref 每 render 自動 sync（L271-283），但 **eager update 場景**（setState 未 commit 前就要讀）要手動同步 ref。
+
+| State | 鏡像 Ref | 邊度讀 ref | 風險 |
+|-------|---------|-----------|------|
+| `steps` | `stepsRef`（page.tsx L271） | 步數顯示 | 🟢 低（純顯示） |
+| `totalSteps` | `totalStepsRef`（L272） | **sync、市集 L1780、事件 rollEvent L924/978** | 🔴 高（BUGS 28 已修，改步數邏輯要再檢查） |
+| `user` | `userRef`（L273） | addSt / sync / 事件 | 🟡 中 |
+| `pets` | `petsRef`（L274） | addSt 讀 active pet skills | 🟡 中 |
+| `pet` | `petRef`（L275） | 事件檢查 L921 | 🟡 中 |
+| `activeIdx` | `activeIdxRef`（L276） | addSt / sync | 🟡 中 |
+| `cardDragY` | `cardDragYRef`（L87） | drag handler（pointermove） | 🟡 中（BUGS 16.3） |
+| `trailDayFilter` | `trailDayFilterRef`（RealMap L193） | polyline show/hide effect | 🟡 中 |
+| `gridVisible` | `gridVisibleRef`（RealMap L175） | updateGrid / flags | 🟡 中（BUGS 12.1） |
+| `ownedCells` | `ownedCellsRef`（RealMap L182） | monsters/shops 放置 | 🟡 中 |
+| `heading` | `headingRef`（RealMap L163） | marker 旋轉 | 🟢 低 |
+| shop lifetime | `shopLifetimeRef`（RealMap L186） | getShopForCell 倒數 | 🔴 高（in-memory，refresh reset） |
+
+**規則：**
+1. 改任何上表 state → 檢查對應 ref 有冇同步（render-time sync 通常自動，但 eager/timer/interval 場景要手動）
+2. 新增 state 如果需要喺 callback/interval/event handler 讀取 → 一齊建立 ref 鏡像
+3. 讀 ref 嘅地方（sync、市集、事件檢查）改邏輯時 → 同時檢查 ref 有冇 update 到位
 
 ---
 
