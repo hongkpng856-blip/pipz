@@ -418,3 +418,13 @@
 
 ### Files
 - `apps/web/src/app/page.tsx` — `addSt()`: unified `totalGain = finalSteps + bonus`; eager `totalStepsRef` update.
+
+## v0.40.10 — Milestone Notification Purity + Shop Lifetime Persistence (2026-07-29)
+
+### Fixed
+- **Milestone notification moved out of `setTotalSteps` updater** — `createNotification` + `setNotifUnread` were side-effects inside a React state updater; StrictMode double-invocation could fire the 🏆 milestone notification twice. Now computed outside the updater using the eagerly-updated `totalStepsRef` (pure updater only).
+- **Shop lifetimes now persist across refresh** (BUGS 15.3) — `shopLifetimeRef` is loaded from / saved to `localStorage` key `pipz_shop_lifetimes`; expired entries dropped on load. Shops no longer reset their 15-45min countdown when the page reloads.
+
+### Files
+- `apps/web/src/app/page.tsx` — milestone check moved outside `setTotalSteps` updater
+- `apps/web/src/components/RealMap.tsx` — `SHOP_LIFETIME_KEY` + `loadShopLifetimes`/`persistShopLifetimes`/`setShopLifetime` helpers; ref initialised from storage

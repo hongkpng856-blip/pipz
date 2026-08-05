@@ -979,3 +979,25 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root cause** | `addSt()` computed `bonus = rollStepBonus(activeSkills)` and added it to `setSteps` (session display) but only `finalSteps` was added to `setTotalSteps`, `setPets` (pet.totalSteps), and `scheduleSync`. Also `scheduleSync` used render-closure `totalSteps` which could be stale when `addSt` fired multiple times in one tick. |
 | **Fix** | Unified `const totalGain = finalSteps + bonus`; applied to pet.totalSteps, user totalSteps, and `scheduleSync`. Added eager `totalStepsRef.current += totalGain` so sync/market/event checks read fresh totals even when addSt batches. |
 | **Prevention** | Any step-adding path must apply ALL step components (base + multiplier + bonus) uniformly to every consumer: session steps, pet steps, user totalSteps, DB sync, and refs. Use a ref for values read outside React render. |
+
+### 29. Milestone notification inside setState updater — double-fire risk
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Status** | ✅ FIXED v0.40.10 |
+| **Symptom** | 🏆 milestone notification could fire twice in React StrictMode (dev) — `createNotification` + `setNotifUnread` were called inside the `setTotalSteps` updater function, which React may invoke twice. |
+| **Root cause** | Side-effects inside a state updater. Updaters must be pure — React can double-invoke them (StrictMode dev) or re-run them; network/notification side-effects there are unreliable. |
+| **Fix** | Compute milestone crossing OUTSIDE the updater using `totalStepsRef.current` (already eagerly updated in `addSt`): `oldTotal = ref - totalGain`, `newTotal = ref`. Updater now returns the value only. |
+| **Prevention** | Never call side-effects (API calls, notifications, `setState` of other state) inside a `setState` updater. Use refs for current-value reads, or move side-effects after the updater call. |
+
+### 30. Shop lifetimes reset on page refresh (fixes BUGS 15.3)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Status** | ✅ FIXED v0.40.10 |
+| **Symptom** | Refreshing the page reset every shop's 15-45min countdown — shops effectively never expired from the player's perspective (they could camp a shop forever by refreshing). |
+| **Root cause** | `shopLifetimeRef` was a plain in-memory `Map` initialised empty; lifetimes existed only for the current page session. |
+| **Fix** | Persist cellKey→expiresAt to `localStorage` key `pipz_shop_lifetimes`. Load on ref init (`loadShopLifetimes`, drops already-expired entries), save on every new lifetime set (`setShopLifetime` → `persistShopLifetimes`). |
+| **Prevention** | Any deterministic in-memory game state that should survive refresh (timers, cooldowns, one-time flags) → persist to localStorage; validate/expire entries on load. |
