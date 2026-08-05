@@ -1,43 +1,63 @@
 #!/usr/bin/env python3
-"""Supabase keep-alive script — runs a lightweight query to prevent auto-pausing."""
+"""Supabase keep-alive script — runs a REAL query against the DB to count as activity.
 
-import urllib.request
-import urllib.error
-import json
-import sys
-import os
+v2 (2026-08-05): v1 only hit /rest/v1/ with no apikey and got 401, which does NOT
+count as project activity — project got paused anyway. Now uses the anon key from
+.env.production and runs a real SELECT against a public table (profiles).
+"""
+import urllib.request, urllib.error, sys, os, json
 from datetime import datetime
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://mxbuffmxvyuioidjzaet.supabase.co")
-SUPABASE_ANON_KEY = os.environ.get("NEXt_PUBLIC_SUPABASE_ANON_KEY", "")
-TIMEOUT = 15
+SUPABASE_URL = "https://mxbuffmxvyuioidjzaet.supabase.co"
+ENV_PATHS = [
+    "C:/Users/claw/Desktop/Pipz/apps/web/.env.production",
+    "C:/Users/claw/Desktop/Pipz/apps/web/.env.local",
+]
+
+def get_anon_key():
+    for envp in ENV_PATHS:
+        if not os.path.isfile(envp):
+            continue
+        with open(envp) as f:
+            for line in f:
+                if "SUPABASE_ANON_KEY" in line:
+                    val = line.strip().split("=", 1)[-1].strip('"\'')
+                    if val:
+                        return val
+    return None
 
 def ping():
-    """Hit the Supabase REST API to generate activity."""
-    # Try the health/rest endpoint — works without auth
-    url = f"{SUPABASE_URL}/rest/v1/"
+    key = get_anon_key()
+    if not key:
+        print(f"[{datetime.now().isoformat()}] FAIL — no anon key found")
+        return False
+    url = f"{SUPABASE_URL}/rest/v1/profiles?select=id&limit=1"
     headers = {
-        "User-Agent": "Pipz-KeepAlive/1.0",
+        "User-Agent": "Pipz-KeepAlive/2.0",
         "Accept": "application/json",
+        "apikey": key,
+        "Authorization": f"Bearer {key}",
     }
-    if SUPABASE_ANON_KEY:
-        headers["apikey"] = SUPABASE_ANON_KEY
-
     req = urllib.request.Request(url, headers=headers, method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             body = resp.read().decode()
-            status = resp.status
-            print(f"[{datetime.now().isoformat()}] OK — status={status}, len={len(body)}")
+            print(f"[{datetime.now().isoformat()}] OK — status={resp.status}, body={body[:80]}")
             return True
     except urllib.error.HTTPError as e:
-        # 401/406 are expected for unauthenticated requests — that's still DB activity
-        print(f"[{datetime.now().isoformat()}] HTTP {e.code} — expected for unauthenticated ping, DB still touched")
-        return True
+        print(f"[{datetime.now().isoformat()}] HTTP {e.code} — {e.read()[:120]}")
+        return False
     except Exception as e:
         print(f"[{datetime.now().isoformat()}] FAIL — {e}")
         return False
 
 if __name__ == "__main__":
     ok = ping()
+    # Also hit the project URL itself (any request to the project host counts as traffic)
+    try:
+        req2 = urllib.request.Request(f"{SUPABASE_URL}/auth/v1/health", headers={"apikey": get_anon_key() or ""})
+        with urllib.request.urlopen(req2, timeout=20) as r2:
+            print(f"[{datetime.now().isoformat()}] health={r2.status}")
+    except Exception:
+        pass
     sys.exit(0 if ok else 1)
