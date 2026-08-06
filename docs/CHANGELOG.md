@@ -428,3 +428,13 @@
 ### Files
 - `apps/web/src/app/page.tsx` — milestone check moved outside `setTotalSteps` updater
 - `apps/web/src/components/RealMap.tsx` — `SHOP_LIFETIME_KEY` + `loadShopLifetimes`/`persistShopLifetimes`/`setShopLifetime` helpers; ref initialised from storage
+
+## v0.40.11 — Keepalive v2 + Docs Index Refresh (2026-08-05)
+
+### Infra
+- **Supabase keepalive upgraded to v2** — real DB query (SELECT profiles) + auth health check; v1's 401 ping to `/rest/v1/` did NOT count as project activity, so the project got auto-paused despite the cron running. Windows path fix (`C:/...` instead of MSYS `/c/...`).
+- Cron now delivers results to Telegram DM daily (`origin`).
+
+### Docs
+- **`MODULES.md`** — new Section 23 (scripts / keepalive), Section 4 step-formula triple rule (BUGS 28/29), checklist items 6-7 (state↔ref mirror, script sync).
+- **`BUGS_AND_PITFALLS.md`** — Sections 28/29/30 added (see v0.40.9/v0.40.10); 15.3 marked FIXED.

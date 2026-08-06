@@ -32,6 +32,7 @@
 | [20. Pixel 圖形渲染](#20-pixel-圖形渲染) | PixelPetCanvas / WalkingCanvas 等 | — |
 | [21. PWA / Service Worker](#21-pwa--service-worker) | sw.js / SwRegister.tsx | — |
 | [22. 資料庫 Schema / Migrations](#22-資料庫-schema--migrations) | supabase-schema.sql + migrations | — |
+| [23. scripts / 工具腳本](#23-scripts--工具腳本) | scripts/*.py + hermes cron 副本 | — |
 
 ---
 
@@ -93,7 +94,9 @@
 | `apps/web/src/lib/supabase-db.ts` L91-145 | `updateTotalSteps` / `upsertDailySteps` / `getWeeklySteps` / `getTodaySteps` |
 | page.tsx L2283-2303 | 每星期 bar 圖（`DAY_COLORS` + click filter） |
 
-**相關 BUGS**：4.1-4.3（步數計算）、25（bar 顏色 + click-to-filter）
+**相關 BUGS**：4.1-4.3（步數計算）、25（bar 顏色 + click-to-filter）、**28（StepBonus 步數消失 — bonus 冇入 totalSteps/sync，已修 v0.40.9）**、**29（milestone 通知喺 setState updater 入面，已修 v0.40.10）**
+
+> ⚠️ **步數公式三件套（v0.40.9 起）**：`totalGain = finalSteps + bonus` 必須統一加到 ① session `steps` ② pet `totalSteps` ③ user `totalSteps` ④ `scheduleSync` ⑤ `totalStepsRef`（eager）。改任何一步要檢查全部 5 個消費者。
 
 ---
 
@@ -385,6 +388,22 @@
 
 ---
 
+## 23. scripts / 工具腳本
+
+| 位置 | 內容 |
+|------|------|
+| `scripts/supabase-keepalive.py` | **Keepalive v2**（2026-08-05）：真實 DB query（`SELECT profiles limit 1`）+ auth health check，防 Supabase 自動 pause。每 3 日由 hermes cron（job `f38b39540a3d`）行 |
+| `scripts/fix_rls.py` | 一次性 RLS 修復（service_role key 執行 SQL） |
+| hermes cron 副本 | `C:\Users\claw\AppData\Local\hermes\scripts\supabase-keepalive.py`（cron 實際執行呢個，改 script 要同步兩邊） |
+
+**Keepalive 教訓（2026-08-05 pause 事件）**：
+- ⚠️ **v1 只打 `/rest/v1/` 401 唔算 activity** → project 照樣被 pause。v2 要打真實 query（200）+ health check
+- ⚠️ Python 讀 `.env` 用 Windows path（`C:/...`），MSYS path（`/c/...`）讀唔到
+- ⚠️ 改 script 後要**同步 repo 副本**（`scripts/`）+ hermes cron 副本（`~/AppData/Local/hermes/scripts/`）兩邊
+- 📬 Cron deliver = `origin`（寄返 Telegram DM）
+
+---
+
 ## 改嘢前 Checklist
 
 1. **搵分類** → 睇呢份 index 涉及邊啲檔案
@@ -392,7 +411,9 @@
 3. **同步改色/常數** → `DAY_COLORS` 喺 **RealMap.tsx L29** 同 **page.tsx L46** 兩處，改一處要改另一處
 4. **RLS** → 涉及新表一定要開 RLS
 5. **z-index** → 改層級前睇 Section 17 圖表
-6. **改完** → update `docs/CHANGELOG.md` + 有需要加 BUGS section
+6. **state ↔ ref 鏡像** → 改 step 之前睇「state ↔ ref 鏡像清單」；eager/timer 場景手動同步 ref（BUGS 28/29 教訓）
+7. **scripts 同步** → 改 `scripts/` 要同步 hermes cron 副本（見 Section 23）
+8. **改完** → update `docs/CHANGELOG.md` + 有需要加 BUGS section
 
 ---
 
