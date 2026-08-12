@@ -438,3 +438,15 @@
 ### Docs
 - **`MODULES.md`** — new Section 23 (scripts / keepalive), Section 4 step-formula triple rule (BUGS 28/29), checklist items 6-7 (state↔ref mirror, script sync).
 - **`BUGS_AND_PITFALLS.md`** — Sections 28/29/30 added (see v0.40.9/v0.40.10); 15.3 marked FIXED.
+
+## v0.40.12 — Keepalive v3: Real Write Activity + Docs Refresh (2026-08-12)
+
+### Infra
+- **Supabase keepalive upgraded to v3** — from read-only SELECT to a real WRITE: upserts `keepalive_heartbeat` row (id=1, updated_at=now) via POST + `Prefer: resolution=merge-duplicates` (201 confirmed)
+- Created `keepalive_heartbeat` table + RLS policy (`anon` upsert allowed) via Management API (curl; Python urllib blocked by Cloudflare 403)
+- Cron schedule tightened: daily → **every 12h** (720m), deliver=origin (Telegram DM)
+- **Why**: 2026-08-12 Supabase auto-pause warning despite v2's daily 200s — read-only SELECTs don't count as "sufficient activity"; only real write transactions do
+
+### Docs
+- MODULES.md Section 23: keepalive v3, new lessons (SELECT-only insufficient; curl for Management API)
+- BUGS_AND_PITFALLS.md: Section 31 (keepalive v2 SELECT-only not counted as activity)

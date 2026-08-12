@@ -392,15 +392,17 @@
 
 | 位置 | 內容 |
 |------|------|
-| `scripts/supabase-keepalive.py` | **Keepalive v2**（2026-08-05）：真實 DB query（`SELECT profiles limit 1`）+ auth health check，防 Supabase 自動 pause。每 3 日由 hermes cron（job `f38b39540a3d`）行 |
+| `scripts/supabase-keepalive.py` | **Keepalive v3**（2026-08-12）：真實 WRITE（upsert `keepalive_heartbeat` row）+ auth health check，防 Supabase 自動 pause。每 12 小時由 hermes cron（job `f38b39540a3d`）行 |
 | `scripts/fix_rls.py` | 一次性 RLS 修復（service_role key 執行 SQL） |
 | hermes cron 副本 | `C:\Users\claw\AppData\Local\hermes\scripts\supabase-keepalive.py`（cron 實際執行呢個，改 script 要同步兩邊） |
 
-**Keepalive 教訓（2026-08-05 pause 事件）**：
+**Keepalive 教訓（2026-08-05 + 2026-08-12 pause 事件）**：
 - ⚠️ **v1 只打 `/rest/v1/` 401 唔算 activity** → project 照樣被 pause。v2 要打真實 query（200）+ health check
+- ⚠️ **v2 淨 SELECT（200 但 read-only）都唔夠** → 2026-08-12 再收 pause 預警。**Supabase 只當「真實寫入交易」係 activity** → v3 用 POST upsert `keepalive_heartbeat`（201 確認）
 - ⚠️ Python 讀 `.env` 用 Windows path（`C:/...`），MSYS path（`/c/...`）讀唔到
 - ⚠️ 改 script 後要**同步 repo 副本**（`scripts/`）+ hermes cron 副本（`~/AppData/Local/hermes/scripts/`）兩邊
-- 📬 Cron deliver = `origin`（寄返 Telegram DM）
+- ⚠️ 建表用 Management API 要**用 curl**（Python urllib 被 Cloudflare 403 擋）；body 用 JSON file（`curl -d @file`）
+- 📬 Cron deliver = `origin`（寄返 Telegram DM）；排程 12 小時（720m）
 
 ---
 

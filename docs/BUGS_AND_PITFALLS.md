@@ -1001,3 +1001,14 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root cause** | `shopLifetimeRef` was a plain in-memory `Map` initialised empty; lifetimes existed only for the current page session. |
 | **Fix** | Persist cellKey→expiresAt to `localStorage` key `pipz_shop_lifetimes`. Load on ref init (`loadShopLifetimes`, drops already-expired entries), save on every new lifetime set (`setShopLifetime` → `persistShopLifetimes`). |
 | **Prevention** | Any deterministic in-memory game state that should survive refresh (timers, cooldowns, one-time flags) → persist to localStorage; validate/expire entries on load. |
+
+### 31. Supabase keepalive v2 (read-only SELECT) still not counted as activity
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Status** | ✅ FIXED v0.40.11 (keepalive v3) |
+| **Symptom** | 2026-08-12: Supabase auto-pause scanner email — project `mxbuffmxvyuioidjzaet` "scheduled to be paused" despite the daily keepalive cron returning HTTP 200 every day (8月6-11日). v2 did `GET /rest/v1/profiles?select=id&limit=1` (read-only). |
+| **Root cause** | Supabase counts only real **write transactions** as project activity for the free-tier auto-pause heuristic. Read-only SELECTs (even authenticated 200s) were treated as insufficient activity. |
+| **Fix** | v3 upserts a row into `keepalive_heartbeat` (id=1, updated_at=now) via `POST /rest/v1/keepalive_heartbeat` with `Prefer: resolution=merge-duplicates` (201 confirmed). Cron schedule tightened daily → every 12h. Table + RLS policy created via Management API (curl only — Python urllib gets Cloudflare 403). |
+| **Prevention** | Keepalive must perform a real WRITE (upsert/insert), not just read. Heartbeat table must have an `anon` RLS policy allowing upsert (`FOR ALL TO anon USING (true) WITH CHECK (true)`). If pause warning recurs, check the heartbeat row's `updated_at` is actually changing. |
