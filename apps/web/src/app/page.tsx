@@ -2589,7 +2589,7 @@ export default function HomePage() {
                   <div ref={navRef} style={{flexShrink:0, padding:'0 16px 14px'}}>
                     {/* ── Tab nav integrated into steps card ── */}
                     <div style={{display:'flex', justifyContent:'space-around', padding:'6px 0 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:6}}>
-                      {([
+                      {([ 
                         { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
                         { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
                         { k: 'properties' as Tab, icon: '🏠', label: '地產' },
@@ -2605,7 +2605,17 @@ export default function HomePage() {
                              filter: cardTab === t.k ? 'none' : 'grayscale(0.5)',
                              transition:'opacity 0.15s',
                            }}>
-                          <span style={{fontSize:16}}>{t.icon}</span>
+                          <span style={{fontSize:16, position:'relative'}}>
+                            {t.icon}
+                            {cardTab === t.k && (
+                              <span style={{
+                                position:'absolute', left:'50%', transform:'translateX(-50%)',
+                                top:'100%', width:16, height:3, borderRadius:2,
+                                background:'linear-gradient(90deg,#2563EB,#EC4899,#F59E0B)',
+                                marginTop:2,
+                              }} />
+                            )}
+                          </span>
                           <span style={{fontSize:8, color: cardTab === t.k ? '#e2e8f0' : '#5a6d85', fontWeight: cardTab === t.k ? 700 : 500}}>{t.label}</span>
                         </button>
                       ))}
