@@ -30,6 +30,9 @@ const DAY_COLORS = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444', '#ec4
 const DAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
 // ── Monopoly grid config ──
+// ⚠️ 2026-08-12 暫時隱藏地圖上嘅插旗 / 佔地格 / 商店 / 怪物（功能簡化）。
+// 改做 `true` 即恢復晒，唔使 delete 任何 code。可順便隱藏 grid toggle button。
+const SHOW_TERRITORY = false
 const CELL_SIZE_DEG = 0.0003  // ~30m per cell (at HK latitude) — 4x smaller than original 0.0006
 const MAX_GRID_CELLS = 8000   // safety cap (increased for 4x smaller cells)
 const GRID_PAD = 10            // extra cells beyond viewport for smooth panning (slightly more for smaller cells)
@@ -264,6 +267,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   function updateGrid(map: L.Map, anchor: { lat: number; lng: number }, fromToggle = false) {
     // Skip if grid is toggled off
     if (!gridVisibleRef.current) return
+    if (!SHOW_TERRITORY) return  // 2026-08-12: territory overlay hidden — keep code for future restore
 
     // Remove old grid + highlight
     gridRectsRef.current.forEach(r => r.remove())
@@ -390,6 +394,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
   /** Place or update flag markers on all occupied cells (any user) — coloured, clickable, zoom-gated only */
   function placeAllFlags(map: L.Map) {
+    if (!SHOW_TERRITORY) return  // 2026-08-12: territory overlay hidden — keep code for future restore
     // Remove old handler + group
     if (flagZoomHandlerRef.current) {
       map.off('zoomend', flagZoomHandlerRef.current)
@@ -463,6 +468,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
   /** Place monster markers on visible unowned grid cells */
   function placeMonstersOnGrid(map: L.Map) {
+    if (!SHOW_TERRITORY) return  // 2026-08-12: territory overlay hidden — keep code for future restore
     // Remove old monsters
     if (monsterGroupRef.current) {
       map.removeLayer(monsterGroupRef.current)
@@ -532,6 +538,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
   /** Place shop markers on visible unowned grid cells */
   function placeShopsOnGrid(map: L.Map) {
+    if (!SHOW_TERRITORY) return  // 2026-08-12: territory overlay hidden — keep code for future restore
     // Remove old shops
     if (shopGroupRef.current) {
       map.removeLayer(shopGroupRef.current)
@@ -1495,6 +1502,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         {gpsFollowRef.current ? '🎯' : '📍'}
       </button>
       {/* ── Grid toggle button ── */}
+      {SHOW_TERRITORY && (
       <button
         className="real-map-grid-toggle-btn"
         onClick={() => {
@@ -1534,6 +1542,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       >
         {gridVisible ? '▦' : '▢'}
       </button>
+      )}
       {/* ── Trail overview button ── */}
       <button
         className={`real-map-trail-overview ${trailOverview ? 'active' : ''}`}
