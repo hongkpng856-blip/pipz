@@ -2304,21 +2304,7 @@ export default function HomePage() {
                             </div>
                           </div>
                         )}
-                        {/* 佔領 + 寵物狀態 */}
-                        <div style={{display:'flex', gap:20, padding:'6px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                          <div style={{textAlign:'center'}}>
-                            <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{properties.length}</div>
-                            <div style={{fontSize:9, color:'#5a6d85'}}>佔領地</div>
-                          </div>
-                          <div style={{textAlign:'center'}}>
-                            <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{allFlagCells?.length || 0}</div>
-                            <div style={{fontSize:9, color:'#5a6d85'}}>插旗點</div>
-                          </div>
-                          <div style={{textAlign:'center'}}>
-                            <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>{pet && walking ? '步行中' : pet ? '待機' : '離線'}</div>
-                            <div style={{fontSize:9, color:'#5a6d85'}}>寵物</div>
-                          </div>
-                        </div>
+                        {/* 佔領 + 寵物狀態 row removed 2026-08-12 (territory hidden + user request) */}
                       </>)}
 
                       {/* ── 🐾 Pets: full content from pets page ── */}
