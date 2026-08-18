@@ -1,7 +1,9 @@
-// Pipz Service Worker — v4
+// Pipz Service Worker — v5
+// v5 (2026-08-12): bump cache to force clients to pick up the territory-hidden build
+// (v4 served stale cache-first JS so users kept seeing the old grid button)
 // Cache-first for static assets, network-first for everything else
 
-const CACHE = 'pipz-v4'
+const CACHE = 'pipz-v5'
 const STATIC = [
   '/',
   '/manifest.json',
