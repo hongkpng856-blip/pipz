@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
+import { MapPin, MapTrifold, PawPrint, House, Users, ChatCircle, ShoppingBag, Backpack, Compass, Heart } from '@phosphor-icons/react/dist/ssr'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, EVENT_POOL, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import ModalPortal from '../components/ModalPortal'
@@ -64,6 +65,19 @@ function getZoneIdx(row: number, col: number): number {
   const r = Math.floor(row / REGION_SIZE)
   const c = Math.floor(col / REGION_SIZE)
   return ((r * 7 + c * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
+}
+
+// ── Tab icons (Phosphor / UI/UX Pro Max design system, 2026-08-12) ──
+const TAB_GLYPH: Record<Tab, { Node: any; color: string }> = {
+  map:         { Node: MapTrifold, color: '#2563EB' },
+  pets:        { Node: PawPrint,   color: '#EC4899' },
+  properties:  { Node: House,      color: '#F59E0B' },
+  community:   { Node: ChatCircle, color: '#22c55e' },
+  inventory:   { Node: Backpack,   color: '#8b5cf6' },
+}
+function TabGlyph({ k, size = 18, active = false }: { k: Tab; size?: number; active?: boolean }) {
+  const { Node, color } = TAB_GLYPH[k] ?? { Node: MapTrifold, color: '#2563EB' }
+  return <Node size={size} weight={active ? 'fill' : 'regular'} color={active ? color : 'currentColor'} />
 }
 
 export default function HomePage() {
@@ -2590,11 +2604,11 @@ export default function HomePage() {
                     {/* ── Tab nav integrated into steps card ── */}
                     <div style={{display:'flex', justifyContent:'space-around', padding:'6px 0 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginTop:6}}>
                       {([ 
-                        { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
-                        { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
-                        { k: 'properties' as Tab, icon: '🏠', label: '地產' },
-                        { k: 'community' as Tab, icon: '🏪', label: '社群' },
-                        { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
+                        { k: 'map' as Tab, icon: null, label: '地圖' },
+                        { k: 'pets' as Tab, icon: null, label: '寵物' },
+                        { k: 'properties' as Tab, icon: null, label: '地產' },
+                        { k: 'community' as Tab, icon: null, label: '社群' },
+                        { k: 'inventory' as Tab, icon: null, label: '背包' },
                       ]).map(t => (
                         <button key={t.k} onClick={() => setCardTab(t.k)}
                            style={{
@@ -2606,7 +2620,7 @@ export default function HomePage() {
                              transition:'opacity 0.15s',
                            }}>
                           <span style={{fontSize:16, position:'relative'}}>
-                            {t.icon}
+                            <TabGlyph k={t.k} size={18} active={cardTab === t.k} />
                             {cardTab === t.k && (
                               <span style={{
                                 position:'absolute', left:'50%', transform:'translateX(-50%)',
@@ -3170,14 +3184,16 @@ export default function HomePage() {
         <div className="nav-bar">
           <div className="nav-grid">
             {([
-              { k: 'map' as Tab, icon: '🗺️', label: '地圖' },
-              { k: 'pets' as Tab, icon: '🐾', label: '寵物' },
-              { k: 'properties' as Tab, icon: '🏠', label: '地產' },
-              { k: 'community' as Tab, icon: '🏪', label: '社群' },
-              { k: 'inventory' as Tab, icon: '🎒', label: '背包' },
+              { k: 'map' as Tab, icon: null, label: '地圖' },
+              { k: 'pets' as Tab, icon: null, label: '寵物' },
+              { k: 'properties' as Tab, icon: null, label: '地產' },
+              { k: 'community' as Tab, icon: null, label: '社群' },
+              { k: 'inventory' as Tab, icon: null, label: '背包' },
             ]).map(t => (
               <button key={t.k} className={`nav-btn ${tab === t.k ? 'active' : ''}`} onClick={() => setTab(t.k)}>
-                <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>{t.icon}</span>
+                <span className={`nav-icon ${tab === t.k ? 'active' : ''}`}>
+                  <TabGlyph k={t.k} size={20} active={tab === t.k} />
+                </span>
                 <span className={`nav-label ${tab === t.k ? 'active' : 'inactive'}`}>{t.label}</span>
               </button>
             ))}
