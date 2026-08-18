@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ReactDOM from 'react-dom'
 import dynamic from 'next/dynamic'
-import { MapPin, MapTrifold, PawPrint, House, Users, ChatCircle, ShoppingBag, Backpack, Compass, Heart } from '@phosphor-icons/react/dist/ssr'
 import { generateStats, generateSkills, generateAllSkills, calculateEvolution, EVOLUTION_STEPS, Rarity, Mood, PetStatus, Pet, formatSteps, RARITY_COLORS, RARITY_LABELS, calculateStepMultiplier, rollStepBonus, getEncounterMultiplier, hasMoodGuard, getEnergyBonus, SkillEffect, rollEvent, GameEvent, EVENT_POOL, HELP_ITEM_POOL, EQUIPMENT_POOL } from '@pipz/core'
 import PixelPetCanvas from '../components/PixelPetCanvas'
 import ModalPortal from '../components/ModalPortal'
@@ -67,17 +66,123 @@ function getZoneIdx(row: number, col: number): number {
   return ((r * 7 + c * 13) % ZONE_COLORS.length + ZONE_COLORS.length) % ZONE_COLORS.length
 }
 
-// ── Tab icons (Phosphor / UI/UX Pro Max design system, 2026-08-12) ──
-const TAB_GLYPH: Record<Tab, { Node: any; color: string }> = {
-  map:         { Node: MapTrifold, color: '#2563EB' },
-  pets:        { Node: PawPrint,   color: '#EC4899' },
-  properties:  { Node: House,      color: '#F59E0B' },
-  community:   { Node: ChatCircle, color: '#22c55e' },
-  inventory:   { Node: Backpack,   color: '#8b5cf6' },
+// ── Tab icons (hand-crafted pixel-art, PICO-8 style — Pipz 2026-08-12) ──
+// Each grid char: pixel of fill color; '.' = transparent. Rendered as SVG rects
+// with a darker drop shadow below each pixel for a chunky retro-game feel.
+type Pixel = string[][]
+const PIXEL_TABS: Record<Tab, { grid: Pixel; color: string; shadow: string }> = {
+  // 🗺️ map — folded paper map with a pin
+  map: {
+    color: '#2563EB', shadow: '#1d4ed8',
+    grid: [
+      '...####...',
+      '..#....#..',
+      '.#......#.',
+      '.#..###.#.',
+      '.#..#..#..',
+      '.#..#.#...',
+      '.#..#.#...',
+      '..####....',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🐾 pet — paw print
+  pets: {
+    color: '#EC4899', shadow: '#db2777',
+    grid: [
+      '..#.....#.',
+      '.###...###',
+      '..#.....#.',
+      '..........',
+      '...##.##..',
+      '..########',
+      '.########.',
+      '.######...',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🏠 property — house / home
+  properties: {
+    color: '#F59E0B', shadow: '#d97706',
+    grid: [
+      '.....##...',
+      '....####..',
+      '...######.',
+      '..########',
+      '.########.',
+      '.#......#.',
+      '.#.###..#.',
+      '.#.###..#.',
+      '.#......#.',
+      '.########.',
+    ],
+  },
+  // 🏪 community — chat bubble
+  community: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '#........#',
+      '#........#',
+      '#........#',
+      '.#......#.',
+      '..#######.',
+      '.....###..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🎒 inventory — backpack
+  inventory: {
+    color: '#8b5cf6', shadow: '#7c3aed',
+    grid: [
+      '..######..',
+      '..#....#..',
+      '.########.',
+      '.#.##.##.#',
+      '.#......#.',
+      '#.######.#',
+      '#.######.#',
+      '.########.',
+      '..######..',
+      '..........',
+    ],
+  },
+}
+// lighten a hex color toward white (for top highlight)
+function pixelHighlight(hex: string): string {
+  const n = parseInt(hex.replace('#', ''), 16)
+  const r = Math.min(255, ((n >> 16) & 255) + 70)
+  const g = Math.min(255, ((n >> 8) & 255) + 70)
+  const b = Math.min(255, (n & 255) + 70)
+  return `rgb(${r},${g},${b})`
 }
 function TabGlyph({ k, size = 18, active = false }: { k: Tab; size?: number; active?: boolean }) {
-  const { Node, color } = TAB_GLYPH[k] ?? { Node: MapTrifold, color: '#2563EB' }
-  return <Node size={size} weight={active ? 'fill' : 'regular'} color={active ? color : 'currentColor'} />
+  const { grid, color, shadow } = PIXEL_TABS[k] ?? PIXEL_TABS.map
+  const rows = grid.length, cols = grid[0].length
+  const cell = size / rows
+  const px: React.ReactNode[] = []
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = grid[y][x]
+      if (ch === '.' || ch === ' ') continue
+      const cx = x * cell, cy = y * cell
+      // drop shadow
+      px.push(<rect key={`s${x}-${y}`} x={cx} y={cy + cell * 0.25} width={cell} height={cell} fill={shadow} />)
+      // pixel body
+      px.push(<rect key={`b${x}-${y}`} x={cx} y={cy} width={cell} height={cell} fill={active ? color : '#94a5b8'} />)
+      // top highlight for depth (only active & on top rows)
+      px.push(<rect key={`h${x}-${y}`} x={cx + cell * 0.1} y={cy + cell * 0.1} width={cell * 0.8} height={cell * 0.4} fill={active ? pixelHighlight(color) : 'transparent'} />)
+    }
+  }
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" style={{ display: 'block' }}>
+      {px}
+    </svg>
+  )
 }
 
 export default function HomePage() {
