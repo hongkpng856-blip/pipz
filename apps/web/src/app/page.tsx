@@ -70,7 +70,7 @@ function getZoneIdx(row: number, col: number): number {
 // Each grid char: pixel of fill color; '.' = transparent. Rendered as SVG rects
 // with a darker drop shadow below each pixel for a chunky retro-game feel.
 type Pixel = string[][]
-const PIXEL_TABS: Record<Tab, { grid: Pixel; color: string; shadow: string }> = {
+const PIXEL_TABS: Record<string, { grid: Pixel; color: string; shadow: string }> = {
   // 🗺️ map — folded paper map with a pin
   map: {
     color: '#2563EB', shadow: '#1d4ed8',
@@ -151,6 +151,166 @@ const PIXEL_TABS: Record<Tab, { grid: Pixel; color: string; shadow: string }> = 
       '..........',
     ],
   },
+  // 🔧 tools — wrench / gear (header Dev Tools)
+  gear: {
+    color: '#60a5fa', shadow: '#3b82f6',
+    grid: [
+      '...####...',
+      '..######..',
+      '..#....#..',
+      '.#.#..#.#.',
+      '.#..##..#.',
+      '.#......#.',
+      '.#..##..#.',
+      '..#....#..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🔑 login — key
+  key: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '..#..#....',
+      '..#..#....',
+      '..#..#....',
+      '..#..####.',
+      '.#...####.',
+      '.#...#....',
+      '..#..#....',
+      '...#......',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🔔 notification — bell
+  bell: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '..#####...',
+      '.##...##..',
+      '.#.....#..',
+      '.#.....#..',
+      '.#.....#..',
+      '..#####...',
+      '..##.##...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 👣 steps — footprint
+  foot: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..#.#.#...',
+      '.#####....',
+      '..###.....',
+      '..###.....',
+      '..###.....',
+      '.#####....',
+      '..###.....',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 👤 account — person
+  user: {
+    color: '#c084fc', shadow: '#8b5cf6',
+    grid: [
+      '....##....',
+      '...#..#...',
+      '...#..#...',
+      '....##....',
+      '..........',
+      '..######..',
+      '..######..',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⚡ energy — lightning bolt
+  bolt: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '.....###..',
+      '.....###..',
+      '....###...',
+      '...###....',
+      '..#####...',
+      '..###.....',
+      '..###.....',
+      '.#........',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⭐ favorites — star
+  star: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '.########.',
+      '..#######.',
+      '...#####..',
+      '..##.##...',
+      '.#.....#..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📋 my listings — clipboard
+  clipboard: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '...####...',
+      '...#..#...',
+      '..######..',
+      '..#....#..',
+      '..#....#..',
+      '..#....#..',
+      '..#....#..',
+      '..######..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🛒 market — cart
+  cart: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..........',
+      '..##......',
+      '.#..####..',
+      '.#.....#..',
+      '.#......#.',
+      '.#######..',
+      '..#...#...',
+      '...#####..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🥚 eggs — egg
+  egg: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '....##....',
+      '...####...',
+      '...####...',
+      '..######..',
+      '..######..',
+      '..######..',
+      '...####...',
+      '...####...',
+      '....##....',
+      '..........',
+    ],
+  },
 }
 // lighten a hex color toward white (for top highlight)
 function pixelHighlight(hex: string): string {
@@ -160,7 +320,7 @@ function pixelHighlight(hex: string): string {
   const b = Math.min(255, (n & 255) + 70)
   return `rgb(${r},${g},${b})`
 }
-function TabGlyph({ k, size = 18, active = false }: { k: Tab; size?: number; active?: boolean }) {
+function TabGlyph({ k, size = 18, active = false }: { k: string; size?: number; active?: boolean }) {
   const { grid, color, shadow } = PIXEL_TABS[k] ?? PIXEL_TABS.map
   const rows = grid.length, cols = grid[0].length
   const cell = size / rows
@@ -1940,7 +2100,7 @@ export default function HomePage() {
                 padding: 0, lineHeight: 1, marginLeft: 4,
               }}>
               <span style={{ color: notifUnread > 0 ? '#fbbf24' : '#9ca3af', position: 'relative' }}>
-                🔔
+                <TabGlyph k="bell" size={18} active />
                 {notifUnread > 0 && (
                   <span style={{
                     position: 'absolute', top: -6, right: -8,
@@ -1962,9 +2122,9 @@ export default function HomePage() {
                 background:'rgba(59,130,246,0.12)', border:'none',
                 cursor:'pointer', color:'#60a5fa',
                 fontSize:11, padding:'2px 6px', borderRadius:6,
-                fontFamily:'inherit', marginRight:2,
+                fontFamily:'inherit', marginRight:2, display:'inline-flex', alignItems:'center',
               }}>
-              🔧
+              <TabGlyph k="gear" size={14} active />
             </button>
             {user ? (
               <>
@@ -1975,8 +2135,9 @@ export default function HomePage() {
                     fontSize: 11, padding: '3px 8px', borderRadius: 10,
                     fontFamily:'inherit', whiteSpace:'nowrap',
                     maxWidth: 100, overflow:'hidden', textOverflow:'ellipsis',
+                    display:'inline-flex', alignItems:'center', gap:4,
                   }}>
-                  👤 {user.email}
+                  <TabGlyph k="user" size={13} active /> {user.email}
                 </button>
               </>
             ) : (
@@ -1985,12 +2146,12 @@ export default function HomePage() {
                   background:'none', border:'none',
                   cursor:'pointer', color:'#5a6d85',
                   fontSize: 14, padding: '2px 4px',
-                  fontFamily:'inherit',
+                  fontFamily:'inherit', display:'inline-flex', alignItems:'center',
                 }}>
-                🔑
+                <TabGlyph k="key" size={16} active />
               </button>
             )}
-            <span className="header-icon">👣</span>
+            <span className="header-icon"><TabGlyph k="foot" size={15} active /></span>
             <span className="header-steps">{ready ? formatSteps(totalSteps) : '0'}</span>
           </div>
         </div>
@@ -2449,15 +2610,15 @@ export default function HomePage() {
                           <>
                             {/* Headline */}
                             <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
-                              <div style={{fontSize:12, fontWeight:700, color:'#e2e8f0'}}>🐾 寵物</div>
+                              <div style={{fontSize:12, fontWeight:700, color:'#e2e8f0', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="pets" size={12} active /> 寵物</div>
                               <div style={{fontSize:10, color:'#5a6d85'}}>{pets.length} 隻</div>
                             </div>
 
                             {/* ⚡ Energy + Eggs section — same as pets page */}
                             <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                               <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:6}}>
-                                <div style={{fontSize:10, color:'#5a6d85'}}>⚡ 你擁有的能量</div>
-                                {eggs.length > 0 && <div style={{fontSize:10, color:'#94a5b8', marginLeft:'auto'}}>🥚 ×{eggs.length}</div>}
+                                <div style={{fontSize:10, color:'#5a6d85', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="bolt" size={11} active /> 你擁有的能量</div>
+                                {eggs.length > 0 && <div style={{fontSize:10, color:'#94a5b8', marginLeft:'auto', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="egg" size={11} active /> ×{eggs.length}</div>}
                               </div>
                               <div style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:8, background:'rgba(255,255,255,0.04)'}}>
                                 <svg width="18" height="26" viewBox="0 0 26 38" fill="none"><path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b"/></svg>
@@ -2483,7 +2644,7 @@ export default function HomePage() {
                             {/* ⭐ Team section */}
                             <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                                <div style={{fontSize:10, color:'#5a6d85'}}>⭐ 主力隊伍</div>
+                                <div style={{fontSize:10, color:'#5a6d85', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="star" size={11} active /> 主力隊伍</div>
                                 <div style={{fontSize:10, color:'#5a6d85'}}>{favorites.length}/5</div>
                               </div>
                               <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:4}}>
@@ -2511,7 +2672,7 @@ export default function HomePage() {
                             {otherPets.length > 0 && (
                               <div style={{padding:'8px 0', borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                                 <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                                  <div style={{fontSize:10, color:'#5a6d85'}}>🐾 其他寵物</div>
+                                  <div style={{fontSize:10, color:'#5a6d85', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="pets" size={11} active /> 其他寵物</div>
                                   <div style={{fontSize:10, color:'#5a6d85'}}>{otherPets.length} 隻</div>
                                 </div>
                                 <div style={{maxHeight:'50vh', overflowY:'auto', overflowX:'hidden', WebkitOverflowScrolling:'touch', overscrollBehavior:'contain'}}>
@@ -2542,7 +2703,7 @@ export default function HomePage() {
                       {cardTab === 'properties' && (<>
                         <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
                           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                            <div style={{fontSize:10, color:'#94a5b8'}}>🏠 地產列表</div>
+                            <div style={{fontSize:10, color:'#94a5b8', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="properties" size={11} active /> 地產列表</div>
                             <div style={{fontSize:10, color:'#5a6d85'}}>{properties.length} 塊</div>
                           </div>
                           {!user ? (
@@ -2582,7 +2743,7 @@ export default function HomePage() {
                             {/* My Listings */}
                             <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
                               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                                <div style={{fontSize:10, color:'#94a5b8'}}>📋 我的上架</div>
+                                <div style={{fontSize:10, color:'#94a5b8', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="clipboard" size={11} active /> 我的上架</div>
                                 <div style={{fontSize:10, color:'#5a6d85'}}>{myListings.length} 隻</div>
                               </div>
                               {myListings.length === 0 ? (
@@ -2604,7 +2765,7 @@ export default function HomePage() {
                             {/* Marketplace */}
                             <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
                               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                                <div style={{fontSize:10, color:'#94a5b8'}}>🛒 市集</div>
+                                <div style={{fontSize:10, color:'#94a5b8', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="cart" size={11} active /> 市集</div>
                                 <div style={{fontSize:10, color:'#5a6d85'}}>{marketListings.length} 隻</div>
                               </div>
                               {marketListings.length === 0 ? (
@@ -2626,7 +2787,7 @@ export default function HomePage() {
                             {/* Property Market */}
                             <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
                               <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                                <div style={{fontSize:10, color:'#94a5b8'}}>🏠 地皮市集</div>
+                                <div style={{fontSize:10, color:'#94a5b8', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="properties" size={11} active /> 地皮市集</div>
                                 <div style={{fontSize:10, color:'#5a6d85'}}>{listedProperties.length} 塊</div>
                               </div>
                               {listedProperties.length === 0 ? (
@@ -2658,7 +2819,7 @@ export default function HomePage() {
                       {cardTab === 'inventory' && (<>
                         <div style={{borderTop:'1px solid rgba(255,255,255,0.06)', padding:'8px 0'}}>
                           <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6}}>
-                            <div style={{fontSize:10, color:'#94a5b8'}}>🎒 背包</div>
+                            <div style={{fontSize:10, color:'#94a5b8', display:'flex', alignItems:'center', gap:4}}><TabGlyph k="inventory" size={11} active /> 背包</div>
                             <div style={{fontSize:10, color:'#5a6d85'}}>
                               {inventory.filter((i: any) => i.itemType === 'help').length} 道具 · {inventory.filter((i: any) => i.itemType === 'equipment').length} 裝備
                             </div>
@@ -2749,7 +2910,7 @@ export default function HomePage() {
           {tab === 'pets' && (
             <div className="fade-up" style={{display:'flex', flexDirection:'column', height:'calc(100dvh - 110px)', overflow:'hidden'}}>
               <div className="section-header" style={{flexShrink:0}}>
-                <span className="section-title">🐾 寵物</span>
+                <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="pets" size={14} active /> 寵物</span>
                 <span className="section-count">{pets.length}隻</span>
               </div>
               {pets.length === 0 ? (
@@ -2783,7 +2944,7 @@ export default function HomePage() {
                   {/* ⚡ 你擁有的能量 + 🥚 蛋 */}
                   <div className="section" style={{marginBottom:8, flexShrink:0}}>
                     <div className="section-header">
-                      <span className="section-title">⚡ 你擁有的能量</span>
+                      <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="bolt" size={14} active /> 你擁有的能量</span>
                       {eggs.length > 0 && <span className="section-count">🥚 ×{eggs.length}</span>}
                     </div>
                     <div className="card" style={{padding:'10px 16px'}}>
@@ -2879,7 +3040,7 @@ export default function HomePage() {
                     {/* ⭐ 主力隊伍 (drag-drop target, max 5) */}
                     <div className="section" style={{marginBottom:8, flexShrink:0}}>
                       <div className="section-header">
-                        <span className="section-title">⭐ 主力隊伍</span>
+                        <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="star" size={14} active /> 主力隊伍</span>
                         <span className="section-count">{favorites.length}/5</span>
                       </div>
                       <div className="team-grid">
@@ -2932,7 +3093,7 @@ export default function HomePage() {
                       <>
                         <div className="section" style={{flexShrink:0, marginBottom:0}}>
                           <div className="section-header">
-                            <span className="section-title">🐾 其他寵物</span>
+                            <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="pets" size={14} active /> 其他寵物</span>
                             <span className="section-count">{otherPets.length}隻</span>
                           </div>
                         </div>
@@ -2997,7 +3158,7 @@ export default function HomePage() {
                   {/* Section: My Listings */}
                   <div className="section" style={{marginBottom:12}}>
                     <div className="section-header">
-                      <span className="section-title">📋 我的上架</span>
+                      <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="clipboard" size={14} active /> 我的上架</span>
                             <span className="section-count">{myListings.length}隻</span>
                             <div style={{ flex: 1 }} />
                     </div>
@@ -3028,7 +3189,7 @@ export default function HomePage() {
                   {/* Section: Marketplace */}
                   <div className="section" style={{marginBottom:10}}>
                     <div className="section-header">
-                      <span className="section-title">🛒 市集</span>
+                      <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="cart" size={14} active /> 市集</span>
                       <span className="section-count">{marketListings.length}隻</span>
                     </div>
                     {marketListings.length === 0 ? (
@@ -3058,7 +3219,7 @@ export default function HomePage() {
                   {/* Section: Property Market */}
                   <div className="section" style={{marginBottom:10}}>
                     <div className="section-header">
-                      <span className="section-title">🏠 地皮市集</span>
+                      <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="properties" size={14} active /> 地皮市集</span>
                       <span className="section-count">{listedProperties.length}塊</span>
                     </div>
                     {listedProperties.length === 0 ? (
@@ -3117,7 +3278,7 @@ export default function HomePage() {
           {tab === 'inventory' && user && (
             <div className="fade-up" style={{paddingBottom: 20}}>
               <div className="section-header">
-                <span className="section-title">🎒 背包</span>
+                <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="inventory" size={14} active /> 背包</span>
                 <span className="section-count">
                   {inventory.filter((i: any) => i.itemType === 'help').length}道具 · {inventory.filter((i: any) => i.itemType === 'equipment').length}裝備
                 </span>
@@ -3203,7 +3364,7 @@ export default function HomePage() {
           {tab === 'properties' && (
             <div className="fade-up">
               <div className="section-header">
-                <span className="section-title">🏠 地產</span>
+                <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="properties" size={14} active /> 地產</span>
                 <span className="section-count">{properties.length}塊</span>
                 <button onClick={() => setCompactProps(v => !v)}
                   style={{
