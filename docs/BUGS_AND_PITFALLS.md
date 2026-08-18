@@ -1012,3 +1012,15 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root cause** | Supabase counts only real **write transactions** as project activity for the free-tier auto-pause heuristic. Read-only SELECTs (even authenticated 200s) were treated as insufficient activity. |
 | **Fix** | v3 upserts a row into `keepalive_heartbeat` (id=1, updated_at=now) via `POST /rest/v1/keepalive_heartbeat` with `Prefer: resolution=merge-duplicates` (201 confirmed). Cron schedule tightened daily → every 12h. Table + RLS policy created via Management API (curl only — Python urllib gets Cloudflare 403). |
 | **Prevention** | Keepalive must perform a real WRITE (upsert/insert), not just read. Heartbeat table must have an `anon` RLS policy allowing upsert (`FOR ALL TO anon USING (true) WITH CHECK (true)`). If pause warning recurs, check the heartbeat row's `updated_at` is actually changing. |
+
+
+### 32. SW cache-first makes users see a stale build forever (grid button ghost)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium |
+| **Status** | ✅ RESOLVED 2026-08-12 (sw.js v5 + custom domain) |
+| **Symptom** | User reported "grid button still visible" on the map page even after hard-refresh, repeatedly. Server had actually been updated (SHOW_TERRITORY=false build deployed) — but the user's device kept serving the old JS. Also: incognito mode "couldn't connect to the site" while normal mode showed the stale build. |
+| **Root cause** | Two compounded issues: (1) The PWA Service Worker (`sw.js`) uses **cache-first** for static JS/CSS, so once a client registered the SW it kept serving the old bundle — hard refresh does NOT bypass the SW cache. (2) The user's device/network couldn't reach `*.vercel.app` at all (DNS pollution / ISP / router block), so the SW offline cache was the only version it could show; it had never fetched the new build. My headless test browser (no SW) saw the new version, which masked issue (1). |
+| **Fix** | (a) Bumped `sw.js` cache `pipz-v4` → `pipz-v5` to force SW update on registered clients. (b) Diagnosed connectivity: server verified 200 via curl/another network; user's device couldn't reach vercel.app → (c) added custom domain `pipz.anthroskill.com` (A record `76.76.21.21` on Cloudflare, DNS-only) which works on the user's device. |
+| **Prevention** | **Always bump the SW `CACHE` version on every deploy.** To diagnose "still seeing old UI": test with curl or a non-SW browser to confirm the server is actually new; then distinguish "stale SW cache" from "can't reach server". Use incognito / Clear site data / another network to force-fresh for the user. Use a custom domain if `*.vercel.app` is unreachable from the user's network. |

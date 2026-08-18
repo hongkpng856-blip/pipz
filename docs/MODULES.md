@@ -33,6 +33,7 @@
 | [21. PWA / Service Worker](#21-pwa--service-worker) | sw.js / SwRegister.tsx | — |
 | [22. 資料庫 Schema / Migrations](#22-資料庫-schema--migrations) | supabase-schema.sql + migrations | — |
 | [23. scripts / 工具腳本](#23-scripts--工具腳本) | scripts/*.py + hermes cron 副本 | — |
+| [24. 部署 / 域名](#24-部署--域名) | Vercel `pipz` + Cloudflare 自訂域名 | — |
 
 ---
 
@@ -361,12 +362,18 @@
 
 | 位置 | 內容 |
 |------|------|
-| `apps/web/public/sw.js` | Cache-first static SW |
+| `apps/web/public/sw.js` | Cache-first static SW — **v5**（2026-08-12） |
 | `apps/web/src/components/SwRegister.tsx` | SW 註冊 |
 | `apps/web/public/manifest.json` | PWA manifest |
 | `apps/web/public/icon-192.png` / `icon-512.png` | App icons |
 
-**相關 BUGS**：7.3（SW 快取 stale assets — 改 public/ 資源後要 bump cache version）
+**相關 BUGS**：7.3（SW 快取 stale assets — 改 public/ 資源後要 bump cache version）、32（SW cache-first 令用戶長期睇舊版 — 2026-08-12 網格掣事件）
+
+**⚠️ SW 改版鐵律（2026-08-12 網格掣事件）**：
+- 每次改版後必須 **bump `sw.js` 嘅 `CACHE` 版本**（`pipz-v4` → `pipz-v5`），否則已註冊 SW 嘅用戶會一直攞舊 cache，永遠睇唔到新版
+- browser 對 `/sw.js` 有 24 小時內唔會重新檢查嘅限制 → 就算 bump 咗，用戶都要等 SW 更新
+- 要**立即**迫用戶睇新版：無痕視窗 / 「Clear site data」（清埋 SW）/ 另一裝置另一條網絡
+- 診斷時要注意：**連唔到 server vs 睇緊舊 cache 係兩回事** — 用 curl（無 SW）測 server 先知道 server 真係新版，再判斷用戶係咪被 SW cache 鎖死
 
 ---
 
@@ -403,6 +410,29 @@
 - ⚠️ 改 script 後要**同步 repo 副本**（`scripts/`）+ hermes cron 副本（`~/AppData/Local/hermes/scripts/`）兩邊
 - ⚠️ 建表用 Management API 要**用 curl**（Python urllib 被 Cloudflare 403 擋）；body 用 JSON file（`curl -d @file`）
 - 📬 Cron deliver = `origin`（寄返 Telegram DM）；排程 12 小時（720m）
+
+---
+
+## 24. 部署 / 域名
+
+| 項目 | 內容 |
+|------|------|
+| Vercel project | `pipz`（org `hongkpng856`），URL `https://pipz-ivory.vercel.app` |
+| 自訂域名 | **`https://pipz.anthroskill.com`**（2026-08-12 加） |
+| 域名註冊 | **Cloudflare**（`anthroskill.com`，nameservers davina/kipp.ns.cloudflare.com） |
+| DNS record | `A pipz.anthroskill.com → 76.76.21.21`（**DNS only**，唔開橙色 proxy） |
+| SSL | Vercel 自動簽發 Let's Encrypt cert |
+| 觸發 deploy | `git push`（main branch） |
+
+**點解要用自訂域名（2026-08-12）**：
+- 用戶部機連唔到 `*.vercel.app`（疑似 DNS 污染 / ISP / router 針對性封鎖），但用自訂域名 `pipz.anthroskill.com` 就正常
+- 診斷順序：先由其他線路（手機數據）/ curl 確認 server 200 正常 → 再判斷係咪用戶端 (SW cache vs 連唔到 server)
+
+**⚠️ 域名改動教訓**：
+- Vercel root domain 同 subdomain 有 alias 關係 — `vercel domains rm anthroskill.com` 會**連帶移除** `pipz.anthroskill.com`（要重新 `domains add`）
+- 加 domain 用 Vercel CLI：`npx vercel domains add pipz.anthroskill.com`（喺 `pipz` project root 行，**唔好**喺 `apps/web` 行 — 嗰度 link 咗去 `web` project，會加錯地方）
+- 加完要等 Vercel 自動驗證 + 簽 cert（幾分鐘至 15 分鐘），期間 HTTPS 會 000/SSL error，正常
+- Cloudflare DNS 加 record 要揀 **DNS only**（灰雲）唔好開 proxy，否則同 Vercel TLS 撞
 
 ---
 

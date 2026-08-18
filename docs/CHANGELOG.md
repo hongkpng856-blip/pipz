@@ -450,3 +450,20 @@
 ### Docs
 - MODULES.md Section 23: keepalive v3, new lessons (SELECT-only insufficient; curl for Management API)
 - BUGS_AND_PITFALLS.md: Section 31 (keepalive v2 SELECT-only not counted as activity)
+
+## v0.40.13 — Hide Territory Overlays + Custom Domain pipz.anthroskill.com (2026-08-12)
+
+### Feature: hide map territory overlays
+- Added `SHOW_TERRITORY = false` flag in RealMap.tsx — hides flags / owned-cell grid / shops / monsters on the map + the grid-toggle button, behind one config flag (flip to true to restore, no code deleted). Build passes.
+
+### Infra: custom domain
+- Added **`https://pipz.anthroskill.com`** pointing to Vercel project `pipz` (A record `76.76.21.21` on Cloudflare, DNS-only). Let's Encrypt cert issued, HTTP 200.
+- Root `anthroskill.com` also registered then removed (using subdomain only).
+- **Why**: user's device/network couldn't reach `*.vercel.app` (DNS pollution / ISP / router block); custom domain works.
+
+### Bugfix: Service Worker stale cache
+- Bumped sw.js cache `pipz-v4` → `pipz-v5` — cache-first SW was serving the old build to registered clients, so users kept seeing the old UI (incl. the grid button) despite fresh deploys. See BUGS 32.
+
+### Docs
+- MODULES.md: Sec 21 SW lessons, new Sec 24 (deploy/domains), nav updated.
+- BUGS_AND_PITFALLS.md: Sec 32 (SW cache-first stale build).
