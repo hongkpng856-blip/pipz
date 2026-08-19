@@ -824,6 +824,9 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
   /** Open a Monopoly-style property card popup with real address + buy/manage */
   function showCellPopup(map: L.Map, latlng: L.LatLng, name: string, color: string, cellLat: number, cellLng: number, cellRow: number, cellCol: number) {
+    // ⏸️ TEMPORARILY DISABLED (2026-08-21) — user wants the Monopoly deed popup hidden
+    // while redesigning content. To re-enable later, just delete this return.
+    return
     const key = `${Math.round(cellLat / CELL_SIZE_DEG)}:${Math.round(cellLng / CELL_SIZE_DEG)}`
     const lighter = color + '66'
     const anchor = anchorRef.current
