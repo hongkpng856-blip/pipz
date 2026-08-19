@@ -3125,17 +3125,15 @@ export default function HomePage() {
 
           <>
           {/* ════ MAP TAB (always mounted, hidden via display:none) ════ */}
-          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'visible' }}>
+          <div className="fade-up" style={{ display: tab === 'map' ? 'flex' : 'none', flexDirection:'column', overflow:'hidden', position:'fixed', top:42, left:0, right:0, bottom:0, zIndex:1 }}>
 
               {/* ── Map fills everything ── */}
-              <div style={{ flexShrink:0, position:'relative' }}>
-              <div style={{ height:'calc(100dvh - 104px)', position:'relative' }}>
+              <div style={{ flex:1, minHeight:0, position:'relative' }}>
               {walking && mapPos ? (
                 <RealMap ref={realMapRef} position={mapPos} walking={walking} pet={pet} mode={movementMode} deviceHeading={compassHeading} compassActive={compassActive} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               ) : (
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
-            </div>                {/* ── close map height container (map only) ── */}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
                 <div ref={cardRef} className="section card"
                   onPointerDown={(e) => {
@@ -3179,7 +3177,7 @@ export default function HomePage() {
                     document.addEventListener('pointermove', onMove);
                     document.addEventListener('pointerup', onUp);
                   }}
-                  style={{position:'relative', zIndex:1003, background:'rgba(15,23,42,0.97)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflowX:'hidden', overflowY:'hidden', display:'flex', flexDirection:'column', height: innerH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
+                  style={{position:'absolute', bottom:0, left:0, right:0, zIndex:1003, background:'rgba(15,23,42,0.7)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)', borderBottomLeftRadius:0, borderBottomRightRadius:0, border:'1px solid rgba(255,255,255,0.06)', borderBottom:'none', padding:0, marginBottom:0, borderRadius:'16px 16px 0 0', touchAction:'none', overflowX:'hidden', overflowY:'hidden', display:'flex', flexDirection:'column', height: innerH + HANDLE_H + navH + cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none'}}>
                   {/* ── Drag handle ── */}
                   <div
                     ref={cardHandleRef}
@@ -3606,8 +3604,6 @@ export default function HomePage() {
                 </div>              {/* ── close nav area ── */}
               </div>                {/* ── close stats card overlay ── */}
             </div>                {/* ── close map wrapper ── */}
-            {/* Spacer: gives scroll-wrap room to scroll when card is expanded */}
-            <div style={{ flexShrink: 0, height: cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none' }} />
           </div>
 
           {/* ════ PETS TAB ════ */}
