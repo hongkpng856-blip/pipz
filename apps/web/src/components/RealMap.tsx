@@ -92,6 +92,20 @@ const RM_ICONS: Record<string, { color: string; shadow: string; grid: string[] }
       '..........',
     ],
   },
+  // 🥚 egg (no-pet marker)
+  egg: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '...##.....',
+      '...####...',
+      '...####...',
+      '..######..',
+      '..######..',
+      '..######..',
+      '..######..',
+      '.########.',
+    ],
+  },
 }
 function RMGlyph({ k, size = 18, active = false }: { k: string; size?: number; active?: boolean }) {
   const def = RM_ICONS[k] ?? RM_ICONS.map
@@ -112,6 +126,30 @@ function RMGlyph({ k, size = 18, active = false }: { k: string; size?: number; a
       {px}
     </svg>
   )
+}
+
+// rmSvg: SVG-string twin of RMGlyph for use inside HTML template literals
+const rmSvgCache = new Map<string, string>()
+function rmSvg(k: string, size = 18, active = false): string {
+  const key = `${k}:${size}:${active}`
+  const hit = rmSvgCache.get(key)
+  if (hit) return hit
+  const def = RM_ICONS[k] ?? RM_ICONS.map
+  const rows = def.grid.length, cols = def.grid[0].length
+  const cell = size / rows
+  let rects = ''
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = def.grid[y][x]
+      if (ch === '.' || ch === ' ') continue
+      const cx = x * cell, cy = y * cell
+      rects += `<rect x="${cx}" y="${cy + cell * 0.25}" width="${cell}" height="${cell}" fill="${def.shadow}"/>`
+      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" fill="${active ? def.color : '#94a5b8'}"/>`
+    }
+  }
+  const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true" style="display:block">${rects}</svg>`
+  rmSvgCache.set(key, svg)
+  return svg
 }
 
 
@@ -1073,27 +1111,26 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
   const buildPetIcon = useCallback(() => {
     const rarityColor = pet ? (RC[pet.rarity] || '#9ca3af') : '#9ca3af'
 
-    // If no pet, show a simple egg dot with direction chevron
+    // If no pet, show a pixel egg marker with direction chevron
     if (!pet) {
       return L.divIcon({
         className: 'pipz-player-marker',
-        html: `<div style="width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center;">
+        html: `<div style="width:36px;height:36px;position:relative;display:flex;align-items:center;justify-content:center;">
           <div class="pipz-heading-arrow" style="transition:transform 0.08s ease-out;">
-            <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:8px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
+            <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-13px;left:10px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
               <path d="M8 0L16 12H0z" fill="${rarityColor}" />
             </svg>
             <div style="
-              width:32px;height:32px;border-radius:50%;
+              width:32px;height:32px;border-radius:6px;
               background:${rarityColor}22;
               border:3px solid ${rarityColor};
               display:flex;align-items:center;justify-content:center;
-              font-size:18px;line-height:1;
-              box-shadow:0 0 12px ${rarityColor}66;
-            ">🥚</div>
+              box-shadow:0 0 12px ${rarityColor}66, inset 0 0 0 2px rgba(0,0,0,0.35);
+            ">${rmSvg('egg', 18, true)}</div>
           </div>
         </div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
       })
     }
 
