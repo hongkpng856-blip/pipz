@@ -1102,25 +1102,25 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
 
     return L.divIcon({
       className: 'pipz-player-marker',
-      html: `<div style="width:44px;height:44px;position:relative;display:flex;align-items:center;justify-content:center;">
+      html: `<div style="width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center;">
         <div class="pipz-heading-arrow" style="transition:transform 0.08s ease-out;">
-          <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-14px;left:14px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
+          <svg style="display:block;width:16px;height:12px;overflow:visible;position:absolute;top:-12px;left:16px;filter:drop-shadow(0 0 2px ${rarityColor});" viewBox="0 0 16 12" fill="none">
             <path d="M8 0L16 12H0z" fill="${rarityColor}" />
           </svg>
           <div style="
-            width:44px;height:44px;border-radius:50%;
+            width:44px;height:44px;border-radius:6px;
             background:${rarityColor}22;
             border:3px solid ${rarityColor};
             display:flex;align-items:center;justify-content:center;
-            box-shadow:0 0 14px ${rarityColor}66;
+            box-shadow:0 0 14px ${rarityColor}66, inset 0 0 0 2px rgba(0,0,0,0.35);
             overflow:hidden;
           ">
-            <img src="${dataUrl}" style="width:36px;height:36px;image-rendering:pixelated;display:block;" />
+            <img src="${dataUrl}" style="width:38px;height:38px;image-rendering:pixelated;display:block;" />
           </div>
         </div>
       </div>`,
-      iconSize: [44, 44],
-      iconAnchor: [22, 22],
+      iconSize: [48, 48],
+      iconAnchor: [24, 24],
     })
   }, [pet])
 
