@@ -63,7 +63,7 @@
 | RealMap.tsx L235-362 | `updateGrid()` — 畫格線、highlight 當前 cell、zoom factor 控制、auto-hide 時清理 overlays |
 | RealMap.tsx L363-435 | `placeAllFlags()` — 玩家旗標 + zoomend handler（zoom < 14 隱藏） |
 | RealMap.tsx L1050-1067 | `onViewChange`（moveend/zoomend throttle：refresh grid + monsters + shops） |
-| RealMap.tsx L1092-1129 | 點擊 cell → 地址 popup |
+| RealMap.tsx L1092-1129 | 點擊 cell → 地址 popup（**⏸️ 暫時停用 2026-08-21** — `showCellPopup` 開頭有 `return`；日後重新設計地契先刪除） |
 | `apps/web/src/app/api/grid-config/route.ts` | Server 端 grid anchor API（server-authoritative） |
 | `supabase/migrations/20260801_grid_config.sql` | `grid_config` 表 + RLS |
 | `apps/web/src/app/page.tsx` L127-165 | Properties state + batch geocode |
@@ -322,7 +322,9 @@
 | `page.tsx` `PIXEL_TABS`（~L73-500） | ~40 個手繪 10×10 pixel grid icon（key → {color, shadow, grid}） |
 | `page.tsx` `TabGlyph` | React component：pixel grid → SVG rects（drop shadow + top highlight） |
 | `page.tsx` `pxSvg()` | SVG string 版（HTML template literal 用，如 shop/monster modal），有 module cache |
-| `RealMap.tsx` `RM_ICONS` + `RMGlyph` | 地圖按鈕專用 8×8 icon（compass/sat/target/pin/map/foot） |
+| `RealMap.tsx` `RM_ICONS` + `RMGlyph` | 地圖按鈕專用 8×8 icon（compass/sat/target/pin/map/foot/egg） |
+| `RealMap.tsx` `rmSvg()` | RMGlyph 嘅 SVG-string 版（Leaflet `L.divIcon` HTML 用；player marker 嘅 pixel egg 用） |
+| `RealMap.tsx` `buildPetIcon()` | 玩家 marker（方形 pixel 框 + `petSpriteDataUrl` pixel 寵物；冇寵物時用 `rmSvg('egg')`） |
 | `globals.css` `.px-num` / `.px-num-sm` | Pixel 數字字體（Press Start 2P 大 / VT323 細） |
 | `layout.tsx` | Google Fonts `<link>`（Press Start 2P + VT323） |
 

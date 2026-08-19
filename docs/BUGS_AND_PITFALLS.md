@@ -1071,3 +1071,23 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Key constraint** | User's real device (iPhone PWA) is the only source of truth. Desktop headless verification has misled us TWICE (Approach C verified `scrollHeight 971 > 622` headless yet broke the user's device; scroll-container verified `reachedBottom:true` headless yet user says unresolved). Per `pipz-ui` skill: verify exact symptom first, prefer minimal change, confirm on real device before declaring success. |
 | **Next steps (proposed, NOT yet attempted)** | ① Ask the user for a screen recording / screenshot of the exact scroll gesture they try, plus which cardTab (map/pets/properties/community/inventory) is active when it fails. ② Consider making the CARD itself scrollable to the bottom as the LAST content area (i.e. card height capped at viewport, content inside scrolls) — but preserve pull-to-reveal. ③ Or: make the map page scroll-wrap scrollable by giving the map tab real flow height AND allow the card content to overflow into the scroll area. Do NOT attempt another restructure without user confirmation of the target behavior. |
 | **Prevention** | Before changing the map tab layout again: reproduce the EXACT gesture on the user's device (which tab, which scroll direction), write out the target structure (container heights/positions) in one coherent pass, deploy, and get the user's real-device confirmation. Never declare success from headless verification alone. |
+
+### 37. Monopoly deed popup — TEMPORARILY DISABLED by user request (2026-08-21)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟢 Low (feature hidden intentionally) |
+| **Status** | ⏸️ **DISABLED ON PURPOSE** — user: 「因為我想重新設計某些內容，而家暫時唔需要地契，所以我想隱藏咗佢先，之後可能日後再會用。」 |
+| **What** | `showCellPopup()` in `RealMap.tsx` (L826+) renders a Monopoly-style 「✦ 物 業 契 約 ✦」 deed popup when clicking a grid cell or a flag marker. Triggered at L1280 `map.on('click', onMapClick)` and L586-590 (flag click). |
+| **Fix** | Added `return` at the top of `showCellPopup` (commit `87ae0fd`) — both triggers become no-ops. Code kept in place with a comment; **to re-enable, delete the `return` + comment**. |
+| **Note** | The user-marker popup (pet info: sprite + rarity + Lv) at L1216-1239 is SEPARATE and still active — do NOT confuse with the deed popup. |
+
+### 38. Map player marker looked like a default location pin (circular) — FIXED 2026-08-21
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (visual — user: 「地圖上寵物都係用緊 default icon」) |
+| **Status** | ✅ FIXED 2026-08-21 (commits `5084e0d` + `4adb9a6`) |
+| **Root cause** | `buildPetIcon()` in `RealMap.tsx` rendered the player marker as a **circular** frame (`border-radius:50%` + thick rarity-color border + glow) — the classic "Google Maps location dot / default pin" look — with a 🥚 **emoji** inside when no pet is equipped. The pixel pet sprite itself was already pixel-art (64×64, 4 colors — verified), but the circular chrome made it read as a default icon. |
+| **Fix** | ① Frame → **square** (`border-radius:6px`) + `inset 0 0 0 2px rgba(0,0,0,0.35)` hard edge (PICO-8 style). ② 🥚 emoji → **pixel egg glyph** via new `rmSvg('egg')` string helper (84 SVG rects). ③ Marker 32→36px (no-pet) / 44→48px (with pet), pet sprite 36→38px. `rmSvg()` is the SVG-string twin of `RMGlyph` for HTML template literals (mirrors `pxSvg()` in page.tsx). |
+| **Prevention** | Any map marker should be square pixel-chrome, never a circular location-dot, to match Pipz's PICO-8 aesthetic. Use `rmSvg()` (not emoji) inside `L.divIcon` HTML strings. |

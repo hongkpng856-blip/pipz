@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.41.4 — Pixel Map Markers + Deed Popup Hidden (2026-08-21)
+
+### Changed
+- **Player pet marker → PICO-8 square chrome** (`RealMap.tsx` `buildPetIcon`): circular frame (`border-radius:50%`) + glow → **square frame** (`border-radius:6px`) + inset hard edge, marker enlarged (44→48px, pet sprite 36→38px). No more "default Google Maps location dot" look.
+- **No-pet marker**: 🥚 emoji → **pixel egg glyph** (new `rmSvg('egg')` string helper, 84 SVG rects); frame square; marker 32→36px.
+
+### Removed (temporarily)
+- **Monopoly deed popup** (`showCellPopup`) — disabled by user request while redesigning content (「暫時唔需要地契…隱藏咗佢先，之後日後再會用」). `return` no-op at top of function; re-enable by deleting it.
+
+### Added
+- `rmSvg()` SVG-string helper in `RealMap.tsx` — twin of `RMGlyph` for use inside `L.divIcon` HTML template literals (mirrors `pxSvg()` in page.tsx).
+
+### Docs
+- BUGS 37 (deed popup disabled), BUGS 38 (marker circular-chrome → pixel square, fixed).
+
 ## v0.41.3 — Full Pixel Theme: Hand-Crafted Icons + 8-Bit Numbers (2026-08-20)
 
 ### Added
