@@ -3322,7 +3322,7 @@ export default function HomePage() {
                               </div>
                               <div style={{display:'flex', alignItems:'center', gap:10, padding:'8px 12px', borderRadius:8, background:'rgba(255,255,255,0.04)'}}>
                                 <svg width="18" height="26" viewBox="0 0 26 38" fill="none"><path d="M14.5 0L0 20h10.5L9 38l17-22H15l2-16h-2.5z" fill="#f59e0b"/></svg>
-                                <div style={{fontSize:20, fontWeight:800, color:'#f59e0b'}}>{ready ? formatSteps(displayEnergy) : '0'}</div>
+                                <div style={{fontSize:18, fontWeight:800, color:'#f59e0b', fontFamily:'\'Press Start 2P\', monospace', letterSpacing:1}}>{ready ? formatSteps(displayEnergy) : '0'}</div>
                               </div>
                               {/* Eggs grid */}
                               {eggs.length > 0 && (
@@ -4566,7 +4566,7 @@ export default function HomePage() {
                 </div>
                 <div style={{display:'flex', justifyContent:'space-between'}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>你嘅步數</span>
-                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600, display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="foot" size={11} active /> {formatSteps(totalSteps)}</span>
+                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600, display:'inline-flex', alignItems:'center', gap:3, fontFamily:'\'VT323\', monospace', fontSize:13}}><TabGlyph k="foot" size={11} active /> {formatSteps(totalSteps)}</span>
                 </div>
               </div>
               <div style={{display:'flex', gap:8}}>

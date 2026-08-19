@@ -6,6 +6,115 @@ import 'leaflet/dist/leaflet.css'
 import { generatePixelPet, drawPixelGrid } from '@pipz/core'
 import type { FlagCell } from '../lib/supabase-db'
 
+// ── Pixel-art icon helper (PICO-8 style) for map buttons — 2026-08-12 ──
+const RM_ICONS: Record<string, { color: string; shadow: string; grid: string[] }> = {
+  // 🧭 compass
+  compass: {
+    color: '#22d3ee', shadow: '#0891b2',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '#...##...#',
+      '#..####..#',
+      '#..####..#',
+      '#...##...#',
+      '.#......#.',
+      '..######..',
+    ],
+  },
+  // 🛰️ gps satellite
+  sat: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '....#.....',
+      '...#.#....',
+      '....#.....',
+      '..#####...',
+      '..#####...',
+      '...#.#....',
+      '..#####...',
+      '..........',
+    ],
+  },
+  // 🎯 gps target (on)
+  target: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '#..####..#',
+      '#..#..#..#',
+      '#..#..#..#',
+      '#..####..#',
+      '.#......#.',
+      '..######..',
+    ],
+  },
+  // 📍 location pin (off)
+  pin: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '..######..',
+      '..######..',
+      '...####...',
+      '....##....',
+      '....##....',
+    ],
+  },
+  // 🗺️ map (trail overview on)
+  map: {
+    color: '#8b5cf6', shadow: '#7c3aed',
+    grid: [
+      '...####...',
+      '..#....#..',
+      '.#......#.',
+      '.#..###.#.',
+      '.#..#..#..',
+      '.#..#.#...',
+      '..####....',
+      '..........',
+    ],
+  },
+  // 👣 footprints (trail overview off)
+  foot: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '..#.#.#...',
+      '.#####....',
+      '..###.....',
+      '..###.....',
+      '..###.....',
+      '.#####....',
+      '..###.....',
+      '..........',
+    ],
+  },
+}
+function RMGlyph({ k, size = 18, active = false }: { k: string; size?: number; active?: boolean }) {
+  const def = RM_ICONS[k] ?? RM_ICONS.map
+  const rows = def.grid.length, cols = def.grid[0].length
+  const cell = size / rows
+  const px: React.ReactNode[] = []
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = def.grid[y][x]
+      if (ch === '.' || ch === ' ') continue
+      const cx = x * cell, cy = y * cell
+      px.push(<rect key={`s${x}-${y}`} x={cx} y={cy + cell * 0.25} width={cell} height={cell} fill={def.shadow} />)
+      px.push(<rect key={`b${x}-${y}`} x={cx} y={cy} width={cell} height={cell} fill={active ? def.color : '#94a5b8'} />)
+    }
+  }
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true" style={{ display: 'block' }}>
+      {px}
+    </svg>
+  )
+}
+
+
 interface Props {
   position: { lat: number; lng: number; heading?: number; accuracy?: number } | null
   walking: boolean
@@ -1472,7 +1581,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
       {walking && (
         <div className={`real-map-gps-badge ${mode === 'vehicle' ? 'real-map-mode-vehicle' : mode === 'stationary' ? 'real-map-mode-stationary' : ''}`}>
           <span className={`gps-dot ${mode === 'vehicle' ? 'gps-dot-vehicle' : mode === 'stationary' ? 'gps-dot-stationary' : ''}`} />
-          {compassActive ? '🧭' : '🛰️'}
+          <RMGlyph k={compassActive ? 'compass' : 'sat'} size={14} active />
           {' '}
           {mode === 'vehicle' ? '乘車中' : mode === 'stationary' ? '靜止中' : '步行中'}
         </div>
@@ -1499,7 +1608,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         aria-label={gpsFollowRef.current ? '關閉GPS自動跟蹤' : '開啟GPS自動跟蹤'}
         title={gpsFollowRef.current ? 'GPS跟蹤：開啟' : 'GPS跟蹤：關閉'}
       >
-        {gpsFollowRef.current ? '🎯' : '📍'}
+        <RMGlyph k={gpsFollowRef.current ? 'target' : 'pin'} size={20} active />
       </button>
       {/* ── Grid toggle button ── */}
       {SHOW_TERRITORY && (
@@ -1540,7 +1649,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         }}
         aria-label={gridVisible ? '隱藏網格' : '顯示網格'}
       >
-        {gridVisible ? '▦' : '▢'}
+        <RMGlyph k='map' size={20} active={gridVisible} />
       </button>
       )}
       {/* ── Trail overview button ── */}
@@ -1550,7 +1659,7 @@ const RealMap = forwardRef<RealMapHandle, Props>(function RealMap({ position, wa
         aria-label={trailOverview ? '關閉足跡總覽' : '足跡總覽'}
         title={trailOverview ? '足跡總覽' : '足跡總覽'}
       >
-        {trailOverview ? '🗺️' : '👣'}
+        <RMGlyph k={trailOverview ? 'map' : 'foot'} size={20} active />
       </button>
     </div>
   )
