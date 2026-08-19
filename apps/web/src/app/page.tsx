@@ -69,7 +69,7 @@ function getZoneIdx(row: number, col: number): number {
 // ── Tab icons (hand-crafted pixel-art, PICO-8 style — Pipz 2026-08-12) ──
 // Each grid char: pixel of fill color; '.' = transparent. Rendered as SVG rects
 // with a darker drop shadow below each pixel for a chunky retro-game feel.
-type Pixel = string[][]
+type Pixel = string[]
 const PIXEL_TABS: Record<string, { grid: Pixel; color: string; shadow: string }> = {
   // 🗺️ map — folded paper map with a pin
   map: {
@@ -487,6 +487,505 @@ const PIXEL_TABS: Record<string, { grid: Pixel; color: string; shadow: string }>
       '..........',
     ],
   },
+
+  // ⚔️ monster — crossed swords
+  sword: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '..#......',
+      '..#..#...',
+      '...#..#..',
+      '.....#...',
+      '..##.#...',
+      '.#...#...',
+      '.#....#..',
+      '..######.',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⚠️ warning — triangle
+  warn: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '.##....##.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+    ],
+  },
+  // ✅ check — confirm
+  check: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..........',
+      '..........',
+      '..........',
+      '....#.....',
+      '...#.#....',
+      '..#..#....',
+      '.#...#....',
+      '#....#....',
+      '..........',
+      '..........',
+    ],
+  },
+  // ✨ sparkle — hatching / evolve
+  sparkle: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '....#.....',
+      '....#.....',
+      '..#####...',
+      '....#.....',
+      '....#.....',
+      '..........',
+      '....#..#..',
+      '.....#....',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🌐 globe — coordinates
+  globe: {
+    color: '#22d3ee', shadow: '#0891b2',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '#..##..#..',
+      '#.####.#..',
+      '#..##..#..',
+      '#........#',
+      '.#......#.',
+      '..######..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🍀 luck — four leaf clover
+  clover: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '..#....#..',
+      '..##..##..',
+      '...####...',
+      '..######..',
+      '...####...',
+      '....##....',
+      '....##....',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🎉 celebrate — confetti party
+  party: {
+    color: '#ec4899', shadow: '#db2777',
+    grid: [
+      '....#....#',
+      '...#....#.',
+      '..#####...',
+      '...#....#.',
+      '....#....#',
+      '..........',
+      '..#...#...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🏃 run — escaping
+  run: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '....##....',
+      '...####...',
+      '....##....',
+      '...####...',
+      '..##..##..',
+      '..##...##.',
+      '...#....#.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🏡 home garden — owned property
+  home: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '.....##...',
+      '....####..',
+      '...######.',
+      '..########',
+      '.#......#.',
+      '.#.#..#.#.',
+      '.#......#.',
+      '.#.#..#.#.',
+      '.#......#.',
+      '.########.',
+    ],
+  },
+  // 📊 chart — weekly steps
+  chart: {
+    color: '#3b82f6', shadow: '#2563eb',
+    grid: [
+      '..........',
+      '........#.',
+      '........#.',
+      '.....#..#.',
+      '.....#..#.',
+      '.....#..#.',
+      '.#...#..#.',
+      '.#...#..#.',
+      '.#...#..#.',
+      '##########',
+    ],
+  },
+  // 🔋 battery — energy
+  battery: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '.#######..',
+      '#........#',
+      '#........#',
+      '#.....#..#',
+      '#........#',
+      '#........#',
+      '.#######..',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📌 pin — listing
+  pin: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '..######..',
+      '..######..',
+      '...####...',
+      '....##....',
+      '....##....',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📅 calendar — purchase date
+  calendar: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '..######..',
+      '..#....#..',
+      '..........',
+      '.########.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📭 inbox — empty state
+  inbox: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '..........',
+      '.########.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '..######..',
+      '...####...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🔍 search — loading location
+  search: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '..####.#..',
+      '......#...',
+      '........#.',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⏳ hourglass — processing
+  hourglass: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '.########.',
+      '..######..',
+      '...####...',
+      '....##....',
+      '...####...',
+      '..######..',
+      '.########.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 😢 sad — insufficient
+  sad: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '..........',
+      '..#....#..',
+      '...#..#...',
+      '..........',
+      '..........',
+      '.########.',
+      '.########.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 💼 briefcase — surprise shop
+  briefcase: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '..######..',
+      '..#....#..',
+      '.########.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🛒 cart — buy (already have 'cart')
+  // 📜 scroll — card toggle
+  scroll: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '..#####...',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '..#####...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 💥 explosion — trap/chest burst
+  boom: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '.#.....#..',
+      '..#...#...',
+      '...###....',
+      '.########.',
+      '..######..',
+      '...####...',
+      '..##..##..',
+      '.#......#.',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📦 box — chest
+  box: {
+    color: '#d4845a', shadow: '#b45309',
+    grid: [
+      '..........',
+      '.########.',
+      '.#......#.',
+      '.########.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🐣 hatch — baby chick
+  chick: {
+    color: '#fbbf24', shadow: '#d97706',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '...####...',
+      '..######..',
+      '.##....##.',
+      '.########.',
+      '...#..#...',
+      '..........',
+      '..........',
+    ],
+  },
+  // 💨 dash — speed burst
+  dash: {
+    color: '#22d3ee', shadow: '#0891b2',
+    grid: [
+      '..........',
+      '.#........',
+      '..##......',
+      '...###....',
+      '....####..',
+      '...###....',
+      '..##......',
+      '.#........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🐱 cat — pixel lab cat
+  cat: {
+    color: '#d4845a', shadow: '#b45309',
+    grid: [
+      '.#.....#..',
+      '.#..#..#..',
+      '.#.....#..',
+      '..#####...',
+      '..##.##...',
+      '..##.##...',
+      '..#####...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🐶 dog — shiba
+  dog: {
+    color: '#a878c8', shadow: '#8b5cf6',
+    grid: [
+      '.#.....#..',
+      '.#..#..#..',
+      '.#.....#..',
+      '..#####...',
+      '..##.##...',
+      '..#####...',
+      '..##..##..',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📤 upload — list item
+  upload: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '....##....',
+      '....##....',
+      '..........',
+      '..######..',
+      '..######..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📥 download — unlist
+  down: {
+    color: '#f59e0b', shadow: '#d97706',
+    grid: [
+      '..######..',
+      '..######..',
+      '..........',
+      '....##....',
+      '....##....',
+      '...####...',
+      '..######..',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🏚️ abandon — abandoned house
+  abandon: {
+    color: '#94a5b8', shadow: '#5a6d85',
+    grid: [
+      '.....##...',
+      '....####..',
+      '...######.',
+      '..########',
+      '.#......#.',
+      '.#.#..#.#.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+    ],
+  },
+  // 🏪 shop — storefront
+  shop: {
+    color: '#ec4899', shadow: '#db2777',
+    grid: [
+      '.########.',
+      '#.#.#.#.#.',
+      '#.#.#.#.#.',
+      '.########.',
+      '.#......#.',
+      '.#.####.#.',
+      '.#.####.#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+    ],
+  },
+
+  // ❌ xmark — error
+  xmark: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '..........',
+      '.#......#.',
+      '..#....#..',
+      '...#..#...',
+      '....##....',
+      '...#..#...',
+      '..#....#..',
+      '.#......#.',
+      '..........',
+      '..........',
+    ],
+  },
+  // ℹ️ info — info circle
+  info: {
+    color: '#3b82f6', shadow: '#2563eb',
+    grid: [
+      '..######..',
+      '.#......#.',
+      '#...##...#',
+      '#...##...#',
+      '#........#',
+      '#...##...#',
+      '.#......#.',
+      '..######..',
+      '..........',
+      '..........',
+    ],
+  },
 }
 // lighten a hex color toward white (for top highlight)
 function pixelHighlight(hex: string): string {
@@ -519,6 +1018,31 @@ function TabGlyph({ k, size = 18, active = false }: { k: string; size?: number; 
       {px}
     </svg>
   )
+}
+
+// ── pxSvg: pure SVG string version of TabGlyph (for HTML template literals) ──
+const pxSvgCache = new Map<string, string>()
+function pxSvg(k: string, size = 14, active = true): string {
+  const key = `${k}:${size}:${active}`
+  const cached = pxSvgCache.get(key)
+  if (cached) return cached
+  const { grid, color, shadow } = PIXEL_TABS[k] ?? PIXEL_TABS.map
+  const rows = grid.length, cols = grid[0].length
+  const cell = size / rows
+  let rects = ''
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const ch = grid[y][x]
+      if (ch === '.' || ch === ' ') continue
+      const cx = (x * cell).toFixed(2), cy = (y * cell).toFixed(2)
+      rects += `<rect x="${cx}" y="${(y * cell + cell * 0.25).toFixed(2)}" width="${cell}" height="${cell}" fill="${shadow}"/>`
+      rects += `<rect x="${cx}" y="${cy}" width="${cell}" height="${cell}" fill="${active ? color : '#94a5b8'}"/>`
+      rects += `<rect x="${(x * cell + cell * 0.1).toFixed(2)}" y="${(y * cell + cell * 0.1).toFixed(2)}" width="${(cell * 0.8).toFixed(2)}" height="${(cell * 0.4).toFixed(2)}" fill="${active ? pixelHighlight(color) : 'transparent'}"/>`
+    }
+  }
+  const out = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true" style="display:inline-block;vertical-align:-3px">${rects}</svg>`
+  pxSvgCache.set(key, out)
+  return out
 }
 
 export default function HomePage() {
@@ -1704,10 +2228,10 @@ export default function HomePage() {
       <div style="font-size:48px;line-height:1;margin-bottom:8px">${m.emoji}</div>
       <div style="font-size:18px;font-weight:800;color:#e8e0d0;margin-bottom:2px">${m.label}</div>
       <div style="font-size:10px;font-weight:700;color:${c};margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${rarityLabel} · Lv.${m.level}</div>
-      <div style="font-size:11px;color:#5a6d85;margin-bottom:14px">⚔️ 野生怪獸擋住去路！</div>
+      <div style="font-size:11px;color:#5a6d85;margin-bottom:14px;display:flex;align-items:center;gap:5px">${pxSvg('sword',12)} 野生怪獸擋住去路！</div>
       <div style="display:flex;gap:8px;justify-content:center">
-        <button id="monster-battle-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-size:12px;font-weight:700;font-family:inherit">⚔️ 戰鬥</button>
-        <button id="monster-run-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">🏃 逃走</button>
+        <button id="monster-battle-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;font-size:12px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:4px">${pxSvg('sword',12)} 戰鬥</button>
+        <button id="monster-run-btn" style="padding:6px 20px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit;display:inline-flex;align-items:center;gap:4px">${pxSvg('run',12)} 逃走</button>
       </div>
     </div>`
     overlay.querySelector('#monster-battle-btn')?.addEventListener('click', () => {
@@ -1751,7 +2275,7 @@ export default function HomePage() {
     overlay.innerHTML = `<div class="card" style="width:300px;overflow:hidden;border:1.5px solid ${shop.color}66;box-shadow:0 0 30px ${shop.color}33;background:#1a1b2e;border-radius:14px;">
       <!-- Shop Header / Sign -->
       <div style="background:linear-gradient(135deg,${shop.color}22,${shop.color}11);padding:16px 20px 12px;text-align:center;border-bottom:1px solid ${shop.color}33">
-        <div style="font-size:32px;line-height:1;margin-bottom:4px">🏪</div>
+        <div style="line-height:1;margin-bottom:4px">${pxSvg('shop',30)}</div>
         <div style="font-size:16px;font-weight:800;color:#e8e0d0;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,0.4)">${shop.label}</div>
         <div style="font-size:10px;color:#5a6d85;margin-top:2px">${shop.desc}</div>
       </div>
@@ -1761,20 +2285,20 @@ export default function HomePage() {
           ${shop.displayDiscount}
         </div>
         <div style="font-size:11px;color:#5a6d85;margin-top:4px;font-weight:600">
-          ${shop.isTrap ? '⚡ 限時優惠即將結束！' : shop.isSurprise ? '💼 限定商品限時折扣' : shop.displayDiscount === '??' ? '🎲 揭開神秘價格' : '🎉 限時折扣'}
+          ${shop.isTrap ? pxSvg('bolt',10)+' 限時優惠即將結束！' : shop.isSurprise ? pxSvg('briefcase',10)+' 限定商品限時折扣' : shop.displayDiscount === '??' ? pxSvg('dice',10)+' 揭開神秘價格' : pxSvg('party',10)+' 限時折扣'}
         </div>
       </div>
       <!-- Countdown Timer (beautiful) -->
       <div style="padding:4px 20px 10px;text-align:center">
         <div id="shop-countdown" style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:${shop.color};font-weight:700">
-          <span>⏳</span>
+          <span>${pxSvg('hourglass',12)}</span>
           <span id="shop-countdown-text" style="font-variant-numeric:tabular-nums">--:--</span>
           <span style="font-weight:400;color:#5a6d85">剩餘</span>
         </div>
       </div>
       <!-- Product Display -->
       <div style="padding:10px 20px;display:flex;align-items:center;gap:12px;border-top:1px solid rgba(255,255,255,0.04)">
-        <div style="flex-shrink:0;width:56px;height:56px;background:${shop.color}15;border-radius:12px;border:1px solid ${shop.color}22;display:flex;align-items:center;justify-content:center;font-size:28px">🥚</div>
+        <div style="flex-shrink:0;width:56px;height:56px;background:${shop.color}15;border-radius:12px;border:1px solid ${shop.color}22;display:flex;align-items:center;justify-content:center">${pxSvg('egg',30)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;color:#e8e0d0">圓貓蛋</div>
           <div style="font-size:10px;color:#5a6d85">孵化出圓貓 PixelLab 寵物</div>
@@ -1783,18 +2307,18 @@ export default function HomePage() {
       <!-- Price Tag -->
       <div style="padding:8px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.05)">
         <div style="font-size:11px;color:#5a6d85;margin-bottom:4px">原價</div>
-        <div style="font-size:14px;color:#5a6d85;text-decoration:line-through;margin-bottom:2px">👣 ${isTrap ? 1500 : isSurprise ? 6000 : shop.actualPrice * 2}</div>
-        <div style="font-size:22px;font-weight:800;color:${shop.color}">
-          👣 ${displayPrice}
+        <div style="font-size:14px;color:#5a6d85;text-decoration:line-through;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:4px">${pxSvg('foot',12)} ${isTrap ? 1500 : isSurprise ? 6000 : shop.actualPrice * 2}</div>
+        <div style="font-size:22px;font-weight:800;color:${shop.color};display:flex;align-items:center;justify-content:center;gap:5px">
+          ${pxSvg('foot',16)} ${displayPrice}
           <span style="font-size:10px;font-weight:600;color:#5a6d85;margin-left:4px">/ 步</span>
         </div>
       </div>
       <!-- Bottom: Player Steps + Buttons -->
       <div style="padding:12px 20px 16px;display:flex;flex-direction:column;gap:10px">
         <div style="font-size:11px;color:#5a6d85;text-align:center">
-          你而家有 👣 <strong style="color:#e8e0d0">${totalSteps}</strong>
-          ${isTrap ? ' · <span style="color:#ef4444">⚠️ 留意條款</span>' : ''}
-          ${isSurprise ? ' · <span style="color:#22c55e">🎉 驚喜價</span>' : ''}
+          你而家有 ${pxSvg('foot',12)} <strong style="color:#e8e0d0">${totalSteps}</strong>
+          ${isTrap ? ' · <span style="color:#ef4444">'+pxSvg('warn',10)+' 留意條款</span>' : ''}
+          ${isSurprise ? ' · <span style="color:#22c55e">'+pxSvg('party',10)+' 驚喜價</span>' : ''}
         </div>
         <div style="display:flex;gap:8px;justify-content:center">
           <button id="shop-buy-btn" style="flex:1;padding:10px 16px;border-radius:10px;cursor:pointer;
@@ -1803,7 +2327,7 @@ export default function HomePage() {
             color:${isTrap ? '#ef4444' : canAfford ? shop.color : '#5a6d85'};
             font-size:13px;font-weight:700;font-family:inherit;
             ${!canAfford && !isTrap ? 'opacity:0.5;cursor:not-allowed' : isTrap ? '' : ''}">
-            ${isTrap ? '⚡ 限時搶購！' : canAfford ? '🛒 立即購買' : '😢 步數不足'}
+            ${isTrap ? pxSvg('bolt',12)+' 限時搶購！' : canAfford ? pxSvg('cart',12)+' 立即購買' : pxSvg('sad',12)+' 步數不足'}
           </button>
           <button id="shop-close-btn" style="padding:10px 16px;border-radius:10px;cursor:pointer;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444;font-size:12px;font-weight:600;font-family:inherit">✕</button>
         </div>
@@ -2199,7 +2723,7 @@ export default function HomePage() {
     }
     setPets(v => v.map((p, i) => i === activeIdx ? evolved : p))
     setEvolvingId(pet.id)
-    logMsg(`🌟 進化！${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
+    logMsg(`<span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="star" size={11} active /> 進化！</span>${RARITY_LABELS[pet.rarity]} → Lv.${evolved.level}`)
     if (user) { createNotification(user.id, 'pet_evolved', '🌟 寵物進化咗！', `${pet.name || '你嘅寵物'}進化到${['BB','幼年','成年','完全體','傳說'][e.newStage-1]||'新'}形態！繼續行路拎更多進化！`, pet.id); setNotifUnread(n => n + 1) }
     if (user) updatePet(evolved)
     // Animation → 帶回寵物頁
@@ -2686,14 +3210,14 @@ export default function HomePage() {
                                 style={{position:'absolute', fontSize:14, fontWeight:700, color:'#22c55e', left:`${-20 + i * 14}px`, top:0, pointerEvents:'none', zIndex:3}}>↑</div>
                             ))}
                             <div className="steps-label" style={{marginTop:2}}>今日步數</div>
-                            {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>👟 雙倍步伐</div>)}
-                            {pet?.skills?.some(s => s.effect === SkillEffect.StepBonus) && (<div style={{fontSize:7, color:'#22d3ee', marginTop:1}}>💨 疾步如飛</div>)}
+                            {pet?.skills?.some(s => s.effect === SkillEffect.DoubleSteps) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2, display:'flex', alignItems:'center', gap:3}}><TabGlyph k="foot" size={8} active /> 雙倍步伐</div>)}
+                            {pet?.skills?.some(s => s.effect === SkillEffect.StepBonus) && (<div style={{fontSize:7, color:'#22d3ee', marginTop:1, display:'flex', alignItems:'center', gap:3}}><TabGlyph k="dash" size={8} active /> 疾步如飛</div>)}
                           </div>
                           <div style={{width:1, background:'#1e2a45'}} />
                           <div style={{textAlign:'center'}}>
                             <div className="steps-num">{ready ? formatSteps(totalSteps) : '0'}</div>
                             <div className="steps-label" style={{marginTop:2}}>總步數</div>
-                            {pet?.skills?.some(s => s.effect === SkillEffect.EnergyBonus) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2}}>⚡ 能量過載</div>)}
+                            {pet?.skills?.some(s => s.effect === SkillEffect.EnergyBonus) && (<div style={{fontSize:7, color:'#f59e0b', marginTop:2, display:'flex', alignItems:'center', gap:3}}><TabGlyph k="bolt" size={8} active /> 能量過載</div>)}
                           </div>
                           <div style={{width:1, background:'#1e2a45'}} />
                           <div style={{textAlign:'center'}}>
@@ -2706,7 +3230,7 @@ export default function HomePage() {
                       {/* ── 🏠 Properties preview ── */}
                       {cardTab === 'properties' && (
                         <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0', marginBottom:14}}>
-                          <div style={{fontSize:32}}>🏡</div>
+                          <div style={{fontSize:32}}><TabGlyph k="home" size={30} active /></div>
                           <div>
                             <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>我的地產</div>
                             <div style={{fontSize:10, color:'#5a6d85', marginTop:2}}>{properties.length} 佔領 · {(allFlagCells || []).length} 插旗</div>
@@ -2717,7 +3241,7 @@ export default function HomePage() {
                       {/* ── 🏪 Community preview ── */}
                       {cardTab === 'community' && (
                         <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0', marginBottom:14}}>
-                          <div style={{fontSize:32}}>🏪</div>
+                          <div style={{fontSize:32}}><TabGlyph k="shop" size={30} active /></div>
                           <div>
                             <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>社群</div>
                             <div style={{fontSize:10, color:'#5a6d85', marginTop:2}}>商店 · 玩家互動</div>
@@ -2728,7 +3252,7 @@ export default function HomePage() {
                       {/* ── 🎒 Backpack preview ── */}
                       {cardTab === 'inventory' && (
                         <div style={{display:'flex', alignItems:'center', gap:12, padding:'4px 0', marginBottom:14}}>
-                          <div style={{fontSize:32}}>🎒</div>
+                          <div style={{fontSize:32}}><TabGlyph k="inventory" size={30} active /></div>
                           <div>
                             <div style={{fontSize:14, fontWeight:700, color:'#e2e8f0'}}>背包</div>
                             <div style={{fontSize:10, color:'#5a6d85', marginTop:2}}>道具 · 裝備</div>
@@ -2744,7 +3268,7 @@ export default function HomePage() {
                         {weeklySteps.length > 0 && (
                           <div style={{marginBottom:8}}>
                             <div style={{display:'flex', justifyContent:'space-between', fontSize:9, color:'#94a5b8', marginBottom:8}}>
-                              <span>📊 本週步數</span>
+                              <span style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="chart" size={12} active /> 本週步數</span>
                               <span>{formatSteps(weeklySteps.reduce((a,b) => a+b.steps, 0))} / 週</span>
                             </div>
                             <div className="weekly-chart">
@@ -2767,7 +3291,7 @@ export default function HomePage() {
                       {cardTab === 'pets' && (() => {
                         if (pets.length === 0) return (
                           <div style={{textAlign:'center', padding:'30px 0', color:'#5a6d85'}}>
-                            <div style={{fontSize:36, marginBottom:8}}>🥚</div>
+                            <div style={{marginBottom:8}}><TabGlyph k="egg" size={34} active /></div>
                             <div style={{fontSize:12}}>未有寵物，行路孵化啦！</div>
                           </div>
                         )
@@ -2808,7 +3332,7 @@ export default function HomePage() {
                                     return (
                                       <div key={egg.id} onClick={() => !isHatching && hatchEgg(egg)}
                                         style={{textAlign:'center', padding:'6px 4px', borderRadius:6, borderColor:`${PC[egg.rarity]}44`, border:'1px solid', background:isHatching?'rgba(245,158,11,0.1)':'rgba(255,255,255,0.03)', cursor:isHatching?'default':'pointer'}}>
-                                        <div style={{fontSize:22}}>{isHatching ? '✨' : '🥚'}</div>
+                                        <div style={{fontSize:22}}>{isHatching ? <TabGlyph k="sparkle" size={20} active /> : <TabGlyph k="egg" size={20} active />}</div>
                                         <div style={{fontSize:7, fontWeight:700, color:PC[egg.rarity], marginTop:2}}>{RARITY_LABELS[egg.rarity]}</div>
                                       </div>
                                     )
@@ -2883,9 +3407,9 @@ export default function HomePage() {
                             <div style={{fontSize:10, color:'#5a6d85'}}>{properties.length} 塊</div>
                           </div>
                           {!user ? (
-                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🔑 需要登入先可以購買地皮</div>
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', gap:4}}><TabGlyph k="key" size={12} active /> 需要登入先可以購買地皮</div>
                           ) : properties.length === 0 ? (
-                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🏠 未擁有任何地皮</div>
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', gap:4}}><TabGlyph k="properties" size={12} active /> 未擁有任何地皮</div>
                           ) : (
                             <div style={{overflow:'auto'}}>
                               <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:4}}>
@@ -2900,7 +3424,7 @@ export default function HomePage() {
                                       <div style={{position:'absolute', top:0, left:0, right:0, height:1, background:color, borderRadius:'6px 6px 0 0'}} />
                                       <div style={{fontSize:8, fontWeight:600, color:'#e2e8f0', marginTop:3}}>{prop.cellRow+1}區 {prop.cellCol+1}號</div>
                                       <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>{zoneNames[zoneIdx]}</div>
-                                      <div style={{fontSize:7, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(prop.price)}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b', marginTop:1, display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(prop.price)}</div>
                                     </div>
                                   )
                                 })}
@@ -2913,7 +3437,7 @@ export default function HomePage() {
                       {/* ── 🏪 Community extended ── */}
                       {cardTab === 'community' && (<>
                         {!user ? (
-                          <div style={{textAlign:'center', padding:'20px 0', color:'#5a6d85', fontSize:11, borderTop:'1px solid rgba(255,255,255,0.06)'}}>🔑 需要登入先可以使用交易市場</div>
+                          <div style={{textAlign:'center', padding:'20px 0', color:'#5a6d85', fontSize:11, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', gap:4}}><TabGlyph k="key" size={12} active /> 需要登入先可以使用交易市場</div>
                         ) : (
                           <>
                             {/* My Listings */}
@@ -2931,7 +3455,7 @@ export default function HomePage() {
                                       style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
                                       <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
                                       <div style={{fontSize:7, color:'#94a5b8'}}>Lv.{p.level}</div>
-                                      <div style={{fontSize:7, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b', display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(p.price)}</div>
                                     </div>
                                   ))}
                                 </div>
@@ -2953,7 +3477,7 @@ export default function HomePage() {
                                       style={{padding:'4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`2px solid ${RARITY_COLORS[p.rarity]}44`, cursor:'pointer', textAlign:'center'}}>
                                       <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={1.3} animation="idle" noAnim />
                                       <div style={{fontSize:7, color:'#94a5b8'}}>Lv.{p.level}</div>
-                                      <div style={{fontSize:7, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                                      <div style={{fontSize:7, color:'#f59e0b', display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(p.price)}</div>
                                     </div>
                                   ))}
                                 </div>
@@ -2980,7 +3504,7 @@ export default function HomePage() {
                                         style={{padding:'6px 4px', borderRadius:6, background:'rgba(255,255,255,0.03)', border:`1px solid ${color}33`, cursor:'pointer', textAlign:'center'}}>
                                         <div style={{fontSize:9, fontWeight:600, color:'#e2e8f0'}}>{zoneNames[zoneIdx]}</div>
                                         <div style={{fontSize:7, color:'#5a6d85', marginTop:1}}>{p.cellRow+1}區 {p.cellCol+1}號</div>
-                                        <div style={{fontSize:7, color:'#f59e0b', marginTop:1}}>⚡{formatSteps(Number(p['price'])||p.price||0)}</div>
+                                        <div style={{fontSize:7, color:'#f59e0b', marginTop:1, display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(Number(p['price'])||p.price||0)}</div>
                                       </div>
                                     )
                                   })}
@@ -3001,9 +3525,9 @@ export default function HomePage() {
                             </div>
                           </div>
                           {!user ? (
-                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>🔑 需要登入</div>
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', gap:4}}><TabGlyph k="key" size={12} active /> 需要登入</div>
                           ) : inventory.length === 0 ? (
-                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11}}>📭 未有物品 — 行路探索拎道具啦！</div>
+                            <div style={{textAlign:'center', padding:'16px 0', color:'#5a6d85', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', gap:4}}><TabGlyph k="inbox" size={12} active /> 未有物品 — 行路探索拎道具啦！</div>
                           ) : (
                             (() => {
                               const items = inventory.map((e: any) => {
@@ -3091,7 +3615,7 @@ export default function HomePage() {
               </div>
               {pets.length === 0 ? (
                 <div className="card empty-state">
-                  <div className="empty-icon">🥚</div>
+                  <div className="empty-icon"><TabGlyph k="egg" size={40} active /></div>
                   <div className="empty-text">未有寵物，行路孵化啦！</div>
                 </div>
               ) : (() => {
@@ -3121,7 +3645,7 @@ export default function HomePage() {
                   <div className="section" style={{marginBottom:8, flexShrink:0}}>
                     <div className="section-header">
                       <span className="section-title" style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="bolt" size={14} active /> 你擁有的能量</span>
-                      {eggs.length > 0 && <span className="section-count">🥚 ×{eggs.length}</span>}
+                      {eggs.length > 0 && <span className="section-count" style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="egg" size={11} active /> ×{eggs.length}</span>}
                     </div>
                     <div className="card" style={{padding:'10px 16px'}}>
                       <div style={{display:'flex', alignItems:'center', gap:12}}>
@@ -3137,7 +3661,7 @@ export default function HomePage() {
                         </div>
                         <div>
                           <div style={{fontSize:9, color:'#5a6d85', marginBottom:1}}>
-                            🔋 累積能量{energyMult > 1 ? ' ⚡能量過載' : ''}
+                            <span style={{display:'inline-flex',alignItems:'center',gap:4}}><TabGlyph k="battery" size={13} active /> 累積能量{energyMult > 1 ? <><TabGlyph k="bolt" size={11} active />能量過載</> : ''}</span>
                           </div>
                           <div style={{fontSize:22, fontWeight:800, color:'#f59e0b', letterSpacing:'-0.02em'}}>
                             {ready ? formatSteps(displayEnergy) : '0'}
@@ -3162,12 +3686,12 @@ export default function HomePage() {
                                   }}>
                                   {isHatching ? (
                                     <>
-                                      <div style={{fontSize:28, animation:'pulse 0.5s ease-in-out infinite', marginBottom:6}}>✨</div>
+                                      <div style={{animation:'pulse 0.5s ease-in-out infinite', marginBottom:6}}><TabGlyph k="sparkle" size={26} active /></div>
                                       <div style={{fontSize:9, color:'#f59e0b', fontWeight:700}}>孵化中...</div>
                                     </>
                                   ) : (
                                     <>
-                                      <div style={{fontSize:32, marginBottom:4}}>🥚</div>
+                                      <div style={{marginBottom:4}}><TabGlyph k="egg" size={28} active /></div>
                                       <div style={{
                                         fontSize:7, fontWeight:700, color:PC[egg.rarity],
                                         background:`${PC[egg.rarity]}18`,
@@ -3196,7 +3720,7 @@ export default function HomePage() {
                                   padding: '12px 4px',
                                   opacity:0.4,
                                 }}>
-                                <div style={{fontSize:32, marginBottom:4, filter:'grayscale(0.6)'}}>🥚</div>
+                                <div style={{marginBottom:4, filter:'grayscale(0.6)'}}><TabGlyph k="egg" size={28} active /></div>
                                 <div style={{
                                   fontSize:7, fontWeight:700, color:'#5a6d85',
                                   display:'inline-block', padding:'1px 8px', borderRadius:3,
@@ -3326,7 +3850,7 @@ export default function HomePage() {
             <div className="fade-up">
               {!user ? (
                 <div className="card empty-state" style={{marginTop:32}}>
-                  <div className="empty-icon">🔑</div>
+                  <div className="empty-icon"><TabGlyph k="key" size={40} active /></div>
                   <div className="empty-text">需要登入先可以使用交易市場</div>
                 </div>
               ) : (
@@ -3355,7 +3879,7 @@ export default function HomePage() {
                               <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" noAnim />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
-                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b', display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(p.price)}</div>
                           </div>
                         ))}
                       </div>
@@ -3385,7 +3909,7 @@ export default function HomePage() {
                               <PixelPetCanvas key={p.id} seed={parseInt(p.speciesId)||1} rarity={p.rarity} evolutionStage={p.evolutionStage} size={2.2} animation="idle" noAnim />
                             </div>
                             <div style={{fontSize:7, color:'#94a5b8', fontWeight:600}}>Lv.{p.level}</div>
-                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b'}}>⚡{formatSteps(p.price)}</div>
+                            <div style={{fontSize:7, fontWeight:700, color:'#f59e0b', display:'flex', alignItems:'center', gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(p.price)}</div>
                           </div>
                         ))}
                       </div>
@@ -3425,17 +3949,17 @@ export default function HomePage() {
                                 <div style={{position:'absolute', top:0, left:0, right:0, height:2,
                                   background: isOwn ? '#22c55e' : color,
                                   borderRadius:'14px 14px 0 0'}} />
-                                <div style={{fontSize:24, marginBottom:2}}>{isOwn ? '✅' : '🏠'}</div>
+                                <div style={{marginBottom:2}}>{isOwn ? <TabGlyph k="check" size={22} active /> : <TabGlyph k="properties" size={22} active />}</div>
                                 <div style={{fontSize:9, fontWeight:700, color: isOwn ? '#22c55e' : color,
                                   textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
                                 <div style={{fontSize:6, color:'#94a5b8', marginTop:1, lineHeight:1.2}}>
-                                  {prop.locationName ? prop.locationName.replace('📍 ','') : '🔍 載入地段…'}
+                                  {prop.locationName ? prop.locationName.replace('📍 ','') : <><TabGlyph k="search" size={9} active /> 載入地段…</>}
                                 </div>
                                 <div style={{fontSize:7, color:'#5a6d85', marginTop:2}}>
-                                  {isOwn ? '👤 你擁有' : (prop.sellerName ? `👤 ${prop.sellerName}` : '由賣家出售')}
+                                  {isOwn ? <><TabGlyph k="user" size={9} active /> 你擁有</> : (prop.sellerName ? <><TabGlyph k="user" size={9} active /> {prop.sellerName}</> : '由賣家出售')}
                                 </div>
                                 <div style={{fontSize:8, fontWeight:700, color:'#f59e0b', marginTop:1}}>
-                                  ⚡{formatSteps(sellPrice)}
+                                  <span style={{display:'inline-flex',alignItems:'center',gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(sellPrice)}</span>
                                 </div>
                               </div>
                             )
@@ -3462,7 +3986,7 @@ export default function HomePage() {
 
               {inventory.length === 0 ? (
                 <div className="card empty-state">
-                  <div className="empty-icon">📭</div>
+                  <div className="empty-icon"><TabGlyph k="inbox" size={40} active /></div>
                   <div className="empty-text">未有物品 — 行路探索拎道具啦！</div>
                 </div>
               ) : (
@@ -3550,17 +4074,17 @@ export default function HomePage() {
                     color:'#a78bfa', cursor:'pointer', fontFamily:'inherit',
                     whiteSpace:'nowrap', lineHeight:1.3,
                   }}>
-                  {compactProps ? '📜 細卡' : '📜 大卡'}
+                  {compactProps ? <><TabGlyph k='scroll' size={10} active /> 細卡</> : <><TabGlyph k='scroll' size={10} active /> 大卡</>}
                 </button>
               </div>
               {!user ? (
                 <div className="card empty-state">
-                  <div className="empty-icon">🔑</div>
+                  <div className="empty-icon"><TabGlyph k="key" size={40} active /></div>
                   <div className="empty-text">需要登入先可以購買地皮</div>
                 </div>
               ) : properties.length === 0 ? (
                 <div className="card empty-state">
-                  <div className="empty-icon">🏠</div>
+                  <div className="empty-icon"><TabGlyph k="properties" size={40} active /></div>
                   <div className="empty-text">未擁有任何地皮</div>
                   <div style={{fontSize:10, color:'#5a6d85', marginTop:4}}>
                     喺地圖點擊格仔即可佔領（25 步）
@@ -3590,7 +4114,7 @@ export default function HomePage() {
                           position: 'absolute', top: 0, left: 0, right: 0, height: 2,
                           background: color,
                         }} />
-                        <div style={{fontSize: 18, lineHeight: 1.2, marginBottom: 1}}>🏠</div>
+                        <div style={{lineHeight: 1.2, marginBottom: 1}}><TabGlyph k="properties" size={16} active /></div>
                         <div style={{
                           fontSize: 9, fontWeight: 700, color,
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -3601,11 +4125,11 @@ export default function HomePage() {
                         }}>{zoneNames[zoneIdx]}</div>
                         <div style={{
                           fontSize: 8, fontWeight: 600, color: '#94a5b8', marginTop: 1,
-                        }}>⚡{formatSteps(prop.price)}</div>
+                        }}><span style={{display:'inline-flex',alignItems:'center',gap:2}}><TabGlyph k="bolt" size={8} active />{formatSteps(prop.price)}</span></div>
                         {isListed && (
                           <div style={{
                             fontSize: 6, color: '#22c55e', fontWeight: 700, marginTop: 1,
-                          }}>📌 上架中</div>
+                          }}><span style={{display:'inline-flex',alignItems:'center',gap:2}}><TabGlyph k="pin" size={9} active /> 上架中</span></div>
                         )}
                       </div>
                     )
@@ -3740,12 +4264,12 @@ export default function HomePage() {
           }} onClick={e => e.stopPropagation()}>
             {evolvingId === pet.id ? (
               <>
-                <div style={{fontSize:48, marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}>✨</div>
+                <div style={{marginBottom:12, animation:'pulse 0.5s ease-in-out infinite'}}><TabGlyph k="sparkle" size={44} active /></div>
                 <div style={{fontSize:24, fontWeight:800, background:'linear-gradient(135deg,#f59e0b,#ffd700)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', marginBottom:8}}>
                   進化中...
                 </div>
                 <div className="hatch-sparkle">
-                  {['🌟','⭐','💫','✨'].map((s,i) => (
+                  {['sparkle','star','sparkle','star'].map((s,i) => (
                     <span key={i} style={{animationDelay:`${i*0.2}s`, fontSize:24}}>{s}</span>
                   ))}
                 </div>
@@ -3760,7 +4284,7 @@ export default function HomePage() {
                   size={4}
                 />
                 <div style={{fontSize:20, fontWeight:800, color:'#f59e0b', margin:'12px 0 4px'}}>
-                  🌟 進化可能！
+                  <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="star" size={11} active /> 進化可能！</span>
                 </div>
                 <div style={{fontSize:12, color:'#94a5b8', marginBottom:16}}>
                   {['baby','juvenile','adult','evolved','legendary'][pet.evolutionStage-1] || '初級'}
@@ -3779,7 +4303,7 @@ export default function HomePage() {
                       color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
                       fontFamily:'inherit',
                     }}>
-                    🌟 進化！
+                    <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="star" size={12} active /> 進化！</span>
                   </button>
                 </div>
               </>
@@ -3816,7 +4340,7 @@ export default function HomePage() {
               borderRadius:24, padding:28, maxWidth:320, width:'100%', textAlign:'center',
             }} onClick={e => e.stopPropagation()}>
               <div style={{fontSize:10, color:'#5a6d85', marginBottom:4, letterSpacing:4, textTransform:'uppercase'}}>
-                🐣 新寵物孵化！
+                <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="chick" size={12} active /> 新寵物孵化！</span>
               </div>
               <div style={{margin:'8px 0'}}>
                 <PixelPetCanvas
@@ -3846,12 +4370,12 @@ export default function HomePage() {
               {/* Stats */}
               <div style={{display:'flex', gap:8, justifyContent:'center', marginBottom:16}}>
                 {[
-                  { icon:'⚡', val:newPet.stats.speed },
-                  { icon:'🍀', val:newPet.stats.luck },
-                  { icon:'💜', val:newPet.stats.charm },
-                  { icon:'🔋', val:newPet.stats.energy },
-                ].map(s => (
-                  <div key={s.icon} style={{
+                  { icon:<TabGlyph k='bolt' size={11} active />, val:newPet.stats.speed },
+                  { icon:<TabGlyph k='clover' size={11} active />, val:newPet.stats.luck },
+                  { icon:<TabGlyph k='heart' size={11} active />, val:newPet.stats.charm },
+                  { icon:<TabGlyph k='battery' size={11} active />, val:newPet.stats.energy },
+                ].map((s, si) => (
+                  <div key={si} style={{
                     background:'#1a2338', borderRadius:10,
                     padding:'6px 12px', textAlign:'center',
                   }}>
@@ -3867,7 +4391,7 @@ export default function HomePage() {
                   fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   borderRadius:16,
                 }}>
-                🎉 睇下寵物！
+                <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="party" size={11} active /> 睇下寵物！</span>
               </button>
             </div>
           </div>
@@ -3891,9 +4415,9 @@ export default function HomePage() {
               background:'#141b2d', border:`1px solid ${RARITY_COLORS[rarity]}44`,
               borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
             }} onClick={e => e.stopPropagation()}>
-              <div style={{fontSize:48, marginBottom:8}}>🥚</div>
+              <div style={{marginBottom:8}}><TabGlyph k="egg" size={44} active /></div>
               <div style={{fontSize:10, color:'#5a6d85', marginBottom:4, letterSpacing:2, textTransform:'uppercase'}}>
-                🚶 行路發現新蛋！
+                <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="walk" size={11} active /> 行路發現新蛋！</span>
               </div>
               <div style={{fontSize:14, fontWeight:700, color:'#f0f4f8', marginBottom:4}}>
                 {eggName}
@@ -3909,7 +4433,7 @@ export default function HomePage() {
                 {RARITY_LABELS[rarity]}
               </div>
               <div style={{fontSize:11, color:'#94a5b8', marginBottom:20}}>
-                {eggEmoji} 行路途中發現咗 {eggName}！快啲去孵化啦！
+                <TabGlyph k={type === 'cat' ? 'cat' : 'dog'} size={13} active /> 行路途中發現咗 {eggName}！快啲去孵化啦！
               </div>
               <div style={{display:'flex', gap:8, justifyContent:'center'}}>
                 <button onClick={dismissEggFound}
@@ -3927,7 +4451,7 @@ export default function HomePage() {
                     color:'white', fontSize:12, fontWeight:700, cursor:'pointer',
                     fontFamily:'inherit',
                   }}>
-                  🥚 去寵物頁孵化
+                  <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="egg" size={11} active /> 去寵物頁孵化</span>
                 </button>
               </div>
             </div>
@@ -3951,7 +4475,7 @@ export default function HomePage() {
             borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
           }} onClick={e => e.stopPropagation()}>
             <div style={{fontSize:40, marginBottom:8}}>
-              {alertModal.type === 'success' ? '✅' : alertModal.type === 'error' ? '❌' : 'ℹ️'}
+              {alertModal.type === 'success' ? <TabGlyph k='check' size={18} active /> : alertModal.type === 'error' ? <TabGlyph k='xmark' size={18} active /> : <TabGlyph k='info' size={18} active />}
             </div>
             <div style={{fontSize:13, color:'#f0f4f8', fontWeight:600, lineHeight:1.5, whiteSpace:'pre-wrap'}}>
               {alertModal.message}
@@ -3980,7 +4504,7 @@ export default function HomePage() {
             background:'#141b2d', border:'1px solid #8b5cf644',
             borderRadius:24, padding:28, maxWidth:300, width:'100%', textAlign:'center',
           }} onClick={e => e.stopPropagation()}>
-            <div style={{fontSize:40, marginBottom:8}}>⚠️</div>
+            <div style={{marginBottom:8}}><TabGlyph k="warn" size={36} active /></div>
             <div style={{fontSize:13, color:'#f0f4f8', fontWeight:600, marginBottom:16, whiteSpace:'pre-wrap'}}>
               {confirmModal.message}
             </div>
@@ -4031,18 +4555,18 @@ export default function HomePage() {
               borderRadius:24, padding:24, maxWidth:320, width:'100%',
             }} onClick={e => e.stopPropagation()}>
               <div style={{textAlign:'center', marginBottom:16}}>
-                <div style={{fontSize:36, marginBottom:4}}>🏠</div>
+                <div style={{marginBottom:4}}><TabGlyph k="properties" size={32} active /></div>
                 <div style={{fontSize:14, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.5px'}}>{name}</div>
                 <div style={{fontSize:9, color:'#5a6d85', marginTop:4}}>確認購買地皮</div>
               </div>
               <div style={{background:'#0f1729', borderRadius:12, padding:12, marginBottom:16}}>
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:6}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>價格</span>
-                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800}}>⚡25</span>
+                  <span style={{fontSize:13, color:'#f59e0b', fontWeight:800, display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="bolt" size={11} active />25</span>
                 </div>
                 <div style={{display:'flex', justifyContent:'space-between'}}>
                   <span style={{fontSize:9, color:'#5a6d85'}}>你嘅步數</span>
-                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600}}>👣 {formatSteps(totalSteps)}</span>
+                  <span style={{fontSize:11, color:'#f0f4f8', fontWeight:600, display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="foot" size={11} active /> {formatSteps(totalSteps)}</span>
                 </div>
               </div>
               <div style={{display:'flex', gap:8}}>
@@ -4083,7 +4607,7 @@ export default function HomePage() {
                   cursor: buyingCell ? 'not-allowed' : 'pointer', fontFamily:'inherit',
                   opacity: buyingCell ? 0.5 : 1,
                 }}>
-                  {buyingCell ? '⏳ 處理中...' : '✅ 確認佔領'}
+                  {buyingCell ? <><TabGlyph k='hourglass' size={11} active /> 處理中...</> : <><TabGlyph k='check' size={11} active /> 確認佔領</>}
                 </button>
               </div>
             </div>
@@ -4162,7 +4686,7 @@ function PropertyModalContent({
           padding: '20px 16px 14px',
           textAlign: 'center',
         }}>
-          <div style={{fontSize:28, lineHeight:1, marginBottom:6}}>🏠</div>
+          <div style={{lineHeight:1, marginBottom:6}}><TabGlyph k="properties" size={26} active /></div>
           <div style={{
             fontSize:16, fontWeight:800, color:'#fff',
             letterSpacing:1,
@@ -4178,15 +4702,15 @@ function PropertyModalContent({
 
           {/* Location */}
           <div className="prop-modal-row">
-            <span className="prop-modal-label">📍 地段</span>
+            <span className="prop-modal-label"><TabGlyph k="pin" size={10} active /> 地段</span>
             <span className="prop-modal-value">
-              {detailLocName ? detailLocName.replace('📍 ','') : '🔍 載入中…'}
+              {detailLocName ? detailLocName.replace('📍 ','') : <><TabGlyph k='search' size={10} active /> 載入中…</>}
             </span>
           </div>
 
           {/* Price */}
           <div className="prop-modal-row">
-            <span className="prop-modal-label">⚡ 價格</span>
+            <span className="prop-modal-label"><TabGlyph k="bolt" size={10} active /> 價格</span>
             <span className="prop-modal-value" style={{color:'#f59e0b', fontWeight:800}}>
               {formatSteps(sellPrice)} 步
             </span>
@@ -4194,19 +4718,19 @@ function PropertyModalContent({
 
           {/* Purchase date */}
           <div className="prop-modal-row">
-            <span className="prop-modal-label">📅 購入</span>
+            <span className="prop-modal-label"><TabGlyph k="calendar" size={10} active /> 購入</span>
             <span className="prop-modal-value">{new Date(p.purchasedAt).toLocaleDateString('zh-HK')}</span>
           </div>
 
           {/* Coordinates */}
           <div className="prop-modal-row">
-            <span className="prop-modal-label">🌐 座標</span>
+            <span className="prop-modal-label"><TabGlyph k="globe" size={10} active /> 座標</span>
             <span className="prop-modal-value">{p.anchorLat.toFixed(4)}, {p.anchorLng.toFixed(4)}</span>
           </div>
 
           {/* Seller */}
           <div className="prop-modal-row" style={{borderBottom:'none'}}>
-            <span className="prop-modal-label">👤 賣家</span>
+            <span className="prop-modal-label"><TabGlyph k="user" size={10} active /> 賣家</span>
             <span className="prop-modal-value">{p.sellerName ? p.sellerName : '匿名賣家'}</span>
           </div>
 
@@ -4217,7 +4741,7 @@ function PropertyModalContent({
               fontSize:9, color:'#22c55e', fontWeight:700,
               padding:'4px 0', borderTop:'1px solid #1a2a3a',
             }}>
-              📌 上架中 · ⚡{formatSteps(p.listPrice ?? 0)} 步
+              <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="pin" size={10} active /> 上架中 · <TabGlyph k="bolt" size={10} active />{formatSteps(p.listPrice ?? 0)} 步</span>
             </div>
           )}
 
@@ -4244,7 +4768,7 @@ function PropertyModalContent({
                     background:'rgba(34,197,94,0.1)',
                     color:'#22c55e', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   }}>
-                    📌 上架出售
+                    <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="pin" size={11} active /> 上架出售</span>
                   </button>
                 ) : (
                   <button onClick={async () => {
@@ -4260,7 +4784,7 @@ function PropertyModalContent({
                     background:'rgba(245,158,11,0.1)',
                     color:'#f59e0b', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   }}>
-                    📭 下架
+                    <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="down" size={11} active /> 下架</span>
                   </button>
                 )}
                 <button onClick={() => {
@@ -4281,7 +4805,7 @@ function PropertyModalContent({
                   background:'rgba(239,68,68,0.1)',
                   color:'#ef4444', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 }}>
-                  🗑️ 放棄
+                  <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="trash" size={11} active /> 放棄</span>
                 </button>
               </>
             ) : user && user.id !== p.userId ? (
@@ -4318,7 +4842,7 @@ function PropertyModalContent({
                 background:'linear-gradient(135deg,#8b5cf644,#7c3aed44)',
                 color:'#c084fc', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
               }}>
-                ⚡ 購買地皮
+                <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="bolt" size={11} active /> 購買地皮</span>
               </button>
             ) : null}
 
@@ -4332,7 +4856,7 @@ function PropertyModalContent({
               background:'transparent', color:'#60a5fa',
               fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
             }}>
-              🗺️ 在地圖上顯示
+              <span style={{display:'inline-flex',alignItems:'center',gap:3}}><TabGlyph k="map" size={11} active /> 在地圖上顯示</span>
             </button>
 
             {/* Cancel */}
