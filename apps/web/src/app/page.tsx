@@ -3135,6 +3135,7 @@ export default function HomePage() {
               ) : (
                 <RealMap ref={realMapRef} position={null} walking={false} pet={pet} mode={null} deviceHeading={null} userId={user?.id} ownedCells={ownedCells} allFlagCells={allFlagCells} trailDayFilter={trailDayFilter} onCellEvent={handleCellEvent} onShopEntered={handleShopEntered} />
               )}
+            </div>                {/* ── close map height container (map only) ── */}
                 {/* 📊 Semi-transparent Steps Card overlay at bottom — expandable */}
                 <div ref={cardRef} className="section card"
                   onPointerDown={(e) => {
@@ -3604,7 +3605,6 @@ export default function HomePage() {
 
                 </div>              {/* ── close nav area ── */}
               </div>                {/* ── close stats card overlay ── */}
-            </div>                {/* ── close map height container ── */}
             </div>                {/* ── close map wrapper ── */}
             {/* Spacer: gives scroll-wrap room to scroll when card is expanded */}
             <div style={{ flexShrink: 0, height: cardDragY, transition: cardAnimRef.current ? 'height 0.3s cubic-bezier(0.4,0,0.2,1)' : 'none' }} />
