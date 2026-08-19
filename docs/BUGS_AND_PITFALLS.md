@@ -1024,3 +1024,36 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root cause** | Two compounded issues: (1) The PWA Service Worker (`sw.js`) uses **cache-first** for static JS/CSS, so once a client registered the SW it kept serving the old bundle — hard refresh does NOT bypass the SW cache. (2) The user's device/network couldn't reach `*.vercel.app` at all (DNS pollution / ISP / router block), so the SW offline cache was the only version it could show; it had never fetched the new build. My headless test browser (no SW) saw the new version, which masked issue (1). |
 | **Fix** | (a) Bumped `sw.js` cache `pipz-v4` → `pipz-v5` to force SW update on registered clients. (b) Diagnosed connectivity: server verified 200 via curl/another network; user's device couldn't reach vercel.app → (c) added custom domain `pipz.anthroskill.com` (A record `76.76.21.21` on Cloudflare, DNS-only) which works on the user's device. |
 | **Prevention** | **Always bump the SW `CACHE` version on every deploy.** To diagnose "still seeing old UI": test with curl or a non-SW browser to confirm the server is actually new; then distinguish "stale SW cache" from "can't reach server". Use incognito / Clear site data / another network to force-fresh for the user. Use a custom domain if `*.vercel.app` is unreachable from the user's network. |
+
+### 33. Batch string-replace can corrupt template-literal logMsg strings (pixel icon migration)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 Critical (build fails with `Expected ',', got 'egg'`) |
+| **Status** | ✅ FIXED 2026-08-20 |
+| **Symptom** | During the emoji→pixel migration, a Python batch `str.replace()` replaced the emoji inside `logMsg('🥚 圓貓蛋已加入！...')` template literals too, producing `logMsg('<TabGlyph k='egg' ...>')` — JSX embedded inside a string literal. `tsc` reported `TS1005 ',' expected` at the broken lines; `next build` failed. |
+| **Root cause** | A blind global replace on the emoji text (`'🥚 圓貓蛋'` → `<TabGlyph k='egg' ...>`) matched BOTH the JSX button content AND the same text inside `logMsg(...)` string arguments. JSX components are not valid inside string literals. The same `'🥚'` string appeared in multiple contexts (button label, log message, notification title, egg modal). |
+| **Fix** | (1) `npx tsc --noEmit` to locate exact broken lines. (2) Manually revert the corrupted logMsg lines back to plain text/emoji: `logMsg('🥚 圓貓蛋已加入！去寵物頁孵化')`. (3) Re-scan with a regex for `logMsg\([^)]*TabGlyph` to catch ALL remaining corruptions (there were 4: 2 in `logMsg('...')`, 2 in `logMsg(\`...\`)`). |
+| **Prevention** | When bulk-replacing text across a file, **scope the replacement to JSX-render context only**. Options: (a) search for the emoji with surrounding JSX (e.g. `>🥚 圓貓蛋<`), (b) exclude lines containing `logMsg(`, `showAlert(`, `createNotification(`, or backtick template literals, (c) after any global replace, run a validation regex for `logMsg\([^)]*<[A-Z]` (JSX inside string arg). Never blind-replace a bare emoji string; always include neighbouring JSX delimiters in the match. |
+
+### 34. Vercel auto-deploy lag / stale chunk on custom domain after push
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟠 Medium (verification sees old build) |
+| **Status** | ✅ Workaround 2026-08-20 |
+| **Symptom** | After `git push`, `https://pipz.anthroskill.com` kept serving the OLD page chunk (same `page-*.js` hash) for minutes — verification with curl saw the previous bundle even though the commit was pushed. Running `npx vercel --prod --yes` manually deployed instantly and the new chunk appeared. |
+| **Root cause** | GitHub→Vercel auto-deploy can lag behind (queue, build time), and the custom domain may still serve the previously deployed build while the new one is building. The headless browser additionally keeps an in-memory cache across navigations (same URL → same chunk), masking fresh deploys until a cache-busting query param is used. |
+| **Fix** | (1) After push, poll the HTML for a NEW `page-*.js` hash (compare with previous). (2) If it hasn't changed after ~1min, run `npx vercel --prod --yes` manually. (3) Always verify with a cache-busting query param (`?v=xxx`) in curl AND in `browser_navigate`, because the browser session reuses cached JS across navigations. |
+| **Prevention** | For verification workflows: use `?v=<timestamp>` query params; compare chunk hashes before/after deploy; keep `npx vercel --prod --yes` as the deterministic deploy path when auto-deploy lags. |
+
+### 35. Pixel icon font rendering — `-webkit-font-smoothing: none` needed + VT323 for small sizes
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🟡 Medium (blurry pixel digits) |
+| **Status** | ✅ FIXED 2026-08-20 |
+| **Symptom** | Pixel font (Press Start 2P) looked slightly blurred/anti-aliased on small sizes; large Press Start glyphs overflow their containers on narrow cards. |
+| **Root cause** | (1) Browsers apply font smoothing (subpixel antialiasing) by default, softening crisp pixel fonts. (2) `Press Start 2P` is a very wide font — 8px digits can overflow small badges/cards. (3) Mixed CJK + pixel font causes fallback to system fonts for Chinese characters, creating visual inconsistency. |
+| **Fix** | (1) Add `-webkit-font-smoothing: none` (and `font-smooth: never`) on `.px-num` / `.px-num-sm`. (2) Use **two fonts**: `Press Start 2P` for large hero numbers (steps counter, energy — 16-18px), `VT323` for small numbers (header steps, section counts, prices — VT323 is narrower and readable at 10-14px). (3) Apply pixel font ONLY to numeric spans (never to mixed CJK text) so Chinese stays in system font. |
+| **Prevention** | When adding pixel fonts: always pair a wide display font with a narrow text font; scope the font to pure-numeric elements; test at the smallest size the UI uses (8-10px) before shipping. `-webkit-font-smoothing: none` is required for true 8-bit look on WebKit. |

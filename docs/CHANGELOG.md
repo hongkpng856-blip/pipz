@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.41.3 — Full Pixel Theme: Hand-Crafted Icons + 8-Bit Numbers (2026-08-20)
+
+### Added
+- **Hand-crafted PICO-8 pixel-art icon system** (`PIXEL_TABS` in `page.tsx`): 30+ hand-drawn icons rendered as SVG `<rect>` grids with drop shadow + top highlight. Replaces ALL emoji across the app:
+  - **Nav tabs**: map/paw/house/chat/backpack
+  - **Header bar**: gear (tools), key (login), bell (notifications), foot (steps), user (account)
+  - **Section titles**: bolt (energy), star (team), clipboard (listings), cart (market), egg, etc.
+  - **Dev Tools panel**: gamepad, sat, dice, walk, flask, paint, replay, up, muscle, trash, stop
+  - **Inner content**: sword (monster), shop, home, chart, battery, pin, globe, party, xmark, info, chick, clover, hourglass, sad, scroll, cat, dog, boom, box, upload, down, abandon, sparkle, check, warn
+- **`pxSvg()` string helper**: Pure SVG-string version of `TabGlyph` for HTML template literals (shop modal, monster modal) with module-level cache.
+- **8-bit numeric fonts**: `Press Start 2P` (large numbers: steps, energy) + `VT323` (small numbers: header steps, prices, counts) loaded via Google Fonts, applied in `globals.css` (`.px-num`, `.px-num-sm`) and key inline number styles.
+- **RealMap map buttons pixel-ified**: `RMGlyph` component in `RealMap.tsx` with compass/sat/target/pin/map/foot icons for GPS toggle, GPS badge, grid toggle, trail overview buttons.
+
+### Changed
+- All emoji icons replaced with consistent hand-drawn pixel-art (unique, no library "AI default" feel).
+- Numeric displays use 8-bit fonts: `.steps-num` (18px Press Start 2P), `.header-steps` (VT323), `.section-count` (VT323 12px), energy number, prices.
+
+### Removed
+- `@phosphor-icons/react` dependency (was briefly used, replaced by hand-crafted pixel icons).
+
+### Code
+- `apps/web/src/app/page.tsx`: `PIXEL_TABS` record (~40 icons), `TabGlyph` + `pxSvg` helpers, all emoji → pixel replacements across header/nav/sections/cards/modals/dev tools
+- `apps/web/src/components/RealMap.tsx`: `RM_ICONS` + `RMGlyph` for map buttons
+- `apps/web/src/app/globals.css`: `.px-num` / `.px-num-sm` classes, pixel fonts on `.steps-num`/`.header-steps`/`.section-count`
+- `apps/web/src/app/layout.tsx`: Google Fonts `<link>` for Press Start 2P + VT323
+- `apps/web/package.json`: removed `@phosphor-icons/react`
+
 ## v0.40.6 — Map Control Buttons Above Card (z-index Fix) (2026-07-18)
 
 ### Fixed

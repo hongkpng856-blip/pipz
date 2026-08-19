@@ -44,6 +44,64 @@
 | Body | `VT323` | 15-16px | 400 | General text, descriptions |
 | Body small | `VT323` | 13-14px | 400 | Labels, hints, secondary text |
 
+### Numeric Fonts (implemented 2026-08-20, web)
+
+Two-font strategy for numbers (avoid Press Start overflow on small sizes):
+
+| Scope | Font | Size | Notes |
+|-------|------|------|-------|
+| Hero numbers (steps counter, energy) | `Press Start 2P` | 16-18px | `letter-spacing: 1px` |
+| Small numbers (header steps, section counts, prices) | `VT323` | 10-14px | `letter-spacing: 0.5px` |
+| CSS classes | `.px-num` / `.px-num-sm` | — | `-webkit-font-smoothing: none` required for crisp 8-bit look |
+
+> ⚠️ Pixel fonts must be applied to **pure-numeric spans only** — mixed CJK text falls back to system fonts (inconsistent). Fonts loaded via Google Fonts `<link>` in `layout.tsx`.
+
+## Icon System — Hand-Crafted Pixel Art (2026-08-20)
+
+**Rule:** NO emoji, NO icon libraries (Phosphor etc. — user explicitly rejected "AI default" library icons). All icons are hand-drawn PICO-8-style pixel grids rendered as SVG `<rect>` elements with a darker drop shadow offset + optional top highlight.
+
+### Implementation (web)
+
+| Location | Helper | Icons |
+|----------|--------|-------|
+| `page.tsx` | `TabGlyph` (React) + `pxSvg()` (SVG string for HTML template literals) | `PIXEL_TABS` record (~40 icons) |
+| `RealMap.tsx` | `RMGlyph` (React) | `RM_ICONS` record (6 icons) |
+
+### Grid Format
+
+```
+'..######..',   ← 10 chars per row, '#' = pixel, '.' = transparent
+'.#......#.',
+...
+```
+Each icon: 10×10 grid (page) or 8×8 grid (map buttons). Rendered at 18-20px (nav), 11-14px (section titles/buttons), 8-10px (inline badges).
+
+### Icon Reference (page.tsx `PIXEL_TABS`)
+
+| Key | Shape | Colour |
+|-----|-------|--------|
+| `map` | folded map | blue `#2563EB` |
+| `pets` | paw print | pink `#EC4899` |
+| `properties` | house | amber `#F59E0B` |
+| `community` | chat bubble | green `#22c55e` |
+| `inventory` | backpack | purple `#8b5cf6` |
+| `gear` / `key` / `bell` / `foot` / `user` | header bar | blue / amber / amber / green / purple |
+| `bolt` / `star` / `clipboard` / `cart` / `egg` | section titles | amber / amber / grey / green / amber |
+| `gamepad` / `sat` / `dice` / `walk` / `flask` / `paint` / `replay` | Dev Tools | cyan / green / purple / green / cyan / pink / purple |
+| `sword` / `shop` / `home` / `chart` / `battery` / `pin` / `globe` | content | red / pink / green / blue / green / red / cyan |
+| `party` / `xmark` / `info` / `chick` / `clover` / `hourglass` / `sad` / `scroll` | modals | pink / red / blue / amber / green / grey / grey / amber |
+| `cat` / `dog` / `boom` / `box` / `upload` / `down` / `abandon` / `sparkle` / `check` / `warn` | content | brown / purple / amber / brown / green / amber / grey / amber / green / amber |
+
+### Design Rules
+
+1. **Drop shadow**: each pixel rect gets a copy offset +0.25 cell downward in `shadow` colour (darker shade of main colour)
+2. **Top highlight** (active state): lighter version of main colour on the top 40% of each pixel
+3. **Active vs inactive**: active = full colour, inactive = grey `#94a5b8`
+4. **Consistency**: same icon key reused everywhere (e.g. `foot` for steps in header + prices + badges)
+5. **No AI/library feel**: every icon hand-drawn grid, unique shapes
+
+
+
 ## Spacing
 
 | Token | Value |

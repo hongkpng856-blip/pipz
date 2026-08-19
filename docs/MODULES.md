@@ -27,6 +27,7 @@
 | [15. 通知系統](#15-通知系統) | NotificationModal.tsx + api/notifications | — |
 | [16. 開發工具 (Dev Tools)](#16-開發工具-dev-tools) | page.tsx | 1878-2146 |
 | [17. 全域樣式 / z-index](#17-全域樣式--z-index) | globals.css | 全檔 |
+| [17b. Icon System（手作 Pixel Art）](#17b-icon-system手作-pixel-art) | page.tsx + RealMap.tsx | 73-500, 6-110 |
 | [18. 資料層 (Supabase DB)](#18-資料層-supabase-db) | supabase-db.ts | 57-680 |
 | [19. API Routes](#19-api-routes) | app/api/** | — |
 | [20. Pixel 圖形渲染](#20-pixel-圖形渲染) | PixelPetCanvas / WalkingCanvas 等 | — |
@@ -309,6 +310,27 @@
 | `.steps-num` / `.steps-label` / `.step-bounce` / `.step-flash` / `.arrow-float` | 步數視覺效果 |
 
 **相關 BUGS**：1.1-1.5（position:fixed / !important / portal）、18.3、27
+
+---
+
+## 17b. Icon System（手作 Pixel Art）
+
+> 2026-08-20 起：**全 app 禁用 emoji / icon library**（用戶明確拒絕「AI default」library icon）。所有 icon 係手繪 PICO-8 pixel grid → SVG `<rect>`。
+
+| 位置 | 內容 |
+|------|------|
+| `page.tsx` `PIXEL_TABS`（~L73-500） | ~40 個手繪 10×10 pixel grid icon（key → {color, shadow, grid}） |
+| `page.tsx` `TabGlyph` | React component：pixel grid → SVG rects（drop shadow + top highlight） |
+| `page.tsx` `pxSvg()` | SVG string 版（HTML template literal 用，如 shop/monster modal），有 module cache |
+| `RealMap.tsx` `RM_ICONS` + `RMGlyph` | 地圖按鈕專用 8×8 icon（compass/sat/target/pin/map/foot） |
+| `globals.css` `.px-num` / `.px-num-sm` | Pixel 數字字體（Press Start 2P 大 / VT323 細） |
+| `layout.tsx` | Google Fonts `<link>`（Press Start 2P + VT323） |
+
+**改 icon 流程**：改 `PIXEL_TABS` 某個 key 嘅 grid → 所有用緊嗰個 key 嘅地方自動更新。加新 icon = 加一個 key + grid。
+
+**⚠️ 陷阱（BUGS 33）**：批量 replace emoji → TabGlyph 時，**唔可以 blind-replace 純 emoji string**（會連 `logMsg()` template literal 入面嘅都改埋，搞到 build fail）。要 scope 去 JSX context（`>emoji<`）或者 exclude `logMsg(` / `showAlert(` 行。
+
+**相關 BUGS**：33（batch replace 誤改 logMsg）、34（deploy lag）、35（pixel font smoothing）
 
 ---
 
