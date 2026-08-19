@@ -439,6 +439,54 @@ const PIXEL_TABS: Record<string, { grid: Pixel; color: string; shadow: string }>
       '..........',
     ],
   },
+  // 🧪 test pet — laboratory flask
+  flask: {
+    color: '#22d3ee', shadow: '#0891b2',
+    grid: [
+      '..........',
+      '..######..',
+      '..######..',
+      '..........',
+      '..######..',
+      '..######..',
+      '..######..',
+      '...####...',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🎨 paint — palette / brush for trail test
+  paint: {
+    color: '#ec4899', shadow: '#db2777',
+    grid: [
+      '..######..',
+      '..#....#..',
+      '.#......#.',
+      '.#..#.#.#.',
+      '.#......#.',
+      '.#..#.#.#.',
+      '.#......#.',
+      '..######..',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🎬 replay — film / play button
+  replay: {
+    color: '#a78bfa', shadow: '#8b5cf6',
+    grid: [
+      '..######..',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '.#....#...',
+      '..######..',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
 }
 // lighten a hex color toward white (for top highlight)
 function pixelHighlight(hex: string): string {
@@ -2461,18 +2509,18 @@ export default function HomePage() {
                     <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
                       <button className="btn btn-primary" onClick={createTestPet}
                         style={{fontSize:10, padding:'4px 10px'}}>
-                        🧪 全能測試寵物
+                        <TabGlyph k='flask' size={11} active /> 全能測試寵物
                       </button>
                       {/* ── PixelLab cat for logged-in users ── */}
                       {user && (
                         <>
                           <button className="btn" onClick={addPixelLabEgg}
                             style={{fontSize:10, padding:'4px 10px', background:'rgba(212,132,90,0.15)', border:'1px solid rgba(212,132,90,0.3)', color:'#d4845a', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
-                            🥚 圓貓蛋
+                            <TabGlyph k='egg' size={11} active /> 圓貓蛋
                           </button>
                           <button className="btn" onClick={addShibaEgg}
                             style={{fontSize:10, padding:'4px 10px', background:'rgba(168,120,200,0.15)', border:'1px solid rgba(168,120,200,0.3)', color:'#a878c8', borderRadius:10, cursor:'pointer', fontFamily:'inherit'}}>
-                            🥚 柴犬蛋
+                            <TabGlyph k='egg' size={11} active /> 柴犬蛋
                           </button>
                         </>   
                       )}
@@ -2482,11 +2530,11 @@ export default function HomePage() {
                     <div style={{display:'flex', gap:8, marginBottom:8, flexWrap:'wrap'}}>
                       <button className="btn btn-ghost" onClick={() => realMapRef.current?.generateTestTrails()}
                         style={{fontSize:10, padding:'4px 10px', color:'#22d3ee'}}>
-                        🎨 測試7日路線
+                        <TabGlyph k='paint' size={11} active /> 測試7日路線
                       </button>
                       <button className="btn btn-ghost" onClick={() => realMapRef.current?.clearStoredTrails()}
                         style={{fontSize:10, padding:'4px 10px', color:'#f59e0b'}}>
-                        🗑️ 清除路線記憶
+                        <TabGlyph k='trash' size={11} active /> 清除路線記憶
                       </button>
                       <button className="btn btn-ghost" onClick={() => {
                         // Generate test trail data for the initial zoom animation
@@ -2507,7 +2555,7 @@ export default function HomePage() {
                         window.location.reload()
                       }}
                         style={{fontSize:10, padding:'4px 10px', color:'#a78bfa'}}>
-                        🎬 重播初始動畫
+                        <TabGlyph k='replay' size={11} active /> 重播初始動畫
                       </button>
                     </div>
 
