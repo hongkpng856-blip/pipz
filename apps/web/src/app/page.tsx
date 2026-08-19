@@ -311,6 +311,134 @@ const PIXEL_TABS: Record<string, { grid: Pixel; color: string; shadow: string }>
       '..........',
     ],
   },
+  // 🕹️ gamepad — D-pad controller
+  gamepad: {
+    color: '#22d3ee', shadow: '#0891b2',
+    grid: [
+      '.########.',
+      '#........#',
+      '#..#..#..#',
+      '#........#',
+      '.########.',
+      '..#.##.#..',
+      '..........',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⬆️ level up — up arrow
+  up: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '....##....',
+      '...####...',
+      '..######..',
+      '.########',
+      '....##....',
+      '....##....',
+      '....##....',
+      '....##....',
+      '..........',
+      '..........',
+    ],
+  },
+  // 💪 max — flexed arm (muscle)
+  muscle: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '.......##.',
+      '......###.',
+      '....####..',
+      '..####....',
+      '.#####....',
+      '.###......',
+      '.###......',
+      '..##......',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🗑️ delete — trash bin
+  trash: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '..######..',
+      '..######..',
+      '..........',
+      '.########.',
+      '.#......#.',
+      '.#......#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+    ],
+  },
+  // 📡 GPS — satellite antenna
+  sat: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '....#.....',
+      '...#.#....',
+      '....#.....',
+      '..#####...',
+      '..#####...',
+      '...#.#....',
+      '..#####...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // ⏹ stop — square
+  stop: {
+    color: '#ef4444', shadow: '#dc2626',
+    grid: [
+      '..........',
+      '.########.',
+      '.########.',
+      '.########.',
+      '.########.',
+      '.########.',
+      '.########.',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🎲 dice — random event
+  dice: {
+    color: '#c084fc', shadow: '#8b5cf6',
+    grid: [
+      '..........',
+      '.########.',
+      '.#......#.',
+      '.#.#..#.#.',
+      '.#......#.',
+      '.#.#..#.#.',
+      '.#......#.',
+      '.########.',
+      '..........',
+      '..........',
+    ],
+  },
+  // 🚶 simulate — walking figure
+  walk: {
+    color: '#22c55e', shadow: '#16a34a',
+    grid: [
+      '....##....',
+      '...####...',
+      '....##....',
+      '...####...',
+      '..##..##..',
+      '..##..##..',
+      '...#..#...',
+      '..........',
+      '..........',
+      '..........',
+    ],
+  },
 }
 // lighten a hex color toward white (for top highlight)
 function pixelHighlight(hex: string): string {
@@ -2176,15 +2304,15 @@ export default function HomePage() {
                           fontSize:14, padding:'4px 12px', borderRadius:10,
                           fontFamily:'inherit', lineHeight:1,
                         }}>
-                        {walking ? '⏹ 熄GPS' : '📡 開GPS'}
+                        {walking ? <><TabGlyph k='stop' size={11} active /> 熄GPS</> : <><TabGlyph k='sat' size={11} active /> 開GPS</>}
                       </button>
-                      {walking && <span style={{fontSize:10, color:'#22c55e'}}>🟢 GPS 運作中</span>}
+                      {walking && <span style={{fontSize:10, color:'#22c55e', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k='sat' size={10} active /> GPS 運作中</span>}
                     </div>
                     {/* ── Walk Simulation + Steps ── */}
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
                       <button className="btn btn-ghost" onClick={forceEvent}
                         style={{fontSize:10, padding:'4px 10px'}}>
-                        🎲 Event
+                        <TabGlyph k='dice' size={10} active /> Event
                       </button>
                       <button className="btn btn-ghost" onClick={addDebug}
                         style={{fontSize:10, padding:'4px 10px'}}>
@@ -2196,12 +2324,12 @@ export default function HomePage() {
                       </button>
                       <button className="btn btn-ghost" onClick={clearSteps}
                         style={{fontSize:10, padding:'4px 10px', color:'#ef4444', fontWeight:800}}>
-                        🗑️ 清零
+                        <TabGlyph k='trash' size={10} active /> 清零
                       </button>
                       <button className={`btn ${simulating ? 'btn-danger' : 'btn-ghost'}`}
                         onClick={() => setSimulating(v => !v)}
                         style={{fontSize:10, padding:'4px 10px'}}>
-                        {simulating ? '⏹ 停止' : '🚶 模擬'}
+                        {simulating ? <><TabGlyph k='stop' size={11} active /> 停止</> : <><TabGlyph k='walk' size={11} active /> 模擬</>}
                       </button>
                       {/* Speed toggle */}
                       {[1,5,10,50].map(s => (
@@ -2218,7 +2346,7 @@ export default function HomePage() {
                         </button>
                       ))}
                       <span style={{fontSize:9, color: simulating ? '#22c55e' : '#5a6d85'}}>
-                        {simulating ? `🟢 ${simSpeed}x` : '🛰️ GPS'}
+                        {simulating ? <><TabGlyph k='sat' size={10} active /> {simSpeed}x</> : <><TabGlyph k='sat' size={10} active /> GPS</>}
                       </span>
                     </div>
 
@@ -2227,9 +2355,9 @@ export default function HomePage() {
                       <button className={`btn ${simGpsWalking ? 'btn-danger' : 'btn-ghost'}`}
                         onClick={() => setSimGpsWalking(v => !v)}
                         style={{fontSize:10, padding:'4px 10px', color: simGpsWalking ? '#f59e0b' : '#22d3ee'}}>
-                        {simGpsWalking ? '⏹ 停GPS模擬' : '🗺️ GPS步行模擬'}
+                        {simGpsWalking ? <><TabGlyph k='stop' size={11} active /> 停GPS模擬</> : <><TabGlyph k='map' size={11} active /> GPS步行模擬</>}
                       </button>
-                      {simGpsWalking && <span style={{fontSize:9, color:'#22c55e'}}>🟢 模擬步行中</span>}
+                      {simGpsWalking && <span style={{fontSize:9, color:'#22c55e', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k='walk' size={10} active /> 模擬步行中</span>}
                     </div>
 
                     {/* ── Manual Mode Toggle ── */}
@@ -2243,9 +2371,9 @@ export default function HomePage() {
                           border: manualMode ? '1px solid rgba(34,211,238,0.4)' : '1px solid rgba(59,130,246,0.15)',
                           color: manualMode ? '#22d3ee' : '#60a5fa',
                         }}>
-                        🕹️ {manualMode ? '手動模式 ON' : '手動模式 OFF'}
+                        <><TabGlyph k='gamepad' size={11} active /> {manualMode ? '手動模式 ON' : '手動模式 OFF'}</>
                       </button>
-                      {manualMode && <span style={{fontSize:9, color:'#22d3ee'}}>🟢 GPS 已停用，使用方向鍵移動</span>}
+                      {manualMode && <span style={{fontSize:9, color:'#22d3ee', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k='gamepad' size={10} active /> GPS 已停用，使用方向鍵移動</span>}
                     </div>
 
                     {/* ── Manual D-Pad Walk ── */}
@@ -2253,7 +2381,7 @@ export default function HomePage() {
                       display:'flex', flexDirection:'column', alignItems:'center',
                       marginBottom:8, gap:3,
                     }}>
-                      <div style={{fontSize:9, color:'#5a6d85', marginBottom:2}}>🕹️ 手動方向</div>
+                      <div style={{fontSize:9, color:'#5a6d85', marginBottom:2, display:'flex', alignItems:'center', gap:4}}><TabGlyph k="gamepad" size={11} active /> 手動方向</div>
                       <div style={{display:'flex', gap:3, justifyContent:'center'}}>
                         <button
                           onMouseDown={() => startManualWalk('up')}
@@ -2386,20 +2514,20 @@ export default function HomePage() {
                     {/* ── Quick Modify (only when pet exists) ── */}
                     {pets[activeIdx] && (
                       <div style={{background:'#1a2338', borderRadius:8, padding:'8px 10px', marginBottom:8}}>
-                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em'}}>
-                          ⚡ 快速修改 — Lv.{pets[activeIdx].level} Stage.{pets[activeIdx].evolutionStage}
+                        <div style={{fontSize:8, color:'#5a6d85', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em', display:'flex', alignItems:'center', gap:4}}>
+                          <TabGlyph k="bolt" size={10} active /> 快速修改 — Lv.{pets[activeIdx].level} Stage.{pets[activeIdx].evolutionStage}
                         </div>
                         <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
                           <button className="btn btn-ghost" onClick={levelUpPet}
-                            style={{fontSize:9, padding:'3px 8px'}}>⬆️ 升 Lv</button>
+                            style={{fontSize:9, padding:'3px 8px', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="up" size={11} active /> 升 Lv</button>
                           <button className="btn btn-ghost" onClick={() => addPetSteps(10000)}
-                            style={{fontSize:9, padding:'3px 8px'}}>👣 +10K 步</button>
+                            style={{fontSize:9, padding:'3px 8px', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="foot" size={11} active /> +10K 步</button>
                           <button className="btn btn-ghost" onClick={evolvePet}
-                            style={{fontSize:9, padding:'3px 8px'}}>🌟 進化</button>
+                            style={{fontSize:9, padding:'3px 8px', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="star" size={11} active /> 進化</button>
                           <button className="btn btn-ghost" onClick={maxOutPet}
-                            style={{fontSize:9, padding:'3px 8px'}}>💪 MAX</button>
+                            style={{fontSize:9, padding:'3px 8px', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="muscle" size={11} active /> MAX</button>
                           <button className="btn btn-ghost" onClick={deleteActivePet}
-                            style={{fontSize:9, padding:'3px 8px', color:'#ef4444'}}>🗑️ 刪除</button>
+                            style={{fontSize:9, padding:'3px 8px', color:'#ef4444', display:'inline-flex', alignItems:'center', gap:3}}><TabGlyph k="trash" size={11} active /> 刪除</button>
                         </div>
                       </div>
                     )}
