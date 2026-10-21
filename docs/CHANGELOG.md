@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.42.6 — 先用免費 model，付費做後備（live 12/12）(2026-10-21)
+
+### Changed
+- **Model 變成逗號分隔嘅 try-list**（`PIPZ_AI_MODEL`，預設 `minimax/minimax-m3.1-flash:free,deepseek/deepseek-v4-flash`）：
+  逐輪試（第一輪免費→付費，第二輪再試），免費 model 得 **9 秒 leash**，夠鐘就交畀後備（免費成功時多數 3–9 秒，慢起上嚟 18–31 秒）。
+- `max_tokens` 1200 → **2500**：deepseek 仍然有機會 reason 到爆額度回空 `content`（診斷訊息證實）。
+- 502 回應加 `attempts[]` 診斷（timeout／HTTP status／unparseable），唔會再係一句 `generation failed`。
+
+### Verified（12 次 live soak，`pipz.anthroskill.com`）
+- **12/12 成功**，延遲 5.6–18.7 秒（平均 13.2 秒）。
+- Model 分佈：免費 minimax 4 次、付費 deepseek 8 次（免費永遠優先，慢就即刻換）。
+- 免費 model 調查（每個 2 次、真 prompt）：`minimax/minimax-m3.1-flash:free` 2/2 OK；
+  `ornith-1.5-122b:free` 0/2（空 + 429）、`stealth/glyph-cluster:free` 0/2（400）、
+  `reflection/beam:free` 0/2（timeout + 空）、`poolside/laguna-s-2.1-free` 0/2（429）。
+
 ## v0.42.5 — AI proxy 實測修正（live 已驗證）(2026-10-21)
 
 ### Fixed
