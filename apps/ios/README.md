@@ -46,8 +46,21 @@ Xcode → 左邊 `Pipz` target → **Signing & Capabilities**
 
 ---
 
-## 二、上 TestFlight（最快見到成果，通常 1 日內）
+## 二、上 TestFlight
 
+三條路都可以做到「push → 雲端自己 build → 自動上 TestFlight → 電話裝」。
+**詳情同 secret 設定：`CI_TO_TESTFLIGHT.md`**（Xcode Cloud 最省事、25 小時/月內含）。
+
+### 方案 A：Xcode Cloud（推薦，設一次之後唔洗開 Mac）
+Xcode → Report navigator → Cloud → Get Started → 揀 GitHub repo → Branch `main` +
+Actions `Archive` + Post-action `TestFlight (Internal)` → Start Build。
+repo 已備 `ci_scripts/ci_post_clone.sh`（自動 `xcodegen generate`）。
+
+### 方案 B：GitHub Actions（public repo 免費，workflow 已寫好）
+`.github/workflows/ios-testflight.yml` — 加 4 個 secret（`ASC_KEY_ID` / `ASC_ISSUER_ID` /
+`ASC_KEY_P8` / `APPLE_TEAM_ID`）就自動跑。
+
+### 方案 C：手動 Archive（第一次建議用呢個，順便確認 compile 冇問題）
 1. Xcode → 上方 device 揀 **Any iOS Device (arm64)**
 2. 選單 Product → **Archive**
 3. Organizer 彈出 → **Distribute App** → **App Store Connect** → **Upload**

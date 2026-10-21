@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.42.1 — iOS 雲端自動上 TestFlight（CI 配套）(2026-10-21)
+
+### Added
+- **`apps/ios/CI_TO_TESTFLIGHT.md`**：三條雲端路線對照（Xcode Cloud 25 小時/月內含、GitHub Actions public repo 免費、Codemagic 500 分鐘/月），連 secret 設定、簽名 fallback、TestFlight 到期／審核注意。
+- **`.github/workflows/ios-testflight.yml`**：push 改到 `apps/ios/**` → macos-15 runner → XcodeGen → archive（ASC API key 自動簽名）→ exportArchive → `altool` 上 TestFlight；IPA 留 14 日 artifact。
+- **`apps/ios/ci_scripts/ci_post_clone.sh`**：Xcode Cloud 用（clone 完自動下載 XcodeGen + generate，因為 repo 只 store `project.yml`）。
+- **`apps/ios/ci/ExportOptions.plist`**：`app-store-connect` / `upload` / automatic signing。
+- `project.yml` 加 **shared scheme**（`scheme:`）— CI 冇 shared scheme 就 build 唔到。
+
 ## v0.42.0 — iOS 生活收集版 MVP（原生 SwiftUI，重新開始）(2026-10-21)
 
 ### Added

@@ -1,0 +1,118 @@
+name: iOS → TestFlight
+
+# 需要嘅 repo secrets（Settings → Secrets and variables → Actions）：
+#   ASC_KEY_ID      — App Store Connect API Key ID（10 字，例如 2X9ABCD3EF）
+#   ASC_ISSUER_ID   — Issuer ID（UUID，App Store Connect → Users and Access → Integrations）
+#   ASC_KEY_P8      — AuthKey_XXXX.p8 檔案內容（base64，`base64 -i AuthKey_XXX.p8`）
+#   APPLE_TEAM_ID   — Apple Developer Team ID（10 字）
+# 可選 repo variable：IOS_BUNDLE_ID（預設 com.anthroskill.pipz）
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/ios/**'
+      - '.github/workflows/ios-testflight.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: true
+
+jobs:
+  testflight:
+    # public repo → macOS runner 唔計費
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'com.anthroskill.pipz' }}
+      XCODEGEN_VERSION: '2.42.0'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 檢查 secrets 齊唔齊
+        run: |
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID TEAM_ID; do
+            if [ -z "${!name}" ]; then echo "::error::缺少 secret $name"; missing=1; fi
+          done
+          if [ -z "${{ secrets.ASC_KEY_P8 }}" ]; then echo "::error::缺少 secret ASC_KEY_P8"; missing=1; fi
+          exit $missing
+
+      - name: 寫入 App Store Connect API key
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          ls -l "$HOME/private_keys"
+
+      - name: 安裝 XcodeGen
+        run: |
+          curl -sL -o /tmp/xcodegen.zip \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -q /tmp/xcodegen.zip -d /tmp
+          sudo cp /tmp/xcodegen/bin/xcodegen /usr/local/bin/
+          xcodegen --version
+
+      - name: 生成 Xcode project
+        working-directory: apps/ios
+        run: xcodegen generate && ls -la
+
+      - name: Archive
+        working-directory: apps/ios
+        run: |
+          set -o pipefail
+          set -x
+          xcodebuild archive \
+            -project Pipz.xcodeproj \
+            -scheme Pipz \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Pipz.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="1.0.0" \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}"
+
+      - name: 匯出 IPA
+        working-directory: apps/ios
+        run: |
+          sed -e "s|__TEAM_ID__|${TEAM_ID}|g" \
+              -e "s|__BUNDLE_ID__|${BUNDLE_ID}|g" \
+              -e "s|__PROFILE_NAME__|XC Universal|g" \
+              ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Pipz.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: 上傳去 TestFlight
+        run: |
+          xcrun altool --upload-app \
+            -f "$RUNNER_TEMP/export/Pipz.ipa" \
+            -t ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" \
+            --verbose
+
+      - name: 保留 IPA（14 日）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pipz-ipa
+          path: ${{ runner.temp }}/export
+          retention-days: 14
+          if-no-files-found: ignore

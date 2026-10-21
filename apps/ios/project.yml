@@ -28,3 +28,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_EMIT_LOC_STRINGS: YES
         CODE_SIGN_STYLE: Automatic
+    scheme:
+      # shared scheme — CI（Xcode Cloud / GitHub Actions）要靠佢先識 build
+      testTargets: []
+      gatherCoverageData: false
