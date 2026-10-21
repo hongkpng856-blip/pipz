@@ -5,7 +5,7 @@
     <key>method</key>
     <string>app-store-connect</string>
     <key>destination</key>
-    <string>upload</string>
+    <string>__DESTINATION__</string>
     <key>teamID</key>
     <string>__TEAM_ID__</string>
     <key>signingStyle</key>
@@ -16,10 +16,5 @@
     <true/>
     <key>manageAppVersionAndBuildNumber</key>
     <false/>
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>__BUNDLE_ID__</key>
-        <string>__PROFILE_NAME__</string>
-    </dict>
 </dict>
 </plist>
