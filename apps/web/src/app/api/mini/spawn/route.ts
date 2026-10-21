@@ -196,8 +196,9 @@ async function attempt(params: {
           { role: 'user', content: params.userPrompt },
         ],
         temperature: 1.15,
-        // 一定要夠大：deepseek 會先用 token 做 reasoning，220 會令 content 變空字串
-        max_tokens: 1200,
+        // 一定要夠大：deepseek 會先用 token 做 reasoning，
+        // 1200 都試過被 reasoning 食晒（回空 content），所以放到 2500（唔用唔收費）
+        max_tokens: 2500,
         response_format: { type: 'json_object' },
       }),
       signal: controller.signal,
