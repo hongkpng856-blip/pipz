@@ -58,7 +58,7 @@ Mac 裝 Hermes → 用同一個 config/profile → 喺 Telegram 同一個 bot �
 
 ---
 
-## 四、同步規則（兩個 agent 改同一個 repo 一定要守）
+## 三、同步規則（兩個 agent 改同一個 repo 一定要守）
 
 現況：**我（Windows）同 Command Code（Mac）都改同一個 GitHub repo。** 呢個係實際風險，唔係理論：
 
@@ -84,7 +84,7 @@ Mac 裝 Hermes → 用同一個 config/profile → 喺 Telegram 同一個 bot �
 
 ---
 
-## 五、`/rc`（喺電話操控 Mac 上面嗰個 session）綁邊個 bot？
+## 四、`/rc`（喺電話操控 Mac 上面嗰個 session）綁邊個 bot？
 
 **唔係綁 Hermes 呢個 bot —— 要新開一個屬於 Command Code 嘅 bot。**
 
@@ -114,7 +114,7 @@ Telegram 一個 bot token **只可以有一個 poller**。Hermes 已經用咗佢
 
 ---
 
-## 六、有咗 remote Mac，我做得到 vs 做唔到
+## 五、有咗 remote Mac，我做得到 vs 做唔到
 
 ### ✅ 我可以全自動做
 - `xcodegen generate`、`xcodebuild build/archive`、`-exportArchive` 出 IPA
@@ -132,7 +132,7 @@ Telegram 一個 bot token **只可以有一個 poller**。Hermes 已經用咗佢
 
 ---
 
-## 四、安全注意
+## 六、安全注意
 - SSH 只開 **public key 認證**，唔好用密碼；`PasswordAuthentication no`
 - 用 **Tailscale** 而唔好喺路由器開 port 22 出去
 - `.p8` / app-specific password 只放喺 Mac 本機（`~/.private_keys`、`~/.pipz_release_env`），**唔好落 git**
