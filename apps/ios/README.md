@@ -50,6 +50,7 @@ Xcode → 左邊 `Pipz` target → **Signing & Capabilities**
 
 三條路都可以做到「push → 雲端自己 build → 自動上 TestFlight → 電話裝」。
 **詳情同 secret 設定：`CI_TO_TESTFLIGHT.md`**（Xcode Cloud 最省事、25 小時/月內含）。
+**TestFlight 逐步圖文流程（開 App 記錄 → Archive → 加 tester → 電話裝 → 常見錯誤）：`TESTFLIGHT_RUNBOOK.md`**
 
 ### 方案 A：Xcode Cloud（推薦，設一次之後唔洗開 Mac）
 Xcode → Report navigator → Cloud → Get Started → 揀 GitHub repo → Branch `main` +

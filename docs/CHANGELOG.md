@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.42.2 — TestFlight 完整 runbook (2026-10-21)
+
+### Added
+- **`apps/ios/TESTFLIGHT_RUNBOOK.md`**：由零到「電話用 TestFlight 裝到」嘅逐步流程 ——
+  前置（Developer Team ID、Bundle ID 註冊、App Store Connect 開 App 記錄）、路線 A 手動 Archive（含真機先 run 一次）、
+  路線 B Xcode Cloud 自動、上傳後 Processing / Missing Compliance / Internal Testing group + 加 build、
+  電話端安裝、出新 build 同 90 日過期、8 個常見錯誤對照表、上架 App Store 前仲要補咩。
+
 ## v0.42.1 — iOS 雲端自動上 TestFlight（CI 配套）(2026-10-21)
 
 ### Added
