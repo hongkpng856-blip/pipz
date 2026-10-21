@@ -131,6 +131,67 @@ struct PixelGrid {
         for (x, y) in targets { set(x, y, value) }
     }
 
+    /// 將成個圖案推入畫布中間，保證唔會被邊緣切斷（留 margin 邊）
+    mutating func fitInside(margin: Int = 2) {
+        var minX = width
+        var minY = height
+        var maxX = -1
+        var maxY = -1
+        for y in 0..<height {
+            for x in 0..<width where isFilled(x, y) {
+                minX = min(minX, x)
+                maxX = max(maxX, x)
+                minY = min(minY, y)
+                maxY = max(maxY, y)
+            }
+        }
+        guard maxX >= 0 else { return }
+
+        var dx = 0
+        var dy = 0
+        if minX < margin {
+            dx = margin - minX
+        } else if maxX > width - 1 - margin {
+            dx = (width - 1 - margin) - maxX
+        }
+        if minY < margin {
+            dy = margin - minY
+        } else if maxY > height - 1 - margin {
+            dy = (height - 1 - margin) - maxY
+        }
+        guard dx != 0 || dy != 0 else { return }
+
+        var shifted = [UInt8](repeating: 0, count: pixels.count)
+        for y in 0..<height {
+            for x in 0..<width where isFilled(x, y) {
+                let nx = x + dx
+                let ny = y + dy
+                if nx >= 0, ny >= 0, nx < width, ny < height {
+                    shifted[ny * width + nx] = pixels[y * width + x]
+                }
+            }
+        }
+        pixels = shifted
+    }
+
+    /// 上光下暗：每一直行最頂嘅主色變高光、最底嘅變陰影（令死物有立體感）
+    mutating func shadeColumns() {
+        for x in 0..<width {
+            var topY = -1
+            var botY = -1
+            for y in 0..<height where isFilled(x, y) {
+                if topY < 0 { topY = y }
+                botY = y
+            }
+            if topY >= 0, pixels[topY * width + x] == PaletteSlot.main {
+                pixels[topY * width + x] = PaletteSlot.light
+            }
+            if botY >= 0, pixels[botY * width + x] == PaletteSlot.main {
+                pixels[botY * width + x] = PaletteSlot.dark
+            }
+        }
+    }
+
     func toSprite(palette: [UInt32]) -> PixelSprite {
         PixelSprite(width: width, height: height, pixels: pixels, palette: palette)
     }

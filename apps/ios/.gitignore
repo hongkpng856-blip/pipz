@@ -1,0 +1,7 @@
+# Xcode / build 產物（project.yml 用 xcodegen 生成）
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+build/
+DerivedData/
+.DS_Store

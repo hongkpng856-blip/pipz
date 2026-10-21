@@ -52,6 +52,8 @@ enum ObjectGenerator {
             grid = blobShape(&rng, stage: grow)
         }
 
+        grid.fitInside(margin: 1)
+
         if rarity >= .epic && grow >= 2 {
             grid.outline(PaletteSlot.glow)
         } else {
@@ -65,12 +67,14 @@ enum ObjectGenerator {
     private static func creature(_ rng: inout SeededRandom, stage: Int, oddity: Bool) -> PixelGrid {
         var g = PixelGrid(width: 20, height: 20)
         let grow = stage
+        let big = grow >= 2
 
-        let headCY = 6 + rng.int(0, 1)
-        let headR = 2 + rng.int(0, 1) + (grow >= 2 ? 1 : 0)
-        let bodyCY = 13 + (grow >= 2 ? -1 : 0)
-        let bodyRY = 3 + rng.int(0, 1) + (grow >= 2 ? 1 : 0)
-        let bodyRX = 4 + rng.int(0, 1) + (grow >= 2 ? 1 : 0)
+        // 垂直預算：內容最多佔 y 1...17，外框之後 0...18，唔會被切
+        let bodyCY = big ? 12 : 13
+        let bodyRY = big ? 4 : 3 + rng.int(0, 1)
+        let bodyRX = big ? 5 + rng.int(0, 1) : 4 + rng.int(0, 1)
+        let headR = 2 + rng.int(0, 1) + (big ? 1 : 0)
+        let headCY = bodyCY - bodyRY - headR + 2
 
         // 身體
         g.symEllipse(bodyCY, rx: bodyRX, ry: bodyRY, PaletteSlot.main)
@@ -101,9 +105,9 @@ enum ObjectGenerator {
         }
 
         // 腳
-        let legCount = (bodyRX >= 5 || grow >= 2) ? 4 : 2
+        let legCount = (bodyRX >= 5 || big) ? 4 : 2
         let legTop = bodyCY + bodyRY
-        let legBot = min(18, legTop + 2 + rng.int(0, 1))
+        let legBot = min(17, legTop + 2)
         let outerX = 9 - bodyRX + 2
         g.vLine(outerX, legTop, legBot, PaletteSlot.dark)
         g.vLine(19 - outerX, legTop, legBot, PaletteSlot.dark)
@@ -125,8 +129,8 @@ enum ObjectGenerator {
                 g.setSym(tx, bodyCY, PaletteSlot.main)
                 g.setSym(tx - 1, bodyCY - 1, PaletteSlot.main)
             default:
-                g.hLine(bodyCY + 2, tx - 1, 9 - bodyRX, PaletteSlot.dark)
-                g.hLine(bodyCY + 2, 10 + bodyRX, 20 - tx, PaletteSlot.dark)
+                g.hLine(bodyCY + 2, max(1, tx - 1), 9 - bodyRX, PaletteSlot.dark)
+                g.hLine(bodyCY + 2, 10 + bodyRX, min(18, 20 - tx), PaletteSlot.dark)
             }
         }
 
@@ -163,28 +167,28 @@ enum ObjectGenerator {
 
     private static func drawEars(_ g: inout PixelGrid, kind: Int, headCY: Int, headR: Int, grow: Int) {
         let baseX = 9 - headR + 1
-        let topY = max(0, headCY - headR)
+        let topY = max(1, headCY - headR)
         switch kind {
         case 0:
             break
         case 1: // 尖耳
-            g.setSym(baseX + 1, topY - 1, PaletteSlot.main)
-            g.setSym(baseX, topY - 2, PaletteSlot.main)
-            g.setSym(baseX + 1, topY - 2, PaletteSlot.main)
+            g.setSym(baseX + 1, max(1, topY - 1), PaletteSlot.main)
+            g.setSym(baseX, max(1, topY - 2), PaletteSlot.main)
+            g.setSym(baseX + 1, max(1, topY - 2), PaletteSlot.main)
         case 2: // 圓耳
-            g.setSym(baseX, topY - 1, PaletteSlot.main)
-            g.setSym(baseX + 1, topY - 1, PaletteSlot.main)
+            g.setSym(baseX, max(1, topY - 1), PaletteSlot.main)
+            g.setSym(baseX + 1, max(1, topY - 1), PaletteSlot.main)
             g.setSym(baseX, topY, PaletteSlot.main)
         case 3: // 觸鬚
-            g.vLine(baseX, max(0, topY - 3), max(0, topY - 1), PaletteSlot.dark)
-            g.vLine(19 - baseX, max(0, topY - 3), max(0, topY - 1), PaletteSlot.dark)
-            g.setSym(baseX, max(0, topY - 4), PaletteSlot.accent)
+            g.vLine(baseX, max(1, topY - 2), max(1, topY - 1), PaletteSlot.dark)
+            g.vLine(19 - baseX, max(1, topY - 2), max(1, topY - 1), PaletteSlot.dark)
+            g.setSym(baseX, max(1, topY - 2), PaletteSlot.accent)
         default: // 單角
-            g.vLine(9, max(0, topY - 2), max(0, topY - 1), PaletteSlot.accent)
-            g.vLine(10, max(0, topY - 2), max(0, topY - 1), PaletteSlot.accent)
+            g.vLine(9, max(1, topY - 2), max(1, topY - 1), PaletteSlot.accent)
+            g.vLine(10, max(1, topY - 2), max(1, topY - 1), PaletteSlot.accent)
             if grow >= 2 {
-                g.set(9, max(0, topY - 3), PaletteSlot.accent2)
-                g.set(10, max(0, topY - 3), PaletteSlot.accent2)
+                g.set(9, max(1, topY - 2), PaletteSlot.accent2)
+                g.set(10, max(1, topY - 2), PaletteSlot.accent2)
             }
         }
     }
@@ -239,6 +243,7 @@ enum ObjectGenerator {
                 k += 1
             }
         }
+        g.shadeColumns()
         return g
     }
 
@@ -326,12 +331,20 @@ enum ObjectGenerator {
         let y1 = min(16, y0 + 6 + rng.int(0, 1))
         let half = 4 + rng.int(0, 1)
         g.symRect(y0, y1, half: half, PaletteSlot.main)
-        g.symRect(y0, y0 + 1, half: half, PaletteSlot.light)
-        g.vLine(9 - half, y0, y1, PaletteSlot.dark)
+        // 蓋
+        g.symRect(y0, y0 + 1, half: half + 1, PaletteSlot.light)
+        g.symHLine(y0 + 2, half: half, PaletteSlot.dark)
+        // 標籤 / 束帶
+        g.symHLine(y0 + 4, half: max(0, half - 2), PaletteSlot.accent)
+        // 邊
+        g.vLine(9 - half, y0 + 3, y1, PaletteSlot.dark)
+        g.vLine(10 + half, y0 + 3, y1, PaletteSlot.dark)
         g.symHLine(y1, half: half, PaletteSlot.dark)
-        g.symHLine(y0 + 3, half: max(0, half - 1), PaletteSlot.light)
+        // 蓋頂掣（鈕）
+        g.set(9, max(0, y0 - 1), PaletteSlot.accent)
+        g.set(10, max(0, y0 - 1), PaletteSlot.accent)
         if stage >= 2 {
-            g.symHLine(y0 + 5, half: max(0, half - 1), PaletteSlot.accent)
+            g.symHLine(y0 + 6, half: max(0, half - 1), PaletteSlot.accent2)
         }
         return g
     }

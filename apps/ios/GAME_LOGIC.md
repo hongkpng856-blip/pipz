@@ -59,6 +59,11 @@
 - **決定性**：同一 (seed, category, stage, rarity) → 永遠同一張圖；只存 seed，唔存圖
 
 驗圖方法：App 內 設定 → 進階 → 測試面板 → 「生成器預覽」。
+喺電腦上面快速驗（唔需要 Xcode）：`python apps/ios/tools/sprite_preview.py` → 出 `sprite_sheet.png`（24 格：6 分類 × 4 階段）。
+
+⚠️ **Pitfall（已中過）**：手畫座標好易超出 20×20 邊界而被無聲裁走（原本 leg 去度 y=19、長尾去度 x=19）。
+所以 `sprite()` 一定會先 `fitInside(margin: 1)` 再畫外框 —— **唔好喺 shape 函數入面自己 fit**。
+改完生成器之後跑一次 `sprite_preview.py`，確認 sheet 入面每個 sprite 都完整（內容唔可以貼住 0 或 19）。
 
 ## 6. 命名
 
