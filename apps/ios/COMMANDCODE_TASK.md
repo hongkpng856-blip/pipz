@@ -1,5 +1,8 @@
 # 俾 Command Code 喺 Mac 上面執行嘅任務卡
 
+> **Agent 入口（如果你係 agent 睇到呢個檔）：** 直接跳去下面「Desktop 版任務卡」，照佢做，
+> 完成後按指定格式回報。唔需要問其他嘢。
+
 > **重點：Command Code 係「喺邊部機開，就用邊部機」嘅 agent（Desktop App 同 CLI 係同一套 agent runtime）。**
 > 一定要喺 **Mac** 上面開，佢才摸得到 `xcodebuild` / `xcrun altool`。
 > 喺 Windows 開嘅話佢只有 Windows 環境，編譯唔到 iOS。
