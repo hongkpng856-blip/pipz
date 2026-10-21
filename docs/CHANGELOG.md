@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.42.0 — iOS 生活收集版 MVP（原生 SwiftUI，重新開始）(2026-10-21)
+
+### Added
+- **`apps/ios` 完全重寫成原生 SwiftUI app**（舊嘅 Supabase 骨架刪除）：唔需要帳號、唔需要網絡、資料只留喺 device。目標係最快上 App Store。
+- **感應器事件層**（`MotionService`）：`CMPedometer` 步數、`CMMotionActivityManager` 活動類型、`CMMotionManager` 30Hz userAcceleration → 大衝擊（≥2.1g）+ 搖晃（1.5s 內 4 次穿越 1.0g）。
+- **事件 → 發現規則**（`GameStore`）：每 600 步、行完一段、衝擊、搖晃、靜止 12 分鐘、每日第一次開 app；全域冷卻 70s、每日上限 24。
+- **程序化像素生成器**（`PixelSprite` + `ObjectGenerator`）：20×20 對稱生物 / 8 種死物模板，同一 seed 永遠同一張圖；spec 嘅分類（動物／家居／食物／植物／工具／怪奇）× 5 稀有度 × 4 成長階段。
+- **離線命名**（`NameGenerator`）+ **可選 AI 改名**（`LLMService`，OpenAI 相容；冇 key 完全照玩）。
+- **成長系統**：夥伴食步數經驗，EXP 250 / 900 / 2600 → 4 階段進化，外形跟 stage 變。
+- **UI**：Home（夥伴 + 感應器面板 + 步數進度）、圖鑑 grid、物件詳情、Reveal 彈出、設定、測試面板（模擬每個事件 + 生成器預覽）。
+- **App Store 配套**：1024 icon 生成器（`tools/make_icon.py`）、Assets.xcassets、`ITSAppUsesNonExemptEncryption=false`、`NSMotionUsageDescription`、完整上架／TestFlight／審核步驟（`apps/ios/README.md`）、調參指南（`apps/ios/GAME_LOGIC.md`）。
+
+### Notes
+- `apps/web`（現有 web 版）**完全冇改動**，照樣 online。
+- Swift code 喺 Windows 寫，只經 tree-sitter 語法檢查（18 個檔案全綠），**未經 Xcode type-check**；首次 build 可能要修幾個編譯錯誤。
+
 ## v0.41.4 — Pixel Map Markers + Deed Popup Hidden (2026-08-21)
 
 ### Changed
