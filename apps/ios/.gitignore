@@ -5,3 +5,9 @@ xcuserdata/
 build/
 DerivedData/
 .DS_Store
+
+# 憑證 / 密鑰（絕對唔可以入 git）
+*.p8
+*.p12
+*.mobileprovision
+.pipz_release_env
