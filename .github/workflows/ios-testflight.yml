@@ -82,13 +82,15 @@ jobs:
             MARKETING_VERSION="1.0.0" \
             CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}"
 
-      - name: 匯出 IPA
+      - name: 匯出並上傳（exportArchive destination=upload）
         working-directory: apps/ios
         run: |
           sed -e "s|__TEAM_ID__|${TEAM_ID}|g" \
               -e "s|__BUNDLE_ID__|${BUNDLE_ID}|g" \
-              -e "s|__PROFILE_NAME__|XC Universal|g" \
+              -e "s|__DESTINATION__|upload|g" \
               ci/ExportOptions.plist > "$RUNNER_TEMP/ExportOptions.plist"
+          # destination=upload 會直接上傳去 App Store Connect；
+          # CI 冇 Xcode 登入嘅 Apple ID，所以用 ASC API key 認證（Mac 上面跑 release.sh 就唔需要）
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Pipz.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
@@ -97,22 +99,3 @@ jobs:
             -authenticationKeyPath "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
-          ls -la "$RUNNER_TEMP/export"
-
-      - name: 上傳去 TestFlight
-        run: |
-          xcrun altool --upload-app \
-            -f "$RUNNER_TEMP/export/Pipz.ipa" \
-            -t ios \
-            --apiKey "$ASC_KEY_ID" \
-            --apiIssuer "$ASC_ISSUER_ID" \
-            --verbose
-
-      - name: 保留 IPA（14 日）
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pipz-ipa
-          path: ${{ runner.temp }}/export
-          retention-days: 14
-          if-no-files-found: ignore

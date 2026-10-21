@@ -186,13 +186,16 @@ TestFlight 嘅價值係：**Internal tester（你自己）唔需要 Apple 審核
           → Apple 處理 5–30 分鐘 → TestFlight app 撳 Update → 你試
 ```
 
-**循環 B（冇 CI，每次用 Mac）**
+**循環 B（冇 CI，每次用 Mac）** — 已喺真機驗證行得通
 ```
-你講症狀 → 我改 Swift + push → Mac 上面 Command Code／終端跑：
+你講症狀 → 我改 Swift + push → Mac 上面跑：
    cd ~/Desktop/pipz && git pull
-   cd apps/ios && ./scripts/typecheck.sh && ./scripts/release.sh
-          → TestFlight 撳 Update → 你試
+   cd apps/ios && ./scripts/release.sh        # 直接 archive + 上傳，3–6 分鐘
+          → 等 App Store Connect 處理 5–30 分鐘 → TestFlight 撳 Update → 你試
 ```
+上傳係由 `xcodebuild -exportArchive` 嘅 `destination=upload` 一手包辦，用**Xcode 已登入嘅 Apple ID**，
+所以 Mac 路線**唔需要** App Store Connect API key。（API key 只係 GitHub Actions 需要，
+因為 runner 冇登入過 Xcode。）
 
 兩者分別只在「邊個負責 build」。我負責嘅部分一樣：**改 code + push**。
 

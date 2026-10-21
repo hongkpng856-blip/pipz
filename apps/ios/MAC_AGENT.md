@@ -7,36 +7,27 @@
 
 ## 一、一鍵 release script（三種接駁法都用同一個）
 
-`scripts/release.sh` — 喺 Mac 上面跑，一條指令做齊：
+`scripts/release.sh` — 喺 Mac 上面跑，一條指令做齊（**已喺真機 + 真 App Store Connect 驗證**）：
 
 ```bash
 cd ~/Desktop/pipz/apps/ios
 
-# 只 build 出 IPA（唔上傳，第一次／試機用）
+# 只出 IPA，唔上傳（想留住個檔／想手動用 Transporter 拖）
 ./scripts/release.sh --no-upload
 
-# build + 自動上傳 TestFlight
+# archive + 直接上傳 TestFlight
 ./scripts/release.sh
 ```
 
-佢會自動做：`xcodegen generate` → `xcodebuild archive`（Release，自動簽名，build number 用時間戳保證遞增）
-→ `xcodebuild -exportArchive` 出 IPA → `xcrun altool` 上傳。Log 全部寫入 `build/release.log`。
+佢會自動做：`xcodegen generate` → `xcodebuild archive`（Release、自動簽名、build number 用時間戳保證遞增）
+→ `xcodebuild -exportArchive` 匯出並上傳（`destination=upload`）。Log 全部寫入 `build/release.log`。
 
-憑證放喺 `~/.pipz_release_env`（script 自動 source，唔會入 git）：
+**認證方式（重要）**：
+- **Mac 上面跑** → 用 Xcode 已經登入嘅 Apple ID，**唔需要任何 API key**
+- **GitHub Actions 跑** → runner 冇 Xcode 登入，所以 workflow 會用 App Store Connect API key
+  （`ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8`）
 
-```bash
-cat > ~/.pipz_release_env <<'EOF'
-export APPLE_TEAM_ID=XXXXXXXXXX          # developer.apple.com → Membership
-export ASC_KEY_ID=YYYYYYYYYY             # App Store Connect → Users and Access → Integrations
-export ASC_ISSUER_ID=xxxxxxxx-xxxx-...   # 同一頁嘅 Issuer ID
-# .p8 放喺 ~/private_keys/AuthKey_<ASC_KEY_ID>.p8
-EOF
-chmod 600 ~/.pipz_release_env
-```
-
-冇 API key 都可以用 app-specific password（appleid.apple.com 生成）：
-`export APPLE_ID=... APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx`
-兩樣都冇 → script 會停低並印出用 **Transporter.app** 手動拖 IPA 嘅方法。
+只有 Team ID 一定要有（`~/.pipz_release_env` 嘅 `APPLE_TEAM_ID`，或者 project.yml 嘅 `DEVELOPMENT_TEAM`）。
 
 ---
 

@@ -69,7 +69,13 @@ Workflow 已經寫好：`.github/workflows/ios-testflight.yml`。
 （呢條路 workflow 需要再改幾行 import keychain；要就到時叫我改。）
 
 ### 注意
-- `xcrun altool` 係舊工具，Apple 逐步推 Transporter；如果某日 fail，改用 `xcrun notarytool`／fastlane `pilot`（我會幫你換）。
+- **上傳係 `xcodebuild -exportArchive` 嘅 `destination=upload` 做的**（唔係另外 call `altool`）。
+  Mac 上面用 Xcode 已登入嘅 Apple ID 就上得；CI runner 冇登入過 Xcode，
+  所以 workflow 額外傳 `-authenticationKeyPath / -authenticationKeyID / -authenticationKeyIssuerID`。
+- `apps/ios/ci/ExportOptions.plist` 嘅 `destination` 係 `__DESTINATION__` 佔位符：
+  `release.sh` 按 `--no-upload` 填 `export` / `upload`，workflow 直接填 `upload`。
+- 唔好喺 ExportOptions 硬寫 `provisioningProfiles`（曾經填過唔存在嘅 profile 名，
+  會死在 `Error Downloading App Information`）；交返 automatic signing。
 - macOS runner 用 `macos-15`（Xcode 16）。要指定 Xcode 版本就加 `sudo xcode-select -s /Applications/Xcode_16.x.app`。
 
 ---

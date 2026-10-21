@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.42.3 — 首次真機實跑：release pipeline 打通（app 已上 TestFlight）(2026-10-21)
+
+> 喺 Mac 上面首次真跑 `typecheck → archive → upload` 成功：**1.0.0 / build 202610212012 已上 TestFlight**。
+> 以下四個問題只有喺真 macOS + 真 App Store Connect 才會爆，Windows 側無法預知。
+
+### Fixed
+- **`release.sh` sed 用 BSD 語法**：`\s*` → `[[:space:]]*`。BSD sed 唔支援 `\s`，令 `MARKETING_VERSION`
+  讀成「 1.0.0」（前導空格），ASC 退件「must be composed of one to three period-separated integers」。
+- **`release.sh` 誤報失敗**：`destination=upload` 時 `xcodebuild` 唔會留 IPA，原本會喺上傳成功之後
+  印「❌ 冇出 IPA」再 `exit 1`。改為只在 `export` 模式才檢查 IPA。
+- **上傳路徑簡化**：刪 altool 分支 —— `-exportArchive` 嘅 `destination=upload` 已經一手包辦（用 Xcode
+  登入嘅 Apple ID），Mac 路線**唔需要 ASC API key**。
+- **`ci/ExportOptions.plist`**：`destination` 改為 `__DESTINATION__` 佔位符（由 script/workflow 填）；
+  移除硬寫嘅 `provisioningProfiles`（填咗唔存在嘅 "XC Universal"，令 export 死在
+  「Error Downloading App Information」）。
+- **`project.yml`**：target 加 `TARGETED_DEVICE_FAMILY: "1"`。xcodegen 對 iOS app 預設 `1,2`，
+  而 app 只支援 portrait，ASC 會以「iPad 需支援四個方向」退件。
+
+### Changed
+- **`.github/workflows/ios-testflight.yml`**：跟新機制（填 `__DESTINATION__=upload`、用 ASC API key
+  認證 `exportArchive`、移除重複嘅 altool 上傳步驟）。
+- Docs 同步：`TESTFLIGHT_RUNBOOK.md`（Mac 路線免 API key、循環流程）、`MAC_AGENT.md`、`CI_TO_TESTFLIGHT.md`。
+
 ## v0.42.2 — TestFlight 完整 runbook (2026-10-21)
 
 ### Added
