@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.42.7 — 免費 model 減半 token 同延遲（12/12，平均 7.0 秒）(2026-10-21)
+
+### Changed
+- 免費 model 加 `reasoning_effort: 'low'`：實測 completion 由平均 464 → 約 200–350 tokens，
+  延遲由 8.3–19.8 秒 → 3.0–6.8 秒，JSON 照樣 5/5 有效。付費 deepseek 加 `low` 反而變差（1821 tokens），所以只套用喺 `:free` model。
+  `reasoning_effort: 'minimal'` 呢個 provider 回 HTTP 400。
+
+### Verified（12 次 live soak）
+- **12/12 成功**，延遲 **4.1–15.9 秒（平均 7.0 秒，之前 13.2 秒）**。
+- Model 分佈：免費 minimax **10/12**、付費 deepseek 只係 2/12（之前 4/8）。
+
+### Token 用量（實測，寫入 `apps/ios/AI_GENERATION.md`）
+- 免費 + low：prompt ~595、completion 180–350、總計 **~780–950／次**
+- 付費 deepseek：prompt ~461、completion 590–1,140、總計 ~1,050–1,500／次
+- 每玩家每日上限 24 次 → 約 **2 萬–3 萬 token／日**
+
 ## v0.42.6 — 先用免費 model，付費做後備（live 12/12）(2026-10-21)
 
 ### Changed

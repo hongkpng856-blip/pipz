@@ -55,6 +55,18 @@ App 收到任何非 200 都會靜靜咁保留離線版，唔會報錯畀用戶�
      -d '{"category":"動物","rarity":"稀有","source":"一下衝擊"}'
    ```
 
+## 每次生成用幾多 token（實測）
+| | prompt | completion（含 reasoning） | total |
+|---|---|---|---|
+| 免費 `minimax-m3.1-flash:free`（`reasoning_effort=low`） | ~595 | 180–350（reasoning 125–290） | **~780–950** |
+| 免費（預設 effort） | ~595 | 平均 464（reasoning 591） | ~710–1,280 |
+| 付費 `deepseek-v4-flash` | ~461 | 590–1,140（reasoning 約 60%） | ~1,050–1,500 |
+
+- Prompt 裡面大約 **450 token 係固定 system prompt**，其餘 ~100 係分類／稀有度／靈感。
+- 上游有 prompt cache（實測 `cached_tokens` 128–384），重複請求平啲。
+- 每玩家每日上限 24 次發現 → **大約 2 萬–3 萬 token／日**。
+- `reasoning_effort: minimal` 呢個 provider 會回 **400**；`low` 對免費 model 有效（token 減半、延遲減半），對 deepseek 反而更差，所以只套用喺免費 model。
+
 ## 成本控制
 - **先用免費 model**：`PIPZ_AI_MODEL` 係逗號分隔 try-list，預設
   `minimax/minimax-m3.1-flash:free,deepseek/deepseek-v4-flash`。免費永遠試先，慢／失敗就即刻換付費。
