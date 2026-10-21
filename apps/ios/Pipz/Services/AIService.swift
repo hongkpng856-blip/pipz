@@ -41,7 +41,7 @@ final class AIService {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 15
+        request.timeoutInterval = 26
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Pipz-iOS/1.0", forHTTPHeaderField: "User-Agent")
 

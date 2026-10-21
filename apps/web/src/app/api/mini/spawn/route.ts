@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 // deepseek 會先花 token 做 reasoning，實測 2-13 秒，所以要放寬 function 時限
 export const maxDuration = 30
 
-const ATTEMPT_TIMEOUT_MS = 20_000
+const ATTEMPT_TIMEOUT_MS = 12_000
 const MAX_ATTEMPTS = 2
 
 /** 分類 → 允許嘅外觀骨架（生物類一定要 creature，物件類唔可以變生物） */
@@ -152,7 +152,8 @@ function normalize(json: Record<string, unknown>, allowed: string[]): Generated 
     note: sanitizeText(json.note, 60),
     archetype,
     ear: clampInt(json.ear, 0, 3, 1),
-    pattern: clampInt(json.pattern, 0, 1, 0),
+    // 模型幾乎每次都答 pattern=1，所以改用名字 hash 決定（穩定、大約一半一半）
+    pattern: hashPick(name, ['0', '1']) === '1' ? 1 : 0,
     palette: sanitizePalette(json.palette) ?? '#B08968',
   }
 }
