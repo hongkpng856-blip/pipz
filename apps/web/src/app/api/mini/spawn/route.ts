@@ -176,7 +176,7 @@ async function attempt(params: {
   userPrompt: string
   allowed: string[]
   budgetMs: number
-}): Promise<Generated | null> {
+}): Promise<{ result: Generated | null; note: string }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), params.budgetMs)
   try {
@@ -203,13 +203,21 @@ async function attempt(params: {
       signal: controller.signal,
     })
 
-    if (!upstream.ok) return null
+    if (!upstream.ok) {
+      const detail = await upstream.text().catch(() => '')
+      return { result: null, note: `${params.model} HTTP ${upstream.status}: ${detail.slice(0, 120)}` }
+    }
     const data = (await upstream.json()) as { choices?: Array<{ message?: { content?: string } }> }
     const content = data.choices?.[0]?.message?.content ?? ''
     const json = extractJson(content)
-    return json ? normalize(json, params.allowed) : null
-  } catch {
-    return null
+    if (!json) {
+      return { result: null, note: `${params.model} unparseable: ${content.slice(0, 100)}` }
+    }
+    const normalized = normalize(json, params.allowed)
+    return { result: normalized, note: normalized ? '' : `${params.model} empty name` }
+  } catch (error) {
+    const aborted = error instanceof Error && error.name === 'AbortError'
+    return { result: null, note: `${params.model} ${aborted ? 'aborted (timeout)' : 'fetch failed'}` }
   } finally {
     clearTimeout(timer)
   }
@@ -266,12 +274,13 @@ ${inspiration.join('\n')}
 
   // 逐輪試：第一輪先免費後付費，第二輪再試一次（免費 model 延遲好飘，1.8–31 秒）
   const deadline = Date.now() + TOTAL_BUDGET_MS
+  const failures: string[] = []
   outer: for (let round = 0; round < MAX_ATTEMPTS; round += 1) {
     for (const model of models) {
       const remaining = deadline - Date.now()
       if (remaining <= 1_000) break outer
       const isFree = model.includes(':free') || model.endsWith('-free')
-      const result = await attempt({
+      const { result, note } = await attempt({
         baseUrl,
         apiKey,
         model,
@@ -286,10 +295,12 @@ ${inspiration.join('\n')}
           { headers: { 'Cache-Control': 'no-store' } }
         )
       }
+      failures.push(note)
     }
   }
 
-  return NextResponse.json({ error: 'generation failed' }, { status: 502 })
+  // 帶診斷資訊，方便睇係 timeout、429 定係模型輸出問題
+  return NextResponse.json({ error: 'generation failed', attempts: failures }, { status: 502 })
 }
 
 export async function GET() {
