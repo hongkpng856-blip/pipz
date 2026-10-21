@@ -17,7 +17,9 @@ export const dynamic = 'force-dynamic'
 // deepseek 會先花 token 做 reasoning，實測 2-13 秒，所以要放寬 function 時限
 export const maxDuration = 30
 
-const ATTEMPT_TIMEOUT_MS = 12_000
+const ATTEMPT_TIMEOUT_MS = 13_000
+// 免費 model 成功時多數 3-9 秒，慢起上嚟要 20-31 秒；唔值得等，夠鐘就交畀後備
+const FREE_MODEL_TIMEOUT_MS = 9_000
 // 成個請求嘅總預算，一定要細過 maxDuration（30 秒）同 iOS client timeout（26 秒）
 const TOTAL_BUDGET_MS = 24_000
 const MAX_ATTEMPTS = 2
@@ -268,6 +270,7 @@ ${inspiration.join('\n')}
     for (const model of models) {
       const remaining = deadline - Date.now()
       if (remaining <= 1_000) break outer
+      const isFree = model.includes(':free') || model.endsWith('-free')
       const result = await attempt({
         baseUrl,
         apiKey,
@@ -275,7 +278,7 @@ ${inspiration.join('\n')}
         systemPrompt,
         userPrompt,
         allowed,
-        budgetMs: Math.min(ATTEMPT_TIMEOUT_MS, remaining),
+        budgetMs: Math.min(isFree ? FREE_MODEL_TIMEOUT_MS : ATTEMPT_TIMEOUT_MS, remaining),
       })
       if (result) {
         return NextResponse.json(
