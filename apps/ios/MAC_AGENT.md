@@ -58,7 +58,37 @@ Mac 裝 Hermes → 用同一個 config/profile → 喺 Telegram 同一個 bot �
 
 ---
 
-## 三、有咗 remote Mac，我做得到 vs 做唔到
+## 三、`/rc`（喺電話操控 Mac 上面嗰個 session）綁邊個 bot？
+
+**唔係綁 Hermes 呢個 bot —— 要新開一個屬於 Command Code 嘅 bot。**
+
+你手上有兩個完全獨立嘅 bot：
+
+| | 邊個 bot | 跑喺邊 | 做咩 |
+|---|---|---|---|
+| 1 | Hermes（同佢傾嘢呢個） | Windows（本機） | 改 code、寫 docs、push |
+| 2 | **Command Code 專用（你要新開）** | Mac | 喺 Mac 跑 `xcodebuild` / `release.sh` |
+
+Telegram 一個 bot token **只可以有一個 poller**。Hermes 已經用咗佢自己嗰個 token，
+如果你把 Hermes 個 token 填去 Command Code，兩邊會互相搶 update（其中一邊會被踢走／收唔到訊息）。
+
+### 開一個新 bot（2 分鐘）
+1. Telegram 搵 **@BotFather** → `/newbot` → 改名（例如 `Pipz Mac`）→ 攞到 token（`123456:AA...`）
+2. Telegram 搵 **@userinfobot** → `/start` → 攞你嘅 user id（一串數字）
+3. 去你新開嗰個 bot 嘅 chat → 撳 **Start**（一定要做，bot 唔可以主動開對話）
+4. Mac 上面 Command Code 個 chat 打 **`/rc`** → 揀 Telegram → 貼 token + 你嘅 user id → **Connect**
+5. 之後手機 Telegram 同「Pipz Mac」呢個 bot 講嘢 = 直接驅動 Mac 上面嗰個 session
+   （狀態會顯示 `On via Telegram`；`/rc off` 解除）
+
+### 需要唔需要？
+- 你多數坐喺 Mac 隔離 → **可以唔用**，直接喺 Mac 打字就得
+- 想出街都叫得佢出 build / 批准 tool → 值得開（mode 揀 `default` 會逐個批准，`yolo` 就唔問）
+
+憑證存喺 Mac 嘅 `~/.commandcode/auth.json`（owner-only 權限），唔會入 repo。
+
+---
+
+## 四、有咗 remote Mac，我做得到 vs 做唔到
 
 ### ✅ 我可以全自動做
 - `xcodegen generate`、`xcodebuild build/archive`、`-exportArchive` 出 IPA
