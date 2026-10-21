@@ -1091,3 +1091,15 @@ Similar to 6.3 — resolved via `key={pet.id}`.
 | **Root cause** | `buildPetIcon()` in `RealMap.tsx` rendered the player marker as a **circular** frame (`border-radius:50%` + thick rarity-color border + glow) — the classic "Google Maps location dot / default pin" look — with a 🥚 **emoji** inside when no pet is equipped. The pixel pet sprite itself was already pixel-art (64×64, 4 colors — verified), but the circular chrome made it read as a default icon. |
 | **Fix** | ① Frame → **square** (`border-radius:6px`) + `inset 0 0 0 2px rgba(0,0,0,0.35)` hard edge (PICO-8 style). ② 🥚 emoji → **pixel egg glyph** via new `rmSvg('egg')` string helper (84 SVG rects). ③ Marker 32→36px (no-pet) / 44→48px (with pet), pet sprite 36→38px. `rmSvg()` is the SVG-string twin of `RMGlyph` for HTML template literals (mirrors `pxSvg()` in page.tsx). |
 | **Prevention** | Any map marker should be square pixel-chrome, never a circular location-dot, to match Pipz's PICO-8 aesthetic. Use `rmSvg()` (not emoji) inside `L.divIcon` HTML strings. |
+
+### 39. AI proxy（/api/mini/spawn）三個實測陷阱 — FIXED 2026-10-21
+
+| Field | Value |
+|-------|-------|
+| **Severity** | 🔴 High (AI 生成會靜靜失效，App 只會退回離線名) |
+| **Status** | ✅ FIXED（`apps/web/src/app/api/mini/spawn/route.ts`） |
+| **① 上游 403** | `api.commandcode.ai` 前面有 Cloudflare，請求冇正常 `User-Agent`（Python urllib / Node undici 預設）→ **403 Forbidden**。curl 反而得，所以好易睇漏。Fix：明確送 `'User-Agent': 'Pipz-Web/1.0 (...)'`。 |
+| **② max_tokens 太細 → content 空** | deepseek 會**先花 token 做 reasoning**。`max_tokens: 220` 時 `reasoning_content` 用晒全部額度，`content` 回空字串 → `extractJson` 失敗 → 502 `unparseable model output`。實測 800 夠、1200 穩。另加 `response_format: {type:'json_object'}`。 |
+| **③ timeout 層數要對齊** | 上游實測 2–14 秒。function `maxDuration=30`、每次 attempt 12 秒、最多 2 次（最壞 24 秒）、iOS `URLRequest.timeoutInterval=26`。任何一層細過上游就會白做（實測見過 20s+retry = 26s 超過舊 15s client timeout，結果被 App 丟掉）。 |
+| **測試陷阱** | Windows bash 用 `curl -d '{"category":"家居"}'` 送中文，會用 console codepage 編碼 → server 收到亂碼 → `JSON.parse` 失敗 → **靜靜當成預設分類「動物」**，於是全部生成 creature，仲以為分類邏輯壞。**測中文 body 要用 python／檔案寫入 UTF-8**，唔好用 bash inline 中文。 |
+| **模型唔聽話** | 幾乎每次都答 `pattern: 1`，而且「動物」分類都會生成水壺。Fix：server 端用 `CATEGORY_ARCHETYPES` 夾死合法骨架（唔合法就用名字 hash 揀一個），`pattern` 改用名字 hash（約 50/50、穩定）。重複用語（半夜／自己／會嘆氣嘅）寫入 prompt 禁令 + 每次注入隨機場景／質感／小動作靈感。 |

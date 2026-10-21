@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.42.5 — AI proxy 實測修正（live 已驗證）(2026-10-21)
+
+### Fixed
+- **上游 403**：`api.commandcode.ai` 前面有 Cloudflare，冇正常 `User-Agent`（Node undici / Python 預設）會被擋；route 已明確送 UA。
+- **`content` 空字串**：deepseek 先用 token 做 reasoning，`max_tokens: 220` 會令 content 空 → 改成 **1200** 並加 `response_format: json_object`。
+- **timeout 對齊**：function `maxDuration=30`、每次 attempt 12 秒 ×2（最壞 24 秒）、iOS client 26 秒。舊組合（20 秒 + retry、client 15 秒）會令成功嘅結果被 App 丟掉。
+- **分類唔聽話**：server 用 `CATEGORY_ARCHETYPES` 夾死合法骨架（動物／怪奇一定係 creature），唔合法就用名字 hash 揀；`pattern` 改用名字 hash（模型每次都答 1）。
+- **重複用語**：prompt 禁「半夜／自己／會嘆氣嘅／半融／半溶」，每次注入隨機場景／質感／小動作／生物類型靈感。
+
+### Verified（`https://pipz.anthroskill.com/api/mini/spawn`）
+- 12 次連續請求：10 成功、2 次 502（上游瞬時失誤，App 會自動用離線名），延遲 5.4–14.3 秒。
+- 分類正確：動物／怪奇 → creature；家居 → cup/bottle/box；食物 → cup/blob；植物 → blob/brush/creature；工具 → brush。
+- `PIPZ_AI_KEY` 已寫入 Vercel **Production + Development**（project `pipz`，Root Directory `apps/web`）。
+
 ## v0.42.4 — AI 即時生成（開箱即用，玩家唔需要 key）(2026-10-21)
 
 ### Added

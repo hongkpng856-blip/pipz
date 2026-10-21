@@ -56,9 +56,23 @@ App 收到任何非 200 都會靜靜咁保留離線版，唔會報錯畀用戶�
    ```
 
 ## 成本控制
-- 每次發現一次請求，`max_tokens: 220`、temperature 1.05、12 秒 timeout。
+- 每次發現一次請求，`max_tokens: 1200`（reasoning 要用）、temperature 1.15、每次 attempt 12 秒、最多 2 次。
 - 每日發現上限 24（`DiscoveryRules.maxPerDay`）→ 每個玩家每日最多 24 次請求。
 - 想再省：把 `PIPZ_AI_MODEL` 換成更便宜模型；或者把 `ai.enabled` 預設改 false（唔建議，會失去產品重點）。
+
+## 實測（2026-10-21，live）
+- `POST` 延遲 5.4–14.3 秒（deepseek 先做 reasoning；香港／亞洲時段快啲）。
+- 12 次連續請求：10 成功、2 次上游瞬時 502 → App 自動用離線名，玩家唔會見到錯誤。
+- 分類骨架正確：動物／怪奇 → `creature`；家居 → cup/bottle/box；食物 → cup/blob；植物 → blob/brush/creature；工具 → brush。
+- 已寫入 Vercel env：`PIPZ_AI_KEY`（Production ＋ Development，project `pipz`，Root Directory `apps/web`）。
+
+## 實作陷阱（改之前先睇）
+1. 上游有 Cloudflare：**一定要送正常 `User-Agent`**，否則 403。
+2. **`max_tokens` 至少 800**：deepseek 先花 token 做 reasoning，太少會回空 `content`。
+3. Timeout 三層要對齊：function `maxDuration=30`、attempt 12 秒 ×2、iOS client 26 秒。
+4. `pattern` 唔可以信模型（永遠答 1），用名字 hash。
+5. 測中文 body **唔好用 Windows bash inline curl**（會用 console codepage 變亂碼，server 會靜靜當成預設分類）。用 python 或者 UTF-8 檔案。
+
 
 ## 安全 / 審核
 - 唔會收集或傳送任何個人資料（只傳分類、稀有度、事件類型）→ App Privacy 可以照答「不收集」。
