@@ -58,7 +58,8 @@ struct ItemSpriteView: View {
             seed: item.discoverySeed,
             category: item.category,
             stage: item.stage,
-            rarity: item.rarity
+            rarity: item.rarity,
+            hints: item.hints
         )
     }
 

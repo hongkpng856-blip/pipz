@@ -65,13 +65,22 @@
 所以 `sprite()` 一定會先 `fitInside(margin: 1)` 再畫外框 —— **唔好喺 shape 函數入面自己 fit**。
 改完生成器之後跑一次 `sprite_preview.py`，確認 sheet 入面每個 sprite 都完整（內容唔可以貼住 0 或 19）。
 
-## 6. 命名
+## 6. 命名 / 外觀（AI 即時生成，開箱即用）
 
-`NameGenerator.make` — 每個分類有 prefix / base / suffix 三段字庫 + 描述句字庫，離線即時。
+發現嘅一刻，app 會 call 自己嘅 proxy `https://pipz.anthroskill.com/api/mini/spawn`，
+由 AI 回傳：`name`（4–10 字）、`note`（一句）、同 **外觀提示** `archetype / ear / pattern / palette`。
+外觀提示直接餵落 `ObjectGenerator.sprite(..., hints:)`，所以骨架、耳朵、花紋、主色都係 AI 決定。
+
+- Key 只喺 server（Vercel `PIPZ_AI_KEY`），**玩家唔需要填任何嘢**
+- hints 會存落 `DiscoveredItem.hints` → 之後重開／進化都畫返同一隻
+- AI 失敗（冇網 / server 未設 / timeout）→ 自動用 `NameGenerator` + 純程序化外形，唔會卡住
+- 設定 → 「AI 即時生成」可以關；進階可以改 endpoint
+
+接口契約、部署步驟、成本控制：`AI_GENERATION.md`。
+
+### 離線命名（後備）
+`NameGenerator.make` — 每個分類有 prefix / base / suffix 三段字庫 + 描述句字庫。
 重名會重試 8 次，仍然重複就加 `（No.xx）`。
-
-（可選）`LLMService`：設定填咗 OpenAI 相容 endpoint + model + key 之後，發現時會再請求一次，
-用 AI 名／描述覆蓋離線名；**失敗就靜靜咁保留離線名**，唔會卡流程。
 
 ## 7. 成長 / 進化
 

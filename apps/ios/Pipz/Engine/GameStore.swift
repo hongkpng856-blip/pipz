@@ -225,9 +225,9 @@ final class GameStore: ObservableObject {
 
         reveal = newItem
 
-        // 可選 AI 改名
-        if LLMConfig.load().usable {
-            LLMService.shared.enrich(category: category, rarity: rarity, baseName: name, source: source) { [weak self] result in
+        // AI 即時生成（開箱即用：走我哋自己嘅 proxy，玩家唔需要任何 key）
+        if AIConfig.isEnabled {
+            AIService.shared.spawn(category: category, rarity: rarity, source: source, seed: seed) { [weak self] result in
                 guard let result else { return }
                 Task { @MainActor in
                     self?.applyAI(result, to: newItem.id)
@@ -236,12 +236,13 @@ final class GameStore: ObservableObject {
         }
     }
 
-    private func applyAI(_ result: LLMService.Enrichment, to id: UUID) {
+    private func applyAI(_ result: AIService.Spawn, to id: UUID) {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
         items[index].aiName = result.name
         if !result.note.isEmpty {
             items[index].aiNote = result.note
         }
+        items[index].hints = result.hints
         if reveal?.id == id {
             reveal = items[index]
         }

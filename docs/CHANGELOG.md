@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.42.4 — AI 即時生成（開箱即用，玩家唔需要 key）(2026-10-21)
+
+### Added
+- **`apps/web/src/app/api/mini/spawn/route.ts`** — server 端 proxy：用 `PIPZ_AI_KEY`（Vercel env）打
+  OpenAI 相容 API，回傳 `{name, note, archetype, ear, pattern, palette}`。有 JSON 抽取、夾值、
+  顏色／文字 sanitize、12 秒 timeout、`GET` 健康檢查。**Key 永遠唔會入 app binary。**
+- **`apps/ios/Pipz/Services/AIService.swift`**（取代 `LLMService.swift`）：預設開啟，打自己嘅 proxy，
+  **唔需要 API key**；解析 name/note + 外觀 hints；失敗或離線自動退回內建生成。
+- **`AIHints` + `DiscoveredItem.hints`**：AI 決定嘅外觀會存落存檔，重開／進化都畫返同一隻。
+- **`ObjectGenerator.sprite(..., hints:)`**：`archetype` 揀骨架、`ear` 揀耳型、`pattern` 強制花紋、
+  `palette` 做主色（`SpritePalette.make(baseColor:)`）。
+- **`apps/ios/AI_GENERATION.md`**：接口契約、部署步驟、成本控制、審核注意。
+
+### Changed
+- 設定畫面：由「AI 改名（可選）+ 自己填 endpoint/model/key」改成 **「AI 即時生成」內建開關**
+  （進階只保留 endpoint，可還原預設）。
+- `GAME_LOGIC.md` §6 改寫（AI 生成 + 離線後備）。
+
 ## v0.42.3 — 首次真機實跑：release pipeline 打通（app 已上 TestFlight）(2026-10-21)
 
 > 喺 Mac 上面首次真跑 `typecheck → archive → upload` 成功：**1.0.0 / build 202610212012 已上 TestFlight**。

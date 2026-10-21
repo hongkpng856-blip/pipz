@@ -32,19 +32,34 @@ private extension PixelGrid {
 
 enum ObjectGenerator {
 
-    static func sprite(seed: UInt64, category: ItemCategory, stage: Int, rarity: Rarity) -> PixelSprite {
+    static func sprite(seed: UInt64, category: ItemCategory, stage: Int, rarity: Rarity,
+                       hints: AIHints? = nil) -> PixelSprite {
         var rng = SeededRandom(seed: seed)
-        let palette = SpritePalette.make(category: category, rarity: rarity, rng: &rng)
+        let palette = SpritePalette.make(
+            category: category, rarity: rarity, rng: &rng, baseColor: hints?.paletteHex
+        )
         let grow = max(0, min(Growth.maxStage, stage))
+        let forcedShape = hints?.archetype.flatMap { shape(named: $0) }
+        let wantsCreature = hints?.archetype == nil || hints?.archetype == "creature"
 
         var grid: PixelGrid
-        switch category {
-        case .animal:
-            grid = creature(&rng, stage: grow, oddity: false)
-        case .oddity:
-            grid = creature(&rng, stage: grow, oddity: true)
-        case .household, .food, .plant, .tool:
-            grid = object(&rng, stage: grow, category: category)
+        if let forcedShape {
+            grid = object(&rng, stage: grow, category: category,
+                          forcedShape: forcedShape, patternForce: hints?.pattern)
+        } else if wantsCreature && (category == .animal || category == .oddity) {
+            grid = creature(&rng, stage: grow, oddity: category == .oddity,
+                            earOverride: hints?.ear, patternForce: hints?.pattern)
+        } else {
+            switch category {
+            case .animal:
+                grid = creature(&rng, stage: grow, oddity: false,
+                                earOverride: hints?.ear, patternForce: hints?.pattern)
+            case .oddity:
+                grid = creature(&rng, stage: grow, oddity: true,
+                                earOverride: hints?.ear, patternForce: hints?.pattern)
+            case .household, .food, .plant, .tool:
+                grid = object(&rng, stage: grow, category: category, patternForce: hints?.pattern)
+            }
         }
 
         let drawn = grid.pixels.contains { $0 != 0 }
@@ -64,7 +79,8 @@ enum ObjectGenerator {
 
     // MARK: 生物
 
-    private static func creature(_ rng: inout SeededRandom, stage: Int, oddity: Bool) -> PixelGrid {
+    private static func creature(_ rng: inout SeededRandom, stage: Int, oddity: Bool,
+                                 earOverride: Int? = nil, patternForce: Int? = nil) -> PixelGrid {
         var g = PixelGrid(width: 20, height: 20)
         let grow = stage
         let big = grow >= 2
@@ -86,7 +102,7 @@ enum ObjectGenerator {
         }
 
         // 耳／角／觸鬚
-        let earKind = rng.int(0, oddity ? 4 : 3)
+        let earKind = earOverride ?? rng.int(0, oddity ? 4 : 3)
         drawEars(&g, kind: earKind, headCY: headCY, headR: headR, grow: grow)
 
         // 眼
@@ -135,7 +151,7 @@ enum ObjectGenerator {
         }
 
         // 花紋
-        if grow >= 1 || rng.chance(0.45) {
+        if patternForce == 1 || grow >= 1 || rng.chance(0.45) {
             let spots = 2 + rng.int(0, 3)
             var k = 0
             while k < spots {
@@ -216,9 +232,25 @@ enum ObjectGenerator {
         }
     }
 
-    private static func object(_ rng: inout SeededRandom, stage: Int, category: ItemCategory) -> PixelGrid {
+    private static func shape(named name: String) -> Shape? {
+        switch name.lowercased() {
+        case "creature": return nil
+        case "cup": return .cup
+        case "bottle": return .bottle
+        case "lamp": return .lamp
+        case "clock": return .clock
+        case "box": return .box
+        case "chair": return .chair
+        case "brush": return .brush
+        case "blob": return .blob
+        default: return nil
+        }
+    }
+
+    private static func object(_ rng: inout SeededRandom, stage: Int, category: ItemCategory,
+                               forcedShape: Shape? = nil, patternForce: Int? = nil) -> PixelGrid {
         let options = shapes(for: category)
-        let shape = options[rng.int(options.count)]
+        let shape = forcedShape ?? options[rng.int(options.count)]
         var g: PixelGrid
         switch shape {
         case .cup: g = cupShape(&rng, stage: stage)
@@ -230,8 +262,8 @@ enum ObjectGenerator {
         case .brush: g = brushShape(&rng, stage: stage)
         case .blob: g = blobShape(&rng, stage: stage)
         }
-        // 成熟之後加裝飾點
-        if stage >= 1 && rng.chance(0.7) {
+        // 成熟之後加裝飾點（AI 指定 pattern 就一定有）
+        if patternForce == 1 || (stage >= 1 && rng.chance(0.7)) {
             let dots = 1 + rng.int(0, 2)
             var k = 0
             while k < dots {

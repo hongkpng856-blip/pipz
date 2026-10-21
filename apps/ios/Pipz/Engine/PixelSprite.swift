@@ -230,9 +230,10 @@ enum SpritePalette {
         }
     }
 
-    static func make(category: ItemCategory, rarity: Rarity, rng: inout SeededRandom) -> [UInt32] {
+    static func make(category: ItemCategory, rarity: Rarity, rng: inout SeededRandom,
+                     baseColor: UInt32? = nil) -> [UInt32] {
         let pool = baseColors(for: category)
-        let base = pool[rng.int(pool.count)]
+        let base = baseColor ?? pool[rng.int(pool.count)]
         // 稀有度影響鮮艷度
         let satBoost = [0.10, 0.03, 0.0, -0.05, -0.08][rarity.rawValue]
         let main = HexColor.mix(base, rarity.tintHex, satBoost)

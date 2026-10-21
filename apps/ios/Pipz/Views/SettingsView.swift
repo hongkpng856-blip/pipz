@@ -9,10 +9,8 @@ struct SettingsView: View {
     @AppStorage("sensor.shake") private var sensorShake = true
     @AppStorage("sensor.stillness") private var sensorStillness = true
 
-    @AppStorage("llm.enabled") private var llmEnabled = false
-    @AppStorage("llm.endpoint") private var llmEndpoint = LLMConfig.defaultEndpoint
-    @AppStorage("llm.model") private var llmModel = LLMConfig.defaultModel
-    @AppStorage("llm.key") private var llmKey = ""
+    @AppStorage("ai.enabled") private var aiEnabled = true
+    @AppStorage("ai.endpoint") private var aiEndpoint = AIConfig.defaultEndpoint
 
     @State private var showResetConfirm = false
     @State private var showDebug = false
@@ -52,21 +50,29 @@ struct SettingsView: View {
                 .padding(12)
                 .pixelPanel(color: Theme.panelRaised, radius: 3)
 
-                SectionHeader(text: "AI 改名（可選）")
+                SectionHeader(text: "AI 即時生成")
                 VStack(alignment: .leading, spacing: 10) {
-                    toggleRow("用 AI 幫物件改名同寫描述", isOn: $llmEnabled)
-                    Text("唔開都用得，會用內建嘅離線名。開就要填一個 OpenAI 相容嘅 API。")
+                    toggleRow("用 AI 生成每件物件", isOn: $aiEnabled)
+                    Text("已內建。每次發現都會由 AI 即時改名、寫描述，同決定外觀（骨架、耳朵、花紋、主色）。唔需要你自己填任何 key。")
+                        .font(.pixelLight(10))
+                        .foregroundColor(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("冇網絡或者 AI 慢嘅時候，會自動用內建離線生成，唔會卡住。")
                         .font(.pixelLight(10))
                         .foregroundColor(Theme.dim)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    labeledField("Endpoint", text: $llmEndpoint)
-                    labeledField("Model", text: $llmModel)
-                    labeledField("API Key", text: $llmKey, secure: true)
-
-                    Text("Key 只存喺你部手機（UserDefaults／沙盒），唔會離開部機。")
-                        .font(.pixelLight(9))
-                        .foregroundColor(Theme.dim)
+                    labeledField("Endpoint（進階，一般唔需要改）", text: $aiEndpoint)
+                    if !AIConfig.usingDefaultEndpoint {
+                        Button {
+                            aiEndpoint = AIConfig.defaultEndpoint
+                        } label: {
+                            Text("還原預設 endpoint")
+                                .font(.pixel(10))
+                                .foregroundColor(Theme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .padding(12)
                 .pixelPanel(radius: 3)

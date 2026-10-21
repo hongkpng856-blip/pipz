@@ -156,6 +156,14 @@ enum SensorSignal {
 
 // MARK: - 物件
 
+/// AI 生成嘅外觀提示（name/note 以外）。全部 optional：AI 失敗就跟程序化生成。
+struct AIHints: Codable, Equatable {
+    var archetype: String?
+    var ear: Int?
+    var pattern: Int?
+    var paletteHex: UInt32?
+}
+
 struct DiscoveredItem: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var discoverySeed: UInt64
@@ -164,6 +172,7 @@ struct DiscoveredItem: Identifiable, Codable, Equatable {
     var baseName: String
     var aiName: String?
     var aiNote: String?
+    var hints: AIHints?
     var exp: Int = 0
     var discoveredAt: Date = Date()
     var source: DiscoverySource
