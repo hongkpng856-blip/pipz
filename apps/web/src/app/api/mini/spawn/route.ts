@@ -173,9 +173,10 @@ async function attempt(params: {
   systemPrompt: string
   userPrompt: string
   allowed: string[]
+  budgetMs: number
 }): Promise<Generated | null> {
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), ATTEMPT_TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), params.budgetMs)
   try {
     const upstream = await fetch(`${params.baseUrl}/chat/completions`, {
       method: 'POST',
@@ -261,20 +262,28 @@ ${inspiration.join('\n')}
 
   const systemPrompt = buildSystemPrompt(allowed, category)
 
-  // 逐個 model 試（免費優先），每個最多 2 次；用完總預算就放棄，由 App 用離線生成
+  // 逐輪試：第一輪先免費後付費，第二輪再試一次（免費 model 延遲好飘，1.8–31 秒）
   const deadline = Date.now() + TOTAL_BUDGET_MS
-  for (const model of models) {
-    for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
-      if (Date.now() >= deadline) break
-      const result = await attempt({ baseUrl, apiKey, model, systemPrompt, userPrompt, allowed })
+  outer: for (let round = 0; round < MAX_ATTEMPTS; round += 1) {
+    for (const model of models) {
+      const remaining = deadline - Date.now()
+      if (remaining <= 1_000) break outer
+      const result = await attempt({
+        baseUrl,
+        apiKey,
+        model,
+        systemPrompt,
+        userPrompt,
+        allowed,
+        budgetMs: Math.min(ATTEMPT_TIMEOUT_MS, remaining),
+      })
       if (result) {
         return NextResponse.json(
-          { ...result, model },
+          { ...result, model, round },
           { headers: { 'Cache-Control': 'no-store' } }
         )
       }
     }
-    if (Date.now() >= deadline) break
   }
 
   return NextResponse.json({ error: 'generation failed' }, { status: 502 })
