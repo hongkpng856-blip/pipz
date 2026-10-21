@@ -168,3 +168,73 @@ TestFlight 過得，唔代表上架過得。上架前要補：
 - 撳 **Add for Review → Submit to App Store**
 
 審核通常 1–3 日。被 reject 就睇 Resolution Center 原因再改（最常見：4.2 功能太簡單、2.1 crash、5.1 私隱聲明不符）。
+
+---
+
+## 6. 上咗 TestFlight 之後：改 bug 嘅循環
+
+TestFlight 嘅價值係：**Internal tester（你自己）唔需要 Apple 審核，出幾多個 build 都得，隨改隨上。**
+
+### 6.1 兩種循環，揀一種定死
+
+**循環 A（推薦，設定一次之後完全唔洗開 Mac）** — GitHub Actions
+一次性加 4 個 secret（`CI_TO_TESTFLIGHT.md` 有步驟：`ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_P8` / `APPLE_TEAM_ID`）。
+之後：
+
+```
+你講症狀 → 我改 Swift → git push main → GitHub Actions 自動 archive + 上傳
+          → Apple 處理 5–30 分鐘 → TestFlight app 撳 Update → 你試
+```
+
+**循環 B（冇 CI，每次用 Mac）**
+```
+你講症狀 → 我改 Swift + push → Mac 上面 Command Code／終端跑：
+   cd ~/Desktop/pipz && git pull
+   cd apps/ios && ./scripts/typecheck.sh && ./scripts/release.sh
+          → TestFlight 撳 Update → 你試
+```
+
+兩者分別只在「邊個負責 build」。我負責嘅部分一樣：**改 code + push**。
+
+### 6.2 每個循環嘅實際步驟
+
+1. **你試到問題** → 只需講「症狀」（唔需要你判斷原因）。
+   最好連：邊個畫面、邊個操作、有冇閃退、iPhone 型號、iOS 版本
+2. **我定位** → 我會講邊個檔／邊條規則，改完 push
+3. **出 build** → 循環 A 自動；循環 B 你／Command Code 跑 `release.sh`
+   （build number 自動用時間戳，永遠遞增，唔會撞）
+4. **等處理** → App Store Connect → TestFlight → 睇 build 由 Processing 變可用（5–30 分鐘）
+5. **電話 Update** → TestFlight app → Pipz → **Update** → 重試同一個操作
+6. **回報** → 「OK」或者「未解決 + 新症狀」→ 回到第 2 步
+7. **要爛到開唔到都唔怕** → TestFlight → Pipz → **Previous Builds** 可以裝返上一個可用 build
+
+> 每次循環大約 15–40 分鐘（我改 code 幾分鐘 + build 5–10 分鐘 + Apple 處理 5–30 分鐘）。
+
+### 6.3 收到問題時，先做嘅三分類（決定要唔要改 code）
+
+| 你見到 | 先查 | 通常係 |
+|---|---|---|
+| 開 app 即閃退 | App Store Connect → TestFlight → build → **Crashes**；或者 Xcode → Window → Organizer → Crashes | 真實 bug，要改 code |
+| 感應器完全冇反應 | App 內 設定 → 感應器狀態（授權／步數感應／陀螺儀） | 八成係權限被拒 → 設定 → Pipz → 動作與健身 開返，唔需要改 code |
+| 行極都冇「發現」 | App 內 首頁步數有冇升？設定 → 進階 → 測試面板 撳模擬睇有冇彈 | 有彈＝生成器正常，係門檻／冷卻問題（我調 `DiscoveryRules`） |
+| 出嘅嘢太醜／太怪 | 測試面板 → 生成器預覽 | `ObjectGenerator` / `NameGenerator`（我用 `tools/sprite_preview.py` 先驗） |
+| 節奏太快／太慢 | 同上 | 改 `stepInterval` / `minGap` / `maxPerDay`（`GAME_LOGIC.md` §9 有對照） |
+| 存檔唔見咗／數據怪 | 睇有冇換機／重裝 | 我會加 safe decode + 版本欄位 |
+| 版面爆位／字太細 | 你出截圖 | SwiftUI 佈局，我改 Views |
+
+**要提供咩證據**：一句症狀 + 截圖最好。我做唔到嘅係「估你部機發生咩事」，
+所以請講現象，唔需要你判斷原因。
+
+### 6.4 版本號規則（唔好亂）
+
+- **Build number**（`CFBundleVersion`）：每次上傳都要大過上一次。`release.sh` 用時間戳（`YYYYMMDDHHmm`），
+  CI 用 `GITHUB_RUN_NUMBER` —— 兩者都保證遞增，唔需要你記。
+   ⚠️ 唔好手動 Archive 又唔勾 "Manage version and build number"，會撞號。
+- **Version**（`CFBundleShortVersionString`）：TestFlight 期間一直用 `1.0.0` 都可以；
+  正式上 App Store 之後改功能就用 `1.0.1`、`1.1.0`。改咗要喺 App Store Connect 開新 version 記錄。
+- TestFlight build **90 日後過期**，唔會影響你嘅資料（存檔喺 app sandbox，Update 唔會清）。
+
+### 6.5 想快啲？兩個 shortcut
+- 喺 Command Code 個 chat 打 **`/rc`** 綁 Telegram → 你喺街都可以叫 Mac 出 build、批准 tool
+- 把「已知問題」變成 regression 友善：每次修完，我喺 `docs/CHANGELOG.md` 記一句，
+  同 `apps/ios/GAME_LOGIC.md` 更新參數，唔會改完又改返轉頭
