@@ -1,12 +1,31 @@
-# 俾 Command Code（`cmd`）喺 Mac 上面執行嘅任務卡
+# 俾 Command Code 喺 Mac 上面執行嘅任務卡
 
-> **重點：Command Code 係「喺邊部機開，就用邊部機」嘅 terminal agent。**
-> 一定要喺 **Mac** 上面（`apps/ios` 目錄內）開，佢才摸得到 `xcodebuild` / `xcrun altool`。
-> 喺 Windows 開嘅話佢只係有 Windows 環境，編譯唔到 iOS。
+> **重點：Command Code 係「喺邊部機開，就用邊部機」嘅 agent（Desktop App 同 CLI 係同一套 agent runtime）。**
+> 一定要喺 **Mac** 上面開，佢才摸得到 `xcodebuild` / `xcrun altool`。
+> 喺 Windows 開嘅話佢只有 Windows 環境，編譯唔到 iOS。
 
 ---
 
-## 用法一：你自己喺 Mac 開（最簡單）
+## 用法 0：Desktop App（你已裝咗，最啱你）
+
+Desktop App 內建 agent runtime + **Terminal**（Terminal 就係開喺 active project 目錄），
+所以唔需要另外裝 CLI，直接做：
+
+1. **裝喺 Mac 上面**（如果只裝喺 Windows，去 [commandcode.ai/download/mac](https://commandcode.ai/download/mac) 裝多一次）
+2. 開 Command Code → 用你帳號登入
+3. **Open project** → 揀 `~/Desktop/pipz`（成個 repo，因為要 commit／push）
+4. 開一個新 chat → composer 左下角權限模式揀 **Full access**（Shift+Tab 轉）
+5. 貼入下面「Desktop 版任務卡」（比 CLI 版短，因為 Desktop 有 project context）
+6. 佢會喺 workbench 嘅 **Terminal** 跑 script；有嘢要批就喺 chat 撳 Approve
+7. 想喺電話睇住／批准：chat 打 **`/rc`** → 綁 Telegram bot（要先用 @BotFather 開 bot
+   同 @userinfobot 攞你 user id），之後手機 Telegram 就係同一個 session
+   （`/rc off` 解除；模式 `/rc yolo` 全自動）
+
+> Mac 上面第一次跑之前，記得 `xcode-select --install`（Command Line Tools）同裝好 Xcode。
+
+---
+
+## 用法一：你自己喺 Mac 開 CLI（最簡單）
 
 ```bash
 # 首次
@@ -82,6 +101,39 @@ ssh pipz-mac 'cd ~/Desktop/pipz && git pull && cd apps/ios && \
 3. 每個 error 嘅根因（如果有 8 個以上就只列最典型 8 個）
 4. IPA 有冇出（路徑）
 5. 下一步建議（例如「可以 archive 上 TestFlight」或者「仲有 2 個 error 需要人決定」）
+```
+
+---
+
+## Desktop 版任務卡（貼入 Command Code Desktop composer，短版）
+
+```
+專案：apps/ios（SwiftUI + XcodeGen，唔准加任何第三方依賴）。
+
+背景：呢個 iOS app 嘅 Swift code 係喺 Windows 上面寫，只做過語法檢查，未經 Xcode type-check，
+所以第一次編譯一定會有一堆 error，屬正常。
+
+請喺 apps/ios 目錄依序做：
+
+1) 跑 ./scripts/typecheck.sh（用 Simulator SDK 編譯，唔需要簽名憑證）
+2) 逐個修 error，改到出現「✅ TYPE-CHECK 過」為止（最多 12 輪；卡死就停手報告）
+   修改規矩：
+   - 只改到編譯得過；唔准改遊戲數值、文案、顏色、UI 佈局
+   - 唔准加任何第三方依賴（SPM / CocoaPods 都唔准）
+   - 唔准改 iOS deployment target（16.0）同 SWIFT_VERSION（5.9）
+   - 唔准為咗編譯過而刪功能；真要簡化就喺報告列明
+   - 常見成因：SwiftUI API 版本簽名、@MainActor 隔離、CoreMotion 回呼參數、
+     Binding / optional 處理、extension 未 import
+3) 過咗之後跑 ./scripts/release.sh --no-upload 出 IPA
+   （Team ID：先讀 ~/.pipz_release_env 嘅 APPLE_TEAM_ID，冇就問我）
+4) 如果失敗係簽名問題（No profiles / no certificate / exportArchive 失敗）：
+   唔好改 project.yml，把 xcodebuild 錯誤段落原文報告出嚟
+
+【絕對唔准】git commit、git push、把 .p8 / .p12 / 密碼寫入任何檔案或輸出、
+改 Bundle ID（com.anthroskill.pipz）、升級 Xcode 或 brew upgrade。
+
+【最後報告】1) 型別檢查過唔過 2) 改過邊啲檔 + 一句原因 3) 每個 error 根因（最多 8 個）
+4) IPA 路徑有冇出 5) 下一步建議
 ```
 
 ---
