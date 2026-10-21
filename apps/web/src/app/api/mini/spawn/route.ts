@@ -176,6 +176,7 @@ async function attempt(params: {
   userPrompt: string
   allowed: string[]
   budgetMs: number
+  reasoningEffort?: string
 }): Promise<{ result: Generated | null; note: string }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), params.budgetMs)
@@ -200,6 +201,9 @@ async function attempt(params: {
         // 1200 都試過被 reasoning 食晒（回空 content），所以放到 2500（唔用唔收費）
         max_tokens: 2500,
         response_format: { type: 'json_object' },
+        // 免費 model 用 low reasoning：實測 completion 由 ~464 降到 ~200 tokens、
+        // 延遲由 8–20 秒降到 3–7 秒，JSON 照樣 5/5 有效。付費唔加（deepseek 反而變差）。
+        ...(params.reasoningEffort ? { reasoning_effort: params.reasoningEffort } : {}),
       }),
       signal: controller.signal,
     })
@@ -289,6 +293,8 @@ ${inspiration.join('\n')}
         userPrompt,
         allowed,
         budgetMs: Math.min(isFree ? FREE_MODEL_TIMEOUT_MS : ATTEMPT_TIMEOUT_MS, remaining),
+        // 只有免費 model 用 low reasoning（實測 token 減半、延遲減半；deepseek 唔受惠）
+        reasoningEffort: isFree ? 'low' : undefined,
       })
       if (result) {
         return NextResponse.json(
