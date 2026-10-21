@@ -58,7 +58,33 @@ Mac 裝 Hermes → 用同一個 config/profile → 喺 Telegram 同一個 bot �
 
 ---
 
-## 三、`/rc`（喺電話操控 Mac 上面嗰個 session）綁邊個 bot？
+## 四、同步規則（兩個 agent 改同一個 repo 一定要守）
+
+現況：**我（Windows）同 Command Code（Mac）都改同一個 GitHub repo。** 呢個係實際風險，唔係理論：
+
+- **我改 → Mac 收到**：要 Mac 跑 `git pull`（或者 CI 自動）。**唔會自己同步。**
+- **Mac 改 → 我收到**：要我 `git fetch/pull`。**唔會自動通知我。**
+  第一次真跑就係咁撞到：我 `git push` 被 rejected，fetch 之後才見到 Mac 個 commit
+  （`1377e3f fix(ios): 令 release.sh 真係上到 TestFlight`）。如果兩邊同時改同一個檔 → merge conflict。
+
+### 三條規矩
+
+1. **我負責 code，Mac 只負責 build**（單一 writer）。
+   Mac 上嘅 agent 只准「修到編譯得過」，唔准改功能／數值／UI（任務卡已經寫明）。
+   佢修完一定即刻 `git commit && git push`，我下次改之前一定先 `git pull --rebase`。
+2. **唔好兩邊同時改同一個檔**。我改 Swift 期間，Mac 唔好改 Swift（build 就冇問題）。
+3. **長遠解法：CI 做 build**（`.github/workflows/ios-testflight.yml`）。
+   設定一次 API key 之後，我 push → GitHub 自動 build + 上傳，Mac 完全唔需要參與，
+   亦冇 divergence 風險。缺點：CI 冇 Xcode 登入嘅 Apple ID，
+   要多一個 distribution 憑證 secret（Mac 上面 Keychain 匯出一次 `.p12` 就得）。
+
+### 想即刻知我改咗咩
+- GitHub 上面睇 `main` 嘅 commit list（我每次改都會有 commit message）
+- 或者 Mac 跑 `git log --oneline -5 origin/main`
+
+---
+
+## 五、`/rc`（喺電話操控 Mac 上面嗰個 session）綁邊個 bot？
 
 **唔係綁 Hermes 呢個 bot —— 要新開一個屬於 Command Code 嘅 bot。**
 
@@ -88,7 +114,7 @@ Telegram 一個 bot token **只可以有一個 poller**。Hermes 已經用咗佢
 
 ---
 
-## 四、有咗 remote Mac，我做得到 vs 做唔到
+## 六、有咗 remote Mac，我做得到 vs 做唔到
 
 ### ✅ 我可以全自動做
 - `xcodegen generate`、`xcodebuild build/archive`、`-exportArchive` 出 IPA
