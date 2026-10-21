@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
+        // 上游用 Cloudflare：冇正常 User-Agent 會 403（Python/undici 預設 UA 會被擋）
+        'User-Agent': 'Pipz-Web/1.0 (+https://pipz.anthroskill.com)',
+        Accept: 'application/json',
       },
       body: JSON.stringify({
         model,
@@ -115,7 +118,8 @@ export async function POST(req: NextRequest) {
           { role: 'user', content: userPrompt },
         ],
         temperature: 1.05,
-        max_tokens: 220,
+        // 一定要夠大：deepseek 會先用 token 做 reasoning，220 會令 content 變空字串
+        max_tokens: 800,
       }),
       signal: controller.signal,
     })
