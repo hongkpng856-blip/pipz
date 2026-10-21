@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // 環境變數：
 //   PIPZ_AI_KEY        （必需）OpenAI 相容 API key
 //   PIPZ_AI_BASE_URL   （選填）預設 https://api.commandcode.ai/provider/v1
-//   PIPZ_AI_MODEL      （選填）預設 deepseek/deepseek-v4-flash
+//   PIPZ_AI_MODEL      （選填）逗號分隔，逐個試（預設免費 model → 付費後備）
 //
 // POST /api/mini/spawn
 // body: { "category": "動物", "rarity": "稀有", "source": "衝擊", "seed": "123456" }
@@ -18,7 +18,15 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 const ATTEMPT_TIMEOUT_MS = 12_000
+// 成個請求嘅總預算，一定要細過 maxDuration（30 秒）同 iOS client timeout（26 秒）
+const TOTAL_BUDGET_MS = 24_000
 const MAX_ATTEMPTS = 2
+
+// 免費 model 優先；免費 quota 用完／429 就退去付費（便宜）後備
+const DEFAULT_MODELS = [
+  'minimax/minimax-m3.1-flash:free',
+  'deepseek/deepseek-v4-flash',
+]
 
 /** 分類 → 允許嘅外觀骨架（生物類一定要 creature，物件類唔可以變生物） */
 const CATEGORY_ARCHETYPES: Record<string, string[]> = {
@@ -226,7 +234,11 @@ export async function POST(req: NextRequest) {
     /\/$/,
     ''
   )
-  const model = process.env.PIPZ_AI_MODEL || 'deepseek/deepseek-v4-flash'
+  const modelList = (process.env.PIPZ_AI_MODEL || '')
+    .split(',')
+    .map((m) => m.trim())
+    .filter(Boolean)
+  const models = modelList.length > 0 ? modelList : DEFAULT_MODELS
 
   // 每次抽隨機靈感：令同一分類都會生出好唔同嘅嘢
   const inspiration = [
@@ -249,12 +261,20 @@ ${inspiration.join('\n')}
 
   const systemPrompt = buildSystemPrompt(allowed, category)
 
-  // 偶爾模型會回空 content 或者爛 JSON，重試一次就夠
-  for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
-    const result = await attempt({ baseUrl, apiKey, model, systemPrompt, userPrompt, allowed })
-    if (result) {
-      return NextResponse.json(result, { headers: { 'Cache-Control': 'no-store' } })
+  // 逐個 model 試（免費優先），每個最多 2 次；用完總預算就放棄，由 App 用離線生成
+  const deadline = Date.now() + TOTAL_BUDGET_MS
+  for (const model of models) {
+    for (let i = 0; i < MAX_ATTEMPTS; i += 1) {
+      if (Date.now() >= deadline) break
+      const result = await attempt({ baseUrl, apiKey, model, systemPrompt, userPrompt, allowed })
+      if (result) {
+        return NextResponse.json(
+          { ...result, model },
+          { headers: { 'Cache-Control': 'no-store' } }
+        )
+      }
     }
+    if (Date.now() >= deadline) break
   }
 
   return NextResponse.json({ error: 'generation failed' }, { status: 502 })
