@@ -45,7 +45,7 @@ App 收到任何非 200 都會靜靜咁保留離線版，唔會報錯畀用戶�
 1. **Vercel 環境變數**（Project → Settings → Environment Variables）
    - `PIPZ_AI_KEY`＝OpenAI 相容 API key（**必需**）
    - `PIPZ_AI_BASE_URL`＝預設 `https://api.commandcode.ai/provider/v1`
-   - `PIPZ_AI_MODEL`＝預設 `deepseek/deepseek-v4-flash`
+   - `PIPZ_AI_MODEL`＝預設 `reflection/beam:free,deepseek/deepseek-v4.1-flash`（逗號分隔，逐個試）
 2. Deploy（push 去 main 或者 `vercel --prod`）
 3. 驗證：
    ```bash
@@ -58,24 +58,26 @@ App 收到任何非 200 都會靜靜咁保留離線版，唔會報錯畀用戶�
 ## 每次生成用幾多 token（實測）
 | | prompt | completion（含 reasoning） | total |
 |---|---|---|---|
-| 免費 `minimax-m3.1-flash:free`（`reasoning_effort=low`） | ~595 | 180–350（reasoning 125–290） | **~780–950** |
-| 免費（預設 effort） | ~595 | 平均 464（reasoning 591） | ~710–1,280 |
-| 付費 `deepseek-v4-flash` | ~461 | 590–1,140（reasoning 約 60%） | ~1,050–1,500 |
+| 免費 `reflection/beam:free` | ~520 | ~950 | **~1,450–1,570** |
+| 付費 `deepseek-v4.1-flash` | ~443 | 280–540（reasoning 約 80%） | **~720–990** |
 
 - Prompt 裡面大約 **450 token 係固定 system prompt**，其餘 ~100 係分類／稀有度／靈感。
 - 上游有 prompt cache（實測 `cached_tokens` 128–384），重複請求平啲。
-- 每玩家每日上限 24 次發現 → **大約 2 萬–3 萬 token／日**。
+- 每玩家每日上限 24 次發現 → **大約 2 萬–3.5 萬 token／日**。
 - `reasoning_effort: minimal` 呢個 provider 會回 **400**；`low` 對免費 model 有效（token 減半、延遲減半），對 deepseek 反而更差，所以只套用喺免費 model。
 
 ## 成本控制
 - **先用免費 model**：`PIPZ_AI_MODEL` 係逗號分隔 try-list，預設
-  `minimax/minimax-m3.1-flash:free,deepseek/deepseek-v4-flash`。免費永遠試先，慢／失敗就即刻換付費。
-- 免費 model 得 **9 秒 leash**（成功時 3–9 秒，慢起上嚟 18–31 秒），付費 13 秒；
-  成個請求總預算 24 秒（< `maxDuration` 30、< iOS client 26）。
+  `reflection/beam:free,deepseek/deepseek-v4.1-flash`。免費永遠試先，慢／失敗就即刻換付費。
+- 免費同付費都係 **13 秒 leash**（`reflection/beam:free` 要 10–11 秒），成個請求總預算 24 秒
+  （< `maxDuration` 30、< iOS client 26）。
 - 每日發現上限 24（`DiscoveryRules.maxPerDay`）→ 每個玩家每日最多 24 次請求。
-- 免費 model 調查（每個 2 次實測）：只有 `minimax/minimax-m3.1-flash:free` 穩定；
-  `ornith-1.5-122b:free`／`poolside/laguna-s-2.1-free` 常 429，`stealth/glyph-cluster:free` 400，
-  `reflection/beam:free` 慢到 timeout。想再省可以自己改 `PIPZ_AI_MODEL`。
+- **Model 狀態（2026-10-22 實測）**：
+  - `reflection/beam:free` ✅ 可用（~1.5k tokens、10–11 秒），付費後備 `deepseek/deepseek-v4.1-flash` ✅（~860 tokens、4–5 秒）
+  - `minimax/minimax-m3.1-flash:free` ❌ **免費期已結束**（403「The free MiniMax M3.1 Flash window has ended」）
+  - `stealth/glyph-cluster:free` ❌ 唔支援 structured output（400）
+  - `poolside/laguna-s-2.1-free`、`ornith/ornith-1.5-122b:free` ❌ 常 429
+- **唔用 DeepSeek V4 Flash（非 4.1）** —— 用戶要求全部改用 `deepseek/deepseek-v4.1-flash`。
 
 ## 實測（2026-10-21，live）
 - 12 次連續請求：**12/12 成功**，延遲 5.6–18.7 秒（平均 13.2 秒）。
@@ -90,6 +92,11 @@ App 收到任何非 200 都會靜靜咁保留離線版，唔會報錯畀用戶�
 3. Timeout 三層要對齊：function `maxDuration=30`、免費 9 秒／付費 13 秒、iOS client 26 秒。
 4. `pattern` 唔可以信模型（永遠答 1），用名字 hash。
 5. 測中文 body **唔好用 Windows bash inline curl**（會用 console codepage 變亂碼，server 會靜靜當成預設分類）。用 python 或者 UTF-8 檔案。
+6. **簡體字**：V4.1 會偶爾漏簡體（叶／台／铁／绒／鱼），system prompt 已明寫「一定用繁體字」。
+7. **英文亂碼**：`reflection/beam:free` 偶爾會中途爆英文（實測「濕 stranger entities 濕老鼠不 predictable」）；
+   `normalize()` 見到 name／note 有 2 個以上連續英文字母就當失敗，重試或退後備 model。
+8. **唔支援 structured output 嘅 model**（如 glyph-cluster）會回 400；`attempt()` 會用 `structured:false`
+   再試一次（唔送 `response_format`／`reasoning_effort`），靠 `extractJson` 抽 JSON。
 
 
 

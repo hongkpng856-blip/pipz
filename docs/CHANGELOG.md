@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.42.8 — 停用 V4 Flash，全面改 V4.1；免費層換 reflection/beam (2026-10-22)
+
+### Changed
+- **所有 DeepSeek V4 Flash（非 4.1）已停用**：route 預設同 Vercel `PIPZ_AI_MODEL` 都改成
+  `deepseek/deepseek-v4.1-flash`。實測 V4.1 更快更省：3.8–5.1 秒、總 token 平均 **860**（V4 Flash 係 4.0–6.2 秒／1190）。
+- **`minimax/minimax-m3.1-flash:free` 免費期已完**（403「The free MiniMax M3.1 Flash window has ended」）→
+  免費層換成 `reflection/beam:free`（可用，~1.5k tokens、10–11 秒）。
+- `stealth/glyph-cluster:free` 唔支援 structured output（400）→ `attempt()` 會用 `structured:false` 重試。
+- 免費 model leash 9 秒 → **13 秒**（beam 要 10–11 秒）。
+- Prompt 加繁體規則（V4.1 會漏 叶／台／铁／绒／鱼）。
+- `normalize()` 拒絕含英文單詞嘅輸出（beam 實測爆過「濕 stranger entities 濕老鼠不 predictable」）。
+
+### Verified（12 次 live soak）
+- **12/12 成功**，延遲 3.6–19.1 秒（平均 8.1 秒）。
+- Model 分佈：免費 `reflection/beam:free` **9/12**、付費 `deepseek-v4.1-flash` 3/12。
+
 ## v0.42.7 — 免費 model 減半 token 同延遲（12/12，平均 7.0 秒）(2026-10-21)
 
 ### Changed
