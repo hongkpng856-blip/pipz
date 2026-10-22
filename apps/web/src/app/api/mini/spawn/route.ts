@@ -18,15 +18,15 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
 const ATTEMPT_TIMEOUT_MS = 13_000
-// 免費 model 成功時多數 3-9 秒，慢起上嚟要 20-31 秒；唔值得等，夠鐘就交畀後備
-const FREE_MODEL_TIMEOUT_MS = 9_000
+// 免費 model 慢起上嚟要 10-11 秒（reflection/beam:free），所以俾足 13 秒
+const FREE_MODEL_TIMEOUT_MS = 13_000
 // 成個請求嘅總預算，一定要細過 maxDuration（30 秒）同 iOS client timeout（26 秒）
 const TOTAL_BUDGET_MS = 24_000
 const MAX_ATTEMPTS = 2
 
-// 免費 model 優先；免費 quota 用完／429 就退去付費（便宜）後備
+// 免費 model 優先；免費 quota 用完／429／403 就退去付費 V4.1（唔用 V4 Flash）
 const DEFAULT_MODELS = [
-  'minimax/minimax-m3.1-flash:free',
+  'reflection/beam:free',
   'deepseek/deepseek-v4.1-flash',
 ]
 
@@ -84,6 +84,7 @@ function buildSystemPrompt(allowed: string[], category: string): string {
 - ear：0-3 整數，只有 archetype=creature 有意義（0=無耳 1=尖耳 2=圓耳 3=觸鬚）。
 - pattern：0 或 1，身上有冇花紋（大約一半機會有就好）。
 - palette：一個 hex 色，作為物件主色，要符合物件氣質（唔要純黑或純白）。
+- **字體：一定用繁體字（香港），絕對唔准出現簡體字**（例：葉唔可以寫成叶、颱唔可以寫成台、鐵唔可以寫成铁、絨唔可以寫成绒、魚唔可以寫成鱼）。
 
 嚴禁以下開頭或者用語（因為已經用得太多）：半夜、凌晨三點、自己、會嘆氣嘅、半融、半溶。
 每次都要用唔同嘅場景、質感同小動作，唔好重複同一個句式。`
@@ -177,6 +178,7 @@ async function attempt(params: {
   allowed: string[]
   budgetMs: number
   reasoningEffort?: string
+  structured?: boolean
 }): Promise<{ result: Generated | null; note: string }> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), params.budgetMs)
@@ -200,10 +202,15 @@ async function attempt(params: {
         // 一定要夠大：deepseek 會先用 token 做 reasoning，
         // 1200 都試過被 reasoning 食晒（回空 content），所以放到 2500（唔用唔收費）
         max_tokens: 2500,
-        response_format: { type: 'json_object' },
-        // 免費 model 用 low reasoning：實測 completion 由 ~464 降到 ~200 tokens、
-        // 延遲由 8–20 秒降到 3–7 秒，JSON 照樣 5/5 有效。付費唔加（deepseek 反而變差）。
-        ...(params.reasoningEffort ? { reasoning_effort: params.reasoningEffort } : {}),
+        // 有啲 model（例如 stealth/glyph-cluster:free）唔支援 structured output，
+        // 會回 400；嗰時會用 structured=false 再試，靠 extractJson 抽 JSON。
+        ...(params.structured === false
+          ? {}
+          : { response_format: { type: 'json_object' } }),
+        // 免費 model 用 low reasoning：實測 token 同延遲都減半。付費唔加（deepseek 反而變差）。
+        ...(params.reasoningEffort && params.structured !== false
+          ? { reasoning_effort: params.reasoningEffort }
+          : {}),
       }),
       signal: controller.signal,
     })
@@ -285,7 +292,7 @@ ${inspiration.join('\n')}
       const remaining = deadline - Date.now()
       if (remaining <= 1_000) break outer
       const isFree = model.includes(':free') || model.endsWith('-free')
-      const { result, note } = await attempt({
+      const attemptParams = {
         baseUrl,
         apiKey,
         model,
@@ -295,7 +302,21 @@ ${inspiration.join('\n')}
         budgetMs: Math.min(isFree ? FREE_MODEL_TIMEOUT_MS : ATTEMPT_TIMEOUT_MS, remaining),
         // 只有免費 model 用 low reasoning（實測 token 減半、延遲減半；deepseek 唔受惠）
         reasoningEffort: isFree ? 'low' : undefined,
-      })
+        structured: true,
+      }
+      let outcome = await attempt(attemptParams)
+      // 有啲 model 唔支援 response_format／reasoning_effort（400），退回普通請求再試
+      if (!outcome.result && outcome.note.includes('HTTP 400')) {
+        const retryRemaining = deadline - Date.now()
+        if (retryRemaining > 1_000) {
+          outcome = await attempt({
+            ...attemptParams,
+            structured: false,
+            budgetMs: Math.min(ATTEMPT_TIMEOUT_MS, retryRemaining),
+          })
+        }
+      }
+      const { result, note } = outcome
       if (result) {
         return NextResponse.json(
           { ...result, model, round },
