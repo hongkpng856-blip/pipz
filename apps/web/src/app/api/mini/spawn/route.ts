@@ -27,7 +27,7 @@ const MAX_ATTEMPTS = 2
 // 免費 model 優先；免費 quota 用完／429 就退去付費（便宜）後備
 const DEFAULT_MODELS = [
   'minimax/minimax-m3.1-flash:free',
-  'deepseek/deepseek-v4-flash',
+  'deepseek/deepseek-v4.1-flash',
 ]
 
 /** 分類 → 允許嘅外觀骨架（生物類一定要 creature，物件類唔可以變生物） */
