@@ -155,12 +155,16 @@ function hashPick(text: string, list: string[]): string {
 function normalize(json: Record<string, unknown>, allowed: string[]): Generated | null {
   const name = sanitizeText(json.name, 24)
   if (!name) return null
+  const note = sanitizeText(json.note, 60)
+  // 免費 model 偶爾會中途爆英文（例如「濕 stranger entities 濕老鼠不 predictable」）→ 當失敗，
+  // 交返上層重試或者退去後備 model，寧願慢都好過出爛字。
+  if (/[A-Za-z]{2,}/.test(name) || /[A-Za-z]{2,}/.test(note)) return null
   const archetypeRaw = sanitizeText(json.archetype, 16).toLowerCase()
   // 模型偶爾會唔聽話（例如「動物」生成咗水壺），用名字穩定咁揀返一個合法骨架
   const archetype = allowed.includes(archetypeRaw) ? archetypeRaw : hashPick(name, allowed)
   return {
     name,
-    note: sanitizeText(json.note, 60),
+    note,
     archetype,
     ear: clampInt(json.ear, 0, 3, 1),
     // 模型幾乎每次都答 pattern=1，所以改用名字 hash 決定（穩定、大約一半一半）
